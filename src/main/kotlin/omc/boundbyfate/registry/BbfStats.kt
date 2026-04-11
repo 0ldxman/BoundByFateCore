@@ -2,6 +2,9 @@ package omc.boundbyfate.registry
 
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.stat.StatDefinition
+import omc.boundbyfate.api.stat.StatEffectBinding
+import omc.boundbyfate.system.stat.effect.MaxHealthStatEffect
+import omc.boundbyfate.system.stat.effect.MovementSpeedStatEffect
 
 /**
  * Built-in D&D 5e stats for BoundByFate.
@@ -20,6 +23,7 @@ object BbfStats {
         minValue = 1,
         maxValue = 30,
         defaultValue = 10
+        // TODO: Add melee damage effect
     )
     
     /**
@@ -31,7 +35,13 @@ object BbfStats {
         displayName = "Выносливость",
         minValue = 1,
         maxValue = 30,
-        defaultValue = 10
+        defaultValue = 10,
+        effects = listOf(
+            StatEffectBinding(
+                effect = MaxHealthStatEffect,
+                statId = Identifier("boundbyfate-core", "constitution")
+            )
+        )
     )
     
     /**
@@ -43,7 +53,13 @@ object BbfStats {
         displayName = "Ловкость",
         minValue = 1,
         maxValue = 30,
-        defaultValue = 10
+        defaultValue = 10,
+        effects = listOf(
+            StatEffectBinding(
+                effect = MovementSpeedStatEffect,
+                statId = Identifier("boundbyfate-core", "dexterity")
+            )
+        )
     )
     
     /**
@@ -56,6 +72,7 @@ object BbfStats {
         minValue = 1,
         maxValue = 30,
         defaultValue = 10
+        // TODO: Add spell power effect
     )
     
     /**
@@ -68,6 +85,7 @@ object BbfStats {
         minValue = 1,
         maxValue = 30,
         defaultValue = 10
+        // TODO: Add perception/awareness effect
     )
     
     /**
@@ -80,6 +98,7 @@ object BbfStats {
         minValue = 1,
         maxValue = 30,
         defaultValue = 10
+        // TODO: Add social interaction effect
     )
     
     /**

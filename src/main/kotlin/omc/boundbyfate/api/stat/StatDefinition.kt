@@ -14,6 +14,7 @@ import net.minecraft.util.Identifier
  * @property minValue Minimum allowed value (default: 1)
  * @property maxValue Maximum allowed value (default: 30)
  * @property defaultValue Default value when not specified (default: 10)
+ * @property effects List of effects to apply when this stat changes
  *
  * @throws IllegalArgumentException if minValue > maxValue or defaultValue is out of range
  */
@@ -23,7 +24,8 @@ data class StatDefinition(
     val displayName: String,
     val minValue: Int = 1,
     val maxValue: Int = 30,
-    val defaultValue: Int = 10
+    val defaultValue: Int = 10,
+    val effects: List<StatEffectBinding> = emptyList()
 ) {
     init {
         require(minValue <= maxValue) {
