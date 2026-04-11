@@ -1,6 +1,0 @@
-{
-  "boundbyfate-core:player_level": {
-    "type": "entity",
-    "class": "omc.boundbyfate.component.PlayerLevelComponent"
-  }
-}

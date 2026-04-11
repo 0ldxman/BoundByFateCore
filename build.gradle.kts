@@ -41,12 +41,6 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	modImplementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
-	
-	// Cardinal Components API
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${providers.gradleProperty("cca_version").get()}")
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${providers.gradleProperty("cca_version").get()}")
-	include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${providers.gradleProperty("cca_version").get()}")
-	include("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${providers.gradleProperty("cca_version").get()}")
 }
 
 tasks.processResources {

@@ -7,7 +7,8 @@ import net.minecraft.command.CommandRegistryAccess
 import net.minecraft.server.command.CommandManager
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.Text
-import omc.boundbyfate.registry.BbfComponents
+import omc.boundbyfate.component.PlayerLevelData
+import omc.boundbyfate.registry.BbfAttachments
 
 object LevelCommand {
     fun register(
@@ -45,12 +46,12 @@ object LevelCommand {
     
     private fun showLevelInfo(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
-        val levelComponent = BbfComponents.PLAYER_LEVEL.get(player)
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
         
-        val level = levelComponent.level
-        val xp = levelComponent.experience
-        val requiredXp = levelComponent.getRequiredExperience(level)
-        val proficiency = levelComponent.getProficiencyBonus()
+        val level = levelData.level
+        val xp = levelData.experience
+        val requiredXp = levelData.getRequiredExperience(level)
+        val proficiency = levelData.getProficiencyBonus()
         
         context.source.sendFeedback(
             { Text.literal("§6=== Character Info ===") },
@@ -75,10 +76,10 @@ object LevelCommand {
     private fun setLevel(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
         val newLevel = IntegerArgumentType.getInteger(context, "level")
-        val levelComponent = BbfComponents.PLAYER_LEVEL.get(player)
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
         
-        levelComponent.setLevel(newLevel)
-        BbfComponents.PLAYER_LEVEL.sync(player)
+        levelData.setLevel(newLevel)
+        player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
         
         context.source.sendFeedback(
             { Text.literal("§aLevel set to $newLevel") },
@@ -91,19 +92,19 @@ object LevelCommand {
     private fun addExperience(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
         val amount = IntegerArgumentType.getInteger(context, "amount")
-        val levelComponent = BbfComponents.PLAYER_LEVEL.get(player)
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
         
-        val leveledUp = levelComponent.addExperience(amount)
-        BbfComponents.PLAYER_LEVEL.sync(player)
+        val leveledUp = levelData.addExperience(amount)
+        player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
         
         if (leveledUp) {
             context.source.sendFeedback(
-                { Text.literal("§6✦ Level Up! §eYou are now level ${levelComponent.level}") },
+                { Text.literal("§6✦ Level Up! §eYou are now level ${levelData.level}") },
                 true
             )
         } else {
             context.source.sendFeedback(
-                { Text.literal("§a+$amount XP (${levelComponent.experience}/${levelComponent.getRequiredExperience(levelComponent.level)})") },
+                { Text.literal("§a+$amount XP (${levelData.experience}/${levelData.getRequiredExperience(levelData.level)})") },
                 false
             )
         }
