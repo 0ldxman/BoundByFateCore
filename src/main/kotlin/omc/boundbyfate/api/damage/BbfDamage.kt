@@ -36,12 +36,12 @@ object BbfDamage {
     ): DamageSource {
         val entry = world.registryManager
             .get(RegistryKeys.DAMAGE_TYPE)
-            .getOrThrow(key)
+            .entryOf(key)
 
         return if (attacker != null) {
-            DamageSource(entry, attacker)
+            DamageSource(entry, attacker, null)
         } else {
-            DamageSource(entry)
+            DamageSource(entry, null, null)
         }
     }
 }
