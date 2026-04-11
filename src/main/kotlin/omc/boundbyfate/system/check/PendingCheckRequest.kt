@@ -30,14 +30,14 @@ data class PendingCheckRequest(
 
 /**
  * In-memory store for pending check requests.
- * Requests expire after 10 minutes.
+ * Requests expire after 10 minutes and are cleaned up every 60 seconds.
  */
 object PendingCheckStore {
     private val pending = ConcurrentHashMap<UUID, PendingCheckRequest>()
+    private const val CLEANUP_INTERVAL_TICKS = 20 * 60 // Every 60 seconds (20 ticks/sec)
+    private var tickCounter = 0
 
     fun put(request: PendingCheckRequest) {
-        // Clean up expired requests
-        pending.entries.removeIf { it.value.isExpired }
         pending[request.id] = request
     }
 
@@ -48,5 +48,17 @@ object PendingCheckStore {
 
     fun getForPlayer(playerName: String): List<PendingCheckRequest> {
         return pending.values.filter { it.playerName == playerName && !it.isExpired }
+    }
+
+    /**
+     * Called every server tick. Cleans up expired requests periodically.
+     * Register this in BoundByFateCore via ServerTickEvents.END_SERVER_TICK.
+     */
+    fun onServerTick() {
+        tickCounter++
+        if (tickCounter >= CLEANUP_INTERVAL_TICKS) {
+            tickCounter = 0
+            val removed = pending.entries.removeIf { it.value.isExpired }
+        }
     }
 }
