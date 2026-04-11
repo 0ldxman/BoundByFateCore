@@ -1,15 +1,21 @@
 package omc.boundbyfate
 
 import net.fabricmc.api.ModInitializer
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+import omc.boundbyfate.command.LevelCommand
 import org.slf4j.LoggerFactory
 
 object BoundByFateCore : ModInitializer {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
 	override fun onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-		logger.info("Hello Fabric world!")
+		logger.info("BoundByFate Core initializing...")
+		
+		// Register commands
+		CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
+			LevelCommand.register(dispatcher, registryAccess, environment)
+		}
+		
+		logger.info("BoundByFate Core initialized!")
 	}
 }
