@@ -142,6 +142,12 @@ object CharacterConfigLoader {
     "boundbyfate-core:intelligence": 10,
     "boundbyfate-core:wisdom": 12,
     "boundbyfate-core:charisma": 8
+  },
+  "proficiencies": {
+    "boundbyfate-core:athletics": 1,
+    "boundbyfate-core:intimidation": 1,
+    "boundbyfate-core:save_strength": 1,
+    "boundbyfate-core:save_constitution": 1
   }
 }
         """.trimIndent()

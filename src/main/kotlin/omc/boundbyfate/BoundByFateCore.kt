@@ -20,6 +20,10 @@ object BoundByFateCore : ModInitializer {
 		BbfStats.register()
 		logger.info("Registered ${StatRegistry.size} stats")
 		
+		// Register skills and saving throws
+		omc.boundbyfate.registry.BbfSkills.register()
+		logger.info("Registered ${omc.boundbyfate.registry.SkillRegistry.size} skills/saves")
+		
 		// Register data attachments
 		BbfAttachments.register()
 		

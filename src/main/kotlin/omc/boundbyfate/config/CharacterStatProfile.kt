@@ -39,12 +39,10 @@ data class CharacterStatProfile(
     val race: Identifier,
     val characterClass: Identifier,
     val startingLevel: Int,
-    val baseStats: Map<Identifier, Int>
+    val baseStats: Map<Identifier, Int>,
+    val proficiencies: Map<Identifier, Int> = emptyMap()
 ) {
     companion object {
-        /**
-         * Codec for JSON serialization/deserialization.
-         */
         val CODEC: Codec<CharacterStatProfile> = RecordCodecBuilder.create { instance ->
             instance.group(
                 Codec.STRING.fieldOf("playerName").forGetter { it.playerName },
@@ -53,7 +51,10 @@ data class CharacterStatProfile(
                 Codec.INT.fieldOf("startingLevel").forGetter { it.startingLevel },
                 Codec.unboundedMap(Identifier.CODEC, Codec.INT)
                     .fieldOf("baseStats")
-                    .forGetter { it.baseStats }
+                    .forGetter { it.baseStats },
+                Codec.unboundedMap(Identifier.CODEC, Codec.INT)
+                    .optionalFieldOf("proficiencies", emptyMap())
+                    .forGetter { it.proficiencies }
             ).apply(instance, ::CharacterStatProfile)
         }
     }

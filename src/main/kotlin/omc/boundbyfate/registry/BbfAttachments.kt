@@ -40,6 +40,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "entity_stats"),
         EntityStatData.CODEC
     )
+
+    /**
+     * Entity skill proficiency data attachment.
+     * Stores skill and saving throw proficiency levels (0, 1, 2).
+     * Persists through death and world reload.
+     */
+    val ENTITY_SKILLS: AttachmentType<omc.boundbyfate.component.EntitySkillData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "entity_skills"),
+        omc.boundbyfate.component.EntitySkillData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

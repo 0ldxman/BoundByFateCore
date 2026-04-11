@@ -106,6 +106,14 @@ object PlayerStatsHandler {
             // Attach stats to player
             player.setAttached(BbfAttachments.ENTITY_STATS, statsData)
             
+            // Load skill proficiencies from config (first join only)
+            val skillData = if (profile != null) {
+                omc.boundbyfate.component.EntitySkillData.fromMap(profile.proficiencies)
+            } else {
+                omc.boundbyfate.component.EntitySkillData()
+            }
+            player.setAttached(BbfAttachments.ENTITY_SKILLS, skillData)
+            
             // Apply all effects
             StatEffectProcessor.applyAll(player, statsData)
             
