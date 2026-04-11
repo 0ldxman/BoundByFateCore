@@ -72,17 +72,15 @@ object StatEffectProcessor {
      * Identifies BoundByFate modifiers by UUID prefix (bbf00000-*) or name prefix.
      */
     private fun removeAllBbfModifiers(entity: LivingEntity) {
-        for (attribute in entity.attributes.attributesToSend) {
-            val instance = entity.getAttributeInstance(attribute) ?: continue
-            
+        for (attributeInstance in entity.attributes.attributesToSend) {
             // Collect modifiers to remove (can't modify during iteration)
-            val toRemove = instance.modifiers.filter { modifier ->
+            val toRemove = attributeInstance.modifiers.filter { modifier ->
                 isBbfModifier(modifier)
             }
             
             // Remove them
             for (modifier in toRemove) {
-                instance.removeModifier(modifier.id)
+                attributeInstance.removeModifier(modifier.id)
             }
         }
     }
