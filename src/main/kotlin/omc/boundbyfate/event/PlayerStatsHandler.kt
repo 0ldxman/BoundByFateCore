@@ -8,7 +8,7 @@ import omc.boundbyfate.config.CharacterConfigLoader
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 import omc.boundbyfate.system.stat.StatEffectProcessor
-import omc.boundbyfate.system.classes.ClassSystem
+import omc.boundbyfate.system.charclass.ClassSystem
 import org.slf4j.LoggerFactory
 
 /**
