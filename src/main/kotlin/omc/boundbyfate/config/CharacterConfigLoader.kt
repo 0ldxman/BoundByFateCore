@@ -103,6 +103,7 @@ object CharacterConfigLoader {
     
     /**
      * Gets the config directory, creating it if necessary.
+     * Also creates an example config file if the directory is empty.
      */
     private fun getConfigDirectory(worldDirectory: Path): Path {
         val configDir = worldDirectory.resolve("boundbyfate").resolve("characters")
@@ -110,9 +111,47 @@ object CharacterConfigLoader {
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
             logger.info("Created character config directory: $configDir")
+            
+            // Create example config
+            createExampleConfig(configDir)
         }
         
         return configDir
+    }
+    
+    /**
+     * Creates an example character config file.
+     */
+    private fun createExampleConfig(configDir: Path) {
+        val exampleFile = configDir.resolve("_example.json")
+        
+        if (Files.exists(exampleFile)) {
+            return // Already exists
+        }
+        
+        val exampleJson = """
+{
+  "playerName": "Steve",
+  "race": "boundbyfate-core:human",
+  "class": "boundbyfate-core:fighter",
+  "startingLevel": 1,
+  "baseStats": {
+    "boundbyfate-core:strength": 15,
+    "boundbyfate-core:constitution": 14,
+    "boundbyfate-core:dexterity": 13,
+    "boundbyfate-core:intelligence": 10,
+    "boundbyfate-core:wisdom": 12,
+    "boundbyfate-core:charisma": 8
+  }
+}
+        """.trimIndent()
+        
+        try {
+            Files.writeString(exampleFile, exampleJson)
+            logger.info("Created example character config: $exampleFile")
+        } catch (e: Exception) {
+            logger.error("Failed to create example config", e)
+        }
     }
     
     /**

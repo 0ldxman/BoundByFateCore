@@ -107,6 +107,7 @@ object MobStatConfigLoader {
     
     /**
      * Gets the config directory, creating it if necessary.
+     * Also creates an example config file if the directory is empty.
      */
     private fun getConfigDirectory(worldDirectory: Path): Path {
         val configDir = worldDirectory.resolve("boundbyfate").resolve("mobs")
@@ -114,9 +115,44 @@ object MobStatConfigLoader {
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
             logger.info("Created mob config directory: $configDir")
+            
+            // Create example config
+            createExampleConfig(configDir)
         }
         
         return configDir
+    }
+    
+    /**
+     * Creates an example mob config file.
+     */
+    private fun createExampleConfig(configDir: Path) {
+        val exampleFile = configDir.resolve("_example_minecraft_zombie.json")
+        
+        if (Files.exists(exampleFile)) {
+            return // Already exists
+        }
+        
+        val exampleJson = """
+{
+  "mobTypeId": "minecraft:zombie",
+  "baseStats": {
+    "boundbyfate-core:strength": 13,
+    "boundbyfate-core:constitution": 15,
+    "boundbyfate-core:dexterity": 8,
+    "boundbyfate-core:intelligence": 3,
+    "boundbyfate-core:wisdom": 6,
+    "boundbyfate-core:charisma": 5
+  }
+}
+        """.trimIndent()
+        
+        try {
+            Files.writeString(exampleFile, exampleJson)
+            logger.info("Created example mob config: $exampleFile")
+        } catch (e: Exception) {
+            logger.error("Failed to create example mob config", e)
+        }
     }
     
     /**
