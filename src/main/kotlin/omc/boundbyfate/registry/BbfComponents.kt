@@ -14,18 +14,13 @@ import omc.boundbyfate.component.PlayerLevelComponent
 class BbfComponents : EntityComponentInitializer {
     
     override fun registerEntityComponentFactories(registry: EntityComponentFactoryRegistry) {
-        // Create component key during registration phase
-        PLAYER_LEVEL = ComponentRegistry.getOrCreate(
-            Identifier("boundbyfate-core", "player_level"), 
-            PlayerLevelComponent::class.java
-        )
-        
         // Attach level component to all players, persist through death
         registry.registerForPlayers(PLAYER_LEVEL, { PlayerLevelComponent() }, RespawnCopyStrategy.ALWAYS_COPY)
     }
     
     companion object {
-        lateinit var PLAYER_LEVEL: ComponentKey<PlayerLevelComponent>
-            private set
+        @JvmField
+        val PLAYER_LEVEL: ComponentKey<PlayerLevelComponent> = 
+            ComponentRegistry.getOrCreate(Identifier("boundbyfate-core", "player_level"), PlayerLevelComponent::class.java)
     }
 }
