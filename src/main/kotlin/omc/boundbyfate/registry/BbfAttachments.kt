@@ -50,6 +50,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "entity_skills"),
         omc.boundbyfate.component.EntitySkillData.CODEC
     )
+
+    /**
+     * Entity resource pools attachment.
+     * Stores all resource pools (spell slots, rage, ki points, etc.).
+     * Persists through death and world reload.
+     */
+    val ENTITY_RESOURCES: AttachmentType<omc.boundbyfate.component.EntityResourceData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "entity_resources"),
+        omc.boundbyfate.component.EntityResourceData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

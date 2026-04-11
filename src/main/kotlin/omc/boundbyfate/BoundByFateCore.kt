@@ -24,6 +24,10 @@ object BoundByFateCore : ModInitializer {
 		omc.boundbyfate.registry.BbfSkills.register()
 		logger.info("Registered ${omc.boundbyfate.registry.SkillRegistry.size} skills/saves")
 		
+		// Register resource definitions
+		omc.boundbyfate.registry.BbfResources.register()
+		logger.info("Registered ${omc.boundbyfate.registry.ResourceRegistry.size} resource types")
+		
 		// Register data attachments
 		BbfAttachments.register()
 		
