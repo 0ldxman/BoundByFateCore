@@ -25,6 +25,7 @@ object BoundByFateCore : ModInitializer {
 		
 		// Register event handlers
 		PlayerStatsHandler.register()
+		omc.boundbyfate.event.MobStatsHandler.register()
 		logger.info("Registered event handlers")
 		
 		// Register commands
