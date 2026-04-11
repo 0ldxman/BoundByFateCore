@@ -1,7 +1,7 @@
 package omc.boundbyfate.registry
 
 import dev.onyxstudios.cca.api.v3.component.ComponentKey
-import dev.onyxstudios.cca.api.v3.component.ComponentRegistry
+import dev.onyxstudios.cca.api.v3.component.ComponentRegistryV3
 import dev.onyxstudios.cca.api.v3.entity.EntityComponentFactoryRegistry
 import dev.onyxstudios.cca.api.v3.entity.EntityComponentInitializer
 import dev.onyxstudios.cca.api.v3.entity.RespawnCopyStrategy
@@ -21,6 +21,6 @@ class BbfComponents : EntityComponentInitializer {
     companion object {
         @JvmField
         val PLAYER_LEVEL: ComponentKey<PlayerLevelComponent> = 
-            ComponentRegistry.getOrCreate(Identifier("boundbyfate-core", "player_level"), PlayerLevelComponent::class.java)
+            ComponentRegistryV3.INSTANCE.getOrCreate(Identifier("boundbyfate-core", "player_level"), PlayerLevelComponent::class.java)
     }
 }
