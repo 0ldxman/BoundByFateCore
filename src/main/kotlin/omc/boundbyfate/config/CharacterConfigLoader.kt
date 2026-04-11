@@ -103,7 +103,7 @@ object CharacterConfigLoader {
     
     /**
      * Gets the config directory, creating it if necessary.
-     * Also creates an example config file if the directory is empty.
+     * Also creates an example config file if it doesn't exist.
      */
     private fun getConfigDirectory(worldDirectory: Path): Path {
         val configDir = worldDirectory.resolve("boundbyfate").resolve("characters")
@@ -111,10 +111,10 @@ object CharacterConfigLoader {
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
             logger.info("Created character config directory: $configDir")
-            
-            // Create example config
-            createExampleConfig(configDir)
         }
+        
+        // Always try to create example config (will skip if exists)
+        createExampleConfig(configDir)
         
         return configDir
     }
