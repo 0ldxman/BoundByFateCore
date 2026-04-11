@@ -3,60 +3,74 @@ package omc.boundbyfate.component
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.damage.ResistanceLevel
 
 /**
- * Stores damage resistances, immunities and vulnerabilities for an entity.
+ * Stores damage resistance levels for an entity, tracked per source.
  *
- * Resistances are stored per source (race, equipment, ability) to allow
- * multiple sources to grant the same resistance without overwriting each other.
- * The effective modifier for a damage type is the MINIMUM across all sources
- * (most protective wins).
+ * Each source contributes an integer level for a damage type.
+ * The effective level is the SUM of all source contributions, clamped to [-3, +2].
  *
- * Modifier values:
- * - 0.0 = immunity (no damage)
- * - 0.5 = resistance (half damage)
- * - 1.0 = normal (default, no entry needed)
- * - 2.0 = vulnerability (double damage)
+ * Level → Multiplier:
+ * -3 = Immunity       (0.0x)
+ * -2 = Strong Resist  (0.25x)
+ * -1 = Resist         (0.5x)
+ *  0 = Normal         (1.0x)
+ * +1 = Vulnerable     (2.0x)
+ * +2 = Very Vulnerable(4.0x)
  *
- * @property sources Map of sourceId -> (damageTypeId -> modifier)
+ * Example:
+ * - Race grants RESIST(-1) to poison
+ * - Artifact grants VULNERABLE(+1) to poison
+ * - Effective: -1 + 1 = 0 → Normal
+ *
+ * @property sources Map of sourceId -> (damageTypeId -> level contribution)
  */
 data class EntityDamageData(
-    val sources: Map<Identifier, Map<Identifier, Float>> = emptyMap()
+    val sources: Map<Identifier, Map<Identifier, Int>> = emptyMap()
 ) {
     /**
-     * Returns the effective damage multiplier for a given damage type.
-     * Takes the minimum modifier across all sources (most protective wins).
-     * Returns 1.0 if no entry exists (normal damage).
+     * Returns the effective ResistanceLevel for a damage type.
+     * Sums all source contributions and clamps to [-3, +2].
      */
-    fun getModifier(damageTypeId: Identifier): Float {
-        var min = 1.0f
-        for ((_, resistances) in sources) {
-            val modifier = resistances[damageTypeId] ?: continue
-            if (modifier < min) min = modifier
+    fun getResistanceLevel(damageTypeId: Identifier): ResistanceLevel {
+        var total = 0
+        for ((_, contributions) in sources) {
+            total += contributions[damageTypeId] ?: 0
         }
-        return min
+        return ResistanceLevel.fromLevel(total)
     }
 
     /**
-     * Returns true if the entity is immune to this damage type from any source.
+     * Returns the effective damage multiplier for a damage type.
      */
-    fun isImmune(damageTypeId: Identifier): Boolean = getModifier(damageTypeId) == 0.0f
+    fun getModifier(damageTypeId: Identifier): Float =
+        getResistanceLevel(damageTypeId).multiplier
 
     /**
-     * Adds or updates a resistance from a specific source.
-     *
-     * @param sourceId Who grants this resistance (e.g. "boundbyfate-core:race_dwarf")
-     * @param damageTypeId The damage type identifier
-     * @param modifier Damage multiplier (0.0=immune, 0.5=resist, 1.0=normal, 2.0=vulnerable)
+     * Returns true if the entity is immune to this damage type.
      */
-    fun withResistance(sourceId: Identifier, damageTypeId: Identifier, modifier: Float): EntityDamageData {
-        require(modifier >= 0.0f) { "Damage modifier cannot be negative" }
-        val sourceMap = (sources[sourceId] ?: emptyMap()) + (damageTypeId to modifier)
+    fun isImmune(damageTypeId: Identifier): Boolean =
+        getResistanceLevel(damageTypeId) == ResistanceLevel.IMMUNITY
+
+    /**
+     * Adds or updates a resistance contribution from a specific source.
+     *
+     * @param sourceId Who grants this (e.g. "boundbyfate-core:race_dwarf")
+     * @param damageTypeId The damage type identifier
+     * @param level Contribution level (-3 to +2, use ResistanceLevel.value)
+     */
+    fun withResistance(sourceId: Identifier, damageTypeId: Identifier, level: Int): EntityDamageData {
+        val sourceMap = (sources[sourceId] ?: emptyMap()) + (damageTypeId to level)
         return copy(sources = sources + (sourceId to sourceMap))
     }
 
+    /** Convenience overload using ResistanceLevel enum. */
+    fun withResistance(sourceId: Identifier, damageTypeId: Identifier, level: ResistanceLevel): EntityDamageData =
+        withResistance(sourceId, damageTypeId, level.value)
+
     /**
-     * Removes a specific resistance from a source.
+     * Removes a specific resistance contribution from a source.
      */
     fun withoutResistance(sourceId: Identifier, damageTypeId: Identifier): EntityDamageData {
         val sourceMap = sources[sourceId] ?: return this
@@ -69,7 +83,7 @@ data class EntityDamageData(
     }
 
     /**
-     * Removes ALL resistances from a source (e.g. when unequipping an item).
+     * Removes ALL contributions from a source (e.g. unequipping an item).
      */
     fun withoutSource(sourceId: Identifier): EntityDamageData =
         copy(sources = sources - sourceId)
@@ -79,7 +93,7 @@ data class EntityDamageData(
             instance.group(
                 Codec.unboundedMap(
                     Identifier.CODEC,
-                    Codec.unboundedMap(Identifier.CODEC, Codec.FLOAT)
+                    Codec.unboundedMap(Identifier.CODEC, Codec.INT)
                 )
                     .optionalFieldOf("sources", emptyMap())
                     .forGetter { it.sources }
