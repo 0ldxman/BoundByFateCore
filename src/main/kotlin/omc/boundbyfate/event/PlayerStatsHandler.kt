@@ -33,6 +33,19 @@ object PlayerStatsHandler {
         try {
             val playerName = player.name.string
             
+            // Check if player already has stats data (from NBT)
+            val existingStats = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+            
+            if (existingStats != null) {
+                // Player already has stats - just reapply effects
+                logger.info("Player '$playerName' has existing stats data - reapplying effects")
+                StatEffectProcessor.applyAll(player, existingStats)
+                return
+            }
+            
+            // No existing data - this is first join or data was lost
+            logger.info("Player '$playerName' has no stats data - loading from config")
+            
             // Get world directory from PersistentStateManager
             // This is the most reliable way to get the actual save directory
             val serverWorld = player.serverWorld
