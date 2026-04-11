@@ -12,12 +12,12 @@ interface PlayerDataComponent : ServerTickingComponent {
     /**
      * Serialize component data to NBT for persistence.
      */
-    fun writeToNbt(tag: NbtCompound)
+    override fun writeToNbt(tag: NbtCompound)
     
     /**
      * Deserialize component data from NBT.
      */
-    fun readFromNbt(tag: NbtCompound)
+    override fun readFromNbt(tag: NbtCompound)
     
     /**
      * Called every server tick. Override if needed.
