@@ -60,6 +60,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "entity_resources"),
         omc.boundbyfate.component.EntityResourceData.CODEC
     )
+
+    /**
+     * Entity damage resistances attachment.
+     * Stores damage type modifiers (immunity, resistance, vulnerability).
+     * Persists through death and world reload.
+     */
+    val ENTITY_DAMAGE: AttachmentType<omc.boundbyfate.component.EntityDamageData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "entity_damage"),
+        omc.boundbyfate.component.EntityDamageData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.
