@@ -8,19 +8,21 @@ import omc.boundbyfate.registry.BbfAttachments
 /**
  * Utility for managing entity damage resistances.
  *
- * Used by races, classes, equipment and abilities to grant
- * resistances, immunities and vulnerabilities.
+ * Resistances are tracked per source - multiple sources can grant the same
+ * resistance and the most protective one wins (minimum modifier).
  *
  * Usage:
  * ```kotlin
  * // Dwarf racial resistance to poison
- * DamageResistanceSystem.addResistance(player, BbfDamageTypes.POISON.id, 0.5f)
+ * DamageResistanceSystem.addResistance(
+ *     entity = player,
+ *     sourceId = Identifier("boundbyfate-core", "race_dwarf"),
+ *     damageTypeId = BbfDamageTypes.POISON.id,
+ *     modifier = 0.5f
+ * )
  *
- * // Undead immunity to necrotic
- * DamageResistanceSystem.addResistance(entity, BbfDamageTypes.NECROTIC.id, 0.0f)
- *
- * // Remove resistance (e.g. when unequipping item)
- * DamageResistanceSystem.removeResistance(player, BbfDamageTypes.FIRE.id)
+ * // Remove all resistances from a source (e.g. unequip item)
+ * DamageResistanceSystem.removeSource(player, Identifier("mymod", "fire_ring"))
  * ```
  */
 object DamageResistanceSystem {
@@ -36,22 +38,37 @@ object DamageResistanceSystem {
     }
 
     /**
-     * Adds or updates a resistance for an entity.
+     * Adds or updates a resistance from a specific source.
      *
      * @param entity The entity to modify
+     * @param sourceId Who grants this resistance (race, item, ability ID)
      * @param damageTypeId The damage type identifier
      * @param modifier Damage multiplier (0.0=immune, 0.5=resist, 1.0=normal, 2.0=vulnerable)
      */
-    fun addResistance(entity: LivingEntity, damageTypeId: Identifier, modifier: Float) {
+    fun addResistance(
+        entity: LivingEntity,
+        sourceId: Identifier,
+        damageTypeId: Identifier,
+        modifier: Float
+    ) {
         val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE, EntityDamageData())
-        entity.setAttached(BbfAttachments.ENTITY_DAMAGE, data.withResistance(damageTypeId, modifier))
+        entity.setAttached(BbfAttachments.ENTITY_DAMAGE, data.withResistance(sourceId, damageTypeId, modifier))
     }
 
     /**
-     * Removes a resistance from an entity (back to normal 1.0).
+     * Removes a specific resistance from a source.
      */
-    fun removeResistance(entity: LivingEntity, damageTypeId: Identifier) {
+    fun removeResistance(entity: LivingEntity, sourceId: Identifier, damageTypeId: Identifier) {
         val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE, null) ?: return
-        entity.setAttached(BbfAttachments.ENTITY_DAMAGE, data.withoutResistance(damageTypeId))
+        entity.setAttached(BbfAttachments.ENTITY_DAMAGE, data.withoutResistance(sourceId, damageTypeId))
+    }
+
+    /**
+     * Removes ALL resistances granted by a source.
+     * Use when unequipping an item or losing a racial ability.
+     */
+    fun removeSource(entity: LivingEntity, sourceId: Identifier) {
+        val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE, null) ?: return
+        entity.setAttached(BbfAttachments.ENTITY_DAMAGE, data.withoutSource(sourceId))
     }
 }

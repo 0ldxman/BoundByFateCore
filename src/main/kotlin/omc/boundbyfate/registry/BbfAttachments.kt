@@ -26,6 +26,7 @@ object BbfAttachments {
      * Player level and experience data attachment.
      * Persists through death and world reload.
      */
+    @JvmField
     val PLAYER_LEVEL: AttachmentType<PlayerLevelData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "player_level"),
         PLAYER_LEVEL_CODEC
@@ -36,6 +37,7 @@ object BbfAttachments {
      * Stores base stat values and modifiers for players and mobs.
      * Persists through death and world reload.
      */
+    @JvmField
     val ENTITY_STATS: AttachmentType<EntityStatData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "entity_stats"),
         EntityStatData.CODEC
@@ -46,6 +48,7 @@ object BbfAttachments {
      * Stores skill and saving throw proficiency levels (0, 1, 2).
      * Persists through death and world reload.
      */
+    @JvmField
     val ENTITY_SKILLS: AttachmentType<omc.boundbyfate.component.EntitySkillData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "entity_skills"),
         omc.boundbyfate.component.EntitySkillData.CODEC
@@ -56,6 +59,7 @@ object BbfAttachments {
      * Stores all resource pools (spell slots, rage, ki points, etc.).
      * Persists through death and world reload.
      */
+    @JvmField
     val ENTITY_RESOURCES: AttachmentType<omc.boundbyfate.component.EntityResourceData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "entity_resources"),
         omc.boundbyfate.component.EntityResourceData.CODEC
@@ -66,6 +70,7 @@ object BbfAttachments {
      * Stores damage type modifiers (immunity, resistance, vulnerability).
      * Persists through death and world reload.
      */
+    @JvmField
     val ENTITY_DAMAGE: AttachmentType<omc.boundbyfate.component.EntityDamageData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "entity_damage"),
         omc.boundbyfate.component.EntityDamageData.CODEC
