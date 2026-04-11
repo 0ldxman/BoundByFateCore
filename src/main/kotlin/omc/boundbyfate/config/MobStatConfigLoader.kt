@@ -110,7 +110,8 @@ object MobStatConfigLoader {
      * Gets the config directory, creating it if necessary.
      */
     private fun getConfigDirectory(server: MinecraftServer): Path {
-        val worldDir = server.runDirectory.toPath().resolve(server.getSavePath(net.minecraft.world.level.storage.LevelStorage.LevelSave.ROOT).toString())
+        // Get world directory (where level.dat is located)
+        val worldDir = server.runDirectory.toPath().resolve(server.session.directoryName)
         val configDir = worldDir.resolve("boundbyfate").resolve("mobs")
         
         if (!Files.exists(configDir)) {
