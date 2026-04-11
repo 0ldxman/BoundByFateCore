@@ -44,6 +44,6 @@
 		"java": ">=17",
 		"fabric-api": "*",
 		"fabric-language-kotlin": "*",
-		"cardinal-components": ">=5.4.0"
+		"cardinal-components": ">=5.2.2"
 	}
 }
