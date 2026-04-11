@@ -78,8 +78,8 @@ object LevelCommand {
         val newLevel = IntegerArgumentType.getInteger(context, "level")
         val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, PlayerLevelData())
         
-        levelData.setLevel(newLevel)
-        player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
+        val updatedData = levelData.withLevel(newLevel)
+        player.setAttached(BbfAttachments.PLAYER_LEVEL, updatedData)
         
         context.source.sendFeedback(
             { Text.literal("§aLevel set to $newLevel") },
@@ -94,17 +94,18 @@ object LevelCommand {
         val amount = IntegerArgumentType.getInteger(context, "amount")
         val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, PlayerLevelData())
         
-        val leveledUp = levelData.addExperience(amount)
-        player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
+        val leveledUp = levelData.wouldLevelUp(amount)
+        val updatedData = levelData.addExperience(amount)
+        player.setAttached(BbfAttachments.PLAYER_LEVEL, updatedData)
         
         if (leveledUp) {
             context.source.sendFeedback(
-                { Text.literal("§6✦ Level Up! §eYou are now level ${levelData.level}") },
+                { Text.literal("§6✦ Level Up! §eYou are now level ${updatedData.level}") },
                 true
             )
         } else {
             context.source.sendFeedback(
-                { Text.literal("§a+$amount XP (${levelData.experience}/${levelData.getRequiredExperience(levelData.level)})") },
+                { Text.literal("§a+$amount XP (${updatedData.experience}/${updatedData.getRequiredExperience(updatedData.level)})") },
                 false
             )
         }

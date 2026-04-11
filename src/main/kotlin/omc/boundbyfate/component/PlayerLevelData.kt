@@ -5,31 +5,38 @@ package omc.boundbyfate.component
  * Uses Fabric Data Attachment API for persistence.
  */
 data class PlayerLevelData(
-    var level: Int = 1,
-    var experience: Int = 0
+    val level: Int = 1,
+    val experience: Int = 0
 ) {
     /**
      * Add experience to the player and handle level ups.
-     * @return true if player leveled up
+     * @return new PlayerLevelData with updated values, or null if no level up
      */
-    fun addExperience(amount: Int): Boolean {
-        experience += amount
+    fun addExperience(amount: Int): PlayerLevelData {
+        val newXp = experience + amount
         val requiredXp = getRequiredExperience(level)
         
-        if (experience >= requiredXp) {
-            experience -= requiredXp
-            level++
-            return true
+        return if (newXp >= requiredXp) {
+            // Level up
+            PlayerLevelData(level + 1, newXp - requiredXp)
+        } else {
+            // Just add XP
+            PlayerLevelData(level, newXp)
         }
-        return false
+    }
+    
+    /**
+     * Check if adding XP would cause level up.
+     */
+    fun wouldLevelUp(amount: Int): Boolean {
+        return (experience + amount) >= getRequiredExperience(level)
     }
     
     /**
      * Set player level directly (admin command).
      */
-    fun setLevel(newLevel: Int) {
-        level = newLevel.coerceIn(1, 20)
-        experience = 0
+    fun withLevel(newLevel: Int): PlayerLevelData {
+        return PlayerLevelData(newLevel.coerceIn(1, 20), 0)
     }
     
     /**
