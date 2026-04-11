@@ -50,12 +50,11 @@ object CharacterConfigLoader {
                 val errors = profile.validate()
                 if (errors.isNotEmpty()) {
                     logger.error("Invalid character config for '$playerName': ${errors.joinToString(", ")}")
-                    return null
+                } else {
+                    // Cache
+                    cache[playerName] = profile
+                    logger.info("Loaded character config for '$playerName': race=${profile.race}, class=${profile.characterClass}, level=${profile.startingLevel}")
                 }
-                
-                // Cache and return
-                cache[playerName] = profile
-                logger.info("Loaded character config for '$playerName': race=${profile.race}, class=${profile.characterClass}, level=${profile.startingLevel}")
             }
             
             result.error().ifPresent { error ->
@@ -107,8 +106,8 @@ object CharacterConfigLoader {
      * Gets the config directory, creating it if necessary.
      */
     private fun getConfigDirectory(server: MinecraftServer): Path {
-        val worldDir = server.getSavePath(net.minecraft.world.level.storage.LevelResource.ROOT)
-        val configDir = worldDir.resolve("boundbyfate").resolve("characters")
+        val worldDir = server.getSavePath(net.minecraft.world.level.storage.LevelStorage.LevelSave.LEVEL_DAT)
+        val configDir = worldDir.parent.resolve("boundbyfate").resolve("characters")
         
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
