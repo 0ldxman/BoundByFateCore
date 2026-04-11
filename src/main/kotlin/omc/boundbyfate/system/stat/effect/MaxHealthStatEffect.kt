@@ -36,7 +36,7 @@ object MaxHealthStatEffect : StatEffect {
             MODIFIER_ID,
             "BoundByFate CON health bonus",
             hpBonus,
-            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADD_VALUE
+            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADDITION
         )
         attributeInstance.addPersistentModifier(modifier)
         

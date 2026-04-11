@@ -36,7 +36,7 @@ object MovementSpeedStatEffect : StatEffect {
             MODIFIER_ID,
             "BoundByFate DEX speed bonus",
             speedBonus,
-            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADD_MULTIPLIED_BASE
+            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.MULTIPLY_BASE
         )
         attributeInstance.addPersistentModifier(modifier)
     }

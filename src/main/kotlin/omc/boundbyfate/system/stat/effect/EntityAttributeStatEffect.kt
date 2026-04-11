@@ -60,7 +60,7 @@ class EntityAttributeStatEffect(
             return EntityAttributeStatEffect(
                 attribute = attribute,
                 modifierId = modifierId,
-                operation = EntityAttributeModifier.Operation.ADD_VALUE,
+                operation = EntityAttributeModifier.Operation.ADDITION,
                 formula = { it.dndModifier * multiplier }
             )
         }
@@ -73,7 +73,7 @@ class EntityAttributeStatEffect(
         fun fromTotalValue(
             attribute: EntityAttribute,
             modifierId: UUID,
-            operation: EntityAttributeModifier.Operation = EntityAttributeModifier.Operation.ADD_VALUE,
+            operation: EntityAttributeModifier.Operation = EntityAttributeModifier.Operation.ADDITION,
             formula: (Int) -> Double
         ): EntityAttributeStatEffect {
             return EntityAttributeStatEffect(

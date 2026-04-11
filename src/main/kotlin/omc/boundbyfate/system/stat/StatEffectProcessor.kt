@@ -82,7 +82,7 @@ object StatEffectProcessor {
             
             // Remove them
             for (modifier in toRemove) {
-                instance.removeModifier(modifier)
+                instance.removeModifier(modifier.id)
             }
         }
     }
