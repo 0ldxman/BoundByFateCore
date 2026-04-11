@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType
 import net.minecraft.util.Identifier
+import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.component.PlayerLevelData
 
 /**
@@ -28,6 +29,16 @@ object BbfAttachments {
     val PLAYER_LEVEL: AttachmentType<PlayerLevelData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "player_level"),
         PLAYER_LEVEL_CODEC
+    )
+    
+    /**
+     * Entity stats data attachment.
+     * Stores base stat values and modifiers for players and mobs.
+     * Persists through death and world reload.
+     */
+    val ENTITY_STATS: AttachmentType<EntityStatData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "entity_stats"),
+        EntityStatData.CODEC
     )
     
     /**
