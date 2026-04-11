@@ -1,0 +1,31 @@
+{
+  "displayName": "Мастер боя",
+  "parentClass": "boundbyfate-core:fighter",
+  "progression": {
+    "3": {
+      "resources": {
+        "boundbyfate-core:superiority_dice": 4
+      },
+      "abilities": [
+        "boundbyfate-core:maneuver_disarming_attack",
+        "boundbyfate-core:maneuver_precision_attack",
+        "boundbyfate-core:maneuver_trip_attack"
+      ]
+    },
+    "7": {
+      "resources": {
+        "boundbyfate-core:superiority_dice": 5
+      }
+    },
+    "10": {
+      "abilities": [
+        "boundbyfate-core:improved_combat_superiority"
+      ]
+    },
+    "15": {
+      "resources": {
+        "boundbyfate-core:superiority_dice": 6
+      }
+    }
+  }
+}

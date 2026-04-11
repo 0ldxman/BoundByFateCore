@@ -1,0 +1,46 @@
+{
+  "displayName": "Воин",
+  "hitDie": 10,
+  "subclassLevel": 3,
+  "progression": {
+    "1": {
+      "resources": {
+        "boundbyfate-core:second_wind": 1,
+        "boundbyfate-core:action_surge": 1
+      },
+      "proficiencies": [
+        "boundbyfate-core:save_strength",
+        "boundbyfate-core:save_constitution"
+      ],
+      "abilities": [
+        "boundbyfate-core:second_wind",
+        "boundbyfate-core:action_surge"
+      ]
+    },
+    "2": {
+      "abilities": [
+        "boundbyfate-core:action_surge"
+      ]
+    },
+    "5": {
+      "abilities": [
+        "boundbyfate-core:extra_attack"
+      ]
+    },
+    "9": {
+      "resources": {
+        "boundbyfate-core:action_surge": 2
+      }
+    },
+    "11": {
+      "abilities": [
+        "boundbyfate-core:extra_attack_2"
+      ]
+    },
+    "20": {
+      "abilities": [
+        "boundbyfate-core:extra_attack_3"
+      ]
+    }
+  }
+}

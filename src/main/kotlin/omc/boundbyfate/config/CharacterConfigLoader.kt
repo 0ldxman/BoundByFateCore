@@ -134,7 +134,8 @@ object CharacterConfigLoader {
   "playerName": "Steve",
   "race": "boundbyfate-core:human",
   "class": "boundbyfate-core:fighter",
-  "startingLevel": 1,
+  "subclass": "boundbyfate-core:battle_master",
+  "startingLevel": 3,
   "baseStats": {
     "boundbyfate-core:strength": 15,
     "boundbyfate-core:constitution": 14,

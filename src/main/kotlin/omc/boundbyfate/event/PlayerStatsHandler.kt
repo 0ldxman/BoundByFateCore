@@ -101,7 +101,16 @@ object PlayerStatsHandler {
             }
             
             // TODO: Apply race modifiers (when race system is implemented)
-            // TODO: Apply class modifiers (when class system is implemented)
+            
+            // Apply class (first join only - class data not in NBT yet)
+            if (profile != null) {
+                val classId = profile.characterClass
+                val subclassId = profile.subclass
+                val classLevel = profile.startingLevel
+                omc.boundbyfate.system.classes.ClassSystem.applyClass(
+                    player, classId, subclassId, classLevel
+                )
+            }
             
             // Attach stats to player
             player.setAttached(BbfAttachments.ENTITY_STATS, statsData)

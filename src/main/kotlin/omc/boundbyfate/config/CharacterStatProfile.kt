@@ -38,6 +38,7 @@ data class CharacterStatProfile(
     val playerName: String,
     val race: Identifier,
     val characterClass: Identifier,
+    val subclass: Identifier? = null,
     val startingLevel: Int,
     val baseStats: Map<Identifier, Int>,
     val proficiencies: Map<Identifier, Int> = emptyMap()
@@ -48,6 +49,9 @@ data class CharacterStatProfile(
                 Codec.STRING.fieldOf("playerName").forGetter { it.playerName },
                 Identifier.CODEC.fieldOf("race").forGetter { it.race },
                 Identifier.CODEC.fieldOf("class").forGetter { it.characterClass },
+                Identifier.CODEC.optionalFieldOf("subclass").forGetter {
+                    java.util.Optional.ofNullable(it.subclass)
+                },
                 Codec.INT.fieldOf("startingLevel").forGetter { it.startingLevel },
                 Codec.unboundedMap(Identifier.CODEC, Codec.INT)
                     .fieldOf("baseStats")
@@ -55,7 +59,9 @@ data class CharacterStatProfile(
                 Codec.unboundedMap(Identifier.CODEC, Codec.INT)
                     .optionalFieldOf("proficiencies", emptyMap())
                     .forGetter { it.proficiencies }
-            ).apply(instance, ::CharacterStatProfile)
+            ).apply(instance) { playerName, race, characterClass, subclass, startingLevel, baseStats, proficiencies ->
+                CharacterStatProfile(playerName, race, characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies)
+            }
         }
     }
     

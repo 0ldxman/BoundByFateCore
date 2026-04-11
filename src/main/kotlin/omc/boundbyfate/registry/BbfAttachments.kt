@@ -75,6 +75,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "entity_damage"),
         omc.boundbyfate.component.EntityDamageData.CODEC
     )
+
+    /**
+     * Player class and subclass assignment.
+     * Persists through death and world reload.
+     */
+    @JvmField
+    val PLAYER_CLASS: AttachmentType<omc.boundbyfate.component.PlayerClassData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "player_class"),
+        omc.boundbyfate.component.PlayerClassData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

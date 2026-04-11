@@ -28,6 +28,9 @@ object BoundByFateCore : ModInitializer {
 		omc.boundbyfate.registry.BbfResources.register()
 		logger.info("Registered ${omc.boundbyfate.registry.ResourceRegistry.size} resource types")
 		
+		// Register class datapack loader
+		omc.boundbyfate.config.ClassDatapackLoader.register()
+		
 		// Register data attachments
 		BbfAttachments.register()
 		
