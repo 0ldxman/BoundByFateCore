@@ -33,11 +33,30 @@ object PlayerStatsHandler {
         try {
             val playerName = player.name.string
             
-            // Get world directory - the actual save directory where world data is stored
-            // For integrated server: minecraft/saves/[world_folder]/
-            // For dedicated server: ./[world_folder]/
-            val server = player.server
-            val worldDir = player.serverWorld.server.session.getWorldDirectory(player.serverWorld.registryKey)
+            // Get world directory from PersistentStateManager
+            // This is the most reliable way to get the actual save directory
+            val serverWorld = player.serverWorld
+            val stateManager = serverWorld.persistentStateManager
+            
+            // The persistent state manager stores data in the world directory
+            // We can get the directory by accessing its internal field
+            val worldDir = try {
+                val directoryField = stateManager.javaClass.getDeclaredField("directory")
+                directoryField.isAccessible = true
+                (directoryField.get(stateManager) as java.io.File).toPath().parent
+            } catch (e: Exception) {
+                // Fallback: construct path manually based on server type
+                logger.debug("Using fallback world directory method: ${e.message}")
+                val server = player.server
+                val runDir = server.runDirectory.toPath()
+                if (server.isDedicated) {
+                    // Dedicated server: world is in root directory
+                    runDir.resolve(server.saveProperties.levelName)
+                } else {
+                    // Integrated server: worlds are in saves/
+                    runDir.resolve("saves").resolve(server.saveProperties.levelName)
+                }
+            }
             
             // Try to load character config
             val profile = CharacterConfigLoader.load(worldDir, playerName)
