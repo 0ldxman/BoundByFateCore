@@ -33,8 +33,10 @@ object PlayerStatsHandler {
         try {
             val playerName = player.name.string
             
-            // Get world directory (the actual save directory)
-            val worldDir = player.serverWorld.server.getSavePath(net.minecraft.world.level.storage.LevelResource.ROOT)
+            // Get world directory - use the server's save directory
+            // In 1.20.1, we need to construct the path manually
+            val server = player.server
+            val worldDir = server.runDirectory.toPath().resolve(server.saveProperties.levelName)
             
             // Try to load character config
             val profile = CharacterConfigLoader.load(worldDir, playerName)
