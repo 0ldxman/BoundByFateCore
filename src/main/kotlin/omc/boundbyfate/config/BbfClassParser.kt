@@ -44,7 +44,7 @@ import java.io.InputStream
  * }
  * ```
  */
-object ClassLoader {
+object BbfClassParser {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
     /**

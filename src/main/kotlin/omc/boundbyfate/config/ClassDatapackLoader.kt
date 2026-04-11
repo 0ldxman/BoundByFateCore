@@ -6,6 +6,7 @@ import net.minecraft.resource.ResourceManager
 import net.minecraft.resource.ResourceType
 import net.minecraft.util.Identifier
 import omc.boundbyfate.registry.ClassRegistry
+import omc.boundbyfate.config.BbfClassParser
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,7 +38,7 @@ object ClassDatapackLoader : SimpleSynchronousResourceReloadListener {
 
                 try {
                     resource.inputStream.use { stream ->
-                        val definition = ClassLoader.loadClass(classId, stream) ?: return@forEach
+                        val definition = BbfClassParser.loadClass(classId, stream) ?: return@forEach
                         ClassRegistry.registerClass(definition)
                         classCount++
                         logger.info("Loaded class: $classId (${definition.displayName})")
@@ -54,7 +55,7 @@ object ClassDatapackLoader : SimpleSynchronousResourceReloadListener {
 
                 try {
                     resource.inputStream.use { stream ->
-                        val definition = ClassLoader.loadSubclass(subclassId, stream) ?: return@forEach
+                        val definition = BbfClassParser.loadSubclass(subclassId, stream) ?: return@forEach
                         ClassRegistry.registerSubclass(definition)
                         subclassCount++
                         logger.info("Loaded subclass: $subclassId (${definition.displayName})")
