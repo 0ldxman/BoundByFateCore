@@ -2,7 +2,6 @@ package omc.boundbyfate.config
 
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
-import net.minecraft.server.MinecraftServer
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -20,16 +19,16 @@ object CharacterConfigLoader {
     /**
      * Loads a character profile for a player.
      *
-     * @param server The Minecraft server instance
+     * @param worldDirectory The world directory path
      * @param playerName The player's username
      * @return CharacterStatProfile or null if not found/invalid
      */
-    fun load(server: MinecraftServer, playerName: String): CharacterStatProfile? {
+    fun load(worldDirectory: Path, playerName: String): CharacterStatProfile? {
         // Check cache first
         cache[playerName]?.let { return it }
         
         // Get config directory
-        val configDir = getConfigDirectory(server)
+        val configDir = getConfigDirectory(worldDirectory)
         val configFile = configDir.resolve("$playerName.json")
         
         if (!Files.exists(configFile)) {
@@ -71,13 +70,13 @@ object CharacterConfigLoader {
     /**
      * Reloads all cached configs from disk.
      *
-     * @param server The Minecraft server instance
+     * @param worldDirectory The world directory path
      * @return Number of configs reloaded
      */
-    fun reload(server: MinecraftServer): Int {
+    fun reload(worldDirectory: Path): Int {
         cache.clear()
         
-        val configDir = getConfigDirectory(server)
+        val configDir = getConfigDirectory(worldDirectory)
         if (!Files.exists(configDir)) {
             logger.warn("Character config directory does not exist: $configDir")
             return 0
@@ -89,7 +88,7 @@ object CharacterConfigLoader {
                 stream.filter { it.toString().endsWith(".json") }
                     .forEach { file ->
                         val playerName = file.fileName.toString().removeSuffix(".json")
-                        if (load(server, playerName) != null) {
+                        if (load(worldDirectory, playerName) != null) {
                             count++
                         }
                     }
@@ -105,11 +104,8 @@ object CharacterConfigLoader {
     /**
      * Gets the config directory, creating it if necessary.
      */
-    private fun getConfigDirectory(server: MinecraftServer): Path {
-        // Get world directory using overworld properties
-        val worldName = server.overworld.worldProperties.levelName
-        val worldDir = server.runDirectory.toPath().resolve(worldName)
-        val configDir = worldDir.resolve("boundbyfate").resolve("characters")
+    private fun getConfigDirectory(worldDirectory: Path): Path {
+        val configDir = worldDirectory.resolve("boundbyfate").resolve("characters")
         
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)

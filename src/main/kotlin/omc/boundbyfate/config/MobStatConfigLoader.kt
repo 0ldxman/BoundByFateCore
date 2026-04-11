@@ -2,7 +2,6 @@ package omc.boundbyfate.config
 
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
-import net.minecraft.server.MinecraftServer
 import net.minecraft.util.Identifier
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -22,16 +21,16 @@ object MobStatConfigLoader {
     /**
      * Loads a mob stat profile.
      *
-     * @param server The Minecraft server instance
+     * @param worldDirectory The world directory path
      * @param mobTypeId The mob type identifier (e.g., "minecraft:zombie")
      * @return MobStatProfile or null if not found/invalid
      */
-    fun load(server: MinecraftServer, mobTypeId: Identifier): MobStatProfile? {
+    fun load(worldDirectory: Path, mobTypeId: Identifier): MobStatProfile? {
         // Check cache first
         cache[mobTypeId]?.let { return it }
         
         // Get config directory
-        val configDir = getConfigDirectory(server)
+        val configDir = getConfigDirectory(worldDirectory)
         
         // Convert identifier to filename (minecraft:zombie -> minecraft_zombie.json)
         val fileName = "${mobTypeId.namespace}_${mobTypeId.path}.json"
@@ -70,13 +69,13 @@ object MobStatConfigLoader {
     /**
      * Reloads all cached configs from disk.
      *
-     * @param server The Minecraft server instance
+     * @param worldDirectory The world directory path
      * @return Number of configs reloaded
      */
-    fun reload(server: MinecraftServer): Int {
+    fun reload(worldDirectory: Path): Int {
         cache.clear()
         
-        val configDir = getConfigDirectory(server)
+        val configDir = getConfigDirectory(worldDirectory)
         if (!Files.exists(configDir)) {
             logger.warn("Mob config directory does not exist: $configDir")
             return 0
@@ -92,7 +91,7 @@ object MobStatConfigLoader {
                         val parts = fileName.split("_", limit = 2)
                         if (parts.size == 2) {
                             val mobTypeId = Identifier(parts[0], parts[1])
-                            if (load(server, mobTypeId) != null) {
+                            if (load(worldDirectory, mobTypeId) != null) {
                                 count++
                             }
                         }
@@ -109,11 +108,8 @@ object MobStatConfigLoader {
     /**
      * Gets the config directory, creating it if necessary.
      */
-    private fun getConfigDirectory(server: MinecraftServer): Path {
-        // Get world directory using overworld properties
-        val worldName = server.overworld.worldProperties.levelName
-        val worldDir = server.runDirectory.toPath().resolve(worldName)
-        val configDir = worldDir.resolve("boundbyfate").resolve("mobs")
+    private fun getConfigDirectory(worldDirectory: Path): Path {
+        val configDir = worldDirectory.resolve("boundbyfate").resolve("mobs")
         
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
