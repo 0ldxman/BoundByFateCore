@@ -1,8 +1,9 @@
 package omc.boundbyfate.registry
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType
-import net.minecraft.nbt.NbtCompound
 import net.minecraft.util.Identifier
 import omc.boundbyfate.component.PlayerLevelData
 
@@ -11,13 +12,22 @@ import omc.boundbyfate.component.PlayerLevelData
  */
 object BbfAttachments {
     /**
+     * Codec for serializing PlayerLevelData.
+     */
+    private val PLAYER_LEVEL_CODEC: Codec<PlayerLevelData> = RecordCodecBuilder.create { instance ->
+        instance.group(
+            Codec.INT.fieldOf("level").forGetter { it.level },
+            Codec.INT.fieldOf("experience").forGetter { it.experience }
+        ).apply(instance, ::PlayerLevelData)
+    }
+    
+    /**
      * Player level and experience data attachment.
      * Persists through death and world reload.
      */
     val PLAYER_LEVEL: AttachmentType<PlayerLevelData> = AttachmentRegistry.createPersistent(
         Identifier("boundbyfate-core", "player_level"),
-        { tag -> PlayerLevelData.readFromNbt(tag as NbtCompound) },
-        { data, tag -> data.writeToNbt(tag as NbtCompound) }
+        PLAYER_LEVEL_CODEC
     )
     
     /**

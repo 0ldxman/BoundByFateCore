@@ -1,7 +1,5 @@
 package omc.boundbyfate.component
 
-import net.minecraft.nbt.NbtCompound
-
 /**
  * Data class that stores player level and experience.
  * Uses Fabric Data Attachment API for persistence.
@@ -73,26 +71,6 @@ data class PlayerLevelData(
             in 13..16 -> 5
             in 17..20 -> 6
             else -> 2
-        }
-    }
-    
-    /**
-     * Serialize to NBT for persistence.
-     */
-    fun writeToNbt(tag: NbtCompound) {
-        tag.putInt("level", level)
-        tag.putInt("experience", experience)
-    }
-    
-    companion object {
-        /**
-         * Deserialize from NBT.
-         */
-        fun readFromNbt(tag: NbtCompound): PlayerLevelData {
-            return PlayerLevelData(
-                level = tag.getInt("level").coerceIn(1, 20),
-                experience = tag.getInt("experience")
-            )
         }
     }
 }

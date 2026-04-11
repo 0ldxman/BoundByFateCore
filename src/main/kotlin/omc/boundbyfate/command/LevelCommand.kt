@@ -46,7 +46,7 @@ object LevelCommand {
     
     private fun showLevelInfo(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
-        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, PlayerLevelData())
         
         val level = levelData.level
         val xp = levelData.experience
@@ -76,7 +76,7 @@ object LevelCommand {
     private fun setLevel(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
         val newLevel = IntegerArgumentType.getInteger(context, "level")
-        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, PlayerLevelData())
         
         levelData.setLevel(newLevel)
         player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
@@ -92,7 +92,7 @@ object LevelCommand {
     private fun addExperience(context: CommandContext<ServerCommandSource>): Int {
         val player = context.source.playerOrThrow
         val amount = IntegerArgumentType.getInteger(context, "amount")
-        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL) { PlayerLevelData() }
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, PlayerLevelData())
         
         val leveledUp = levelData.addExperience(amount)
         player.setAttached(BbfAttachments.PLAYER_LEVEL, levelData)
