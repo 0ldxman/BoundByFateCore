@@ -3,6 +3,8 @@ package omc.boundbyfate
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import omc.boundbyfate.command.LevelCommand
+import omc.boundbyfate.command.StatsCommand
+import omc.boundbyfate.event.PlayerStatsHandler
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 import omc.boundbyfate.registry.StatRegistry
@@ -21,9 +23,14 @@ object BoundByFateCore : ModInitializer {
 		// Register data attachments
 		BbfAttachments.register()
 		
+		// Register event handlers
+		PlayerStatsHandler.register()
+		logger.info("Registered event handlers")
+		
 		// Register commands
 		CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
 			LevelCommand.register(dispatcher, registryAccess, environment)
+			StatsCommand.register(dispatcher, registryAccess, environment)
 		}
 		
 		logger.info("BoundByFate Core initialized!")
