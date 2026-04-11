@@ -106,8 +106,8 @@ object CharacterConfigLoader {
      * Gets the config directory, creating it if necessary.
      */
     private fun getConfigDirectory(server: MinecraftServer): Path {
-        val worldDir = server.getSavePath(net.minecraft.world.level.storage.LevelStorage.LevelSave.LEVEL_DAT)
-        val configDir = worldDir.parent.resolve("boundbyfate").resolve("characters")
+        val worldDir = server.runDirectory.toPath().resolve(server.getSavePath(net.minecraft.world.level.storage.LevelStorage.LevelSave.ROOT).toString())
+        val configDir = worldDir.resolve("boundbyfate").resolve("characters")
         
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
