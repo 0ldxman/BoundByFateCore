@@ -36,6 +36,7 @@ object BoundByFateCore : ModInitializer {
 		CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
 			LevelCommand.register(dispatcher, registryAccess, environment)
 			StatsCommand.register(dispatcher, registryAccess, environment)
+			omc.boundbyfate.command.SkillCheckCommand.register(dispatcher, registryAccess, environment)
 		}
 		
 		logger.info("BoundByFate Core initialized!")
