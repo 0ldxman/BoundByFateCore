@@ -11,9 +11,7 @@ import omc.boundbyfate.component.PlayerLevelComponent
 /**
  * Registry for all BoundByFate components.
  */
-object BbfComponents : EntityComponentInitializer {
-    lateinit var PLAYER_LEVEL: ComponentKey<PlayerLevelComponent>
-        private set
+class BbfComponents : EntityComponentInitializer {
     
     override fun registerEntityComponentFactories(registry: EntityComponentFactoryRegistry) {
         // Create component key during registration phase
@@ -24,5 +22,10 @@ object BbfComponents : EntityComponentInitializer {
         
         // Attach level component to all players, persist through death
         registry.registerForPlayers(PLAYER_LEVEL, { PlayerLevelComponent() }, RespawnCopyStrategy.ALWAYS_COPY)
+    }
+    
+    companion object {
+        lateinit var PLAYER_LEVEL: ComponentKey<PlayerLevelComponent>
+            private set
     }
 }
