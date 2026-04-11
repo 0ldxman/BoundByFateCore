@@ -1,8 +1,8 @@
 package omc.boundbyfate.registry
 
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.classes.ClassDefinition
-import omc.boundbyfate.api.classes.SubclassDefinition
+import omc.boundbyfate.api.charclass.ClassDefinition
+import omc.boundbyfate.api.charclass.SubclassDefinition
 import java.util.concurrent.ConcurrentHashMap
 
 /**

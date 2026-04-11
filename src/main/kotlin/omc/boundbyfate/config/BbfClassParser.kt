@@ -4,9 +4,9 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.classes.ClassDefinition
-import omc.boundbyfate.api.classes.LevelGrant
-import omc.boundbyfate.api.classes.SubclassDefinition
+import omc.boundbyfate.api.charclass.ClassDefinition
+import omc.boundbyfate.api.charclass.LevelGrant
+import omc.boundbyfate.api.charclass.SubclassDefinition
 import omc.boundbyfate.registry.ClassRegistry
 import org.slf4j.LoggerFactory
 import java.io.InputStream

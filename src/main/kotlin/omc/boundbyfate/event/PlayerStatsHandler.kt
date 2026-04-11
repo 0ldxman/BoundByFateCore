@@ -8,6 +8,7 @@ import omc.boundbyfate.config.CharacterConfigLoader
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 import omc.boundbyfate.system.stat.StatEffectProcessor
+import omc.boundbyfate.system.classes.ClassSystem
 import org.slf4j.LoggerFactory
 
 /**
@@ -107,7 +108,7 @@ object PlayerStatsHandler {
                 val classId = profile.characterClass
                 val subclassId = profile.subclass
                 val classLevel = profile.startingLevel
-                omc.boundbyfate.system.classes.ClassSystem.applyClass(
+                ClassSystem.applyClass(
                     player, classId, subclassId, classLevel
                 )
             }
