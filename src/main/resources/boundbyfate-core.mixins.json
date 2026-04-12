@@ -6,7 +6,8 @@
 		"ExampleMixin",
 		"LivingEntityDamageMixin",
 		"AttackRollMixin",
-		"ArmorEquipMixin"
+		"ArmorEquipMixin",
+		"WeaponHoldMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

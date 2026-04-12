@@ -2,18 +2,30 @@ package omc.boundbyfate.system.combat
 
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
+import omc.boundbyfate.api.combat.WeaponProperty
+import omc.boundbyfate.api.dice.AdvantageType
 import omc.boundbyfate.api.dice.DiceRoller
-import omc.boundbyfate.api.dice.DiceType
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 import omc.boundbyfate.system.proficiency.ProficiencySystem
 import org.slf4j.LoggerFactory
 
 /**
- * Resolves attack rolls using D&D 5e rules.
+ * Resolves D&D 5e attack rolls.
  *
- * Attack roll: d20 + attack bonus vs target AC
- * Attack bonus = STR modifier (melee) or DEX modifier (ranged/finesse) + proficiency bonus (if proficient)
+ * Attack roll: d20 + attack_bonus vs target AC
+ *
+ * Attack bonus:
+ *   = ability_modifier + proficiency_bonus (if proficient)
+ *
+ * Ability modifier selection:
+ *   - FINESSE weapon → max(STR_mod, DEX_mod)
+ *   - Ranged weapon  → DEX_mod
+ *   - Default melee  → STR_mod
+ *
+ * Advantage/Disadvantage:
+ *   - HEAVY weapon + Small/Tiny attacker → DISADVANTAGE
+ *   (advantage/disadvantage cancel each other out if both apply)
  *
  * Critical hit: natural 20 → always hits
  * Critical miss: natural 1 → always misses
@@ -21,81 +33,124 @@ import org.slf4j.LoggerFactory
 object AttackRollSystem {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
-    /**
-     * Resolves whether an attack hits.
-     *
-     * @param attacker The attacking entity
-     * @param target The defending entity
-     * @return AttackResult with hit/miss and roll details
-     */
     fun resolve(attacker: LivingEntity, target: LivingEntity): AttackResult {
         val targetAc = ArmorClassSystem.getAc(target)
-        val roll = DiceRoller.roll(DiceType.D20)
         val attackBonus = getAttackBonus(attacker)
-        val total = roll + attackBonus
+        val advantage = getAdvantageType(attacker)
 
-        val hit = when {
-            roll == 20 -> true   // natural 20 — critical hit
-            roll == 1 -> false   // natural 1 — critical miss
-            else -> total >= targetAc
+        val rollResult = DiceRoller.rollD20(advantage = advantage, modifier = attackBonus)
+        val rawRoll = rollResult.rolls.let {
+            when (advantage) {
+                AdvantageType.ADVANTAGE -> it.max()
+                AdvantageType.DISADVANTAGE -> it.min()
+                AdvantageType.NONE -> it.first()
+            }
         }
 
-        val isCrit = roll == 20
+        val hit = when {
+            rawRoll == 20 -> true
+            rawRoll == 1  -> false
+            else          -> rollResult.total >= targetAc
+        }
+
+        val isCrit = rawRoll == 20
 
         logger.debug(
-            "Attack: roll=$roll bonus=$attackBonus total=$total vs AC=$targetAc → ${if (hit) "HIT${if (isCrit) " (CRIT)" else ""}" else "MISS"}"
+            "Attack: ${rollResult.expression} total=${rollResult.total} vs AC=$targetAc " +
+            "advantage=$advantage → ${if (hit) "HIT${if (isCrit) " (CRIT)" else ""}" else "MISS"}"
         )
 
-        return AttackResult(hit = hit, isCritical = isCrit, roll = roll, bonus = attackBonus, targetAc = targetAc)
+        return AttackResult(
+            hit = hit,
+            isCritical = isCrit,
+            roll = rawRoll,
+            bonus = attackBonus,
+            targetAc = targetAc,
+            advantage = advantage
+        )
     }
 
-    /**
-     * Calculates attack bonus for an entity.
-     * Players: STR mod + proficiency if proficient with held weapon.
-     * Mobs: 0 (can be extended later via mob stats).
-     */
+    // ── Attack bonus ──────────────────────────────────────────────────────────
+
     private fun getAttackBonus(attacker: LivingEntity): Int {
         if (attacker !is ServerPlayerEntity) return 0
 
         val statsData = attacker.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             ?: return 0
 
-        val heldItem = attacker.mainHandStack
-        val isRanged = heldItem.isIn(net.minecraft.item.Items.BOW.defaultStack.let {
-            net.minecraft.registry.tag.TagKey.of(
-                net.minecraft.registry.RegistryKeys.ITEM,
-                net.minecraft.util.Identifier("boundbyfate-core", "proficiency/bows")
-            )
-        })
+        val weapon = attacker.mainHandStack
+        val properties = WeaponPropertySystem.getProperties(weapon)
 
-        // Use DEX for ranged, STR for melee
-        val statId = if (isRanged) BbfStats.DEXTERITY.id else BbfStats.STRENGTH.id
-        val statMod = statsData.getStatValue(statId).dndModifier
+        val abilityMod = when {
+            WeaponProperty.FINESSE in properties -> {
+                // Use whichever is higher
+                val strMod = statsData.getStatValue(BbfStats.STRENGTH.id).dndModifier
+                val dexMod = statsData.getStatValue(BbfStats.DEXTERITY.id).dndModifier
+                maxOf(strMod, dexMod)
+            }
+            isRangedWeapon(attacker) -> {
+                statsData.getStatValue(BbfStats.DEXTERITY.id).dndModifier
+            }
+            else -> {
+                statsData.getStatValue(BbfStats.STRENGTH.id).dndModifier
+            }
+        }
 
-        // Add proficiency bonus if proficient with held weapon
         val profBonus = if (isProficientWithHeld(attacker)) {
             attacker.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)
                 ?.getProficiencyBonus() ?: 2
         } else 0
 
-        return statMod + profBonus
+        return abilityMod + profBonus
+    }
+
+    // ── Advantage/Disadvantage ────────────────────────────────────────────────
+
+    private fun getAdvantageType(attacker: LivingEntity): AdvantageType {
+        if (attacker !is ServerPlayerEntity) return AdvantageType.NONE
+
+        val weapon = attacker.mainHandStack
+        var advantageCount = 0
+        var disadvantageCount = 0
+
+        // HEAVY weapon + Small/Tiny attacker → disadvantage
+        if (WeaponPropertySystem.hasHeavyDisadvantage(attacker, weapon)) {
+            disadvantageCount++
+        }
+
+        // Advantage and disadvantage cancel each other out
+        return when {
+            advantageCount > 0 && disadvantageCount > 0 -> AdvantageType.NONE
+            advantageCount > 0 -> AdvantageType.ADVANTAGE
+            disadvantageCount > 0 -> AdvantageType.DISADVANTAGE
+            else -> AdvantageType.NONE
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private fun isRangedWeapon(player: ServerPlayerEntity): Boolean {
+        val weapon = player.mainHandStack
+        return WeaponPropertySystem.has(weapon, WeaponProperty.THROWN) ||
+               WeaponPropertySystem.has(weapon, WeaponProperty.LOADING)
     }
 
     private fun isProficientWithHeld(player: ServerPlayerEntity): Boolean {
         val item = player.mainHandStack
-        if (item.isEmpty) return true // unarmed
-        val prof = ProficiencySystem.findItemProficiency(item) ?: return true // no proficiency required
+        if (item.isEmpty) return true
+        val prof = ProficiencySystem.findItemProficiency(item) ?: return true
         return ProficiencySystem.hasProficiency(player, prof.id)
     }
 }
 
 /**
- * Result of an attack roll resolution.
+ * Result of an attack roll.
  */
 data class AttackResult(
     val hit: Boolean,
     val isCritical: Boolean,
     val roll: Int,
     val bonus: Int,
-    val targetAc: Int
+    val targetAc: Int,
+    val advantage: AdvantageType = AdvantageType.NONE
 )
