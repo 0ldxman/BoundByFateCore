@@ -16,13 +16,10 @@ public class ArmorEquipMixin {
      * Recalculates AC whenever equipment changes.
      * Covers equipping, unequipping, and item swaps in armor slots.
      */
-    @Inject(method = "equipStack", at = @At("TAIL"))
+    @Inject(method = "equipStack", at = @At("HEAD"))
     private void bbf_onEquipStack(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
-
-        // Only recalculate for armor/offhand slots
         if (slot == EquipmentSlot.MAINHAND) return;
-
         ArmorClassSystem.INSTANCE.recalculate(self);
     }
 }
