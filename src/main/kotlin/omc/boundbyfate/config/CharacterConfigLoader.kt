@@ -132,7 +132,8 @@ object CharacterConfigLoader {
         val exampleJson = """
 {
   "playerName": "Steve",
-  "race": "boundbyfate-core:human",
+  "race": "boundbyfate-core:dwarf",
+  "subrace": "boundbyfate-core:hill_dwarf",
   "class": "boundbyfate-core:fighter",
   "subclass": "boundbyfate-core:battle_master",
   "startingLevel": 3,
@@ -149,7 +150,8 @@ object CharacterConfigLoader {
     "boundbyfate-core:intimidation": 1,
     "boundbyfate-core:save_strength": 1,
     "boundbyfate-core:save_constitution": 1
-  }
+  },
+  "feats": []
 }
         """.trimIndent()
         

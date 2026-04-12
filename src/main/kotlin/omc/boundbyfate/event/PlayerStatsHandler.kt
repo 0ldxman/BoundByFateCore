@@ -50,6 +50,9 @@ object PlayerStatsHandler {
                 } else {
                     omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, null, 1)
                 }
+                
+                // Reapply race scale and speed (reset on each join)
+                omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
                 return
             }
             
@@ -110,8 +113,13 @@ object PlayerStatsHandler {
                 EntityStatData.fromBaseStats(commonerStats)
             }
             
-            // TODO: Apply race modifiers (when race system is implemented)
-            
+            // Apply race (first join only)
+            if (profile != null) {
+                omc.boundbyfate.system.race.RaceSystem.applyRace(
+                    player, profile.race, profile.subrace
+                )
+            }
+
             // Apply class (first join only - class data not in NBT yet)
             if (profile != null) {
                 val classId = profile.characterClass

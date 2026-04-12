@@ -1,0 +1,10 @@
+{
+  "displayName": "Холмовой дварф",
+  "parentRace": "boundbyfate-core:dwarf",
+  "statBonuses": {
+    "boundbyfate-core:wisdom": 1
+  },
+  "abilities": [
+    "boundbyfate-core:dwarven_toughness"
+  ]
+}

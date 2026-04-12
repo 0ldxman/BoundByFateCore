@@ -37,6 +37,7 @@ import net.minecraft.util.Identifier
 data class CharacterStatProfile(
     val playerName: String,
     val race: Identifier,
+    val subrace: Identifier? = null,
     val characterClass: Identifier,
     val subclass: Identifier? = null,
     val startingLevel: Int,
@@ -49,6 +50,9 @@ data class CharacterStatProfile(
             instance.group(
                 Codec.STRING.fieldOf("playerName").forGetter { it.playerName },
                 Identifier.CODEC.fieldOf("race").forGetter { it.race },
+                Identifier.CODEC.optionalFieldOf("subrace").forGetter {
+                    java.util.Optional.ofNullable(it.subrace)
+                },
                 Identifier.CODEC.fieldOf("class").forGetter { it.characterClass },
                 Identifier.CODEC.optionalFieldOf("subclass").forGetter {
                     java.util.Optional.ofNullable(it.subclass)
@@ -63,8 +67,8 @@ data class CharacterStatProfile(
                 Identifier.CODEC.listOf()
                     .optionalFieldOf("feats", emptyList())
                     .forGetter { it.feats }
-            ).apply(instance) { playerName, race, characterClass, subclass, startingLevel, baseStats, proficiencies, feats ->
-                CharacterStatProfile(playerName, race, characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies, feats)
+            ).apply(instance) { playerName, race, subrace, characterClass, subclass, startingLevel, baseStats, proficiencies, feats ->
+                CharacterStatProfile(playerName, race, subrace.orElse(null), characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies, feats)
             }
         }
     }

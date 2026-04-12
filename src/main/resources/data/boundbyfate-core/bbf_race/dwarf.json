@@ -1,0 +1,28 @@
+{
+  "displayName": "Дварф",
+  "size": "MEDIUM",
+  "speedMultiplier": 0.9,
+  "statBonuses": {
+    "boundbyfate-core:constitution": 2
+  },
+  "senses": {
+    "darkvision": 60
+  },
+  "resistances": {
+    "boundbyfate-core:poison": -1
+  },
+  "proficiencies": [
+    "boundbyfate-core:save_constitution"
+  ],
+  "itemProficiencies": [
+    "boundbyfate-core:axes_weapon"
+  ],
+  "abilities": [
+    "boundbyfate-core:stonecunning",
+    "boundbyfate-core:dwarven_resilience"
+  ],
+  "subraces": [
+    "boundbyfate-core:hill_dwarf",
+    "boundbyfate-core:mountain_dwarf"
+  ]
+}

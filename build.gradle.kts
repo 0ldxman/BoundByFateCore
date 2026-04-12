@@ -10,14 +10,16 @@ version = providers.gradleProperty("mod_version").get()
 group = providers.gradleProperty("maven_group").get()
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
 	maven {
 		name = "Ladysnake Mods"
 		url = uri("https://maven.ladysnake.org/releases")
+	}
+	maven {
+		name = "Modrinth"
+		url = uri("https://api.modrinth.com/maven")
+		content {
+			includeGroup("maven.modrinth")
+		}
 	}
 }
 
@@ -41,6 +43,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	modImplementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+
+	// Pehkui - optional dependency for player scale/size changes
+	modCompileOnly("maven.modrinth:pehkui:3.7.11+1.14.4-1.20.4")
 }
 
 tasks.processResources {

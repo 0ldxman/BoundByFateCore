@@ -106,6 +106,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "player_feats"),
         omc.boundbyfate.component.PlayerFeatData.CODEC
     )
+
+    /**
+     * Player race and subrace assignment.
+     * Persists through death and world reload.
+     */
+    @JvmField
+    val PLAYER_RACE: AttachmentType<omc.boundbyfate.component.PlayerRaceData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "player_race"),
+        omc.boundbyfate.component.PlayerRaceData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

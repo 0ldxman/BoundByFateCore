@@ -1,0 +1,26 @@
+{
+  "displayName": "Эльф",
+  "size": "MEDIUM",
+  "speedMultiplier": 1.0,
+  "statBonuses": {
+    "boundbyfate-core:dexterity": 2
+  },
+  "senses": {
+    "darkvision": 60
+  },
+  "resistances": {
+    "boundbyfate-core:psychic": -1
+  },
+  "proficiencies": [
+    "boundbyfate-core:perception"
+  ],
+  "abilities": [
+    "boundbyfate-core:fey_ancestry",
+    "boundbyfate-core:trance"
+  ],
+  "subraces": [
+    "boundbyfate-core:high_elf",
+    "boundbyfate-core:wood_elf",
+    "boundbyfate-core:drow"
+  ]
+}
