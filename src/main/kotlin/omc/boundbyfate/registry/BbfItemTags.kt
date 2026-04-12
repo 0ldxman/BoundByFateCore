@@ -18,6 +18,7 @@ object BbfItemTags {
     val PROFICIENCY_MARTIAL_WEAPONS: TagKey<Item> = of("proficiency/martial_weapons")
     val PROFICIENCY_SMITHING_TOOLS: TagKey<Item> = of("proficiency/smithing_tools")
     val PROFICIENCY_ARTISAN_TOOLS: TagKey<Item> = of("proficiency/artisan_tools")
+    val PROFICIENCY_BOWS: TagKey<Item> = of("proficiency/bows")
 
     private fun of(path: String): TagKey<Item> =
         TagKey.of(RegistryKeys.ITEM, Identifier("boundbyfate-core", path))
