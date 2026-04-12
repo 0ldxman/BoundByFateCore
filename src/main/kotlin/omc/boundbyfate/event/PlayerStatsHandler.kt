@@ -174,6 +174,17 @@ object PlayerStatsHandler {
                 EntityStatData.fromBaseStats(commonerStats)
             }
             
+            // Attach stats FIRST so HP calculation has access to CON modifier
+            player.setAttached(BbfAttachments.ENTITY_STATS, statsData)
+
+            // Initialize PLAYER_LEVEL before class application
+            if (player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null) == null) {
+                player.setAttached(
+                    BbfAttachments.PLAYER_LEVEL,
+                    omc.boundbyfate.component.PlayerLevelData(level = profile?.startingLevel ?: 1)
+                )
+            }
+
             // Apply race (first join only)
             if (profile != null) {
                 omc.boundbyfate.system.race.RaceSystem.applyRace(
@@ -201,7 +212,6 @@ object PlayerStatsHandler {
                         BbfAttachments.PLAYER_SKIN,
                         omc.boundbyfate.component.PlayerSkinData(profile.skin, profile.skinModel)
                     )
-                    // Send skin to all clients immediately
                     val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
                     val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, profile.skin)
                     if (base64 != null) {
@@ -212,17 +222,6 @@ object PlayerStatsHandler {
                         logger.warn("Skin file '${profile.skin}.png' not found for player '$playerName'")
                     }
                 }
-            }
-            
-            // Attach stats to player
-            player.setAttached(BbfAttachments.ENTITY_STATS, statsData)
-
-            // Initialize PLAYER_LEVEL if not already set (commoners need this too)
-            if (player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null) == null) {
-                player.setAttached(
-                    BbfAttachments.PLAYER_LEVEL,
-                    omc.boundbyfate.component.PlayerLevelData(level = profile?.startingLevel ?: 1)
-                )
             }
             
             // Load skill proficiencies from config (first join only)

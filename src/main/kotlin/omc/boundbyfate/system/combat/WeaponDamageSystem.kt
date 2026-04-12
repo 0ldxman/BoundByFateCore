@@ -32,6 +32,16 @@ object WeaponDamageSystem {
         val def = WeaponRegistry.findForItem(weapon)
 
         if (def == null) {
+            // Unarmed strike: 1 + STR modifier (D&D 5e rules)
+            if (weapon.isEmpty) {
+                val strMod = if (attacker is ServerPlayerEntity) {
+                    attacker.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+                        ?.getStatValue(BbfStats.STRENGTH.id)?.dndModifier ?: 0
+                } else 0
+                val damage = (1 + strMod).coerceAtLeast(1).toFloat()
+                return if (isCritical) damage + 1f else damage // crit adds 1 (no dice to double)
+            }
+            // Non-empty weapon not in registry — use vanilla ATTACK_DAMAGE
             val vanillaDamage = attacker.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE).toFloat()
             return if (isCritical) vanillaDamage * 2f else vanillaDamage
         }
