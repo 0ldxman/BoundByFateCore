@@ -42,6 +42,7 @@ object BoundByFateCore : ModInitializer {
 		// Register event handlers
 		PlayerStatsHandler.register()
 		omc.boundbyfate.event.MobStatsHandler.register()
+		omc.boundbyfate.event.BlockInteractionHandler.register()
 		
 		// Periodic cleanup of expired pending check requests
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register {
