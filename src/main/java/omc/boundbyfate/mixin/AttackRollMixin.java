@@ -61,6 +61,7 @@ public abstract class AttackRollMixin {
     /**
      * Applies knockback and hurt reaction on a miss.
      * Target reacts as if hit but takes no damage.
+     * Also triggers mob AI response (flee, aggro) via onAttackedBy.
      */
     private void bbf_applyMissReaction(LivingEntity attacker, LivingEntity target) {
         double dx = target.getX() - attacker.getX();
@@ -78,5 +79,9 @@ public abstract class AttackRollMixin {
             targetMixin.maxHurtTime = 10;
             target.playHurtSound(attacker.getWorld().getDamageSources().genericKill());
         }
+
+        // Trigger mob AI response: flee (passive mobs), aggro (neutral mobs like piglins)
+        // This is the same call Minecraft makes internally after real damage
+        target.onAttackedBy(attacker);
     }
 }
