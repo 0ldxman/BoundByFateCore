@@ -1,8 +1,6 @@
 package omc.boundbyfate.system.combat
 
 import net.minecraft.entity.EquipmentSlot
-import net.minecraft.entity.attribute.EntityAttributeModifier
-import net.minecraft.entity.attribute.EntityAttributes
 import net.minecraft.item.ItemStack
 import net.minecraft.server.network.ServerPlayerEntity
 import omc.boundbyfate.api.combat.WeaponProperty
@@ -10,7 +8,6 @@ import omc.boundbyfate.api.race.RaceSize
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfWeaponTags
 import omc.boundbyfate.registry.RaceRegistry
-import java.util.UUID
 
 /**
  * Reads weapon properties from item tags and applies passive effects.
@@ -25,9 +22,6 @@ import java.util.UUID
  * - VERSATILE: bonus damage die when offhand is empty
  */
 object WeaponPropertySystem {
-    private val REACH_MODIFIER_UUID = UUID.fromString("bbf00003-0000-0000-0000-000000000003")
-    private const val REACH_MODIFIER_NAME = "BbF Reach Weapon"
-    private const val REACH_BONUS = 1.0
 
     /**
      * Returns all weapon properties for the given item stack.
@@ -83,20 +77,8 @@ object WeaponPropertySystem {
     // ── Private ───────────────────────────────────────────────────────────────
 
     private fun applyReach(player: ServerPlayerEntity, heldItem: ItemStack) {
-        val attr = player.getAttributeInstance(EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE) ?: return
-
-        // Remove existing reach modifier
-        attr.getModifier(REACH_MODIFIER_UUID)?.let { attr.removeModifier(it) }
-
-        if (has(heldItem, WeaponProperty.REACH)) {
-            attr.addTemporaryModifier(
-                EntityAttributeModifier(
-                    REACH_MODIFIER_UUID,
-                    REACH_MODIFIER_NAME,
-                    REACH_BONUS,
-                    EntityAttributeModifier.Operation.ADDITION
-                )
-            )
-        }
+        // REACH via GENERIC_ATTACK_RANGE is not available in 1.20.1.
+        // Reach weapons are tagged for tooltip/rule purposes only.
+        // Physical reach extension can be added when upgrading to 1.20.5+.
     }
 }
