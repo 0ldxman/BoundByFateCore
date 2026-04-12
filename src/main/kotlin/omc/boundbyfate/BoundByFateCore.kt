@@ -51,9 +51,15 @@ object BoundByFateCore : ModInitializer {
 		// Register feature/status datapack loader
 		omc.boundbyfate.config.FeatureDatapackLoader.register()
 		
+		// Register ability datapack loader
+		omc.boundbyfate.config.AbilityDatapackLoader.register()
+		
 		// Register built-in feature effects and conditions
 		registerBuiltinFeatureEffects()
 		registerBuiltinFeatureConditions()
+		
+		// Register ability effects
+		omc.boundbyfate.registry.BbfAbilityEffects.register()
 		
 		// Register data attachments
 		BbfAttachments.register()
@@ -72,6 +78,8 @@ object BoundByFateCore : ModInitializer {
 			// Tick status effects for all online players
 			server.playerManager.playerList.forEach { player ->
 				omc.boundbyfate.system.feature.StatusEffectSystem.tick(player)
+				// Tick ability activations
+				omc.boundbyfate.system.ability.AbilityActivationSystem.tick(player)
 				// Recalculate AC periodically (every 20 ticks = 1 second)
 				if (server.ticks % 20 == 0) {
 					omc.boundbyfate.system.combat.ArmorClassSystem.recalculate(player)

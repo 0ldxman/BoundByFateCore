@@ -103,6 +103,19 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_skin"))
 
+    @JvmField
+    val ABILITY_ACTIVATION: AttachmentType<omc.boundbyfate.component.AbilityActivationState> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.AbilityActivationState>()
+            .persistent(omc.boundbyfate.component.AbilityActivationState.CODEC)
+            .buildAndRegister(Identifier("boundbyfate-core", "ability_activation"))
+
+    @JvmField
+    val CONCENTRATION: AttachmentType<omc.boundbyfate.component.ConcentrationData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.ConcentrationData>()
+            .persistent(omc.boundbyfate.component.ConcentrationData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "concentration"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

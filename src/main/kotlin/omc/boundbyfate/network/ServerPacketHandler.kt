@@ -49,6 +49,100 @@ object ServerPacketHandler {
                 logger.debug("Player ${player.name.string} set slot $slot to $featureId")
             }
         }
+
+        // ── Ability System ────────────────────────────────────────────────────
+
+        // Client → Server: activate an ability
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.ACTIVATE_ABILITY) { server, player, _, buf, _ ->
+            val abilityId = buf.readIdentifier()
+            val hasTarget = buf.readBoolean()
+            val targetId = if (hasTarget) buf.readInt() else null
+            val hasTargetPos = buf.readBoolean()
+            val targetPos = if (hasTargetPos) {
+                net.minecraft.util.math.Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble())
+            } else null
+            val hasUpcast = buf.readBoolean()
+            val upcastLevel = if (hasUpcast) buf.readInt() else null
+
+            server.execute {
+                val ability = omc.boundbyfate.registry.AbilityRegistry.get(abilityId)
+                if (ability == null) {
+                    logger.warn("Player ${player.name.string} tried to activate unknown ability $abilityId")
+                    return@execute
+                }
+
+                // Resolve target entity
+                val target = targetId?.let { id ->
+                    player.serverWorld.getEntityById(id) as? net.minecraft.entity.LivingEntity
+                }
+
+                // Validate target distance
+                if (target != null) {
+                    val maxRange = getMaxRange(ability.targeting)
+                    if (player.distanceTo(target) > maxRange) {
+                        logger.debug("Target out of range for ${player.name.string}")
+                        return@execute
+                    }
+                }
+
+                // Validate target position distance
+                if (targetPos != null) {
+                    val maxRange = getMaxRange(ability.targeting)
+                    if (player.pos.distanceTo(targetPos) > maxRange) {
+                        logger.debug("Target position out of range for ${player.name.string}")
+                        return@execute
+                    }
+                }
+
+                // Activate ability
+                val result = omc.boundbyfate.system.ability.AbilityActivationSystem.beginActivation(
+                    player, ability, target, targetPos, upcastLevel
+                )
+
+                logger.debug("${player.name.string} activation result: $result")
+            }
+        }
+
+        // Client → Server: release charged/channeled ability
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.RELEASE_ABILITY) { server, player, _, _, _ ->
+            server.execute {
+                val state = player.getAttachedOrElse(BbfAttachments.ABILITY_ACTIVATION, null)
+                if (state == null) {
+                    logger.debug("${player.name.string} tried to release ability but no activation state")
+                    return@execute
+                }
+
+                val ability = omc.boundbyfate.registry.AbilityRegistry.get(state.abilityId)
+                if (ability == null) {
+                    logger.error("Unknown ability ${state.abilityId} in activation state")
+                    return@execute
+                }
+
+                omc.boundbyfate.system.ability.AbilityActivationSystem.completeActivation(player, ability, state)
+            }
+        }
+
+        // Client → Server: cancel ability activation
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.CANCEL_ABILITY) { server, player, _, _, _ ->
+            server.execute {
+                omc.boundbyfate.system.ability.AbilityActivationSystem.cancelActivation(player, "Player cancelled")
+            }
+        }
+    }
+
+    /**
+     * Gets maximum range for a targeting component.
+     */
+    private fun getMaxRange(targeting: omc.boundbyfate.api.ability.component.TargetingComponent): Double {
+        return when (targeting) {
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Self -> 0.0
+            is omc.boundbyfate.api.ability.component.TargetingComponent.SingleTarget -> targeting.range.toDouble()
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Projectile -> targeting.range.toDouble()
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Area -> targeting.range.toDouble()
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Zone -> targeting.range.toDouble()
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Cone -> targeting.range.toDouble()
+            is omc.boundbyfate.api.ability.component.TargetingComponent.Line -> targeting.range.toDouble()
+        }
     }
 
     /**
@@ -151,6 +245,64 @@ object ServerPacketHandler {
         buf.writeString(targetName)
         server.playerManager.playerList.forEach { player ->
             ServerPlayNetworking.send(player, BbfPackets.CLEAR_PLAYER_SKIN, buf)
+        }
+    }
+
+    // ── Ability System ────────────────────────────────────────────────────────
+
+    /**
+     * Syncs ability activation state to client (for progress bar).
+     */
+    fun syncAbilityActivation(player: ServerPlayerEntity) {
+        val state = player.getAttachedOrElse(BbfAttachments.ABILITY_ACTIVATION, null)
+        val buf = PacketByteBufs.create()
+        
+        if (state != null) {
+            buf.writeBoolean(true)
+            buf.writeIdentifier(state.abilityId)
+            buf.writeFloat(state.getProgress(player.world.time))
+            buf.writeString(state.activationType.name)
+        } else {
+            buf.writeBoolean(false)
+        }
+        
+        ServerPlayNetworking.send(player, BbfPackets.SYNC_ABILITY_ACTIVATION, buf)
+    }
+
+    /**
+     * Updates concentration status.
+     */
+    fun updateConcentration(player: ServerPlayerEntity) {
+        val concentration = player.getAttachedOrElse(BbfAttachments.CONCENTRATION, null)
+        val buf = PacketByteBufs.create()
+        
+        if (concentration != null) {
+            buf.writeBoolean(true)
+            buf.writeIdentifier(concentration.abilityId)
+        } else {
+            buf.writeBoolean(false)
+        }
+        
+        ServerPlayNetworking.send(player, BbfPackets.UPDATE_CONCENTRATION, buf)
+    }
+
+    /**
+     * Broadcasts ability cast to all nearby players (for visual effects).
+     */
+    fun broadcastAbilityCast(
+        caster: net.minecraft.entity.LivingEntity,
+        abilityId: Identifier,
+        world: net.minecraft.server.world.ServerWorld
+    ) {
+        val buf = PacketByteBufs.create()
+        buf.writeInt(caster.id)
+        buf.writeIdentifier(abilityId)
+        
+        // Send to all players within 64 blocks
+        world.players.forEach { player ->
+            if (player.distanceTo(caster) <= 64.0) {
+                ServerPlayNetworking.send(player, BbfPackets.BROADCAST_ABILITY_CAST, buf)
+            }
         }
     }
 

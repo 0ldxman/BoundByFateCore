@@ -32,4 +32,24 @@ object BbfPackets {
 
     /** Server → Client: clear custom skin for a player (revert to Mojang skin) */
     val CLEAR_PLAYER_SKIN = Identifier("boundbyfate-core", "clear_player_skin")
+
+    // ── Ability System ────────────────────────────────────────────────────────
+
+    /** Client → Server: activate an ability */
+    val ACTIVATE_ABILITY = Identifier("boundbyfate-core", "activate_ability")
+
+    /** Client → Server: release a charged/channeled ability */
+    val RELEASE_ABILITY = Identifier("boundbyfate-core", "release_ability")
+
+    /** Client → Server: cancel ability activation */
+    val CANCEL_ABILITY = Identifier("boundbyfate-core", "cancel_ability")
+
+    /** Server → Client: sync ability activation state */
+    val SYNC_ABILITY_ACTIVATION = Identifier("boundbyfate-core", "sync_ability_activation")
+
+    /** Server → Client: update concentration status */
+    val UPDATE_CONCENTRATION = Identifier("boundbyfate-core", "update_concentration")
+
+    /** Server → Client: broadcast ability cast (for visual effects) */
+    val BROADCAST_ABILITY_CAST = Identifier("boundbyfate-core", "broadcast_ability_cast")
 }
