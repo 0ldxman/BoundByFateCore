@@ -12,7 +12,10 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 import omc.boundbyfate.registry.BbfAttachments
+import omc.boundbyfate.registry.BbfStats
+import omc.boundbyfate.registry.ClassRegistry
 import omc.boundbyfate.registry.StatRegistry
+import omc.boundbyfate.system.HitPointsSystem
 import omc.boundbyfate.system.stat.StatEffectProcessor
 
 object StatsCommand {
@@ -150,6 +153,12 @@ object StatsCommand {
         
         // Reapply effects
         StatEffectProcessor.applyAll(player, updatedStats)
+
+        // Recalculate HP (CON modifier affects max HP)
+        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+        val classDef = classData?.let { ClassRegistry.getClass(it.classId) }
+        val level = classData?.classLevel ?: 1
+        HitPointsSystem.applyHitPoints(player, classDef, level)
         
         // Send confirmation
         val newValue = updatedStats.getStatValue(statId)

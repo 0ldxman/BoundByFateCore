@@ -1,6 +1,7 @@
 package omc.boundbyfate.event
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import omc.boundbyfate.component.EntityStatData
@@ -23,6 +24,30 @@ object PlayerStatsHandler {
     fun register() {
         ServerPlayConnectionEvents.JOIN.register { handler, _, server ->
             onPlayerJoin(handler.player)
+        }
+
+        // Reapply HP and stats after respawn (attributes reset on death)
+        ServerPlayerEvents.AFTER_RESPAWN.register { oldPlayer, newPlayer, alive ->
+            onPlayerRespawn(newPlayer)
+        }
+    }
+
+    /**
+     * Called after player respawns. Reapplies all stats and HP.
+     */
+    private fun onPlayerRespawn(player: ServerPlayerEntity) {
+        try {
+            val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null) ?: return
+            StatEffectProcessor.applyAll(player, statsData)
+
+            val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+            val classDef = classData?.let { omc.boundbyfate.registry.ClassRegistry.getClass(it.classId) }
+            omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, classData?.classLevel ?: 1)
+
+            omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
+            omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
+        } catch (e: Exception) {
+            logger.error("Failed to reapply stats after respawn for ${player.name.string}", e)
         }
     }
     

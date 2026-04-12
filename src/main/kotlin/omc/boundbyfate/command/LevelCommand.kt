@@ -9,6 +9,8 @@ import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.Text
 import omc.boundbyfate.component.PlayerLevelData
 import omc.boundbyfate.registry.BbfAttachments
+import omc.boundbyfate.registry.ClassRegistry
+import omc.boundbyfate.system.HitPointsSystem
 
 object LevelCommand {
     fun register(
@@ -80,7 +82,12 @@ object LevelCommand {
         
         val updatedData = levelData.withLevel(newLevel)
         player.setAttached(BbfAttachments.PLAYER_LEVEL, updatedData)
-        
+
+        // Recalculate HP for new level
+        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+        val classDef = classData?.let { ClassRegistry.getClass(it.classId) }
+        HitPointsSystem.applyHitPoints(player, classDef, newLevel)
+
         context.source.sendFeedback(
             { Text.literal("§aLevel set to $newLevel") },
             true
