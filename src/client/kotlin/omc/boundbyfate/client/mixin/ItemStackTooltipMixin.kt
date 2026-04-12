@@ -21,7 +21,8 @@ abstract class ItemStackTooltipMixin {
         context: TooltipContext,
         ci: CallbackInfoReturnable<MutableList<Text>>
     ) {
-        val stack = this as ItemStack
+        @Suppress("CAST_NEVER_SUCCEEDS")
+        val stack = this as? ItemStack ?: return
         if (stack.isEmpty) return
 
         val window = MinecraftClient.getInstance().window?.handle ?: return

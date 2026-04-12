@@ -1,6 +1,7 @@
 package omc.boundbyfate.mixin;
 
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -10,20 +11,26 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ServerPlayerEntity.class)
+@Mixin(LivingEntity.class)
 public class WeaponHoldMixin {
 
-    @Inject(method = "equipStack", at = @At("TAIL"))
-    private void bbf_onWeaponEquip(EquipmentSlot slot, ItemStack stack, CallbackInfo ci) {
-        ServerPlayerEntity self = (ServerPlayerEntity) (Object) this;
+    /**
+     * If TWO_HANDED weapon is equipped in main hand and offhand is occupied,
+     * clear the offhand and notify the player.
+     * Only applies to ServerPlayerEntity.
+     */
+    @Inject(method = "onEquipStack", at = @At("HEAD"))
+    private void bbf_onWeaponEquip(EquipmentSlot slot, ItemStack oldStack, ItemStack newStack, CallbackInfo ci) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (!(self instanceof ServerPlayerEntity player)) return;
 
-        if (slot == EquipmentSlot.MAINHAND && WeaponRegistry.INSTANCE.isTwoHandedViolation(self)) {
-            ItemStack offhandItem = self.getOffHandStack();
-            self.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-            if (!self.getInventory().insertStack(offhandItem)) {
-                self.dropItem(offhandItem, false);
+        if (slot == EquipmentSlot.MAINHAND && WeaponRegistry.INSTANCE.isTwoHandedViolation(player)) {
+            ItemStack offhandItem = player.getOffHandStack();
+            player.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+            if (!player.getInventory().insertStack(offhandItem)) {
+                player.dropItem(offhandItem, false);
             }
-            self.sendMessage(
+            player.sendMessage(
                 Text.literal("§eДвуручное оружие требует свободной левой руки."),
                 true
             );
