@@ -37,7 +37,7 @@ object MobStatsHandler {
     private fun onMobLoad(mob: MobEntity, world: ServerWorld) {
         try {
             val worldDir = getWorldDir(world) ?: return
-            val mobTypeId = mob.type.registryEntry.registryKey().value
+            val mobTypeId = net.minecraft.registry.Registries.ENTITY_TYPE.getId(mob.type)
 
             // Ensure directory exists (first mob only)
             if (!directoryCreated) {

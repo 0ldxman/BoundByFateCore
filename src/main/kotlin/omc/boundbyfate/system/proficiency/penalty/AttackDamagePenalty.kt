@@ -30,7 +30,7 @@ class AttackDamagePenalty(private val multiplier: Float) : PenaltyEffect {
         val modifier = EntityAttributeModifier(
             MODIFIER_UUID,
             MODIFIER_NAME,
-            (multiplier - 1.0).toDouble(),
+            (multiplier - 1.0),
             EntityAttributeModifier.Operation.MULTIPLY_TOTAL
         )
         attribute.addTemporaryModifier(modifier)
