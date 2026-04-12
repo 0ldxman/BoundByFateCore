@@ -34,10 +34,20 @@ object PlayerStatsHandler {
 
     /**
      * Called after player respawns. Reapplies all stats and HP.
+     * Note: persistent attachments with copyOnDeath are copied automatically by Fabric,
+     * but Minecraft resets EntityAttributes on respawn, so we must reapply them.
      */
     private fun onPlayerRespawn(player: ServerPlayerEntity) {
         try {
-            val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null) ?: return
+            // Give Fabric a tick to copy persistent attachments to the new player object
+            // then reapply all attribute-based effects
+            val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+            if (statsData == null) {
+                logger.warn("No stats data on respawn for ${player.name.string} - triggering join logic")
+                onPlayerJoin(player)
+                return
+            }
+
             StatEffectProcessor.applyAll(player, statsData)
 
             val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
@@ -46,6 +56,8 @@ object PlayerStatsHandler {
 
             omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
             omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
+
+            logger.info("Reapplied stats after respawn for ${player.name.string}")
         } catch (e: Exception) {
             logger.error("Failed to reapply stats after respawn for ${player.name.string}", e)
         }
@@ -165,6 +177,14 @@ object PlayerStatsHandler {
             
             // Attach stats to player
             player.setAttached(BbfAttachments.ENTITY_STATS, statsData)
+
+            // Initialize PLAYER_LEVEL if not already set (commoners need this too)
+            if (player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null) == null) {
+                player.setAttached(
+                    BbfAttachments.PLAYER_LEVEL,
+                    omc.boundbyfate.component.PlayerLevelData(level = profile?.startingLevel ?: 1)
+                )
+            }
             
             // Load skill proficiencies from config (first join only)
             val skillData = if (profile != null) {

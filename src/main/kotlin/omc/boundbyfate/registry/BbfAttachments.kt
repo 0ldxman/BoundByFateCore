@@ -10,128 +10,86 @@ import omc.boundbyfate.component.PlayerLevelData
 
 /**
  * Registry for all BoundByFate data attachments.
+ * All player attachments use copyOnDeath() so data survives respawn.
  */
 object BbfAttachments {
-    /**
-     * Codec for serializing PlayerLevelData.
-     */
+
     private val PLAYER_LEVEL_CODEC: Codec<PlayerLevelData> = RecordCodecBuilder.create { instance ->
         instance.group(
             Codec.INT.fieldOf("level").forGetter { it.level },
             Codec.INT.fieldOf("experience").forGetter { it.experience }
         ).apply(instance, ::PlayerLevelData)
     }
-    
-    /**
-     * Player level and experience data attachment.
-     * Persists through death and world reload.
-     */
-    @JvmField
-    val PLAYER_LEVEL: AttachmentType<PlayerLevelData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "player_level"),
-        PLAYER_LEVEL_CODEC
-    )
-    
-    /**
-     * Entity stats data attachment.
-     * Stores base stat values and modifiers for players and mobs.
-     * Persists through death and world reload.
-     */
-    @JvmField
-    val ENTITY_STATS: AttachmentType<EntityStatData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_stats"),
-        EntityStatData.CODEC
-    )
 
-    /**
-     * Entity skill proficiency data attachment.
-     * Stores skill and saving throw proficiency levels (0, 1, 2).
-     * Persists through death and world reload.
-     */
     @JvmField
-    val ENTITY_SKILLS: AttachmentType<omc.boundbyfate.component.EntitySkillData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_skills"),
-        omc.boundbyfate.component.EntitySkillData.CODEC
-    )
+    val PLAYER_LEVEL: AttachmentType<PlayerLevelData> = AttachmentRegistry.builder<PlayerLevelData>()
+        .persistent(PLAYER_LEVEL_CODEC)
+        .copyOnDeath()
+        .buildAndRegister(Identifier("boundbyfate-core", "player_level"))
 
-    /**
-     * Entity resource pools attachment.
-     * Stores all resource pools (spell slots, rage, ki points, etc.).
-     * Persists through death and world reload.
-     */
     @JvmField
-    val ENTITY_RESOURCES: AttachmentType<omc.boundbyfate.component.EntityResourceData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_resources"),
-        omc.boundbyfate.component.EntityResourceData.CODEC
-    )
+    val ENTITY_STATS: AttachmentType<EntityStatData> = AttachmentRegistry.builder<EntityStatData>()
+        .persistent(EntityStatData.CODEC)
+        .copyOnDeath()
+        .buildAndRegister(Identifier("boundbyfate-core", "entity_stats"))
 
-    /**
-     * Entity damage resistances attachment.
-     * Stores damage type modifiers (immunity, resistance, vulnerability).
-     * Persists through death and world reload.
-     */
     @JvmField
-    val ENTITY_DAMAGE: AttachmentType<omc.boundbyfate.component.EntityDamageData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_damage"),
-        omc.boundbyfate.component.EntityDamageData.CODEC
-    )
+    val ENTITY_SKILLS: AttachmentType<omc.boundbyfate.component.EntitySkillData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntitySkillData>()
+            .persistent(omc.boundbyfate.component.EntitySkillData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_skills"))
 
-    /**
-     * Player class and subclass assignment.
-     * Persists through death and world reload.
-     */
     @JvmField
-    val PLAYER_CLASS: AttachmentType<omc.boundbyfate.component.PlayerClassData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "player_class"),
-        omc.boundbyfate.component.PlayerClassData.CODEC
-    )
+    val ENTITY_RESOURCES: AttachmentType<omc.boundbyfate.component.EntityResourceData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntityResourceData>()
+            .persistent(omc.boundbyfate.component.EntityResourceData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_resources"))
 
-    /**
-     * Entity proficiency data.
-     * Stores which proficiencies the entity has.
-     * Persists through death and world reload.
-     */
     @JvmField
-    val ENTITY_PROFICIENCIES: AttachmentType<omc.boundbyfate.component.EntityProficiencyData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_proficiencies"),
-        omc.boundbyfate.component.EntityProficiencyData.CODEC
-    )
+    val ENTITY_DAMAGE: AttachmentType<omc.boundbyfate.component.EntityDamageData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntityDamageData>()
+            .persistent(omc.boundbyfate.component.EntityDamageData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_damage"))
 
-    /**
-     * Player feat and ASI data.
-     * Persists through death and world reload.
-     */
     @JvmField
-    val PLAYER_FEATS: AttachmentType<omc.boundbyfate.component.PlayerFeatData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "player_feats"),
-        omc.boundbyfate.component.PlayerFeatData.CODEC
-    )
+    val PLAYER_CLASS: AttachmentType<omc.boundbyfate.component.PlayerClassData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerClassData>()
+            .persistent(omc.boundbyfate.component.PlayerClassData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_class"))
 
-    /**
-     * Player race and subrace assignment.
-     * Persists through death and world reload.
-     */
     @JvmField
-    val PLAYER_RACE: AttachmentType<omc.boundbyfate.component.PlayerRaceData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "player_race"),
-        omc.boundbyfate.component.PlayerRaceData.CODEC
-    )
+    val ENTITY_PROFICIENCIES: AttachmentType<omc.boundbyfate.component.EntityProficiencyData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntityProficiencyData>()
+            .persistent(omc.boundbyfate.component.EntityProficiencyData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_proficiencies"))
 
-    /**
-     * Entity feature data: granted features, active statuses, cooldowns.
-     * Persists through death and world reload.
-     */
     @JvmField
-    val ENTITY_FEATURES: AttachmentType<omc.boundbyfate.component.EntityFeatureData> = AttachmentRegistry.createPersistent(
-        Identifier("boundbyfate-core", "entity_features"),
-        omc.boundbyfate.component.EntityFeatureData.CODEC
-    )
-    
-    /**
-     * Initialize all attachments. Called during mod initialization.
-     */
+    val PLAYER_FEATS: AttachmentType<omc.boundbyfate.component.PlayerFeatData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerFeatData>()
+            .persistent(omc.boundbyfate.component.PlayerFeatData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_feats"))
+
+    @JvmField
+    val PLAYER_RACE: AttachmentType<omc.boundbyfate.component.PlayerRaceData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerRaceData>()
+            .persistent(omc.boundbyfate.component.PlayerRaceData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_race"))
+
+    @JvmField
+    val ENTITY_FEATURES: AttachmentType<omc.boundbyfate.component.EntityFeatureData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntityFeatureData>()
+            .persistent(omc.boundbyfate.component.EntityFeatureData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_features"))
+
     fun register() {
-        // Attachments are registered on creation, but we call this
-        // to ensure the object is initialized during mod startup
+        // Attachments are registered on creation via buildAndRegister
     }
 }
