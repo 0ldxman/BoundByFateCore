@@ -5,16 +5,18 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.util.Identifier
 
 /**
- * Stores active status effects and feature cooldowns for an entity.
+ * Stores active status effects, feature cooldowns, granted features and hotbar slots.
  *
  * @property activeStatuses Map of statusId -> ActiveStatus
  * @property cooldowns Map of featureId -> remaining cooldown ticks
  * @property grantedFeatures Set of feature IDs the entity has (from race/class/feats)
+ * @property hotbarSlots Array of 10 feature IDs assigned to hotbar slots (null = empty)
  */
 data class EntityFeatureData(
     val activeStatuses: Map<Identifier, ActiveStatus> = emptyMap(),
     val cooldowns: Map<Identifier, Int> = emptyMap(),
-    val grantedFeatures: Set<Identifier> = emptySet()
+    val grantedFeatures: Set<Identifier> = emptySet(),
+    val hotbarSlots: List<Identifier?> = List(10) { null }
 ) {
     /**
      * A single active status effect instance.
@@ -77,6 +79,17 @@ data class EntityFeatureData(
     fun withoutFeature(featureId: Identifier): EntityFeatureData =
         copy(grantedFeatures = grantedFeatures - featureId)
 
+    // ── Hotbar slots ──────────────────────────────────────────────────────────
+
+    fun getHotbarSlot(slot: Int): Identifier? = hotbarSlots.getOrNull(slot)
+
+    fun withHotbarSlot(slot: Int, featureId: Identifier?): EntityFeatureData {
+        if (slot !in 0..9) return this
+        val newSlots = hotbarSlots.toMutableList()
+        newSlots[slot] = featureId
+        return copy(hotbarSlots = newSlots)
+    }
+
     /** Tick down all cooldowns and status durations by 1 */
     fun tick(): EntityFeatureData {
         val newCooldowns = cooldowns
@@ -108,9 +121,19 @@ data class EntityFeatureData(
                     .forGetter { it.cooldowns },
                 Identifier.CODEC.listOf()
                     .optionalFieldOf("grantedFeatures", emptyList())
-                    .forGetter { it.grantedFeatures.toList() }
-            ).apply(instance) { statuses, cooldowns, features ->
-                EntityFeatureData(statuses, cooldowns, features.toSet())
+                    .forGetter { it.grantedFeatures.toList() },
+                Identifier.CODEC.listOf()
+                    .optionalFieldOf("hotbarSlots", emptyList())
+                    .forGetter { slots -> slots.hotbarSlots.map { it ?: Identifier("boundbyfate-core", "empty") } }
+            ).apply(instance) { statuses, cooldowns, features, hotbar ->
+                val slots = hotbar.map { if (it == Identifier("boundbyfate-core", "empty")) null else it }
+                    .let { list ->
+                        // Pad to 10 slots
+                        val padded = list.toMutableList()
+                        while (padded.size < 10) padded.add(null)
+                        padded.take(10)
+                    }
+                EntityFeatureData(statuses, cooldowns, features.toSet(), slots)
             }
         }
     }

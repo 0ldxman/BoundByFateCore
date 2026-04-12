@@ -3,9 +3,9 @@ package omc.boundbyfate.client.network
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.client.MinecraftClient
 import net.minecraft.particle.DefaultParticleType
-import net.minecraft.particle.ParticleTypes
 import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
+import omc.boundbyfate.client.state.ClientFeatureState
 import omc.boundbyfate.network.BbfPackets
 
 /**
@@ -28,6 +28,28 @@ object ClientPacketHandler {
                 spawnParticles(client, particleId, x, y, z, count, spread, speed)
             }
         }
+
+        // Server → Client: sync hotbar slots
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_FEATURE_SLOTS) { client, _, buf, _ ->
+            val slots = Array<Identifier?>(10) { null }
+            for (i in 0..9) {
+                val hasFeature = buf.readBoolean()
+                slots[i] = if (hasFeature) buf.readIdentifier() else null
+            }
+            client.execute {
+                for (i in 0..9) ClientFeatureState.setHotbarSlot(i, slots[i])
+            }
+        }
+
+        // Server → Client: sync granted features
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_GRANTED_FEATURES) { client, _, buf, _ ->
+            val count = buf.readInt()
+            val features = (0 until count).map { buf.readIdentifier() }.toSet()
+            client.execute {
+                ClientFeatureState.grantedFeatures.clear()
+                ClientFeatureState.grantedFeatures.addAll(features)
+            }
+        }
     }
 
     private fun spawnParticles(
@@ -39,10 +61,7 @@ object ClientPacketHandler {
         speed: Float
     ) {
         val world = client.world ?: return
-
-        // Try to find the particle type
         val particleType = Registries.PARTICLE_TYPE.get(particleId)
-
         if (particleType is DefaultParticleType) {
             repeat(count) {
                 val offsetX = (Math.random() - 0.5) * spread

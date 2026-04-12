@@ -28,6 +28,7 @@ data class FeatureDefinition(
     val id: Identifier,
     val displayName: String,
     val description: String = "",
+    val icon: String = "item:minecraft:nether_star",  // "item:minecraft:xxx" or "texture:path/to/icon.png"
     val type: FeatureType = FeatureType.PASSIVE,
     val trigger: FeatureTrigger = FeatureTrigger.PASSIVE,
     val targeting: TargetingMode = TargetingMode.Self,

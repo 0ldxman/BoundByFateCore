@@ -1,6 +1,7 @@
 {
   "displayName": "Второе дыхание",
   "description": "Восстановить 1d10 + уровень воина HP",
+  "icon": "item:minecraft:golden_apple",
   "type": "ACTIVE",
   "trigger": "MANUAL",
   "targeting": { "type": "SELF" },

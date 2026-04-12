@@ -12,6 +12,12 @@ object BbfPackets {
     /** Client → Server: player wants to use a feature */
     val USE_FEATURE = Identifier("boundbyfate-core", "use_feature")
 
-    /** Server → Client: sync feature keybind slots for a player */
+    /** Server → Client: sync feature hotbar slots for a player */
     val SYNC_FEATURE_SLOTS = Identifier("boundbyfate-core", "sync_feature_slots")
+
+    /** Client → Server: player updated a hotbar slot */
+    val UPDATE_FEATURE_SLOT = Identifier("boundbyfate-core", "update_feature_slot")
+
+    /** Server → Client: sync all granted features to client */
+    val SYNC_GRANTED_FEATURES = Identifier("boundbyfate-core", "sync_granted_features")
 }

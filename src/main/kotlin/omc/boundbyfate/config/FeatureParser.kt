@@ -44,6 +44,7 @@ object FeatureParser {
                 id = id,
                 displayName = displayName,
                 description = json.get("description")?.asString ?: "",
+                icon = json.get("icon")?.asString ?: "item:minecraft:nether_star",
                 type = type,
                 trigger = trigger,
                 targeting = targeting,
