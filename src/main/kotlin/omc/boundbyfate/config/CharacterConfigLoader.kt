@@ -33,6 +33,7 @@ object CharacterConfigLoader {
         
         if (!Files.exists(configFile)) {
             logger.warn("No character config found for player '$playerName' at: $configFile")
+            logger.warn("Config dir exists: ${Files.exists(configDir)}, files in dir: ${if (Files.exists(configDir)) Files.list(configDir).map { it.fileName.toString() }.toList() else emptyList()}")
             return null
         }
         
