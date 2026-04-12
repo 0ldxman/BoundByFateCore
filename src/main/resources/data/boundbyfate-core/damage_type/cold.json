@@ -2,5 +2,5 @@
   "exhaustion": 0.0,
   "scaling": "never",
   "effects": "freezing",
-  "death_message_type": "default"
+  "message_id": "cold"
 }
