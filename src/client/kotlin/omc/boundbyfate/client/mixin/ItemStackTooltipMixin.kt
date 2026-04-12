@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
-@Mixin(ItemStack::class)
+@Mixin(value = [ItemStack::class])
 abstract class ItemStackTooltipMixin {
 
-    @Inject(method = "getTooltip", at = At("RETURN"))
+    @Inject(method = ["getTooltip"], at = [At("RETURN")])
     private fun bbf_addProficiencyTooltip(
         player: PlayerEntity?,
         context: TooltipContext,
