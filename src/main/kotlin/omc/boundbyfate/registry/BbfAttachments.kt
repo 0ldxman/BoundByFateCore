@@ -89,6 +89,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "entity_features"))
 
+    @JvmField
+    val ENTITY_ARMOR_CLASS: AttachmentType<omc.boundbyfate.component.EntityArmorClassData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.EntityArmorClassData>()
+            .persistent(omc.boundbyfate.component.EntityArmorClassData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "entity_armor_class"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

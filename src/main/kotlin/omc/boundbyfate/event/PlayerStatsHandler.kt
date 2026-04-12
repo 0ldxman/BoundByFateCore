@@ -57,6 +57,9 @@ object PlayerStatsHandler {
             omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
             omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
 
+            // Recalculate AC (attributes reset on join)
+            omc.boundbyfate.system.combat.ArmorClassSystem.recalculate(player)
+
             logger.info("Reapplied stats after respawn for ${player.name.string}")
         } catch (e: Exception) {
             logger.error("Failed to reapply stats after respawn for ${player.name.string}", e)
