@@ -3,6 +3,7 @@ package omc.boundbyfate.system.proficiency
 import net.minecraft.block.Block
 import net.minecraft.item.ItemStack
 import net.minecraft.registry.Registries
+import net.minecraft.registry.RegistryKeys
 import net.minecraft.registry.tag.TagKey
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
@@ -10,6 +11,7 @@ import omc.boundbyfate.api.proficiency.PenaltyContext
 import omc.boundbyfate.api.proficiency.ProficiencyEntry
 import omc.boundbyfate.component.EntityProficiencyData
 import omc.boundbyfate.registry.BbfAttachments
+import omc.boundbyfate.registry.BbfItemTags
 import omc.boundbyfate.registry.PenaltyEffectRegistry
 import omc.boundbyfate.registry.ProficiencyRegistry
 import omc.boundbyfate.system.proficiency.penalty.ActivePenaltyTracker
@@ -74,6 +76,8 @@ object ProficiencySystem {
 
     /**
      * Finds the proficiency entry that covers this item, if any.
+     * Checks item tags from BbfItemTags first (fast path), then falls back to
+     * explicit item IDs in ProficiencyRegistry entries.
      * Returns null if no proficiency covers this item.
      */
     fun findItemEntry(item: ItemStack): Pair<Identifier, ProficiencyEntry>? {
@@ -82,13 +86,53 @@ object ProficiencySystem {
 
         for (prof in ProficiencyRegistry.getAll()) {
             for (entry in prof.entries) {
+                // Check explicit item IDs
                 if (itemId in entry.items) return prof.id to entry
+                // Check item tags (both legacy tag IDs in entry and BbfItemTags)
                 if (entry.itemTags.any { tagId ->
-                    item.isIn(TagKey.of(net.minecraft.registry.RegistryKeys.ITEM, tagId))
+                    item.isIn(TagKey.of(RegistryKeys.ITEM, tagId))
                 }) return prof.id to entry
             }
         }
         return null
+    }
+
+    /**
+     * Returns display names of all proficiency categories this item belongs to.
+     * Uses item tags — works on both client and server.
+     * Filters out container tags if a more specific tag already matched.
+     */
+    fun getProficiencyCategoriesForItem(item: ItemStack): List<String> {
+        if (item.isEmpty) return emptyList()
+
+        val matched = BbfItemTags.ALL.filter { (_, tag) -> item.isIn(tag) }
+
+        // If item matches a specific tag (e.g. swords), skip its parent container (martial_weapons)
+        // unless the item ONLY matches the container
+        val specificMatches = matched.filter { (_, tag) ->
+            BbfItemTags.ALL.none { (_, other) ->
+                other != tag && item.isIn(other) && isParentOf(other, tag)
+            }
+        }
+
+        return (if (specificMatches.isNotEmpty()) specificMatches else matched)
+            .map { (name, _) -> name }
+    }
+
+    /**
+     * Returns true if [parent] tag is a superset container of [child] tag
+     * based on known BbfItemTags hierarchy.
+     */
+    private fun isParentOf(parent: TagKey<*>, child: TagKey<*>): Boolean {
+        val parentPath = parent.id.path
+        val childPath = child.id.path
+        return when {
+            parentPath == "proficiency/martial_weapons" &&
+                (childPath == "proficiency/swords" || childPath == "proficiency/axes_weapon") -> true
+            parentPath == "proficiency/artisan_tools" &&
+                childPath == "proficiency/smithing_tools" -> true
+            else -> false
+        }
     }
 
     /**

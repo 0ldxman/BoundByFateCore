@@ -3,7 +3,8 @@
 	"package": "omc.boundbyfate.client.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+		"ItemStackTooltipMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
