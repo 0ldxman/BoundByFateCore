@@ -1,0 +1,10 @@
+{
+  "displayName": "Живучий",
+  "description": "+2 к максимальному HP за каждый уровень персонажа",
+  "prerequisites": {},
+  "grants": {
+    "abilities": [
+      "boundbyfate-core:tough_hp_bonus"
+    ]
+  }
+}

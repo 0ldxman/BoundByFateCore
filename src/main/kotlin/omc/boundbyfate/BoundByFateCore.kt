@@ -36,6 +36,9 @@ object BoundByFateCore : ModInitializer {
 		// Register proficiency datapack loader
 		omc.boundbyfate.config.ProficiencyDatapackLoader.register()
 		
+		// Register feat datapack loader
+		omc.boundbyfate.config.FeatDatapackLoader.register()
+		
 		// Register data attachments
 		BbfAttachments.register()
 		

@@ -96,6 +96,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "entity_proficiencies"),
         omc.boundbyfate.component.EntityProficiencyData.CODEC
     )
+
+    /**
+     * Player feat and ASI data.
+     * Persists through death and world reload.
+     */
+    @JvmField
+    val PLAYER_FEATS: AttachmentType<omc.boundbyfate.component.PlayerFeatData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "player_feats"),
+        omc.boundbyfate.component.PlayerFeatData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

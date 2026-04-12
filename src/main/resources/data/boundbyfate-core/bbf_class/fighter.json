@@ -32,6 +32,15 @@
         "boundbyfate-core:extra_attack"
       ]
     },
+    "4": {
+      "upgrade": true
+    },
+    "6": {
+      "upgrade": true
+    },
+    "8": {
+      "upgrade": true
+    },
     "9": {
       "resources": {
         "boundbyfate-core:action_surge": 2

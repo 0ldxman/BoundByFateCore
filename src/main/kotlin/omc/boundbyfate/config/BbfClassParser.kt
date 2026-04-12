@@ -195,7 +195,8 @@ object BbfClassParser {
             resources = resources,
             proficiencies = proficiencies,
             abilities = abilities,
-            itemProficiencies = itemProficiencies
+            itemProficiencies = itemProficiencies,
+            upgrade = obj.get("upgrade")?.asBoolean ?: false
         )
     }
 }

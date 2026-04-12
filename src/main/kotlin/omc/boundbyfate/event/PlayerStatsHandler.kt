@@ -120,6 +120,11 @@ object PlayerStatsHandler {
                 ClassSystem.applyClass(
                     player, classId, subclassId, classLevel
                 )
+                
+                // Apply feats from config
+                if (profile.feats.isNotEmpty()) {
+                    omc.boundbyfate.system.feat.FeatSystem.applyFeatsFromConfig(player, profile.feats)
+                }
             }
             
             // Attach stats to player

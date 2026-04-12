@@ -41,7 +41,8 @@ data class CharacterStatProfile(
     val subclass: Identifier? = null,
     val startingLevel: Int,
     val baseStats: Map<Identifier, Int>,
-    val proficiencies: Map<Identifier, Int> = emptyMap()
+    val proficiencies: Map<Identifier, Int> = emptyMap(),
+    val feats: List<Identifier> = emptyList()
 ) {
     companion object {
         val CODEC: Codec<CharacterStatProfile> = RecordCodecBuilder.create { instance ->
@@ -58,9 +59,12 @@ data class CharacterStatProfile(
                     .forGetter { it.baseStats },
                 Codec.unboundedMap(Identifier.CODEC, Codec.INT)
                     .optionalFieldOf("proficiencies", emptyMap())
-                    .forGetter { it.proficiencies }
-            ).apply(instance) { playerName, race, characterClass, subclass, startingLevel, baseStats, proficiencies ->
-                CharacterStatProfile(playerName, race, characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies)
+                    .forGetter { it.proficiencies },
+                Identifier.CODEC.listOf()
+                    .optionalFieldOf("feats", emptyList())
+                    .forGetter { it.feats }
+            ).apply(instance) { playerName, race, characterClass, subclass, startingLevel, baseStats, proficiencies, feats ->
+                CharacterStatProfile(playerName, race, characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies, feats)
             }
         }
     }
