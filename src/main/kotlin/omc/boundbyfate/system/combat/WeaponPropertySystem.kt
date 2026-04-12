@@ -11,9 +11,7 @@ import omc.boundbyfate.registry.WeaponRegistry
 
 /**
  * Reads weapon properties from WeaponRegistry and applies passive effects.
- *
  * Properties are defined in bbf_weapon/*.json datapacks.
- * Falls back to empty set if weapon is not registered.
  */
 object WeaponPropertySystem {
 
@@ -23,19 +21,10 @@ object WeaponPropertySystem {
     fun has(stack: ItemStack, property: WeaponProperty): Boolean =
         WeaponRegistry.findForItem(stack)?.has(property) == true
 
-    /**
-     * Applies passive effects when main hand changes.
-     * Currently a no-op — REACH attribute not available in 1.20.1.
-     */
     fun applyPassiveEffects(player: ServerPlayerEntity, heldItem: ItemStack) {
-        // REACH: PLAYER_ENTITY_INTERACTION_RANGE not available in 1.20.1
-        // Will be implemented on version upgrade
+        // REACH not available in 1.20.1
     }
 
-    /**
-     * Returns true if attacker should roll with disadvantage due to HEAVY weapon.
-     * Applies to Small and Tiny creatures.
-     */
     fun hasHeavyDisadvantage(player: ServerPlayerEntity, weapon: ItemStack): Boolean {
         if (!has(weapon, WeaponProperty.HEAVY)) return false
         val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null) ?: return false
@@ -43,11 +32,9 @@ object WeaponPropertySystem {
         return race.size == RaceSize.SMALL || race.size == RaceSize.TINY
     }
 
-    /** Returns true if offhand is empty (relevant for VERSATILE two-handed bonus damage). */
     fun isWieldingTwoHanded(player: ServerPlayerEntity): Boolean =
         player.getEquippedStack(EquipmentSlot.OFFHAND).isEmpty
 
-    /** Returns true if TWO_HANDED weapon is held and offhand has an item. */
     fun isTwoHandedViolation(player: ServerPlayerEntity): Boolean {
         val mainHand = player.mainHandStack
         if (!has(mainHand, WeaponProperty.TWO_HANDED)) return false
