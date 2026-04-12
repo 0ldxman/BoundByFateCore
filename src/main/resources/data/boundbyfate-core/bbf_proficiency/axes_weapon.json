@@ -1,0 +1,13 @@
+{
+  "displayName": "Топоры (оружие)",
+  "entries": [
+    {
+      "displayName": "Топоры",
+      "tags": ["minecraft:axes"],
+      "penalty": {
+        "type": "boundbyfate-core:attack_damage",
+        "multiplier": 0.5
+      }
+    }
+  ]
+}

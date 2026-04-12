@@ -13,8 +13,7 @@ import org.slf4j.LoggerFactory
 object BoundByFateCore : ModInitializer {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
-	override fun onInitialize() {
-		logger.info("BoundByFate Core initializing...")
+	override fun onInitialize() {		logger.info("BoundByFate Core initializing...")
 		
 		// Register stats
 		BbfStats.register()
@@ -30,6 +29,12 @@ object BoundByFateCore : ModInitializer {
 		
 		// Register class datapack loader
 		omc.boundbyfate.config.ClassDatapackLoader.register()
+		
+		// Register built-in penalty effect types
+		registerPenaltyEffects()
+		
+		// Register proficiency datapack loader
+		omc.boundbyfate.config.ProficiencyDatapackLoader.register()
 		
 		// Register data attachments
 		BbfAttachments.register()
@@ -54,5 +59,27 @@ object BoundByFateCore : ModInitializer {
 		}
 		
 		logger.info("BoundByFate Core initialized!")
+	}
+
+	private fun registerPenaltyEffects() {
+		val registry = omc.boundbyfate.registry.PenaltyEffectRegistry
+		
+		registry.register(net.minecraft.util.Identifier("boundbyfate-core", "attack_damage")) { params ->
+			omc.boundbyfate.system.proficiency.penalty.AttackDamagePenalty(
+				params.get("multiplier")?.asFloat ?: 0.5f
+			)
+		}
+		
+		registry.register(net.minecraft.util.Identifier("boundbyfate-core", "attack_chance")) { params ->
+			omc.boundbyfate.system.proficiency.penalty.AttackChancePenalty(
+				params.get("missChance")?.asFloat ?: 0.4f
+			)
+		}
+		
+		registry.register(net.minecraft.util.Identifier("boundbyfate-core", "block_interaction")) { _ ->
+			omc.boundbyfate.system.proficiency.penalty.BlockInteractionPenalty
+		}
+		
+		logger.info("Registered built-in penalty effect types")
 	}
 }

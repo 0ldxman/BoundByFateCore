@@ -1,0 +1,7 @@
+{
+  "displayName": "Ремесленные инструменты",
+  "includes": [
+    "boundbyfate-core:smithing_tools",
+    "boundbyfate-core:crafting_tools"
+  ]
+}

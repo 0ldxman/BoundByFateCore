@@ -13,6 +13,10 @@
         "boundbyfate-core:save_strength",
         "boundbyfate-core:save_constitution"
       ],
+      "itemProficiencies": [
+        "boundbyfate-core:martial_weapons",
+        "boundbyfate-core:heavy_armor"
+      ],
       "abilities": [
         "boundbyfate-core:second_wind",
         "boundbyfate-core:action_surge"

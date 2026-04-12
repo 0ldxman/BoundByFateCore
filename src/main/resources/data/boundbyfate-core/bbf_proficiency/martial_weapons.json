@@ -1,0 +1,8 @@
+{
+  "displayName": "Воинское оружие",
+  "includes": [
+    "boundbyfate-core:swords",
+    "boundbyfate-core:axes_weapon",
+    "boundbyfate-core:bows"
+  ]
+}

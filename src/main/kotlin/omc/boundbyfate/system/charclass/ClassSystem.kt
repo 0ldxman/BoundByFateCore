@@ -107,7 +107,7 @@ object ClassSystem {
             ResourceSystem.addPool(player, resourceId, maximum)
         }
 
-        // Apply proficiencies
+        // Apply proficiencies (skill/save)
         if (grant.proficiencies.isNotEmpty()) {
             val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, EntitySkillData())
             var updated = skillData
@@ -115,6 +115,11 @@ object ClassSystem {
                 updated = updated.withProficiency(profId, ProficiencyLevel.PROFICIENT)
             }
             player.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
+        }
+
+        // Apply item/armor/tool proficiencies
+        for (profId in grant.itemProficiencies) {
+            omc.boundbyfate.system.proficiency.ProficiencySystem.addProficiency(player, profId)
         }
 
         // Abilities are stubs for now - just log them

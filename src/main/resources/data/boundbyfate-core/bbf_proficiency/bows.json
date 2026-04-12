@@ -1,0 +1,13 @@
+{
+  "displayName": "Луки",
+  "entries": [
+    {
+      "displayName": "Луки",
+      "items": ["minecraft:bow", "minecraft:crossbow"],
+      "penalty": {
+        "type": "boundbyfate-core:attack_damage",
+        "multiplier": 0.6
+      }
+    }
+  ]
+}

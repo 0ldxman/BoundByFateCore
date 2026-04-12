@@ -181,10 +181,21 @@ object BbfClassParser {
             }
         }
 
+        // Item proficiencies: ["boundbyfate-core:martial_weapons"]
+        val itemProficiencies = mutableListOf<Identifier>()
+        obj.getAsJsonArray("itemProficiencies")?.forEach { element ->
+            try {
+                itemProficiencies.add(Identifier(element.asString))
+            } catch (e: Exception) {
+                logger.warn("$id level $level: invalid itemProficiency '${element.asString}'")
+            }
+        }
+
         return LevelGrant(
             resources = resources,
             proficiencies = proficiencies,
-            abilities = abilities
+            abilities = abilities,
+            itemProficiencies = itemProficiencies
         )
     }
 }
