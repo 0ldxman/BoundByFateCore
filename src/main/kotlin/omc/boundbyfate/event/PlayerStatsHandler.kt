@@ -130,11 +130,15 @@ object PlayerStatsHandler {
                     val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
                     val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinData.skinName)
                     if (base64 != null) {
-                        omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
-                            playerName, base64, skinData.skinModel, player.server
-                        )
+                        val skinName = skinData.skinName
+                        val skinModel = skinData.skinModel
+                        player.server.execute {
+                            omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
+                                playerName, base64, skinModel, player.server
+                            )
+                            omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server)
+                        }
                     }
-                    omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server)
                 }
                 return
             }
@@ -212,12 +216,18 @@ object PlayerStatsHandler {
                         BbfAttachments.PLAYER_SKIN,
                         omc.boundbyfate.component.PlayerSkinData(profile.skin, profile.skinModel)
                     )
+                    val skinName = profile.skin
+                    val skinModel = profile.skinModel
                     val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
-                    val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, profile.skin)
+                    val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinName)
                     if (base64 != null) {
-                        omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
-                            playerName, base64, profile.skinModel, player.server
-                        )
+                        // Delay skin broadcast by 1 tick so the client is fully connected
+                        player.server.execute {
+                            omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
+                                playerName, base64, skinModel, player.server
+                            )
+                            omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server)
+                        }
                     } else {
                         logger.warn("Skin file '${profile.skin}.png' not found for player '$playerName'")
                     }
