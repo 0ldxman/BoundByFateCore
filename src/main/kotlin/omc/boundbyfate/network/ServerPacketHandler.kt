@@ -77,6 +77,25 @@ object ServerPacketHandler {
         syncWeaponRegistry(player)
     }
 
+    /**
+     * Sends floating attack roll text to the attacker only.
+     */
+    fun sendAttackRoll(
+        attacker: ServerPlayerEntity,
+        targetX: Double, targetY: Double, targetZ: Double,
+        roll: Int, bonus: Int, hit: Boolean, isCrit: Boolean
+    ) {
+        val buf = PacketByteBufs.create()
+        buf.writeDouble(targetX)
+        buf.writeDouble(targetY)
+        buf.writeDouble(targetZ)
+        buf.writeInt(roll)
+        buf.writeInt(bonus)
+        buf.writeBoolean(hit)
+        buf.writeBoolean(isCrit)
+        ServerPlayNetworking.send(attacker, BbfPackets.SHOW_ATTACK_ROLL, buf)
+    }
+
     private fun syncWeaponRegistry(player: ServerPlayerEntity) {
         val weapons = WeaponRegistry.getAll()
         val buf = PacketByteBufs.create()

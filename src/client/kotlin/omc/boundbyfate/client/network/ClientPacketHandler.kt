@@ -7,13 +7,11 @@ import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.combat.WeaponDefinition
 import omc.boundbyfate.api.combat.WeaponProperty
+import omc.boundbyfate.client.render.FloatingTextRenderer
 import omc.boundbyfate.client.state.ClientFeatureState
 import omc.boundbyfate.client.state.ClientWeaponRegistry
 import omc.boundbyfate.network.BbfPackets
 
-/**
- * Handles packets received from the server on the client side.
- */
 object ClientPacketHandler {
 
     fun register() {
@@ -26,10 +24,7 @@ object ClientPacketHandler {
             val count = buf.readInt()
             val spread = buf.readFloat()
             val speed = buf.readFloat()
-
-            client.execute {
-                spawnParticles(client, particleId, x, y, z, count, spread, speed)
-            }
+            client.execute { spawnParticles(client, particleId, x, y, z, count, spread, speed) }
         }
 
         // Server → Client: sync hotbar slots
@@ -39,9 +34,7 @@ object ClientPacketHandler {
                 val hasFeature = buf.readBoolean()
                 slots[i] = if (hasFeature) buf.readIdentifier() else null
             }
-            client.execute {
-                for (i in 0..9) ClientFeatureState.setHotbarSlot(i, slots[i])
-            }
+            client.execute { for (i in 0..9) ClientFeatureState.setHotbarSlot(i, slots[i]) }
         }
 
         // Server → Client: sync granted features
@@ -51,6 +44,28 @@ object ClientPacketHandler {
             client.execute {
                 ClientFeatureState.grantedFeatures.clear()
                 ClientFeatureState.grantedFeatures.addAll(features)
+            }
+        }
+
+        // Server → Client: show floating attack roll text above target
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SHOW_ATTACK_ROLL) { client, _, buf, _ ->
+            val x = buf.readDouble()
+            val y = buf.readDouble()
+            val z = buf.readDouble()
+            val roll = buf.readInt()
+            val bonus = buf.readInt()
+            val hit = buf.readBoolean()
+            val isCrit = buf.readBoolean()
+            client.execute {
+                val total = roll + bonus
+                val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+                val text = if (isCrit) "★$total ($roll$bonusStr)" else "$total ($roll$bonusStr)"
+                val color = when {
+                    isCrit -> 0xFFD700  // gold
+                    hit    -> 0x55FF55  // green
+                    else   -> 0xAA0000  // dark red
+                }
+                FloatingTextRenderer.add(text, color, x, y, z)
             }
         }
 
@@ -72,9 +87,7 @@ object ClientPacketHandler {
                 }.toSet()
                 WeaponDefinition(id, displayName, items, damage, versatileDamage, damageType, properties)
             }
-            client.execute {
-                ClientWeaponRegistry.update(definitions)
-            }
+            client.execute { ClientWeaponRegistry.update(definitions) }
         }
     }
 
@@ -82,9 +95,7 @@ object ClientPacketHandler {
         client: MinecraftClient,
         particleId: Identifier,
         x: Double, y: Double, z: Double,
-        count: Int,
-        spread: Float,
-        speed: Float
+        count: Int, spread: Float, speed: Float
     ) {
         val world = client.world ?: return
         val particleType = Registries.PARTICLE_TYPE.get(particleId)

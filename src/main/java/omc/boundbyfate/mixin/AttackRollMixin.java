@@ -4,6 +4,8 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import omc.boundbyfate.network.ServerPacketHandler;
 import omc.boundbyfate.system.combat.AttackRollSystem;
 import omc.boundbyfate.system.combat.AttackResult;
 import omc.boundbyfate.system.combat.WeaponDamageSystem;
@@ -30,6 +32,17 @@ public abstract class AttackRollMixin {
 
         LivingEntity target = (LivingEntity) (Object) this;
         AttackResult result = AttackRollSystem.INSTANCE.resolve(attacker, target);
+
+        // Send floating roll text to attacker if they're a player
+        if (attacker instanceof ServerPlayerEntity player) {
+            double displayY = target.getY() + target.getHeight() + 0.5;
+            ServerPacketHandler.INSTANCE.sendAttackRoll(
+                player,
+                target.getX(), displayY, target.getZ(),
+                result.getRoll(), result.getBonus(),
+                result.getHit(), result.getCritical()
+            );
+        }
 
         if (!result.getHit()) {
             PENDING_RESULT.remove();

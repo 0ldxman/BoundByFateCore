@@ -23,4 +23,7 @@ object BbfPackets {
 
     /** Server → Client: sync weapon definitions to client for tooltips */
     val SYNC_WEAPON_REGISTRY = Identifier("boundbyfate-core", "sync_weapon_registry")
+
+    /** Server → Client: show floating attack roll text above target (only to attacker) */
+    val SHOW_ATTACK_ROLL = Identifier("boundbyfate-core", "show_attack_roll")
 }

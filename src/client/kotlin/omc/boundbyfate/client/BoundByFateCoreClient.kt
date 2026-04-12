@@ -2,6 +2,7 @@ package omc.boundbyfate.client
 
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.Screens
 import net.minecraft.client.MinecraftClient
@@ -13,6 +14,7 @@ import omc.boundbyfate.client.gui.FeatureScreen
 import omc.boundbyfate.client.keybind.FeatureKeyBindings
 import omc.boundbyfate.client.keybind.FeatureSlotManager
 import omc.boundbyfate.client.network.ClientPacketHandler
+import omc.boundbyfate.client.render.FloatingTextRenderer
 import omc.boundbyfate.client.tooltip.ItemTooltipManager
 import omc.boundbyfate.client.tooltip.ProficiencyTooltipProvider
 import omc.boundbyfate.client.tooltip.WeaponTooltipProvider
@@ -25,6 +27,12 @@ object BoundByFateCoreClient : ClientModInitializer {
         // Register tooltip providers
         ItemTooltipManager.register(ProficiencyTooltipProvider)
         ItemTooltipManager.register(WeaponTooltipProvider)
+
+        // Register floating text renderer
+        WorldRenderEvents.LAST.register { context -> FloatingTextRenderer.render(context) }
+
+        // Tick floating texts
+        ClientTickEvents.END_CLIENT_TICK.register { _ -> FloatingTextRenderer.tick() }
 
         // Register keybindings
         FeatureKeyBindings.register()
