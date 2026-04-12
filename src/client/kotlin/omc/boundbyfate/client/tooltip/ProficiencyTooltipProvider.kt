@@ -25,7 +25,9 @@ object ProficiencyTooltipProvider : BbfTooltipProvider {
 
         // Filter out parent containers when a more specific child already matched
         val specific = matched.filter { (_, tag) ->
-            matched.none { (_, other) -> other != tag && isChildOf(tag, other) }
+            // Keep this tag if no OTHER matched tag is a child of it
+            // (i.e. remove parents when their children are also matched)
+            matched.none { (_, other) -> other != tag && isChildOf(other, tag) }
         }
 
         val names = specific.map { (name, _) -> name }
