@@ -14,7 +14,8 @@ data class PlayerSkinData(
     val skinName: String,
     val skinModel: String = "default"
 ) {
-    val isSlim: Boolean get() = skinModel == "slim"
+    /** true if this skin uses slim (Alex) arms */
+    val isSlim: Boolean get() = skinModel == "slim" || skinModel == "alex"
 
     companion object {
         val CODEC: Codec<PlayerSkinData> = RecordCodecBuilder.create { instance ->

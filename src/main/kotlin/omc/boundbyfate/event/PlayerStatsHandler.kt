@@ -201,6 +201,16 @@ object PlayerStatsHandler {
                         BbfAttachments.PLAYER_SKIN,
                         omc.boundbyfate.component.PlayerSkinData(profile.skin, profile.skinModel)
                     )
+                    // Send skin to all clients immediately
+                    val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
+                    val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, profile.skin)
+                    if (base64 != null) {
+                        omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
+                            playerName, base64, profile.skinModel, player.server
+                        )
+                    } else {
+                        logger.warn("Skin file '${profile.skin}.png' not found for player '$playerName'")
+                    }
                 }
             }
             
