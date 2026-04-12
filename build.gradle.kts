@@ -14,13 +14,6 @@ repositories {
 		name = "Ladysnake Mods"
 		url = uri("https://maven.ladysnake.org/releases")
 	}
-	maven {
-		name = "Modrinth"
-		url = uri("https://api.modrinth.com/maven")
-		content {
-			includeGroup("maven.modrinth")
-		}
-	}
 }
 
 loom {
