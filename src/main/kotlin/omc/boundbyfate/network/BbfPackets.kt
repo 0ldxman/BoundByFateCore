@@ -26,4 +26,10 @@ object BbfPackets {
 
     /** Server → Client: show floating attack roll text above target (only to attacker) */
     val SHOW_ATTACK_ROLL = Identifier("boundbyfate-core", "show_attack_roll")
+
+    /** Server → Client: set custom skin for a player */
+    val SYNC_PLAYER_SKIN = Identifier("boundbyfate-core", "sync_player_skin")
+
+    /** Server → Client: clear custom skin for a player (revert to Mojang skin) */
+    val CLEAR_PLAYER_SKIN = Identifier("boundbyfate-core", "clear_player_skin")
 }

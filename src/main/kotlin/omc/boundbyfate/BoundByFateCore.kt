@@ -87,6 +87,7 @@ object BoundByFateCore : ModInitializer {
 			StatsCommand.register(dispatcher, registryAccess, environment)
 			omc.boundbyfate.command.SkillCheckCommand.register(dispatcher, registryAccess, environment)
 			omc.boundbyfate.command.RollCommand.register(dispatcher, registryAccess, environment)
+			omc.boundbyfate.command.SkinCommand.register(dispatcher, registryAccess, environment)
 		}
 		
 		logger.info("BoundByFate Core initialized!")

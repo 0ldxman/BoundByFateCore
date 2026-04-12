@@ -43,7 +43,11 @@ data class CharacterStatProfile(
     val startingLevel: Int,
     val baseStats: Map<Identifier, Int>,
     val proficiencies: Map<Identifier, Int> = emptyMap(),
-    val feats: List<Identifier> = emptyList()
+    val feats: List<Identifier> = emptyList(),
+    /** Skin file name without extension, e.g. "steve_warrior". File: world/boundbyfate/skins/steve_warrior.png */
+    val skin: String? = null,
+    /** Skin model type: "default" (Steve, wide arms) or "slim" (Alex, slim arms) */
+    val skinModel: String = "default"
 ) {
     companion object {
         val CODEC: Codec<CharacterStatProfile> = RecordCodecBuilder.create { instance ->
@@ -66,9 +70,13 @@ data class CharacterStatProfile(
                     .forGetter { it.proficiencies },
                 Identifier.CODEC.listOf()
                     .optionalFieldOf("feats", emptyList())
-                    .forGetter { it.feats }
-            ).apply(instance) { playerName, race, subrace, characterClass, subclass, startingLevel, baseStats, proficiencies, feats ->
-                CharacterStatProfile(playerName, race, subrace.orElse(null), characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies, feats)
+                    .forGetter { it.feats },
+                Codec.STRING.optionalFieldOf("skin").forGetter {
+                    java.util.Optional.ofNullable(it.skin)
+                },
+                Codec.STRING.optionalFieldOf("skinModel", "default").forGetter { it.skinModel }
+            ).apply(instance) { playerName, race, subrace, characterClass, subclass, startingLevel, baseStats, proficiencies, feats, skin, skinModel ->
+                CharacterStatProfile(playerName, race, subrace.orElse(null), characterClass, subclass.orElse(null), startingLevel, baseStats, proficiencies, feats, skin.orElse(null), skinModel)
             }
         }
     }

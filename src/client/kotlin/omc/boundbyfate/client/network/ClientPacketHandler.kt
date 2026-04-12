@@ -8,6 +8,7 @@ import net.minecraft.util.Identifier
 import omc.boundbyfate.api.combat.WeaponDefinition
 import omc.boundbyfate.api.combat.WeaponProperty
 import omc.boundbyfate.client.render.FloatingTextRenderer
+import omc.boundbyfate.client.skin.ClientSkinManager
 import omc.boundbyfate.client.state.ClientFeatureState
 import omc.boundbyfate.client.state.ClientWeaponRegistry
 import omc.boundbyfate.network.BbfPackets
@@ -69,9 +70,22 @@ object ClientPacketHandler {
             }
         }
 
+        // Server → Client: set custom player skin
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_PLAYER_SKIN) { _, _, buf, _ ->
+            val playerName = buf.readString()
+            val skinModel = buf.readString()
+            val skinBase64 = buf.readString()
+            ClientSkinManager.setSkin(playerName, skinBase64, skinModel)
+        }
+
+        // Server → Client: clear custom player skin
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.CLEAR_PLAYER_SKIN) { _, _, buf, _ ->
+            val playerName = buf.readString()
+            ClientSkinManager.clearSkin(playerName)
+        }
+
         // Server → Client: sync weapon registry for tooltips
-        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_WEAPON_REGISTRY) { client, _, buf, _ ->
-            val count = buf.readInt()
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_WEAPON_REGISTRY) { client, _, buf, _ ->            val count = buf.readInt()
             val definitions = (0 until count).map {
                 val id = buf.readIdentifier()
                 val displayName = buf.readString()

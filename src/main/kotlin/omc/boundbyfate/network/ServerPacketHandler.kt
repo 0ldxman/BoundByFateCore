@@ -96,6 +96,64 @@ object ServerPacketHandler {
         ServerPlayNetworking.send(attacker, BbfPackets.SHOW_ATTACK_ROLL, buf)
     }
 
+    /**
+     * Sends a custom skin to all online players.
+     * Called when a player joins or when admin changes skin via command.
+     *
+     * @param targetName The player whose skin is being set
+     * @param skinBase64 Base64-encoded PNG data
+     * @param skinModel "default" or "slim"
+     * @param server The Minecraft server instance
+     */
+    fun broadcastSkin(
+        targetName: String,
+        skinBase64: String,
+        skinModel: String,
+        server: net.minecraft.server.MinecraftServer
+    ) {
+        val buf = PacketByteBufs.create()
+        buf.writeString(targetName)
+        buf.writeString(skinModel)
+        buf.writeString(skinBase64)
+
+        server.playerManager.playerList.forEach { player ->
+            ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_SKIN, buf)
+        }
+    }
+
+    /**
+     * Sends all currently active custom skins to a newly joined player.
+     */
+    fun syncAllSkinsToPlayer(
+        player: net.minecraft.server.network.ServerPlayerEntity,
+        server: net.minecraft.server.MinecraftServer,
+        worldDir: java.nio.file.Path
+    ) {
+        server.playerManager.playerList.forEach { online ->
+            val skinData = online.getAttachedOrElse(BbfAttachments.PLAYER_SKIN, null) ?: return@forEach
+            val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinData.skinName) ?: return@forEach
+            val buf = PacketByteBufs.create()
+            buf.writeString(online.name.string)
+            buf.writeString(skinData.skinModel)
+            buf.writeString(base64)
+            ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_SKIN, buf)
+        }
+    }
+
+    /**
+     * Broadcasts skin removal to all players.
+     */
+    fun broadcastSkinClear(
+        targetName: String,
+        server: net.minecraft.server.MinecraftServer
+    ) {
+        val buf = PacketByteBufs.create()
+        buf.writeString(targetName)
+        server.playerManager.playerList.forEach { player ->
+            ServerPlayNetworking.send(player, BbfPackets.CLEAR_PLAYER_SKIN, buf)
+        }
+    }
+
     private fun syncWeaponRegistry(player: ServerPlayerEntity) {
         val weapons = WeaponRegistry.getAll()
         val buf = PacketByteBufs.create()

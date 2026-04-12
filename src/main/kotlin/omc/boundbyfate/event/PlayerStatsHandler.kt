@@ -96,6 +96,30 @@ object PlayerStatsHandler {
                 
                 // Sync feature slots to client
                 omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
+
+                // Broadcast this player's skin to all, and send all existing skins to this player
+                val skinData = player.getAttachedOrElse(BbfAttachments.PLAYER_SKIN, null)
+                if (skinData != null) {
+                    val worldDir = player.serverWorld.persistentStateManager.let { sm ->
+                        try {
+                            val f = sm.javaClass.getDeclaredField("directory")
+                            f.isAccessible = true
+                            (f.get(sm) as java.io.File).toPath().parent
+                        } catch (e: Exception) {
+                            val server = player.server
+                            val runDir = server.runDirectory.toPath()
+                            if (server.isDedicated) runDir.resolve(server.saveProperties.levelName)
+                            else runDir.resolve("saves").resolve(server.saveProperties.levelName)
+                        }
+                    }
+                    val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinData.skinName)
+                    if (base64 != null) {
+                        omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
+                            playerName, base64, skinData.skinModel, player.server
+                        )
+                    }
+                    omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server, worldDir)
+                }
                 return
             }
             
@@ -175,6 +199,14 @@ object PlayerStatsHandler {
                 // Apply feats from config
                 if (profile.feats.isNotEmpty()) {
                     omc.boundbyfate.system.feat.FeatSystem.applyFeatsFromConfig(player, profile.feats)
+                }
+
+                // Apply skin from config (first join)
+                if (profile.skin != null) {
+                    player.setAttached(
+                        BbfAttachments.PLAYER_SKIN,
+                        omc.boundbyfate.component.PlayerSkinData(profile.skin, profile.skinModel)
+                    )
                 }
             }
             
