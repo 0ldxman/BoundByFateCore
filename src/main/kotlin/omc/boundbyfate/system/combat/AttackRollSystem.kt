@@ -41,7 +41,7 @@ object AttackRollSystem {
 
         return AttackResult(
             hit = hit,
-            isCritical = isCrit,
+            critical = isCrit,
             roll = rawRoll,
             bonus = attackBonus,
             targetAc = targetAc,
@@ -106,7 +106,7 @@ object AttackRollSystem {
 
 data class AttackResult(
     val hit: Boolean,
-    val isCritical: Boolean,
+    val critical: Boolean,
     val roll: Int,
     val bonus: Int,
     val targetAc: Int,

@@ -59,7 +59,7 @@ public class AttackRollMixin {
         AttackResult result = PENDING_RESULT.get();
         if (result == null) return amount;
 
-        return WeaponDamageSystem.INSTANCE.calculate(attacker, attacker.getMainHandStack(), result.getIsCritical());
+        return WeaponDamageSystem.INSTANCE.calculate(attacker, attacker.getMainHandStack(), result.getCritical());
     }
 
     private boolean bbf_isDirectAttack(DamageSource source) {
