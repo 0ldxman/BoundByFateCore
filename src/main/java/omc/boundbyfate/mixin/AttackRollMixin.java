@@ -64,7 +64,13 @@ public abstract class AttackRollMixin {
         AttackResult result = PENDING_RESULT.get();
         if (result == null) return amount;
 
-        return WeaponDamageSystem.INSTANCE.calculate(attacker, attacker.getMainHandStack(), result.getCritical());
+        float mainDamage = WeaponDamageSystem.INSTANCE.calculate(attacker, attacker.getMainHandStack(), result.getCritical());
+
+        // Schedule bonus damage after main damage is applied
+        LivingEntity target = (LivingEntity) (Object) this;
+        WeaponDamageSystem.INSTANCE.applyBonusDamage(attacker, attacker.getMainHandStack(), target, result.getCritical());
+
+        return mainDamage;
     }
 
     private boolean bbf_isDirectAttack(DamageSource source) {

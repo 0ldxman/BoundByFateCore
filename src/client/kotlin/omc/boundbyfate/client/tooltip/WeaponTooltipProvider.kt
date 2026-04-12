@@ -3,12 +3,17 @@ package omc.boundbyfate.client.tooltip
 import net.minecraft.item.ItemStack
 import omc.boundbyfate.api.combat.WeaponProperty
 import omc.boundbyfate.client.state.ClientWeaponRegistry
+import omc.boundbyfate.system.combat.BonusDamageReader
 
 /**
  * Tooltip provider that shows weapon combat stats.
  *
- * Shows: damage dice, damage type, and weapon properties.
- * Only shown when SHIFT is held (handled by ItemTooltipManager).
+ * Format:
+ *   Длинный меч
+ *     2d6 (Рубящий)
+ *     + 1d4 (Огонь)
+ *     + 1d6 (Сияющий) [vs Нежить]
+ *     Свойства: Фехтовальное, Универсальное
  */
 object WeaponTooltipProvider : BbfTooltipProvider {
 
@@ -17,25 +22,26 @@ object WeaponTooltipProvider : BbfTooltipProvider {
 
         val lines = mutableListOf<String>()
 
-        // Damage
-        val dmgLine = if (def.versatileDamage != null) {
-            "${def.damage} (${def.versatileDamage} двуручное)"
+        // Main damage line
+        val mainDmgType = def.damageType.path.replace("_", " ").replaceFirstChar { it.uppercase() }
+        val mainDmg = if (def.versatileDamage != null) {
+            "${def.damage} / ${def.versatileDamage} двуручное ($mainDmgType)"
         } else {
-            def.damage
+            "${def.damage} ($mainDmgType)"
         }
-        lines.add("Урон: $dmgLine")
+        lines.add(mainDmg)
 
-        // Damage type — strip namespace for display
-        val dmgTypeName = def.damageType.path
-            .replace("_", " ")
-            .replaceFirstChar { it.uppercase() }
-        lines.add("Тип урона: $dmgTypeName")
+        // Bonus damage entries from NBT
+        val bonusEntries = BonusDamageReader.readEntries(stack)
+        for (entry in bonusEntries) {
+            val typeName = entry.damageType.path.replace("_", " ").replaceFirstChar { it.uppercase() }
+            val conditionStr = entry.conditionLabel?.let { " [$it]" } ?: ""
+            lines.add("+ ${entry.dice} ($typeName)$conditionStr")
+        }
 
         // Properties
         if (def.properties.isNotEmpty()) {
-            val propNames = def.properties
-                .sortedBy { it.displayName }
-                .joinToString(", ") { it.displayName }
+            val propNames = def.properties.sortedBy { it.displayName }.joinToString(", ") { it.displayName }
             lines.add("Свойства: $propNames")
         }
 
