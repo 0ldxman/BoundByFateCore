@@ -12,6 +12,7 @@ import omc.boundbyfate.component.PlayerSkinData
 import omc.boundbyfate.network.ServerPacketHandler
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.system.skin.SkinLoader
+import omc.boundbyfate.util.WorldDirUtil
 
 object SkinCommand {
 
@@ -123,12 +124,7 @@ object SkinCommand {
 
     private fun getWorldDir(context: CommandContext<ServerCommandSource>): java.nio.file.Path? {
         return try {
-            val server = context.source.server
-            val world = server.overworld
-            val sm = world.persistentStateManager
-            val f = sm.javaClass.getDeclaredField("directory")
-            f.isAccessible = true
-            (f.get(sm) as java.io.File).toPath().parent
+            WorldDirUtil.getWorldDir(context.source.server)
         } catch (e: Exception) {
             null
         }

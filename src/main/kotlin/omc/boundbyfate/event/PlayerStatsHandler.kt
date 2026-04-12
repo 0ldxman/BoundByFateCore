@@ -100,25 +100,14 @@ object PlayerStatsHandler {
                 // Broadcast this player's skin to all, and send all existing skins to this player
                 val skinData = player.getAttachedOrElse(BbfAttachments.PLAYER_SKIN, null)
                 if (skinData != null) {
-                    val worldDir = player.serverWorld.persistentStateManager.let { sm ->
-                        try {
-                            val f = sm.javaClass.getDeclaredField("directory")
-                            f.isAccessible = true
-                            (f.get(sm) as java.io.File).toPath().parent
-                        } catch (e: Exception) {
-                            val server = player.server
-                            val runDir = server.runDirectory.toPath()
-                            if (server.isDedicated) runDir.resolve(server.saveProperties.levelName)
-                            else runDir.resolve("saves").resolve(server.saveProperties.levelName)
-                        }
-                    }
+                    val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
                     val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinData.skinName)
                     if (base64 != null) {
                         omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
                             playerName, base64, skinData.skinModel, player.server
                         )
                     }
-                    omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server, worldDir)
+                    omc.boundbyfate.network.ServerPacketHandler.syncAllSkinsToPlayer(player, player.server)
                 }
                 return
             }
@@ -126,30 +115,8 @@ object PlayerStatsHandler {
             // No existing data - this is first join or data was lost
             logger.info("Player '$playerName' has no stats data - loading from config")
             
-            // Get world directory from PersistentStateManager
-            // This is the most reliable way to get the actual save directory
-            val serverWorld = player.serverWorld
-            val stateManager = serverWorld.persistentStateManager
-            
-            // The persistent state manager stores data in the world directory
-            // We can get the directory by accessing its internal field
-            val worldDir = try {
-                val directoryField = stateManager.javaClass.getDeclaredField("directory")
-                directoryField.isAccessible = true
-                (directoryField.get(stateManager) as java.io.File).toPath().parent
-            } catch (e: Exception) {
-                // Fallback: construct path manually based on server type
-                logger.debug("Using fallback world directory method: ${e.message}")
-                val server = player.server
-                val runDir = server.runDirectory.toPath()
-                if (server.isDedicated) {
-                    // Dedicated server: world is in root directory
-                    runDir.resolve(server.saveProperties.levelName)
-                } else {
-                    // Integrated server: worlds are in saves/
-                    runDir.resolve("saves").resolve(server.saveProperties.levelName)
-                }
-            }
+            // Get world directory
+            val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
             
             // Try to load character config
             val profile = CharacterConfigLoader.load(worldDir, playerName)

@@ -126,9 +126,9 @@ object ServerPacketHandler {
      */
     fun syncAllSkinsToPlayer(
         player: net.minecraft.server.network.ServerPlayerEntity,
-        server: net.minecraft.server.MinecraftServer,
-        worldDir: java.nio.file.Path
+        server: net.minecraft.server.MinecraftServer
     ) {
+        val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(server)
         server.playerManager.playerList.forEach { online ->
             val skinData = online.getAttachedOrElse(BbfAttachments.PLAYER_SKIN, null) ?: return@forEach
             val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinData.skinName) ?: return@forEach

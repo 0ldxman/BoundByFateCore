@@ -112,6 +112,13 @@ object CharacterConfigLoader {
             Files.createDirectories(configDir)
             logger.info("Created character config directory: $configDir")
         }
+
+        // Ensure skins directory exists
+        val skinsDir = worldDirectory.resolve("boundbyfate").resolve("skins")
+        if (!Files.exists(skinsDir)) {
+            Files.createDirectories(skinsDir)
+            logger.info("Created skins directory: $skinsDir")
+        }
         
         // Always try to create example config (will skip if exists)
         createExampleConfig(configDir)
@@ -137,6 +144,8 @@ object CharacterConfigLoader {
   "class": "boundbyfate-core:fighter",
   "subclass": "boundbyfate-core:battle_master",
   "startingLevel": 3,
+  "skin": "steve_warrior",
+  "skinModel": "default",
   "baseStats": {
     "boundbyfate-core:strength": 15,
     "boundbyfate-core:constitution": 14,
