@@ -20,12 +20,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class AttackRollMixin {
 
     @Shadow protected abstract void playHurtSound(DamageSource source);
-    @Shadow protected abstract void onDamaged(DamageSource damageSource);
 
     private static final ThreadLocal<AttackResult> PENDING_RESULT = new ThreadLocal<>();
+    // Flag to skip our mixin when we call damage() ourselves for AI triggering
+    private static final ThreadLocal<Boolean> SKIP_ROLL = ThreadLocal.withInitial(() -> false);
 
     @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
     private void bbf_resolveAttackRoll(DamageSource source, float amount, CallbackInfoReturnable<Boolean> ci) {
+        // Skip if we triggered this damage call ourselves
+        if (SKIP_ROLL.get()) return;
         if (!bbf_isDirectAttack(source)) return;
         if (!(source.getAttacker() instanceof LivingEntity attacker)) return;
 
@@ -74,24 +77,28 @@ public abstract class AttackRollMixin {
 
     /**
      * Applies knockback and mob AI response on a miss.
-     * No hurt animation (no red flash) — visually the attack missed.
+     * Calls damage(0) with SKIP_ROLL flag so Minecraft processes AI normally
+     * without triggering our attack roll again.
      */
     private void bbf_applyMissReaction(LivingEntity attacker, LivingEntity target, DamageSource source) {
-        // Knockback only — no red flash
+        // Knockback — no red flash (no hurtTime set)
         double dx = target.getX() - attacker.getX();
         double dz = target.getZ() - attacker.getZ();
         double dist = Math.sqrt(dx * dx + dz * dz);
         if (dist > 0) { dx /= dist; dz /= dist; }
         target.takeKnockback(0.25, -dx, -dz);
 
-        // Trigger AI response via onDamaged:
-        // - passive mobs (sheep, cows) → FleeGoal activates
-        // - neutral mobs (piglins, wolves) → become hostile
-        // - hostile mobs → retarget attacker
-        AttackRollMixin targetMixin = (AttackRollMixin) (Object) target;
-        targetMixin.onDamaged(source);
+        // Trigger full AI response by calling damage(0.001f) with our skip flag.
+        // This lets Minecraft run its normal post-damage AI logic (flee, aggro)
+        // without dealing actual damage or triggering our roll again.
+        SKIP_ROLL.set(true);
+        try {
+            target.damage(source, 0.001f);
+        } finally {
+            SKIP_ROLL.set(false);
+        }
 
-        // For MobEntity: also set attacker as target if not already targeting
+        // For MobEntity: also explicitly set attacker as target
         if (target instanceof MobEntity mob && mob.getTarget() == null) {
             mob.setTarget(attacker);
         }
