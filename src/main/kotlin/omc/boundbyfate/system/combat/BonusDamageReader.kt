@@ -1,33 +1,26 @@
 package omc.boundbyfate.system.combat
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import net.minecraft.entity.LivingEntity
-import net.minecraft.entity.mob.ZombieEntity
-import net.minecraft.entity.mob.SkeletonEntity
-import net.minecraft.entity.mob.PhantomEntity
-import net.minecraft.entity.mob.DrownedEntity
-import net.minecraft.entity.mob.ZombieVillagerEntity
-import net.minecraft.entity.mob.WitherSkeletonEntity
-import net.minecraft.entity.mob.StrayEntity
-import net.minecraft.entity.mob.HuskEntity
-import net.minecraft.entity.mob.ZombifiedPiglinEntity
-import net.minecraft.entity.mob.WardenEntity
-import net.minecraft.entity.boss.WitherEntity
-import net.minecraft.entity.passive.IronGolemEntity
-import net.minecraft.entity.passive.SnowGolemEntity
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtList
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.combat.BonusDamageEntry
+import omc.boundbyfate.registry.DamageConditionRegistry
 
 /**
- * Reads bonus damage entries from ItemStack NBT.
+ * Reads bonus damage entries from ItemStack NBT and evaluates conditions.
  *
  * NBT format:
  * ```
  * BbfBonusDamage: [
  *   {dice: "1d4", type: "boundbyfate-core:fire"},
- *   {dice: "1d6", type: "boundbyfate-core:radiant", condition: "undead"}
+ *   {dice: "1d6", type: "boundbyfate-core:radiant", condition: "boundbyfate-core:undead"},
+ *   {dice: "1d8", type: "boundbyfate-core:necrotic",
+ *    condition: "boundbyfate-core:target_has_status",
+ *    conditionParams: {statusId: "boundbyfate-core:burning"}}
  * ]
  * ```
  */
@@ -47,9 +40,20 @@ object BonusDamageReader {
             val compound = element as? NbtCompound ?: return@mapNotNull null
             val dice = compound.getString("dice").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val typeStr = compound.getString("type").takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            val condition = compound.getString("condition").takeIf { it.isNotBlank() }
+
+            val conditionId = compound.getString("condition").takeIf { it.isNotBlank() }
+                ?.let { try { Identifier(it) } catch (e: Exception) { null } }
+
+            // Parse conditionParams from NBT string (stored as JSON string in NBT)
+            val conditionParams = if (compound.contains("conditionParams")) {
+                try {
+                    JsonParser.parseString(compound.getString("conditionParams")) as? JsonObject
+                        ?: JsonObject()
+                } catch (e: Exception) { JsonObject() }
+            } else JsonObject()
+
             try {
-                BonusDamageEntry(dice, Identifier(typeStr), condition)
+                BonusDamageEntry(dice, Identifier(typeStr), conditionId, conditionParams)
             } catch (e: Exception) {
                 null
             }
@@ -57,26 +61,23 @@ object BonusDamageReader {
     }
 
     /**
-     * Filters bonus damage entries that apply to the given target.
+     * Returns only entries whose condition passes for the given attacker/target pair.
      */
-    fun getApplicableEntries(stack: ItemStack, target: LivingEntity): List<BonusDamageEntry> {
+    fun getApplicableEntries(
+        stack: ItemStack,
+        attacker: LivingEntity,
+        target: LivingEntity
+    ): List<BonusDamageEntry> {
         return readEntries(stack).filter { entry ->
-            when (entry.condition) {
-                null -> true
-                "undead" -> isUndead(target)
-                "construct" -> isConstruct(target)
-                else -> false
+            val condId = entry.conditionId
+                ?: return@filter true // no condition = always applies
+
+            val condition = DamageConditionRegistry.create(condId, entry.conditionParams)
+            if (condition == null) {
+                // Unknown condition — skip this entry
+                return@filter false
             }
+            condition.test(attacker, target)
         }
     }
-
-    private fun isUndead(entity: LivingEntity): Boolean = entity is ZombieEntity ||
-        entity is SkeletonEntity || entity is PhantomEntity ||
-        entity is DrownedEntity || entity is ZombieVillagerEntity ||
-        entity is WitherSkeletonEntity || entity is StrayEntity ||
-        entity is HuskEntity || entity is ZombifiedPiglinEntity ||
-        entity is WitherEntity || entity is WardenEntity
-
-    private fun isConstruct(entity: LivingEntity): Boolean =
-        entity is IronGolemEntity || entity is SnowGolemEntity
 }

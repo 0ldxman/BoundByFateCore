@@ -35,6 +35,9 @@ object BoundByFateCore : ModInitializer {
 		
 		// Register built-in penalty effect types
 		registerPenaltyEffects()
+
+		// Register built-in damage conditions
+		registerBuiltinDamageConditions()
 		
 		// Register proficiency datapack loader
 		omc.boundbyfate.config.ProficiencyDatapackLoader.register()
@@ -228,5 +231,59 @@ object BoundByFateCore : ModInitializer {
 		}
 
 		logger.info("Registered built-in feature conditions")
+	}
+
+	private fun registerBuiltinDamageConditions() {
+		val reg = omc.boundbyfate.registry.DamageConditionRegistry
+		val id = { path: String -> net.minecraft.util.Identifier("boundbyfate-core", path) }
+
+		reg.register(id("undead")) { _ ->
+			omc.boundbyfate.api.combat.DamageCondition { _, target ->
+				target is net.minecraft.entity.mob.ZombieEntity ||
+				target is net.minecraft.entity.mob.SkeletonEntity ||
+				target is net.minecraft.entity.mob.PhantomEntity ||
+				target is net.minecraft.entity.mob.DrownedEntity ||
+				target is net.minecraft.entity.mob.ZombieVillagerEntity ||
+				target is net.minecraft.entity.mob.WitherSkeletonEntity ||
+				target is net.minecraft.entity.mob.StrayEntity ||
+				target is net.minecraft.entity.mob.HuskEntity ||
+				target is net.minecraft.entity.mob.ZombifiedPiglinEntity ||
+				target is net.minecraft.entity.boss.WitherEntity
+			}
+		}
+		reg.registerLabel(id("undead"), "vs Нежить")
+
+		reg.register(id("construct")) { _ ->
+			omc.boundbyfate.api.combat.DamageCondition { _, target ->
+				target is net.minecraft.entity.passive.IronGolemEntity ||
+				target is net.minecraft.entity.passive.SnowGolemEntity
+			}
+		}
+		reg.registerLabel(id("construct"), "vs Конструкты")
+
+		reg.register(id("target_has_status")) { params ->
+			val statusId = net.minecraft.util.Identifier(params.get("statusId")?.asString ?: "")
+			omc.boundbyfate.api.combat.DamageCondition { _, target ->
+				target.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
+					?.hasStatus(statusId) == true
+			}
+		}
+
+		reg.register(id("attacker_has_status")) { params ->
+			val statusId = net.minecraft.util.Identifier(params.get("statusId")?.asString ?: "")
+			omc.boundbyfate.api.combat.DamageCondition { attacker, _ ->
+				attacker.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
+					?.hasStatus(statusId) == true
+			}
+		}
+
+		reg.register(id("target_health_below")) { params ->
+			val threshold = params.get("threshold")?.asFloat ?: 0.5f
+			omc.boundbyfate.api.combat.DamageCondition { _, target ->
+				target.health / target.maxHealth < threshold
+			}
+		}
+
+		logger.info("Registered built-in damage conditions")
 	}
 }

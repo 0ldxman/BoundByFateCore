@@ -68,7 +68,7 @@ object WeaponDamageSystem {
         target: LivingEntity,
         isCritical: Boolean
     ) {
-        val entries = BonusDamageReader.getApplicableEntries(weapon, target)
+        val entries = BonusDamageReader.getApplicableEntries(weapon, attacker, target)
         if (entries.isEmpty()) return
 
         val world = attacker.world
