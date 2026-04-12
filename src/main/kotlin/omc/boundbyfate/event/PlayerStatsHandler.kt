@@ -51,8 +51,11 @@ object PlayerStatsHandler {
             StatEffectProcessor.applyAll(player, statsData)
 
             val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+            val currentLevel = classData?.classLevel
+                ?: player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level
+                ?: 1
             val classDef = classData?.let { omc.boundbyfate.registry.ClassRegistry.getClass(it.classId) }
-            omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, classData?.classLevel ?: 1)
+            omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, currentLevel)
 
             omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
             omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
@@ -78,17 +81,41 @@ object PlayerStatsHandler {
             val existingStats = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             
             if (existingStats != null) {
+                // Player already has stats - check if they're a commoner with a new config available
+                val isCommoner = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null) == null
+                val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
+
+                if (isCommoner) {
+                    // Invalidate cache so we re-read from disk
+                    CharacterConfigLoader.clearCache()
+                    val profile = CharacterConfigLoader.load(worldDir, playerName)
+                    if (profile != null) {
+                        // Config appeared — reinitialize this player from config
+                        logger.info("Player '$playerName' was commoner but config now exists — reinitializing from config")
+                        // Clear existing data so the full init path runs
+                        player.removeAttached(BbfAttachments.ENTITY_STATS)
+                        player.removeAttached(BbfAttachments.PLAYER_LEVEL)
+                        player.removeAttached(BbfAttachments.ENTITY_SKILLS)
+                        onPlayerJoin(player)
+                        return
+                    }
+                }
+
                 // Player already has stats - reapply effects and HP
                 logger.info("Player '$playerName' has existing stats data - reapplying effects")
                 StatEffectProcessor.applyAll(player, existingStats)
                 
                 // Reapply HP (attributes reset on each join)
+                // Use PLAYER_LEVEL for commoners since they have no PLAYER_CLASS
                 val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+                val currentLevel = classData?.classLevel
+                    ?: player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level
+                    ?: 1
                 if (classData != null) {
                     val classDef = omc.boundbyfate.registry.ClassRegistry.getClass(classData.classId)
-                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, classData.classLevel)
+                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, currentLevel)
                 } else {
-                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, null, 1)
+                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, null, currentLevel)
                 }
                 
                 // Reapply race scale and speed (reset on each join)
