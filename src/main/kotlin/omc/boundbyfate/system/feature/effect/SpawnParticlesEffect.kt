@@ -55,7 +55,7 @@ class SpawnParticlesEffect(
             buf.writeFloat(speed)
 
             // Send to all players within 64 blocks
-            PlayerLookup.around(context.world, context.caster.blockPos, 64)
+            PlayerLookup.around(context.world, context.caster.pos, 64.0)
                 .forEach { player ->
                     ServerPlayNetworking.send(player, BbfPackets.SPAWN_PARTICLES, buf)
                 }
