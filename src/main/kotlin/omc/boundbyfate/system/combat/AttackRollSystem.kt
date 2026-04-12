@@ -7,23 +7,10 @@ import omc.boundbyfate.api.dice.AdvantageType
 import omc.boundbyfate.api.dice.DiceRoller
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
+import omc.boundbyfate.registry.WeaponRegistry
 import omc.boundbyfate.system.proficiency.ProficiencySystem
 import org.slf4j.LoggerFactory
 
-/**
- * Resolves D&D 5e attack rolls.
- *
- * Attack roll: d20 + attack_bonus vs target AC
- * Attack bonus = ability_modifier + proficiency_bonus (if proficient)
- *
- * Ability modifier:
- *   FINESSE → max(STR, DEX), Ranged → DEX, Default → STR
- *
- * Advantage/Disadvantage:
- *   HEAVY + Small/Tiny → DISADVANTAGE
- *
- * Nat 20 → always hit (crit), Nat 1 → always miss
- */
 object AttackRollSystem {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
@@ -49,7 +36,7 @@ object AttackRollSystem {
 
         logger.debug(
             "Attack: ${rollResult.expression} total=${rollResult.total} vs AC=$targetAc " +
-            "advantage=$advantage → ${if (hit) "HIT${if (isCrit) " (CRIT)" else ""}" else "MISS"}"
+            "advantage=$advantage -> ${if (hit) "HIT${if (isCrit) " (CRIT)" else ""}" else "MISS"}"
         )
 
         return AttackResult(
@@ -67,13 +54,13 @@ object AttackRollSystem {
         val statsData = attacker.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null) ?: return 0
 
         val weapon = attacker.mainHandStack
-        val properties = WeaponPropertySystem.getProperties(weapon)
+        val properties = WeaponRegistry.getProperties(weapon)
 
         val abilityMod = when {
             WeaponProperty.FINESSE in properties -> {
                 val strMod = statsData.getStatValue(BbfStats.STRENGTH.id).dndModifier
                 val dexMod = statsData.getStatValue(BbfStats.DEXTERITY.id).dndModifier
-                maxOf(strMod, dexMod)
+                if (strMod > dexMod) strMod else dexMod
             }
             isRangedWeapon(attacker) -> statsData.getStatValue(BbfStats.DEXTERITY.id).dndModifier
             else -> statsData.getStatValue(BbfStats.STRENGTH.id).dndModifier
@@ -93,7 +80,7 @@ object AttackRollSystem {
         var advantageCount = 0
         var disadvantageCount = 0
 
-        if (WeaponPropertySystem.hasHeavyDisadvantage(attacker, weapon)) disadvantageCount++
+        if (WeaponRegistry.hasHeavyDisadvantage(attacker, weapon)) disadvantageCount++
 
         return when {
             advantageCount > 0 && disadvantageCount > 0 -> AdvantageType.NONE
@@ -105,8 +92,8 @@ object AttackRollSystem {
 
     private fun isRangedWeapon(player: ServerPlayerEntity): Boolean {
         val weapon = player.mainHandStack
-        return WeaponPropertySystem.has(weapon, WeaponProperty.THROWN) ||
-               WeaponPropertySystem.has(weapon, WeaponProperty.LOADING)
+        return WeaponRegistry.has(weapon, WeaponProperty.THROWN) ||
+               WeaponRegistry.has(weapon, WeaponProperty.LOADING)
     }
 
     private fun isProficientWithHeld(player: ServerPlayerEntity): Boolean {
