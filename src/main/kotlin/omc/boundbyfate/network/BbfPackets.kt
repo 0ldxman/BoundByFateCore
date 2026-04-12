@@ -20,4 +20,7 @@ object BbfPackets {
 
     /** Server → Client: sync all granted features to client */
     val SYNC_GRANTED_FEATURES = Identifier("boundbyfate-core", "sync_granted_features")
+
+    /** Server → Client: sync weapon definitions to client for tooltips */
+    val SYNC_WEAPON_REGISTRY = Identifier("boundbyfate-core", "sync_weapon_registry")
 }

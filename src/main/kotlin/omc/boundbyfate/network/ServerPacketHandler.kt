@@ -7,6 +7,7 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import omc.boundbyfate.component.EntityFeatureData
 import omc.boundbyfate.registry.BbfAttachments
+import omc.boundbyfate.registry.WeaponRegistry
 import omc.boundbyfate.system.feature.FeatureSystem
 import org.slf4j.LoggerFactory
 
@@ -71,5 +72,27 @@ object ServerPacketHandler {
         featuresBuf.writeInt(data.grantedFeatures.size)
         data.grantedFeatures.forEach { featuresBuf.writeIdentifier(it) }
         ServerPlayNetworking.send(player, BbfPackets.SYNC_GRANTED_FEATURES, featuresBuf)
+
+        // Sync weapon registry for client-side tooltips
+        syncWeaponRegistry(player)
+    }
+
+    private fun syncWeaponRegistry(player: ServerPlayerEntity) {
+        val weapons = WeaponRegistry.getAll()
+        val buf = PacketByteBufs.create()
+        buf.writeInt(weapons.size)
+        weapons.forEach { def ->
+            buf.writeIdentifier(def.id)
+            buf.writeString(def.displayName)
+            buf.writeInt(def.items.size)
+            def.items.forEach { buf.writeIdentifier(it) }
+            buf.writeString(def.damage)
+            buf.writeBoolean(def.versatileDamage != null)
+            def.versatileDamage?.let { buf.writeString(it) }
+            buf.writeIdentifier(def.damageType)
+            buf.writeInt(def.properties.size)
+            def.properties.forEach { buf.writeString(it.name) }
+        }
+        ServerPlayNetworking.send(player, BbfPackets.SYNC_WEAPON_REGISTRY, buf)
     }
 }

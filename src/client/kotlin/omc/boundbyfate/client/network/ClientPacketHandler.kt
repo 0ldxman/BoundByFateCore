@@ -5,7 +5,10 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.particle.DefaultParticleType
 import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.combat.WeaponDefinition
+import omc.boundbyfate.api.combat.WeaponProperty
 import omc.boundbyfate.client.state.ClientFeatureState
+import omc.boundbyfate.client.state.ClientWeaponRegistry
 import omc.boundbyfate.network.BbfPackets
 
 /**
@@ -48,6 +51,29 @@ object ClientPacketHandler {
             client.execute {
                 ClientFeatureState.grantedFeatures.clear()
                 ClientFeatureState.grantedFeatures.addAll(features)
+            }
+        }
+
+        // Server → Client: sync weapon registry for tooltips
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_WEAPON_REGISTRY) { client, _, buf, _ ->
+            val count = buf.readInt()
+            val definitions = (0 until count).map {
+                val id = buf.readIdentifier()
+                val displayName = buf.readString()
+                val itemCount = buf.readInt()
+                val items = (0 until itemCount).map { buf.readIdentifier() }
+                val damage = buf.readString()
+                val hasVersatile = buf.readBoolean()
+                val versatileDamage = if (hasVersatile) buf.readString() else null
+                val damageType = buf.readIdentifier()
+                val propCount = buf.readInt()
+                val properties = (0 until propCount).mapNotNull {
+                    try { WeaponProperty.valueOf(buf.readString()) } catch (e: Exception) { null }
+                }.toSet()
+                WeaponDefinition(id, displayName, items, damage, versatileDamage, damageType, properties)
+            }
+            client.execute {
+                ClientWeaponRegistry.update(definitions)
             }
         }
     }
