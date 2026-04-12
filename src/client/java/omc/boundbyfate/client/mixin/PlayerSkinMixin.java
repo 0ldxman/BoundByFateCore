@@ -35,7 +35,7 @@ public class PlayerSkinMixin {
 
         ClientSkinManager.SkinEntry entry = ClientSkinManager.INSTANCE.getSkin(name);
         if (entry != null) {
-            ci.setReturnValue(entry.getSlim() ? "slim" : "default");
+            ci.setReturnValue(entry.isSlim() ? "slim" : "default");
         }
     }
 }
