@@ -52,6 +52,9 @@ object BoundByFateCore : ModInitializer {
 		// Register data attachments
 		BbfAttachments.register()
 		
+		// Register network packet handlers
+		omc.boundbyfate.network.ServerPacketHandler.register()
+		
 		// Register event handlers
 		PlayerStatsHandler.register()
 		omc.boundbyfate.event.MobStatsHandler.register()
@@ -146,6 +149,34 @@ object BoundByFateCore : ModInitializer {
 				soundId = net.minecraft.util.Identifier(params.get("sound")?.asString ?: "minecraft:entity.player.levelup"),
 				volume = params.get("volume")?.asFloat ?: 1.0f,
 				pitch = params.get("pitch")?.asFloat ?: 1.0f
+			)
+		}
+
+		reg.register(id("spawn_particles")) { params ->
+			omc.boundbyfate.system.feature.effect.SpawnParticlesEffect(
+				particleId = net.minecraft.util.Identifier(params.get("particle")?.asString ?: "minecraft:heart"),
+				count = params.get("count")?.asInt ?: 10,
+				spread = params.get("spread")?.asFloat ?: 0.5f,
+				speed = params.get("speed")?.asFloat ?: 0.1f,
+				onCaster = params.get("onCaster")?.asBoolean ?: true,
+				onTargets = params.get("onTargets")?.asBoolean ?: false
+			)
+		}
+
+		reg.register(id("apply_minecraft_effect")) { params ->
+			omc.boundbyfate.system.feature.effect.ApplyMinecraftStatusEffect(
+				effectId = net.minecraft.util.Identifier(params.get("effect")?.asString ?: "minecraft:regeneration"),
+				duration = params.get("duration")?.asInt ?: 200,
+				amplifier = params.get("amplifier")?.asInt ?: 0,
+				ambient = params.get("ambient")?.asBoolean ?: false,
+				showParticles = params.get("showParticles")?.asBoolean ?: true,
+				showIcon = params.get("showIcon")?.asBoolean ?: true
+			)
+		}
+
+		reg.register(id("remove_minecraft_effect")) { params ->
+			omc.boundbyfate.system.feature.effect.RemoveMinecraftStatusEffect(
+				effectId = net.minecraft.util.Identifier(params.get("effect")?.asString ?: "minecraft:poison")
 			)
 		}
 

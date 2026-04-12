@@ -18,6 +18,13 @@
       "bonusLevel": true
     },
     {
+      "type": "boundbyfate-core:spawn_particles",
+      "particle": "minecraft:heart",
+      "count": 15,
+      "spread": 0.8,
+      "onCaster": true
+    },
+    {
       "type": "boundbyfate-core:play_sound",
       "sound": "minecraft:entity.player.levelup",
       "volume": 0.8,
