@@ -1,0 +1,14 @@
+{
+  "displayName": "Меч",
+  "items": [
+    "minecraft:wooden_sword",
+    "minecraft:stone_sword",
+    "minecraft:iron_sword",
+    "minecraft:golden_sword",
+    "minecraft:diamond_sword",
+    "minecraft:netherite_sword"
+  ],
+  "damage": "1d6",
+  "damageType": "boundbyfate-core:slashing",
+  "properties": ["finesse", "light"]
+}

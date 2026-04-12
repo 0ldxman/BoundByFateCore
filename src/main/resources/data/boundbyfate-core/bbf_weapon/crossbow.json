@@ -1,0 +1,7 @@
+{
+  "displayName": "Арбалет",
+  "items": ["minecraft:crossbow"],
+  "damage": "1d8",
+  "damageType": "boundbyfate-core:piercing",
+  "properties": ["two_handed", "loading", "heavy"]
+}

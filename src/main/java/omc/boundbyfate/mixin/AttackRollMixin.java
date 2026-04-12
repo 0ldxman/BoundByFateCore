@@ -2,20 +2,24 @@ package omc.boundbyfate.mixin;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import omc.boundbyfate.system.combat.AttackRollSystem;
 import omc.boundbyfate.system.combat.AttackResult;
+import omc.boundbyfate.system.combat.WeaponDamageSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public class AttackRollMixin {
 
+    // Thread-local to pass crit state from @Inject to @ModifyVariable
+    private static final ThreadLocal<AttackResult> PENDING_RESULT = new ThreadLocal<>();
+
     /**
-     * Intercepts incoming melee/projectile damage and resolves a D&D attack roll.
-     * If the roll misses, cancels the damage entirely.
-     * Runs BEFORE the existing resistance mixin so a miss skips all processing.
+     * Step 1: Resolve attack roll. Cancel on miss, store result for damage calculation.
      */
     @Inject(
         method = "damage",
@@ -23,31 +27,46 @@ public class AttackRollMixin {
         cancellable = true
     )
     private void bbf_resolveAttackRoll(DamageSource source, float amount, CallbackInfoReturnable<Boolean> ci) {
-        LivingEntity target = (LivingEntity) (Object) this;
-
-        // Only apply attack rolls to direct entity attacks (melee/projectile)
         if (!bbf_isDirectAttack(source)) return;
+        if (!(source.getAttacker() instanceof LivingEntity attacker)) return;
 
-        // Need an attacker entity to roll
-        if (source.getAttacker() == null || !(source.getAttacker() instanceof LivingEntity)) return;
-
-        LivingEntity attacker = (LivingEntity) source.getAttacker();
-
+        LivingEntity target = (LivingEntity) (Object) this;
         AttackResult result = AttackRollSystem.INSTANCE.resolve(attacker, target);
 
         if (!result.getHit()) {
-            // Miss — cancel damage entirely
+            PENDING_RESULT.remove();
             ci.setReturnValue(false);
+            return;
         }
-        // Hit — let damage proceed normally through the rest of the pipeline
+
+        PENDING_RESULT.set(result);
+    }
+
+    /**
+     * Step 2: Replace vanilla damage with our calculated D&D damage.
+     * Runs after the attack roll check, only if hit.
+     */
+    @ModifyVariable(
+        method = "damage",
+        at = @At("HEAD"),
+        argsOnly = true,
+        index = 2
+    )
+    private float bbf_replaceDamage(float amount, DamageSource source) {
+        if (!bbf_isDirectAttack(source)) return amount;
+        if (!(source.getAttacker() instanceof LivingEntity attacker)) return amount;
+
+        AttackResult result = PENDING_RESULT.get();
+        if (result == null) return amount;
+
+        return WeaponDamageSystem.INSTANCE.calculate(attacker, attacker.getMainHandStack(), result.getIsCritical());
     }
 
     private boolean bbf_isDirectAttack(DamageSource source) {
-        // Player/mob melee or projectile attacks
         return source.getAttacker() != null &&
-               (source.isOf(net.minecraft.entity.damage.DamageTypes.PLAYER_ATTACK) ||
-                source.isOf(net.minecraft.entity.damage.DamageTypes.MOB_ATTACK) ||
-                source.isOf(net.minecraft.entity.damage.DamageTypes.ARROW) ||
-                source.isOf(net.minecraft.entity.damage.DamageTypes.TRIDENT));
+               (source.isOf(DamageTypes.PLAYER_ATTACK) ||
+                source.isOf(DamageTypes.MOB_ATTACK) ||
+                source.isOf(DamageTypes.ARROW) ||
+                source.isOf(DamageTypes.TRIDENT));
     }
 }

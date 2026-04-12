@@ -30,6 +30,9 @@ object BoundByFateCore : ModInitializer {
 		// Register class datapack loader
 		omc.boundbyfate.config.ClassDatapackLoader.register()
 		
+		// Register weapon datapack loader
+		omc.boundbyfate.config.WeaponDatapackLoader.register()
+		
 		// Register built-in penalty effect types
 		registerPenaltyEffects()
 		

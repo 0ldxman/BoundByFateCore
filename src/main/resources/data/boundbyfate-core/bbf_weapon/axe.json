@@ -1,0 +1,15 @@
+{
+  "displayName": "Топор",
+  "items": [
+    "minecraft:wooden_axe",
+    "minecraft:stone_axe",
+    "minecraft:iron_axe",
+    "minecraft:golden_axe",
+    "minecraft:diamond_axe",
+    "minecraft:netherite_axe"
+  ],
+  "damage": "1d8",
+  "versatileDamage": "1d10",
+  "damageType": "boundbyfate-core:slashing",
+  "properties": ["versatile", "heavy", "two_handed"]
+}

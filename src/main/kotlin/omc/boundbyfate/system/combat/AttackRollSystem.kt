@@ -135,14 +135,6 @@ object AttackRollSystem {
                WeaponPropertySystem.has(weapon, WeaponProperty.LOADING)
     }
 
-    private fun isProficientWithHeld(player: ServerPlayerEntity): Boolean {
-        val item = player.mainHandStack
-        if (item.isEmpty) return true
-        val prof = ProficiencySystem.findItemProficiency(item) ?: return true
-        return ProficiencySystem.hasProficiency(player, prof.id)
-    }
-}
-
 /**
  * Result of an attack roll.
  */
