@@ -32,6 +32,11 @@ object BbfResources {
 
     val KI_POINTS = resource("ki_points", "Очки ки", RecoveryType.SHORT_REST)
 
+    // ── Fighter ───────────────────────────────────────────────────────────────
+
+    val SECOND_WIND = resource("second_wind", "Второе дыхание", RecoveryType.SHORT_REST, defaultMaximum = 1)
+    val ACTION_SURGE = resource("action_surge", "Всплеск действий", RecoveryType.SHORT_REST, defaultMaximum = 1)
+
     // ── Fighter (Battle Master) ───────────────────────────────────────────────
 
     val SUPERIORITY_DICE = resource("superiority_dice", "Кости превосходства", RecoveryType.SHORT_REST)
@@ -78,6 +83,8 @@ object BbfResources {
         ResourceRegistry.register(RAGE)
         ResourceRegistry.register(KI_POINTS)
         ResourceRegistry.register(SUPERIORITY_DICE)
+        ResourceRegistry.register(SECOND_WIND)
+        ResourceRegistry.register(ACTION_SURGE)
         ResourceRegistry.register(DIVINE_SENSE)
         ResourceRegistry.register(LAY_ON_HANDS)
         ResourceRegistry.register(BARDIC_INSPIRATION)
