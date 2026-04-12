@@ -116,6 +116,16 @@ object BbfAttachments {
         Identifier("boundbyfate-core", "player_race"),
         omc.boundbyfate.component.PlayerRaceData.CODEC
     )
+
+    /**
+     * Entity feature data: granted features, active statuses, cooldowns.
+     * Persists through death and world reload.
+     */
+    @JvmField
+    val ENTITY_FEATURES: AttachmentType<omc.boundbyfate.component.EntityFeatureData> = AttachmentRegistry.createPersistent(
+        Identifier("boundbyfate-core", "entity_features"),
+        omc.boundbyfate.component.EntityFeatureData.CODEC
+    )
     
     /**
      * Initialize all attachments. Called during mod initialization.

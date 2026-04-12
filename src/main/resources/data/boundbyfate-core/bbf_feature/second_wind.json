@@ -1,0 +1,27 @@
+{
+  "displayName": "Второе дыхание",
+  "description": "Восстановить 1d10 + уровень воина HP",
+  "type": "ACTIVE",
+  "trigger": "MANUAL",
+  "targeting": { "type": "SELF" },
+  "targetFilter": "SELF_ONLY",
+  "cost": { "resource": "boundbyfate-core:second_wind", "amount": 1 },
+  "cooldown": 0,
+  "conditions": [
+    { "type": "boundbyfate-core:has_resource", "resource": "boundbyfate-core:second_wind", "amount": 1 }
+  ],
+  "effects": [
+    {
+      "type": "boundbyfate-core:heal",
+      "diceCount": 1,
+      "diceType": "D10",
+      "bonusLevel": true
+    },
+    {
+      "type": "boundbyfate-core:play_sound",
+      "sound": "minecraft:entity.player.levelup",
+      "volume": 0.8,
+      "pitch": 1.2
+    }
+  ]
+}

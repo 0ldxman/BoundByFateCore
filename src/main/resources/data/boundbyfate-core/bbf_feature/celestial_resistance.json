@@ -1,0 +1,12 @@
+{
+  "displayName": "Небесное сопротивление",
+  "description": "Сопротивление к некротическому урону и урону излучением",
+  "type": "PASSIVE",
+  "trigger": "PASSIVE",
+  "targeting": { "type": "SELF" },
+  "targetFilter": "SELF_ONLY",
+  "effects": [
+    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:necrotic", "level": -1 },
+    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:radiant", "level": -1 }
+  ]
+}

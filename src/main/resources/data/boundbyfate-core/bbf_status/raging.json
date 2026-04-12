@@ -1,0 +1,14 @@
+{
+  "displayName": "Ярость",
+  "durationTicks": 200,
+  "tickInterval": 20,
+  "onApply": [
+    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:bludgeoning", "level": -1, "sourceId": "boundbyfate-core:raging" },
+    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:piercing", "level": -1, "sourceId": "boundbyfate-core:raging" },
+    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:slashing", "level": -1, "sourceId": "boundbyfate-core:raging" },
+    { "type": "boundbyfate-core:play_sound", "sound": "minecraft:entity.ravager.roar", "volume": 1.0, "pitch": 0.8 }
+  ],
+  "onExpire": [
+    { "type": "boundbyfate-core:play_sound", "sound": "minecraft:entity.player.hurt", "volume": 0.5, "pitch": 0.6 }
+  ]
+}
