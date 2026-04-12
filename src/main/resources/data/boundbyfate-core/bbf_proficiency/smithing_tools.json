@@ -1,12 +1,12 @@
 {
   "displayName": "Кузнечные инструменты",
-  "entries": [
-    {
-      "displayName": "Кузнечные инструменты",
-      "blocks": ["minecraft:anvil", "minecraft:chipped_anvil", "minecraft:damaged_anvil", "minecraft:smithing_table"],
-      "penalty": {
-        "type": "boundbyfate-core:block_interaction"
-      }
-    }
-  ]
+  "blocks": [
+    "minecraft:anvil",
+    "minecraft:chipped_anvil",
+    "minecraft:damaged_anvil",
+    "minecraft:smithing_table"
+  ],
+  "penalty": {
+    "type": "boundbyfate-core:block_interaction"
+  }
 }

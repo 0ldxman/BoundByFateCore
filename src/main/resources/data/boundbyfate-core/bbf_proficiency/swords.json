@@ -1,13 +1,8 @@
 {
   "displayName": "Мечи",
-  "entries": [
-    {
-      "displayName": "Мечи",
-      "tags": ["minecraft:swords"],
-      "penalty": {
-        "type": "boundbyfate-core:attack_chance",
-        "missChance": 0.4
-      }
-    }
-  ]
+  "itemTag": "boundbyfate-core:proficiency/swords",
+  "penalty": {
+    "type": "boundbyfate-core:attack_chance",
+    "missChance": 0.4
+  }
 }

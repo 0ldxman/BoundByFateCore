@@ -23,17 +23,50 @@ abstract class ItemStackTooltipMixin {
         val stack = this as ItemStack
         if (stack.isEmpty) return
 
-        val categories = BbfItemTags.ALL
-            .filter { (_, tag) -> stack.isIn(tag) }
-            .map { (name, _) -> name }
+        // Collect all proficiency tags this item belongs to
+        val allTags = listOf(
+            BbfItemTags.PROFICIENCY_SWORDS,
+            BbfItemTags.PROFICIENCY_AXES_WEAPON,
+            BbfItemTags.PROFICIENCY_MARTIAL_WEAPONS,
+            BbfItemTags.PROFICIENCY_SMITHING_TOOLS,
+            BbfItemTags.PROFICIENCY_ARTISAN_TOOLS,
+        )
 
-        if (categories.isEmpty()) return
+        // Show only the most specific tags (skip containers if a child already matched)
+        val matched = allTags.filter { stack.isIn(it) }
+        val specific = matched.filter { tag ->
+            matched.none { other -> other != tag && isChildOf(tag, other) }
+        }
+
+        if (specific.isEmpty()) return
+
+        val names = specific.joinToString(", ") { tag ->
+            // Convert tag path "proficiency/swords" → display name via registry lookup
+            // Fall back to capitalizing the path segment
+            tag.id.path.removePrefix("proficiency/")
+                .replace("_", " ")
+                .replaceFirstChar { it.uppercase() }
+        }
 
         val tooltip = ci.returnValue
         tooltip.add(Text.empty())
         tooltip.add(
             Text.literal("Владение: ").formatted(Formatting.GRAY)
-                .append(Text.literal(categories.joinToString(", ")).formatted(Formatting.YELLOW))
+                .append(Text.literal(names).formatted(Formatting.YELLOW))
         )
+    }
+
+    /**
+     * Returns true if [child] is a more specific tag contained within [parent].
+     */
+    private fun isChildOf(child: net.minecraft.registry.tag.TagKey<*>, parent: net.minecraft.registry.tag.TagKey<*>): Boolean {
+        val c = child.id.path
+        val p = parent.id.path
+        return when {
+            p == "proficiency/martial_weapons" &&
+                (c == "proficiency/swords" || c == "proficiency/axes_weapon") -> true
+            p == "proficiency/artisan_tools" && c == "proficiency/smithing_tools" -> true
+            else -> false
+        }
     }
 }

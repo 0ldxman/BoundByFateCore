@@ -17,7 +17,7 @@ object BlockInteractionHandler {
             if (world.isClient || player !is ServerPlayerEntity) return@register ActionResult.PASS
 
             val block = world.getBlockState(hitResult.blockPos).block
-            val blocked = ProficiencySystem.getBlockedEntry(player, block)
+            val blocked = ProficiencySystem.getBlockedProficiency(player, block)
 
             if (blocked != null) {
                 player.sendMessage(
