@@ -1,7 +1,7 @@
 package omc.boundbyfate.config
 
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
 import net.minecraft.util.Identifier
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -9,133 +9,134 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Loads and caches mob stat profiles from JSON files.
+ * Loads and caches mob bestiary profiles from JSON files.
  *
- * Config files are located at: `world/boundbyfate/mobs/{mobType}.json`
- * File names use underscores instead of colons (e.g., `minecraft_zombie.json`)
+ * Config files: `world/boundbyfate/mobs/{namespace}_{path}.json`
  */
 object MobStatConfigLoader {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
     private val cache = ConcurrentHashMap<Identifier, MobStatProfile>()
-    
-    /**
-     * Loads a mob stat profile.
-     *
-     * @param worldDirectory The world directory path
-     * @param mobTypeId The mob type identifier (e.g., "minecraft:zombie")
-     * @return MobStatProfile or null if not found/invalid
-     */
+
     fun load(worldDirectory: Path, mobTypeId: Identifier): MobStatProfile? {
-        // Check cache first
         cache[mobTypeId]?.let { return it }
-        
-        // Get config directory
+
         val configDir = getConfigDirectory(worldDirectory)
-        
-        // Convert identifier to filename (minecraft:zombie -> minecraft_zombie.json)
         val fileName = "${mobTypeId.namespace}_${mobTypeId.path}.json"
         val configFile = configDir.resolve(fileName)
-        
-        if (!Files.exists(configFile)) {
-            // Not an error - mobs without configs just don't have stats
-            return null
-        }
-        
+
+        if (!Files.exists(configFile)) return null
+
         return try {
-            // Read and parse JSON
-            val jsonString = Files.readString(configFile)
-            val jsonElement = JsonParser.parseString(jsonString)
-            
-            // Decode using Codec
-            val result = MobStatProfile.CODEC.parse(JsonOps.INSTANCE, jsonElement)
-            
-            result.result().ifPresent { profile ->
-                // Cache and return
-                cache[mobTypeId] = profile
-                logger.info("Loaded mob stat config for '$mobTypeId' with ${profile.baseStats.size} stats")
+            val json = JsonParser.parseString(Files.readString(configFile)) as? JsonObject ?: run {
+                logger.error("Mob config for '$mobTypeId': root must be a JSON object")
+                return null
             }
-            
-            result.error().ifPresent { error ->
-                logger.error("Failed to parse mob stat config for '$mobTypeId': ${error.message()}")
-            }
-            
-            result.result().orElse(null)
+
+            val profile = parseProfile(mobTypeId, json)
+            cache[mobTypeId] = profile
+            logger.info("Loaded mob config for '$mobTypeId' (CR ${profile.challengeRating}, AC ${profile.armorClass})")
+            profile
         } catch (e: Exception) {
-            logger.error("Error loading mob stat config for '$mobTypeId'", e)
+            logger.error("Error loading mob config for '$mobTypeId'", e)
             null
         }
     }
-    
-    /**
-     * Reloads all cached configs from disk.
-     *
-     * @param worldDirectory The world directory path
-     * @return Number of configs reloaded
-     */
+
+    private fun parseProfile(mobTypeId: Identifier, json: JsonObject): MobStatProfile {
+        val cr = json.get("challengeRating")?.asFloat ?: 0f
+        val xp = json.get("experienceReward")?.asInt ?: 0
+        val ac = json.get("armorClass")?.asInt ?: 10
+
+        // Base stats
+        val baseStats = mutableMapOf<Identifier, Int>()
+        json.getAsJsonObject("baseStats")?.entrySet()?.forEach { (key, value) ->
+            try { baseStats[Identifier(key)] = value.asInt }
+            catch (e: Exception) { logger.warn("$mobTypeId: invalid stat '$key'") }
+        }
+
+        // Senses
+        val sensesObj = json.getAsJsonObject("senses")
+        val senses = MobSenses(
+            darkvision  = sensesObj?.get("darkvision")?.asInt  ?: 0,
+            blindsight  = sensesObj?.get("blindsight")?.asInt  ?: 0,
+            tremorsense = sensesObj?.get("tremorsense")?.asInt ?: 0,
+            truesight   = sensesObj?.get("truesight")?.asInt   ?: 0
+        )
+
+        // Resistances: { "boundbyfate-core:fire": -1 }
+        val resistances = mutableMapOf<Identifier, Int>()
+        json.getAsJsonObject("resistances")?.entrySet()?.forEach { (key, value) ->
+            try { resistances[Identifier(key)] = value.asInt }
+            catch (e: Exception) { logger.warn("$mobTypeId: invalid resistance '$key'") }
+        }
+
+        // Traits
+        val traits = mutableListOf<Identifier>()
+        json.getAsJsonArray("traits")?.forEach { el ->
+            try { traits.add(Identifier(el.asString)) }
+            catch (e: Exception) { logger.warn("$mobTypeId: invalid trait '${el.asString}'") }
+        }
+
+        return MobStatProfile(
+            mobTypeId = mobTypeId,
+            challengeRating = cr,
+            experienceReward = xp,
+            armorClass = ac,
+            baseStats = baseStats,
+            senses = senses,
+            resistances = resistances,
+            traits = traits
+        )
+    }
+
     fun reload(worldDirectory: Path): Int {
         cache.clear()
-        
         val configDir = getConfigDirectory(worldDirectory)
-        if (!Files.exists(configDir)) {
-            logger.warn("Mob config directory does not exist: $configDir")
-            return 0
-        }
-        
+        if (!Files.exists(configDir)) return 0
+
         var count = 0
         try {
             Files.list(configDir).use { stream ->
-                stream.filter { it.toString().endsWith(".json") }
+                stream.filter { it.toString().endsWith(".json") && !it.fileName.toString().startsWith("_") }
                     .forEach { file ->
-                        // Parse filename back to Identifier (minecraft_zombie.json -> minecraft:zombie)
                         val fileName = file.fileName.toString().removeSuffix(".json")
-                        val parts = fileName.split("_", limit = 2)
-                        if (parts.size == 2) {
-                            val mobTypeId = Identifier(parts[0], parts[1])
-                            if (load(worldDirectory, mobTypeId) != null) {
-                                count++
-                            }
+                        val underscoreIdx = fileName.indexOf('_')
+                        if (underscoreIdx > 0) {
+                            val namespace = fileName.substring(0, underscoreIdx)
+                            val path = fileName.substring(underscoreIdx + 1)
+                            val mobTypeId = Identifier(namespace, path)
+                            if (load(worldDirectory, mobTypeId) != null) count++
                         }
                     }
             }
         } catch (e: Exception) {
-            logger.error("Error reloading mob stat configs", e)
+            logger.error("Error reloading mob configs", e)
         }
-        
-        logger.info("Reloaded $count mob stat configs")
+
+        logger.info("Reloaded $count mob configs")
         return count
     }
-    
-    /**
-     * Gets the config directory, creating it if necessary.
-     * Also creates an example config file if it doesn't exist.
-     */
+
     private fun getConfigDirectory(worldDirectory: Path): Path {
         val configDir = worldDirectory.resolve("boundbyfate").resolve("mobs")
-        
         if (!Files.exists(configDir)) {
             Files.createDirectories(configDir)
             logger.info("Created mob config directory: $configDir")
         }
-        
-        // Always try to create example config (will skip if exists)
         createExampleConfig(configDir)
-        
         return configDir
     }
-    
-    /**
-     * Creates an example mob config file.
-     */
+
     private fun createExampleConfig(configDir: Path) {
         val exampleFile = configDir.resolve("_example_minecraft_zombie.json")
-        
-        if (Files.exists(exampleFile)) {
-            return // Already exists
-        }
-        
+        if (Files.exists(exampleFile)) return
+
         val exampleJson = """
 {
   "mobTypeId": "minecraft:zombie",
+  "challengeRating": 0.25,
+  "experienceReward": 50,
+  "armorClass": 8,
   "baseStats": {
     "boundbyfate-core:strength": 13,
     "boundbyfate-core:constitution": 15,
@@ -143,10 +144,20 @@ object MobStatConfigLoader {
     "boundbyfate-core:intelligence": 3,
     "boundbyfate-core:wisdom": 6,
     "boundbyfate-core:charisma": 5
-  }
+  },
+  "senses": {
+    "darkvision": 60
+  },
+  "resistances": {
+    "boundbyfate-core:necrotic": -3,
+    "boundbyfate-core:poison": -3
+  },
+  "traits": [
+    "boundbyfate-core:undead_fortitude"
+  ]
 }
         """.trimIndent()
-        
+
         try {
             Files.writeString(exampleFile, exampleJson)
             logger.info("Created example mob config: $exampleFile")
@@ -154,11 +165,6 @@ object MobStatConfigLoader {
             logger.error("Failed to create example mob config", e)
         }
     }
-    
-    /**
-     * Clears the cache.
-     */
-    fun clearCache() {
-        cache.clear()
-    }
+
+    fun clearCache() = cache.clear()
 }
