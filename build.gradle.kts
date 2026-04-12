@@ -43,9 +43,6 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	modImplementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
-
-	// Pehkui - optional dependency for player scale/size changes
-	modCompileOnly("maven.modrinth:pehkui:3.7.11+1.14.4-1.20.4")
 }
 
 tasks.processResources {
