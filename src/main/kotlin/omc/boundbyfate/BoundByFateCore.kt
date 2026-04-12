@@ -191,3 +191,4 @@ object BoundByFateCore : ModInitializer {
 
 		logger.info("Registered built-in feature conditions")
 	}
+}
