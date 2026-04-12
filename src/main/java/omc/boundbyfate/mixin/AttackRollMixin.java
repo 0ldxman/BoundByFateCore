@@ -7,25 +7,21 @@ import omc.boundbyfate.system.combat.AttackRollSystem;
 import omc.boundbyfate.system.combat.AttackResult;
 import omc.boundbyfate.system.combat.WeaponDamageSystem;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
-public class AttackRollMixin {
+public abstract class AttackRollMixin {
 
-    // Thread-local to pass crit state from @Inject to @ModifyVariable
+    @Shadow public int hurtTime;
+    @Shadow public int maxHurtTime;
+
     private static final ThreadLocal<AttackResult> PENDING_RESULT = new ThreadLocal<>();
 
-    /**
-     * Step 1: Resolve attack roll. Cancel on miss, store result for damage calculation.
-     */
-    @Inject(
-        method = "damage",
-        at = @At("HEAD"),
-        cancellable = true
-    )
+    @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
     private void bbf_resolveAttackRoll(DamageSource source, float amount, CallbackInfoReturnable<Boolean> ci) {
         if (!bbf_isDirectAttack(source)) return;
         if (!(source.getAttacker() instanceof LivingEntity attacker)) return;
@@ -35,6 +31,7 @@ public class AttackRollMixin {
 
         if (!result.getHit()) {
             PENDING_RESULT.remove();
+            bbf_applyMissReaction(attacker, target);
             ci.setReturnValue(false);
             return;
         }
@@ -42,16 +39,7 @@ public class AttackRollMixin {
         PENDING_RESULT.set(result);
     }
 
-    /**
-     * Step 2: Replace vanilla damage with our calculated D&D damage.
-     * Runs after the attack roll check, only if hit.
-     */
-    @ModifyVariable(
-        method = "damage",
-        at = @At("HEAD"),
-        argsOnly = true,
-        index = 2
-    )
+    @ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true, index = 2)
     private float bbf_replaceDamage(float amount, DamageSource source) {
         if (!bbf_isDirectAttack(source)) return amount;
         if (!(source.getAttacker() instanceof LivingEntity attacker)) return amount;
@@ -68,5 +56,27 @@ public class AttackRollMixin {
                 source.isOf(DamageTypes.MOB_ATTACK) ||
                 source.isOf(DamageTypes.ARROW) ||
                 source.isOf(DamageTypes.TRIDENT));
+    }
+
+    /**
+     * Applies knockback and hurt reaction on a miss.
+     * Target reacts as if hit but takes no damage.
+     */
+    private void bbf_applyMissReaction(LivingEntity attacker, LivingEntity target) {
+        double dx = target.getX() - attacker.getX();
+        double dz = target.getZ() - attacker.getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist > 0) { dx /= dist; dz /= dist; }
+
+        // Slight knockback (weaker than a real hit)
+        target.takeKnockback(0.25, -dx, -dz);
+
+        // Hurt animation and sound
+        AttackRollMixin targetMixin = (AttackRollMixin) (Object) target;
+        if (targetMixin.hurtTime <= 0) {
+            targetMixin.hurtTime = 10;
+            targetMixin.maxHurtTime = 10;
+            target.playHurtSound(attacker.getWorld().getDamageSources().genericKill());
+        }
     }
 }
