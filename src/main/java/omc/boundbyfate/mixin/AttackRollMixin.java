@@ -19,9 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class AttackRollMixin {
 
-    @Shadow public int hurtTime;
-    @Shadow public int maxHurtTime;
     @Shadow protected abstract void playHurtSound(DamageSource source);
+    @Shadow protected abstract void onDamaged(DamageSource damageSource);
 
     private static final ThreadLocal<AttackResult> PENDING_RESULT = new ThreadLocal<>();
 
@@ -74,30 +73,27 @@ public abstract class AttackRollMixin {
     }
 
     /**
-     * Applies knockback, hurt animation/sound, and mob AI response on a miss.
+     * Applies knockback and mob AI response on a miss.
+     * No hurt animation (no red flash) — visually the attack missed.
      */
     private void bbf_applyMissReaction(LivingEntity attacker, LivingEntity target, DamageSource source) {
-        // Knockback
+        // Knockback only — no red flash
         double dx = target.getX() - attacker.getX();
         double dz = target.getZ() - attacker.getZ();
         double dist = Math.sqrt(dx * dx + dz * dz);
         if (dist > 0) { dx /= dist; dz /= dist; }
         target.takeKnockback(0.25, -dx, -dz);
 
-        // Hurt animation and sound via @Shadow (works because we're in the mixin)
+        // Trigger AI response via onDamaged:
+        // - passive mobs (sheep, cows) → FleeGoal activates
+        // - neutral mobs (piglins, wolves) → become hostile
+        // - hostile mobs → retarget attacker
         AttackRollMixin targetMixin = (AttackRollMixin) (Object) target;
-        if (targetMixin.hurtTime <= 0) {
-            targetMixin.hurtTime = 10;
-            targetMixin.maxHurtTime = 10;
-            targetMixin.playHurtSound(source);
-        }
+        targetMixin.onDamaged(source);
 
-        // Trigger mob AI: set attacker as target for MobEntity (piglins, zombies, etc.)
-        // Passive mobs (animals, villagers) will flee via their existing AI goals
-        if (target instanceof MobEntity mob) {
-            if (mob.getTarget() == null) {
-                mob.setTarget(attacker);
-            }
+        // For MobEntity: also set attacker as target if not already targeting
+        if (target instanceof MobEntity mob && mob.getTarget() == null) {
+            mob.setTarget(attacker);
         }
     }
 }
