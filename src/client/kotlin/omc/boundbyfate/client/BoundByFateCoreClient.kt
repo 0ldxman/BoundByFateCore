@@ -13,11 +13,16 @@ import omc.boundbyfate.client.gui.FeatureScreen
 import omc.boundbyfate.client.keybind.FeatureKeyBindings
 import omc.boundbyfate.client.keybind.FeatureSlotManager
 import omc.boundbyfate.client.network.ClientPacketHandler
+import omc.boundbyfate.client.tooltip.ItemTooltipManager
+import omc.boundbyfate.client.tooltip.ProficiencyTooltipProvider
 
 object BoundByFateCoreClient : ClientModInitializer {
     override fun onInitializeClient() {
         // Register packet handlers
         ClientPacketHandler.register()
+
+        // Register tooltip providers
+        ItemTooltipManager.register(ProficiencyTooltipProvider)
 
         // Register keybindings
         FeatureKeyBindings.register()
