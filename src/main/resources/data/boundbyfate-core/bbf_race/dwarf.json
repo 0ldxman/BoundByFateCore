@@ -14,9 +14,6 @@
   "proficiencies": [
     "boundbyfate-core:save_constitution"
   ],
-  "itemProficiencies": [
-    "boundbyfate-core:axes_weapon"
-  ],
   "abilities": [
     "boundbyfate-core:stonecunning",
     "boundbyfate-core:dwarven_resilience"
