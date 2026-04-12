@@ -8,6 +8,7 @@ import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.PlayerClassData
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.ClassRegistry
+import omc.boundbyfate.system.HitPointsSystem
 import omc.boundbyfate.system.resource.ResourceSystem
 import org.slf4j.LoggerFactory
 
@@ -60,6 +61,9 @@ object ClassSystem {
 
         grants.forEach { applyGrant(player, it) }
 
+        // Apply D&D HP based on class and level
+        HitPointsSystem.applyHitPoints(player, classDef, level)
+
         logger.info("Applied class ${classDef.displayName} (level $level) to ${player.name.string}")
     }
 
@@ -87,6 +91,9 @@ object ClassSystem {
 
         // Update stored level
         player.setAttached(BbfAttachments.PLAYER_CLASS, classData.copy(classLevel = newLevel))
+
+        // Recalculate HP for new level
+        HitPointsSystem.applyHitPoints(player, classDef, newLevel)
 
         logger.info("Applied level up to $newLevel for ${player.name.string} (${classDef.displayName})")
     }

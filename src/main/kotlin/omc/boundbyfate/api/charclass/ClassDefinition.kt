@@ -17,12 +17,14 @@ data class ClassDefinition(
     val id: Identifier,
     val displayName: String,
     val hitDie: Int,
+    val hpPerLevel: Int = hitDie / 2 + 1,
     val subclassLevel: Int = 3,
     val progression: Map<Int, LevelGrant> = emptyMap()
 ) {
     init {
         require(displayName.isNotBlank()) { "ClassDefinition $id: displayName cannot be blank" }
-        require(hitDie in setOf(6, 8, 10, 12)) { "ClassDefinition $id: hitDie must be 6, 8, 10, or 12" }
+        require(hitDie in setOf(4, 6, 8, 10, 12)) { "ClassDefinition $id: hitDie must be 4, 6, 8, 10, or 12" }
+        require(hpPerLevel >= 1) { "ClassDefinition $id: hpPerLevel must be >= 1" }
         require(subclassLevel in 1..20) { "ClassDefinition $id: subclassLevel must be 1-20" }
     }
 

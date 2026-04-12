@@ -3,7 +3,6 @@ package omc.boundbyfate.registry
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.stat.StatDefinition
 import omc.boundbyfate.api.stat.StatEffectBinding
-import omc.boundbyfate.system.stat.effect.MaxHealthStatEffect
 import omc.boundbyfate.system.stat.effect.MovementSpeedStatEffect
 
 /**
@@ -28,6 +27,7 @@ object BbfStats {
     
     /**
      * Constitution (CON) - Endurance, hit points, stamina.
+     * HP is now managed by HitPointsSystem based on class + level.
      */
     val CONSTITUTION: StatDefinition = StatDefinition(
         id = Identifier("boundbyfate-core", "constitution"),
@@ -35,13 +35,7 @@ object BbfStats {
         displayName = "Выносливость",
         minValue = 1,
         maxValue = 30,
-        defaultValue = 10,
-        effects = listOf(
-            StatEffectBinding(
-                effect = MaxHealthStatEffect,
-                statId = Identifier("boundbyfate-core", "constitution")
-            )
-        )
+        defaultValue = 10
     )
     
     /**

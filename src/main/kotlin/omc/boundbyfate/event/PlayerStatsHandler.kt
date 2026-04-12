@@ -38,9 +38,18 @@ object PlayerStatsHandler {
             val existingStats = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             
             if (existingStats != null) {
-                // Player already has stats - just reapply effects
+                // Player already has stats - reapply effects and HP
                 logger.info("Player '$playerName' has existing stats data - reapplying effects")
                 StatEffectProcessor.applyAll(player, existingStats)
+                
+                // Reapply HP (attributes reset on each join)
+                val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+                if (classData != null) {
+                    val classDef = omc.boundbyfate.registry.ClassRegistry.getClass(classData.classId)
+                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, classData.classLevel)
+                } else {
+                    omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, null, 1)
+                }
                 return
             }
             
@@ -124,8 +133,13 @@ object PlayerStatsHandler {
             }
             player.setAttached(BbfAttachments.ENTITY_SKILLS, skillData)
             
-            // Apply all effects
+            // Apply all effects (speed, etc.)
             StatEffectProcessor.applyAll(player, statsData)
+            
+            // Apply commoner HP if no class config
+            if (profile == null) {
+                omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, null, 1)
+            }
             
             logger.info("Applied stats to player '$playerName'")
         } catch (e: Exception) {

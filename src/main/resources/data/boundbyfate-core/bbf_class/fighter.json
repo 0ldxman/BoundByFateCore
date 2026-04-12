@@ -1,6 +1,7 @@
 {
   "displayName": "Воин",
   "hitDie": 10,
+  "hpPerLevel": 6,
   "subclassLevel": 3,
   "progression": {
     "1": {

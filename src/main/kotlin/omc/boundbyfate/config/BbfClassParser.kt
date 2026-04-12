@@ -71,6 +71,7 @@ object BbfClassParser {
                 return null
             }
 
+            val hpPerLevel = json.get("hpPerLevel")?.asInt ?: (hitDie / 2 + 1)
             val subclassLevel = json.get("subclassLevel")?.asInt ?: 3
 
             val progression = parseProgression(id, json.getAsJsonObject("progression"))
@@ -79,6 +80,7 @@ object BbfClassParser {
                 id = id,
                 displayName = displayName,
                 hitDie = hitDie,
+                hpPerLevel = hpPerLevel,
                 subclassLevel = subclassLevel,
                 progression = progression
             )
