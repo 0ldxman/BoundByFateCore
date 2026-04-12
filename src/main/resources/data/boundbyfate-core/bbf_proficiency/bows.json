@@ -1,13 +1,8 @@
 {
   "displayName": "Луки",
-  "entries": [
-    {
-      "displayName": "Луки",
-      "items": ["minecraft:bow", "minecraft:crossbow"],
-      "penalty": {
-        "type": "boundbyfate-core:attack_damage",
-        "multiplier": 0.6
-      }
-    }
-  ]
+  "itemTag": "boundbyfate-core:proficiency/bows",
+  "penalty": {
+    "type": "boundbyfate-core:attack_chance",
+    "missChance": 0.4
+  }
 }
