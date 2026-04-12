@@ -69,6 +69,10 @@ object BoundByFateCore : ModInitializer {
 			// Tick status effects for all online players
 			server.playerManager.playerList.forEach { player ->
 				omc.boundbyfate.system.feature.StatusEffectSystem.tick(player)
+				// Recalculate AC periodically (every 20 ticks = 1 second)
+				if (server.ticks % 20 == 0) {
+					omc.boundbyfate.system.combat.ArmorClassSystem.recalculate(player)
+				}
 			}
 		}
 		

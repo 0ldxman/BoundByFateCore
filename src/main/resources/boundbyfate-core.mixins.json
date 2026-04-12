@@ -6,7 +6,6 @@
 		"ExampleMixin",
 		"LivingEntityDamageMixin",
 		"AttackRollMixin",
-		"ArmorEquipMixin",
 		"WeaponHoldMixin"
 	],
 	"injectors": {
