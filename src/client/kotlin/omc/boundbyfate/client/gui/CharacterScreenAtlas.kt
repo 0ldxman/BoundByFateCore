@@ -5,7 +5,7 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
-import omc.boundbyfate.component.EntityStatsData
+import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 
@@ -150,7 +150,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         context: DrawContext,
         x: Int, y: Int,
         stat: omc.boundbyfate.api.stat.StatDefinition,
-        statsData: EntityStatsData?,
+        statsData: EntityStatData?,
         isLeft: Boolean
     ) {
         // Рисуем щит (фон характеристики) с правильным соотношением сторон
