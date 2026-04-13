@@ -52,6 +52,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val leftSkillDefsByIndex = listOf(strSkillDefs, conSkillDefs, dexSkillDefs)
     private val rightSkillDefsByIndex = listOf(intSkillDefs, wisSkillDefs, chaSkillDefs)
 
+    // Спасброски по характеристикам
+    private val leftSaveDefs = listOf(BbfSkills.SAVE_STRENGTH, BbfSkills.SAVE_CONSTITUTION, BbfSkills.SAVE_DEXTERITY)
+    private val rightSaveDefs = listOf(BbfSkills.SAVE_INTELLIGENCE, BbfSkills.SAVE_WISDOM, BbfSkills.SAVE_CHARISMA)
+
     private var cx = 0
     private var cy = 0
 
@@ -92,7 +96,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i])
             drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
         }
 
@@ -100,7 +104,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i])
             drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
         }
 
@@ -153,6 +157,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             if (isLeft) {
                 // Иконка справа от anchorX, текст прилегает правым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
+                if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
+                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX, y, skillIconSize, skillIconSize)
+                }
                 val textX = anchorX - gap
                 val matrices = context.matrices
                 matrices.push()
@@ -164,6 +171,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             } else {
                 // Иконка слева от anchorX, текст прилегает левым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
+                if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
+                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX, y, skillIconSize, skillIconSize)
+                }
                 val textX = anchorX + skillIconSize + gap
                 val matrices = context.matrices
                 matrices.push()
@@ -179,9 +189,18 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         context: DrawContext,
         x: Int, y: Int,
         stat: omc.boundbyfate.api.stat.StatDefinition,
-        statsData: EntityStatData?
+        statsData: EntityStatData?,
+        skillData: EntitySkillData?,
+        saveDef: omc.boundbyfate.api.skill.SkillDefinition
     ) {
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
+
+        // Иконка владения спасброском — сверху по центру щита
+        val hasSaveProf = (skillData?.getProficiency(saveDef.id)?.multiplier ?: 0) > 0
+        if (hasSaveProf) {
+            val profSize = 6
+            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2, y - profSize / 2, profSize, profSize)
+        }
 
         val value = statsData?.getStatValue(stat.id)?.total ?: 10
         val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
