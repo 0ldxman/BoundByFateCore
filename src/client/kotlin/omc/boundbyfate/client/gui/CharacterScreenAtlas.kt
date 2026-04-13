@@ -3,6 +3,7 @@ package omc.boundbyfate.client.gui
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
+import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
@@ -10,193 +11,188 @@ import omc.boundbyfate.registry.BbfStats
 /**
  * Character sheet screen с использованием атласа.
  * 
- * Использует GuiAtlas и NineSliceRenderer для отрисовки.
+ * Новый дизайн:
+ * - Модель игрока в центре
+ * - Щиты характеристик слева и справа (3 + 3)
+ * - Навыки рядом с характеристиками
+ * - 3 баннера сверху (имя, класс, раса)
  */
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
     companion object {
-        const val WINDOW_WIDTH = 400
-        const val WINDOW_HEIGHT = 500
+        // Размеры щита характеристики
+        const val STAT_SHIELD_WIDTH = 50
+        const val STAT_SHIELD_HEIGHT = 80
+        const val STAT_SPACING = 10
+        
+        // Размеры иконки навыка
+        const val SKILL_ICON_SIZE = 24
+        const val SKILL_SPACING = 5
+        
+        // Размеры баннеров
+        const val BANNER_WIDTH = 150
+        const val BANNER_HEIGHT = 60
     }
 
-    private var windowX = 0
-    private var windowY = 0
+    private var centerX = 0
+    private var centerY = 0
 
     override fun init() {
-        windowX = (width - WINDOW_WIDTH) / 2
-        windowY = (height - WINDOW_HEIGHT) / 2
+        centerX = width / 2
+        centerY = height / 2
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context)
 
-        // Рисуем главное окно из атласа
-        NineSliceRenderer.drawWindow(
-            context,
-            windowX, windowY,
-            WINDOW_WIDTH, WINDOW_HEIGHT
-        )
-
         val player = MinecraftClient.getInstance().player ?: return
         val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
-        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)
         val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
         val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
 
-        var y = windowY + 20
-
-        // ═══ HEADER BANNER ═══
-        NineSliceRenderer.drawHeader(
+        // ═══ 1. МОДЕЛЬ ИГРОКА В ЦЕНТРЕ ═══
+        val playerModelX = centerX
+        val playerModelY = centerY + 20
+        
+        InventoryScreen.drawEntity(
             context,
-            windowX + 20,
-            y,
-            WINDOW_WIDTH - 40,
-            withHighlight = true
+            playerModelX - 25,
+            playerModelY - 30,
+            playerModelX + 25,
+            playerModelY + 70,
+            30,
+            0.0625f,
+            mouseX.toFloat(),
+            mouseY.toFloat(),
+            player
         )
 
-        // Имя персонажа на баннере
-        context.drawCenteredTextWithShadow(
-            textRenderer,
-            player.name,
-            windowX + WINDOW_WIDTH / 2,
-            y + 40,
-            0xFFD700
-        )
-
-        y += 110
-
-        // Раса, класс, уровень
-        val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
-        val classStr = classData?.let { "${it.classId.path.replaceFirstChar { c -> c.uppercase() }} ${it.classLevel}" } ?: ""
-        val levelStr = levelData?.let { "Level ${it.level}" } ?: ""
-
-        context.drawCenteredTextWithShadow(
-            textRenderer,
-            Text.literal("$raceStr  $classStr  $levelStr"),
-            windowX + WINDOW_WIDTH / 2,
-            y,
-            0xAAAAAA
-        )
-
-        y += 20
-
-        // ═══ ABILITY SCORES ═══
-        val stats = listOf(
+        // ═══ 2. ЩИТЫ ХАРАКТЕРИСТИК ═══
+        val leftStats = listOf(
             BbfStats.STRENGTH,
-            BbfStats.DEXTERITY,
             BbfStats.CONSTITUTION,
+            BbfStats.DEXTERITY
+        )
+        
+        val rightStats = listOf(
             BbfStats.INTELLIGENCE,
             BbfStats.WISDOM,
             BbfStats.CHARISMA
         )
 
-        stats.forEachIndexed { index, stat ->
-            val statX = windowX + 40 + (index % 3) * 120
-            val statY = y + (index / 3) * 100
-
-            // Фон характеристики из атласа (масштабируем до нужного размера)
-            GuiAtlas.ICON_STAT_BG.draw(
-                context,
-                statX - 10, statY - 10,
-                80, 90
-            )
-
-            // Значения
-            val value = statsData?.getStatValue(stat.id)?.total ?: 10
-            val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
-
-            // Короткое имя
-            context.drawCenteredTextWithShadow(
-                textRenderer,
-                Text.literal(stat.shortName),
-                statX + 25, statY + 5,
-                0xD4AF37
-            )
-
-            // Значение
-            context.drawCenteredTextWithShadow(
-                textRenderer,
-                Text.literal("$value"),
-                statX + 25, statY + 30,
-                0xFFFFFF
-            )
-
-            // Модификатор
-            val modStr = if (mod >= 0) "+$mod" else "$mod"
-            context.drawCenteredTextWithShadow(
-                textRenderer,
-                Text.literal(modStr),
-                statX + 25, statY + 50,
-                if (mod >= 0) 0x2ECC71 else 0xE74C3C
-            )
+        // Левые характеристики
+        leftStats.forEachIndexed { index, stat ->
+            val statX = centerX - 120
+            val statY = centerY - 80 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
+            
+            drawStatShield(context, statX, statY, stat, statsData, isLeft = true)
         }
 
-        y += 220
+        // Правые характеристики
+        rightStats.forEachIndexed { index, stat ->
+            val statX = centerX + 70
+            val statY = centerY - 80 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
+            
+            drawStatShield(context, statX, statY, stat, statsData, isLeft = false)
+        }
 
-        // ═══ HP BAR ═══
-        val hpX = windowX + 40
-        val hpY = y
-
-        // Фон HP из атласа
-        GuiAtlas.ICON_HP_BG.draw(
-            context,
-            hpX, hpY,
-            WINDOW_WIDTH - 80, 40
+        // ═══ 3. НАВЫКИ ═══
+        // Пока оставим место для навыков, добавим позже
+        
+        // ═══ 4. БАННЕРЫ СВЕРХУ ═══
+        val topY = 20
+        
+        // Центральный баннер - имя игрока
+        val nameX = centerX - BANNER_WIDTH / 2
+        NineSliceRenderer.drawHeader(context, nameX, topY, BANNER_WIDTH, withHighlight = true)
+        context.drawCenteredTextWithShadow(
+            textRenderer,
+            player.name,
+            centerX,
+            topY + 25,
+            0xFFD700
         )
 
-        // HP текст
-        val hp = player.health.toInt()
-        val maxHp = player.maxHealth.toInt()
-        context.drawTextWithShadow(
+        // Левый баннер - класс
+        val classX = centerX - BANNER_WIDTH - 20
+        val classY = topY + 70
+        NineSliceRenderer.drawHeader(context, classX, classY, BANNER_WIDTH, withHighlight = false)
+        
+        val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
+        val classLevel = classData?.classLevel ?: 1
+        context.drawCenteredTextWithShadow(
             textRenderer,
-            Text.literal("HP: $hp / $maxHp"),
-            hpX + 10, hpY + 15,
-            0xFFFFFF
-        )
-
-        y += 60
-
-        // ═══ SAVING THROWS ═══
-        context.drawTextWithShadow(
-            textRenderer,
-            Text.literal("SAVING THROWS"),
-            windowX + 40, y,
+            Text.literal("$classStr $classLevel"),
+            classX + BANNER_WIDTH / 2,
+            classY + 25,
             0xD4AF37
         )
 
-        y += 15
-
-        val saves = listOf(
-            "STR" to "+3",
-            "DEX" to "+5",
-            "CON" to "+5",
-            "INT" to "+0",
-            "WIS" to "+1",
-            "CHA" to "-1"
+        // Правый баннер - раса
+        val raceX = centerX + 20
+        val raceY = topY + 70
+        NineSliceRenderer.drawHeader(context, raceX, raceY, BANNER_WIDTH, withHighlight = false)
+        
+        val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Human"
+        context.drawCenteredTextWithShadow(
+            textRenderer,
+            Text.literal(raceStr),
+            raceX + BANNER_WIDTH / 2,
+            raceY + 25,
+            0xD4AF37
         )
 
-        saves.forEachIndexed { index, (name, bonus) ->
-            val saveX = windowX + 40 + (index % 3) * 120
-            val saveY = y + (index / 3) * 35
-
-            // Фон спасброска
-            GuiAtlas.ICON_SAVE_BG.draw(context, saveX, saveY)
-
-            // Иконка владения (если есть)
-            if (index < 3) { // Пример: первые 3 с владением
-                GuiAtlas.ICON_PROFICIENCY.draw(context, saveX + 2, saveY + 2)
-            }
-
-            // Название и бонус
-            context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("$name $bonus"),
-                saveX + 30, saveY + 7,
-                0xFFFFFF
-            )
-        }
-
         super.render(context, mouseX, mouseY, delta)
+    }
+
+    /**
+     * Рисует щит характеристики с её значением.
+     */
+    private fun drawStatShield(
+        context: DrawContext,
+        x: Int, y: Int,
+        stat: omc.boundbyfate.api.stat.StatDefinition,
+        statsData: omc.boundbyfate.component.EntityStatsData?,
+        isLeft: Boolean
+    ) {
+        // Рисуем щит (фон характеристики)
+        GuiAtlas.ICON_STAT_BG.draw(
+            context,
+            x, y,
+            STAT_SHIELD_WIDTH, STAT_SHIELD_HEIGHT
+        )
+
+        // Получаем значения
+        val value = statsData?.getStatValue(stat.id)?.total ?: 10
+        val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
+
+        // Короткое имя характеристики
+        context.drawCenteredTextWithShadow(
+            textRenderer,
+            Text.literal(stat.shortName),
+            x + STAT_SHIELD_WIDTH / 2,
+            y + 15,
+            0xD4AF37
+        )
+
+        // Значение
+        context.drawCenteredTextWithShadow(
+            textRenderer,
+            Text.literal("$value"),
+            x + STAT_SHIELD_WIDTH / 2,
+            y + 35,
+            0xFFFFFF
+        )
+
+        // Модификатор
+        val modStr = if (mod >= 0) "+$mod" else "$mod"
+        context.drawCenteredTextWithShadow(
+            textRenderer,
+            Text.literal(modStr),
+            x + STAT_SHIELD_WIDTH / 2,
+            y + 55,
+            if (mod >= 0) 0x2ECC71 else 0xE74C3C
+        )
     }
 
     override fun shouldPause() = false
