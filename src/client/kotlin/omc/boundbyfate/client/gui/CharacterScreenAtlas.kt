@@ -121,7 +121,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     /** Рисует баннер: левый конец + тайлы (квадратные, по верху) + правый конец */
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
         // Тайл квадратный (53x53), рисуем 26x26 — сохраняем соотношение сторон
-        val tileDrawH = bannerTileW  // 26x26
+        val tileDrawH = y  // 26x26
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
