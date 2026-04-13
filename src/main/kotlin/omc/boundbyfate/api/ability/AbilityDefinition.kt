@@ -90,7 +90,7 @@ data class AbilityDefinition(
     inline fun <reified T : CostComponent> getCost(): T? = 
         costs.filterIsInstance<T>().firstOrNull()
     
-    inline fun <reified T : VisualComponent> getVisuals(): List<T> = 
+    inline fun <reified T : VisualComponent> getVisualsOfType(): List<T> = 
         visuals.filterIsInstance<T>()
     
     inline fun <reified T : MetadataComponent> getMetadata(): T? = 
