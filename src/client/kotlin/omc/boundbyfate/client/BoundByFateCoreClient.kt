@@ -9,7 +9,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.client.gui.widget.ButtonWidget
 import net.minecraft.text.Text
-import omc.boundbyfate.client.gui.CharacterScreen
+import omc.boundbyfate.client.gui.CharacterScreenAtlas
 import omc.boundbyfate.client.gui.FeatureScreen
 import omc.boundbyfate.client.keybind.FeatureKeyBindings
 import omc.boundbyfate.client.keybind.FeatureSlotManager
@@ -45,7 +45,7 @@ object BoundByFateCoreClient : ClientModInitializer {
 
                 Screens.getButtons(screen).add(
                     ButtonWidget.builder(Text.literal("📜")) {
-                        client.setScreen(CharacterScreen())
+                        client.setScreen(CharacterScreenAtlas())
                     }.dimensions(x - 24, y, 20, 20).build()
                 )
 
@@ -69,7 +69,7 @@ object BoundByFateCoreClient : ClientModInitializer {
 
             // Open character sheet
             if (FeatureKeyBindings.openCharacterSheet.wasPressed()) {
-                client.setScreen(CharacterScreen())
+                client.setScreen(CharacterScreenAtlas())
             }
         }
     }

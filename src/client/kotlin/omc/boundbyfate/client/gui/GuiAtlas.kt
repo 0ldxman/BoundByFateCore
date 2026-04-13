@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier
  * Содержит все элементы интерфейса в одной текстуре.
  */
 object GuiAtlas {
-    val TEXTURE = Identifier("boundbyfate-core", "textures/gui/atlas.png")
+    val TEXTURE = Identifier("boundbyfate-core", "textures/gui/gui_atlas_512.png")
     
     // Размер атласа
     const val ATLAS_WIDTH = 512
