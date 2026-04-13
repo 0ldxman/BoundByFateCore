@@ -7,8 +7,10 @@ import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
 import omc.boundbyfate.api.ability.AbilityDefinition
 import omc.boundbyfate.api.ability.component.ActivationComponent
+import omc.boundbyfate.api.ability.component.CostComponent
 import omc.boundbyfate.component.AbilityActivationState
 import omc.boundbyfate.component.ActivationType
+import omc.boundbyfate.registry.AbilityRegistry
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.system.resource.ResourceSystem
 import org.slf4j.LoggerFactory
@@ -229,12 +231,7 @@ object AbilityActivationSystem {
                 if (activation.interruptOnMove && player.velocity.lengthSquared() > 0.01) {
                     return true
                 }
-                if (activation.interruptOnDamage) {
-                    val damageData = player.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE, null)
-                    if (damageData?.lastDamageTick == player.world.time) {
-                        return true
-                    }
-                }
+                // TODO: Implement interruptOnDamage when damage tracking is added
             }
             is ActivationComponent.Ritual -> {
                 if (activation.requiresStanding && player.velocity.lengthSquared() > 0.01) {

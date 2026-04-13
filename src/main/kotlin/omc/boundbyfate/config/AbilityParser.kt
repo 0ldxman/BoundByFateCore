@@ -129,7 +129,7 @@ object AbilityParser {
             "Charged" -> {
                 val minChargeTicks = json.get("minChargeTicks")?.asInt ?: 20
                 val maxChargeTicks = json.get("maxChargeTicks")?.asInt ?: 60
-                ActivationComponent.Charged(preparationTime, canBeInterrupted, minChargeTicks, maxChargeTicks)
+                ActivationComponent.Charged(preparationTime, minChargeTicks, maxChargeTicks, canBeInterrupted)
             }
             "Ritual" -> {
                 val requiresStanding = json.get("requiresStanding")?.asBoolean ?: true
