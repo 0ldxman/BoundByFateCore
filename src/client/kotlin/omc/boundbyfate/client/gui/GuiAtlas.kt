@@ -73,10 +73,11 @@ object GuiAtlas {
         ) {
             context.drawTexture(
                 TEXTURE,
-                x, y,                    // Позиция на экране
-                u.toFloat(), v.toFloat(), // Позиция в атласе
-                drawWidth, drawHeight,   // Размер на экране
-                ATLAS_WIDTH, ATLAS_HEIGHT // Размер атласа
+                x, y,                     // Позиция на экране
+                drawWidth, drawHeight,    // Размер на экране
+                u.toFloat(), v.toFloat(), // Позиция в атласе (UV)
+                width, height,            // Размер региона в атласе
+                ATLAS_WIDTH, ATLAS_HEIGHT // Размер всего атласа
             )
         }
         
@@ -100,6 +101,7 @@ object GuiAtlas {
             context.drawTexture(
                 TEXTURE,
                 x, y,
+                drawWidth, drawHeight,
                 (u + uOffset).toFloat(), (v + vOffset).toFloat(),
                 drawWidth, drawHeight,
                 ATLAS_WIDTH, ATLAS_HEIGHT
