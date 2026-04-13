@@ -10,7 +10,12 @@ import omc.boundbyfate.api.combat.WeaponProperty
 import omc.boundbyfate.client.render.FloatingTextRenderer
 import omc.boundbyfate.client.skin.ClientSkinManager
 import omc.boundbyfate.client.state.ClientFeatureState
+import omc.boundbyfate.client.state.ClientPlayerData
 import omc.boundbyfate.client.state.ClientWeaponRegistry
+import omc.boundbyfate.component.EntitySkillData
+import omc.boundbyfate.component.EntityStatData
+import omc.boundbyfate.component.PlayerClassData
+import omc.boundbyfate.component.PlayerRaceData
 import omc.boundbyfate.network.BbfPackets
 
 object ClientPacketHandler {
@@ -102,6 +107,53 @@ object ClientPacketHandler {
                 WeaponDefinition(id, displayName, items, damage, versatileDamage, damageType, properties)
             }
             client.execute { ClientWeaponRegistry.update(definitions) }
+        }
+
+        // Server → Client: sync player character data
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_PLAYER_DATA) { client, _, buf, _ ->
+            // Stats
+            val statsCount = buf.readInt()
+            val baseStats = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(statsCount) {
+                val id = buf.readIdentifier()
+                val value = buf.readInt()
+                baseStats[id] = value
+            }
+            // Modifiers (currently 0)
+            val modCount = buf.readInt()
+            repeat(modCount) { buf.readIdentifier(); buf.readInt() }
+
+            // Skills
+            val skillCount = buf.readInt()
+            val proficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(skillCount) {
+                val id = buf.readIdentifier()
+                val level = buf.readInt()
+                proficiencies[id] = level
+            }
+
+            // Class
+            val hasClass = buf.readBoolean()
+            val classData = if (hasClass) {
+                val classId = buf.readIdentifier()
+                val classLevel = buf.readInt()
+                PlayerClassData(classId, classLevel)
+            } else null
+
+            // Race
+            val hasRace = buf.readBoolean()
+            val raceData = if (hasRace) PlayerRaceData(buf.readIdentifier()) else null
+
+            // Level
+            val level = buf.readInt()
+
+            client.execute {
+                ClientPlayerData.statsData = EntityStatData(baseStats = baseStats)
+                ClientPlayerData.skillData = EntitySkillData(proficiencies = proficiencies)
+                ClientPlayerData.classData = classData
+                ClientPlayerData.raceData = raceData
+                ClientPlayerData.level = level
+            }
         }
     }
 

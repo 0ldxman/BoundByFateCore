@@ -161,6 +161,9 @@ object ServerPacketHandler {
 
         // Sync weapon registry for client-side tooltips
         syncWeaponRegistry(player)
+
+        // Sync character data (stats, skills, class, race, level)
+        syncPlayerData(player)
     }
 
     /**
@@ -296,6 +299,58 @@ object ServerPacketHandler {
                 ServerPlayNetworking.send(player, BbfPackets.BROADCAST_ABILITY_CAST, buf)
             }
         }
+    }
+
+    /**
+     * Syncs all character data (stats, skills, class, race, level) to the client.
+     */
+    fun syncPlayerData(player: ServerPlayerEntity) {
+        val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+        val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, null)
+        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+        val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+        val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)
+
+        val buf = PacketByteBufs.create()
+
+        // Stats
+        val stats = statsData?.baseStats ?: emptyMap()
+        buf.writeInt(stats.size)
+        stats.forEach { (id, value) ->
+            buf.writeIdentifier(id)
+            buf.writeInt(value)
+        }
+
+        // Stat modifiers count (for now just send 0 - base stats are enough for display)
+        buf.writeInt(0)
+
+        // Skills
+        val skills = skillData?.proficiencies ?: emptyMap()
+        buf.writeInt(skills.size)
+        skills.forEach { (id, level) ->
+            buf.writeIdentifier(id)
+            buf.writeInt(level)
+        }
+
+        // Class
+        val hasClass = classData != null
+        buf.writeBoolean(hasClass)
+        if (hasClass) {
+            buf.writeIdentifier(classData!!.classId)
+            buf.writeInt(classData.classLevel)
+        }
+
+        // Race
+        val hasRace = raceData != null
+        buf.writeBoolean(hasRace)
+        if (hasRace) {
+            buf.writeIdentifier(raceData!!.raceId)
+        }
+
+        // Level
+        buf.writeInt(levelData?.level ?: 1)
+
+        ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)
     }
 
     private fun syncWeaponRegistry(player: ServerPlayerEntity) {

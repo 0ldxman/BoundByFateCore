@@ -52,4 +52,7 @@ object BbfPackets {
 
     /** Server → Client: broadcast ability cast (for visual effects) */
     val BROADCAST_ABILITY_CAST = Identifier("boundbyfate-core", "broadcast_ability_cast")
+
+    /** Server → Client: sync player character data (stats, skills, class, race, level) */
+    val SYNC_PLAYER_DATA = Identifier("boundbyfate-core", "sync_player_data")
 }

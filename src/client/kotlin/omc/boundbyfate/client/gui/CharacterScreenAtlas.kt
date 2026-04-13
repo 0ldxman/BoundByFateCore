@@ -5,9 +5,9 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
+import omc.boundbyfate.client.state.ClientPlayerData
 import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.EntityStatData
-import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfSkills
 import omc.boundbyfate.registry.BbfStats
 
@@ -68,10 +68,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         renderBackground(context)
 
         val player = MinecraftClient.getInstance().player ?: return
-        val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
-        val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, null)
-        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
-        val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+        val statsData = ClientPlayerData.statsData
+        val skillData = ClientPlayerData.skillData
+        val classData = ClientPlayerData.classData
+        val raceData = ClientPlayerData.raceData
 
         // ═══ МОДЕЛЬ ИГРОКА ═══
         InventoryScreen.drawEntity(
