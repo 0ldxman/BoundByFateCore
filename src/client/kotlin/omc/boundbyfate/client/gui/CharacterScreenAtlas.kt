@@ -44,8 +44,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // ═══ МОДЕЛЬ ИГРОКА ═══
         InventoryScreen.drawEntity(
             context,
-            cx, cy + 55,
-            60,
+            cx, cy + 70,
+            70,
             cx - mouseX.toFloat(),
             cy - mouseY.toFloat(),
             player
@@ -81,8 +81,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
         drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 8, 0xFFD700)
 
-        val sideBannerW = 100
-        val sideBannerY = nameBannerY + 6
+        // Левый баннер (класс) — шире, чуть ниже
+        val sideBannerW = 120
+        val sideBannerY = nameBannerY + 14
         val classBannerX = cx - sideBannerW - 70
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
@@ -112,20 +113,21 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         val midX = x + shieldW / 2
 
-        drawScaledCenteredText(context, stat.shortName, midX, y + 7,  0xD4AF37, 0.6f)  // название: ниже, меньше
+        drawScaledCenteredText(context, stat.shortName, midX, y + 9,  0xD4AF37, 0.6f)  // название: ниже
         drawScaledCenteredText(context, "$value",        midX, y + 17, 0xFFFFFF, 1.0f)  // число: крупнее
         drawScaledCenteredText(context, modStr,          midX, y + 29, if (mod >= 0) 0x2ECC71 else 0xE74C3C, 0.6f) // бонус: меньше, выше
     }
 
-    /** Рисует баннер: левый конец + тайлы (своя высота, выровнены по верху) + правый конец */
+    /** Рисует баннер: левый конец + тайлы (квадратные, по верху) + правый конец */
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        val tileH = 26  // оригинал 53 ÷ 2 — своя высота, не растягиваем!
+        // Тайл квадратный (53x53), рисуем 26x26 — сохраняем соотношение сторон
+        val tileDrawH = bannerTileW  // 26x26
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
         while (remaining > 0) {
             val drawW = minOf(bannerTileW, remaining)
-            GuiAtlas.HEADER_TILE.draw(context, tx, y, drawW, tileH)
+            GuiAtlas.HEADER_TILE.draw(context, tx, y, drawW, tileDrawH)
             tx += drawW
             remaining -= drawW
         }
