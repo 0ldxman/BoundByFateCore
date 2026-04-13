@@ -44,7 +44,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // ═══ МОДЕЛЬ ИГРОКА ═══
         InventoryScreen.drawEntity(
             context,
-            cx, cy + 40,
+            cx, cy + 55,
             60,
             cx - mouseX.toFloat(),
             cy - mouseY.toFloat(),
@@ -79,7 +79,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerX = cx - nameBannerW / 2
         val nameBannerY = 8
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
-        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 12, 0xFFD700)
+        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 8, 0xFFD700)
 
         val sideBannerW = 100
         val sideBannerY = nameBannerY + 6
@@ -87,12 +87,12 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
         val classLevel = classData?.classLevel ?: 1
-        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 12, 0xD4AF37)
+        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 8, 0xD4AF37)
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Human"
-        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 12, 0xD4AF37)
+        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 8, 0xD4AF37)
 
         super.render(context, mouseX, mouseY, delta)
     }
@@ -110,12 +110,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
         val modStr = if (mod >= 0) "+$mod" else "$mod"
 
-        val textScale = 0.7f
         val midX = x + shieldW / 2
 
-        drawScaledCenteredText(context, stat.shortName, midX, y + 4, 0xD4AF37, textScale)
-        drawScaledCenteredText(context, "$value", midX, y + 18, 0xFFFFFF, 0.9f)
-        drawScaledCenteredText(context, modStr, midX, y + 30, if (mod >= 0) 0x2ECC71 else 0xE74C3C, textScale)
+        drawScaledCenteredText(context, stat.shortName, midX, y + 7,  0xD4AF37, 0.6f)  // название: ниже, меньше
+        drawScaledCenteredText(context, "$value",        midX, y + 17, 0xFFFFFF, 1.0f)  // число: крупнее
+        drawScaledCenteredText(context, modStr,          midX, y + 29, if (mod >= 0) 0x2ECC71 else 0xE74C3C, 0.6f) // бонус: меньше, выше
     }
 
     /** Рисует баннер: левый конец + тайлы (своя высота, выровнены по верху) + правый конец */
