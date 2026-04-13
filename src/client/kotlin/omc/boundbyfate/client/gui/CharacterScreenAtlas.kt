@@ -158,7 +158,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 // Иконка справа от anchorX, текст прилегает правым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
                 if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
-                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX, y, 4, 4)
+                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX-2, y+3, 4, 4)
                 }
                 val textX = anchorX - gap
                 val matrices = context.matrices
@@ -172,7 +172,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 // Иконка слева от anchorX, текст прилегает левым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
                 if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
-                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX, y, 4, 4)
+                    GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX+2, y+3, 4, 4)
                 }
                 val textX = anchorX + skillIconSize + gap
                 val matrices = context.matrices
@@ -200,7 +200,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         if (hasSaveProf) {
             val profSize = 4
             // Смещаем ниже (+1) и на 1px ближе к центру (центр щита)
-            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2 + 1, y + 1, profSize, profSize)
+            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2, y + 3, profSize, profSize)
         }
 
         val value = statsData?.getStatValue(stat.id)?.total ?: 10
