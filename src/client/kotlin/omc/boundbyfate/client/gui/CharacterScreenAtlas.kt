@@ -21,18 +21,18 @@ import omc.boundbyfate.registry.BbfStats
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
     companion object {
-        // Размеры щита характеристики (соотношение 109:172 из атласа)
-        const val STAT_SHIELD_WIDTH = 55
+        // Размеры щита характеристики (оригинал 109x172, уменьшаем в 2 раза)
+        const val STAT_SHIELD_WIDTH = 54
         const val STAT_SHIELD_HEIGHT = 86
-        const val STAT_SPACING = 10
+        const val STAT_SPACING = 15
         
-        // Размеры иконки навыка
+        // Размеры иконки навыка (оригинал 24x24)
         const val SKILL_ICON_SIZE = 24
         const val SKILL_SPACING = 5
         
-        // Размеры баннеров
-        const val BANNER_WIDTH = 150
-        const val BANNER_HEIGHT = 60
+        // Размеры баннеров (оригинал левый/правый конец 66x97)
+        const val BANNER_WIDTH = 200
+        const val BANNER_HEIGHT = 97
     }
 
     private var centerX = 0
@@ -80,16 +80,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         // Левые характеристики
         leftStats.forEachIndexed { index, stat ->
-            val statX = centerX - 120
-            val statY = centerY - 80 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
+            val statX = centerX - 150
+            val statY = centerY - 120 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
             
             drawStatShield(context, statX, statY, stat, statsData, isLeft = true)
         }
 
         // Правые характеристики
         rightStats.forEachIndexed { index, stat ->
-            val statX = centerX + 70
-            val statY = centerY - 80 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
+            val statX = centerX + 96
+            val statY = centerY - 120 + index * (STAT_SHIELD_HEIGHT + STAT_SPACING)
             
             drawStatShield(context, statX, statY, stat, statsData, isLeft = false)
         }
@@ -98,7 +98,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Пока оставим место для навыков, добавим позже
         
         // ═══ 4. БАННЕРЫ СВЕРХУ ═══
-        val topY = 20
+        val topY = 30
         
         // Центральный баннер - имя игрока
         val nameX = centerX - BANNER_WIDTH / 2
@@ -107,13 +107,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             player.name,
             centerX,
-            topY + 25,
+            topY + 40,
             0xFFD700
         )
 
         // Левый баннер - класс
-        val classX = centerX - BANNER_WIDTH - 20
-        val classY = topY + 70
+        val classX = centerX - BANNER_WIDTH - 30
+        val classY = topY + 110
         NineSliceRenderer.drawHeader(context, classX, classY, BANNER_WIDTH, withHighlight = false)
         
         val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
@@ -122,13 +122,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal("$classStr $classLevel"),
             classX + BANNER_WIDTH / 2,
-            classY + 25,
+            classY + 40,
             0xD4AF37
         )
 
         // Правый баннер - раса
-        val raceX = centerX + 20
-        val raceY = topY + 70
+        val raceX = centerX + 30
+        val raceY = topY + 110
         NineSliceRenderer.drawHeader(context, raceX, raceY, BANNER_WIDTH, withHighlight = false)
         
         val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Human"
@@ -136,7 +136,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal(raceStr),
             raceX + BANNER_WIDTH / 2,
-            raceY + 25,
+            raceY + 40,
             0xD4AF37
         )
 
@@ -154,6 +154,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         isLeft: Boolean
     ) {
         // Рисуем щит (фон характеристики) с правильным соотношением сторон
+        // Оригинал 109x172, рисуем 54x86 (уменьшено в 2 раза)
         GuiAtlas.ICON_STAT_BG.draw(
             context,
             x, y,
@@ -169,7 +170,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal(stat.shortName),
             x + STAT_SHIELD_WIDTH / 2,
-            y + 15,
+            y + 20,
             0xD4AF37
         )
 
@@ -178,7 +179,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal("$value"),
             x + STAT_SHIELD_WIDTH / 2,
-            y + 40,
+            y + 45,
             0xFFFFFF
         )
 
@@ -188,7 +189,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal(modStr),
             x + STAT_SHIELD_WIDTH / 2,
-            y + 60,
+            y + 65,
             if (mod >= 0) 0x2ECC71 else 0xE74C3C
         )
     }
