@@ -122,9 +122,10 @@ object AbilityParser {
         return when (type) {
             "Instant" -> ActivationComponent.Instant(preparationTime, canBeInterrupted)
             "Channeled" -> {
+                val maxChannelDuration = json.get("maxChannelDuration")?.asInt ?: 60
                 val interruptOnMove = json.get("interruptOnMove")?.asBoolean ?: true
                 val interruptOnDamage = json.get("interruptOnDamage")?.asBoolean ?: true
-                ActivationComponent.Channeled(preparationTime, canBeInterrupted, interruptOnMove, interruptOnDamage)
+                ActivationComponent.Channeled(preparationTime, maxChannelDuration, canBeInterrupted, interruptOnMove, interruptOnDamage)
             }
             "Charged" -> {
                 val minChargeTicks = json.get("minChargeTicks")?.asInt ?: 20
