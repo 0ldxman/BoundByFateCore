@@ -21,9 +21,9 @@ import omc.boundbyfate.registry.BbfStats
  */
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
-    // Размеры щита (оригинал 109x172, ÷5)
-    private val shieldW = 22
-    private val shieldH = 34
+    // Размеры щита (оригинал 109x172, ÷3)
+    private val shieldW = 36
+    private val shieldH = 57
 
     // Размеры баннера (оригинал конец 66x97, ÷2)
     private val bannerEndW = 33
@@ -83,10 +83,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
         context.drawCenteredTextWithShadow(textRenderer, player.name, cx, nameBannerY + 18, 0xFFD700)
 
-        // Левый баннер (класс) — ширина 90px, ниже центрального
+        // Левый баннер (класс) — левее и выше
         val sideBannerW = 90
-        val sideBannerY = nameBannerY + bannerEndH + 4
-        val classBannerX = cx - sideBannerW - 8
+        val sideBannerY = nameBannerY + 10
+        val classBannerX = cx - sideBannerW - 60
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
         val classLevel = classData?.classLevel ?: 1
@@ -95,8 +95,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             classBannerX + sideBannerW / 2, sideBannerY + 18, 0xD4AF37
         )
 
-        // Правый баннер (раса)
-        val raceBannerX = cx + 8
+        // Правый баннер (раса) — правее и выше
+        val raceBannerX = cx + 60
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Human"
         context.drawCenteredTextWithShadow(
@@ -120,9 +120,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
         val modStr = if (mod >= 0) "+$mod" else "$mod"
 
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal(stat.shortName), x + shieldW / 2, y + 3, 0xD4AF37)
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("$value"), x + shieldW / 2, y + 14, 0xFFFFFF)
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal(modStr), x + shieldW / 2, y + 24, if (mod >= 0) 0x2ECC71 else 0xE74C3C)
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal(stat.shortName), x + shieldW / 2, y + 5, 0xD4AF37)
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("$value"), x + shieldW / 2, y + 22, 0xFFFFFF)
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal(modStr), x + shieldW / 2, y + 38, if (mod >= 0) 0x2ECC71 else 0xE74C3C)
     }
 
     /** Рисует баннер заданной ширины: левый конец + тайлы + правый конец */
