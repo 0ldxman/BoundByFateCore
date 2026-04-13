@@ -45,7 +45,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         InventoryScreen.drawEntity(
             context,
             cx, cy + 40,
-            30,
+            60,
             cx - mouseX.toFloat(),
             cy - mouseY.toFloat(),
             player
@@ -114,13 +114,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val midX = x + shieldW / 2
 
         drawScaledCenteredText(context, stat.shortName, midX, y + 4, 0xD4AF37, textScale)
-        drawScaledCenteredText(context, "$value", midX, y + 18, 0xFFFFFF, textScale)
+        drawScaledCenteredText(context, "$value", midX, y + 18, 0xFFFFFF, 0.9f)
         drawScaledCenteredText(context, modStr, midX, y + 30, if (mod >= 0) 0x2ECC71 else 0xE74C3C, textScale)
     }
 
     /** Рисует баннер: левый конец + тайлы (своя высота, выровнены по верху) + правый конец */
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        val tileH = bannerEndH  // тайл растягиваем по высоте концов для единообразия
+        val tileH = 26  // оригинал 53 ÷ 2 — своя высота, не растягиваем!
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
