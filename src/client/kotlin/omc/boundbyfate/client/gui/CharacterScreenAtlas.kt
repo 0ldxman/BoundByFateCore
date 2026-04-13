@@ -27,16 +27,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     // Диагональный отступ щитов
     private val shieldDiagStep = 12
 
-    // Иконка навыка: оригинал 24x24, рисуем 10x10
-    private val skillIconSize = 5
+    // Иконка навыка: 8x8
+    private val skillIconSize = 8
 
-    // Навыки по характеристикам (shortName для отображения)
+    // Навыки по характеристикам — полные названия
     private val strSkills = listOf("Атлетика")
     private val conSkills = emptyList<String>()
-    private val dexSkills = listOf("Акробатика", "Лов. рук", "Скрытность")
+    private val dexSkills = listOf("Акробатика", "Ловкость рук", "Скрытность")
     private val intSkills = listOf("Магия", "История", "Анализ", "Природа", "Религия")
-    private val wisSkills = listOf("Животные", "Проницат.", "Медицина", "Внимат.", "Выживание")
-    private val chaSkills = listOf("Обман", "Запугив.", "Выступл.", "Убеждение")
+    private val wisSkills = listOf("Уход за жив.", "Проницат.", "Медицина", "Внимат.", "Выживание")
+    private val chaSkills = listOf("Обман", "Запугивание", "Выступление", "Убеждение")
 
     private val leftSkillsByIndex = listOf(strSkills, conSkills, dexSkills)
     private val rightSkillsByIndex = listOf(intSkills, wisSkills, chaSkills)
@@ -93,8 +93,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
             drawStatShield(context, sx, sy, stat, statsData)
-            // Навыки левее щита, текст ещё левее иконки
-            drawSkillList(context, sx - skillIconSize - 2, sy, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
+            drawSkillList(context, sx - skillIconSize - 2, sy + 8, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
         }
 
         rightStats.forEachIndexed { i, stat ->
@@ -102,8 +101,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
             drawStatShield(context, sx, sy, stat, statsData)
-            // Навыки правее щита, текст ещё правее иконки
-            drawSkillList(context, sx + shieldW + 2, sy, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
+            drawSkillList(context, sx + shieldW + 2, sy + 8, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -111,7 +109,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerX = cx - nameBannerW / 2
         val nameBannerY = 8
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
-        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 8, 0xFFD700)
+        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 4, 0xFFD700)
 
         val sideBannerW = 120
         val sideBannerY = nameBannerY + 14
@@ -119,21 +117,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Commoner"
         val classLevel = classData?.classLevel ?: 1
-        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 8, 0xD4AF37)
+        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37)
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceStr = raceData?.raceId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Human"
-        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 8, 0xD4AF37)
+        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37)
 
         super.render(context, mouseX, mouseY, delta)
     }
 
-    /**
-     * Рисует список навыков рядом со щитом.
-     * isLeft=true: иконка справа, текст слева от иконки
-     * isLeft=false: иконка слева, текст справа от иконки
-     */
     private fun drawSkillList(
         context: DrawContext,
         anchorX: Int, anchorY: Int,
@@ -143,30 +136,41 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean
     ) {
-        val rowH = 9
+        val rowH = 7  // расстояние между навыками
+        val gap = 3   // зазор между иконкой и текстом
+        val textScale = 0.5f
+
         names.forEachIndexed { i, name ->
             val y = anchorY + i * rowH
             val def = defs.getOrNull(i)
-
-            // Бонус навыка = модификатор стата + бонус владения (если есть)
             val bonus = if (def != null && statsData != null) {
                 val statMod = statsData.getStatValue(def.linkedStat).dndModifier
                 val profLevel = skillData?.getProficiency(def.id)?.multiplier ?: 0
-                val profBonus = 2 // базовый бонус владения
-                statMod + profBonus * profLevel
+                statMod + 2 * profLevel
             } else 0
-            val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+            val label = "$name ${if (bonus >= 0) "+$bonus" else "$bonus"}"
 
             if (isLeft) {
-                // Иконка у правого края (anchorX = левый край иконки)
+                // Иконка справа от anchorX, текст прилегает правым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
-                // Текст левее иконки
-                drawScaledCenteredText(context, "$name", anchorX - 20, y + 2, 0xCCCCCC, 0.5f)
+                val textX = anchorX - gap
+                val matrices = context.matrices
+                matrices.push()
+                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
+                matrices.scale(textScale, textScale, 1f)
+                val w = textRenderer.getWidth(label)
+                context.drawTextWithShadow(textRenderer, label, -w, 0, 0xCCCCCC)
+                matrices.pop()
             } else {
-                // Иконка у левого края (anchorX = левый край иконки)
+                // Иконка слева от anchorX, текст прилегает левым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
-                // Текст правее иконки
-                drawScaledCenteredText(context, "$name", anchorX + skillIconSize + 20, y + 2, 0xCCCCCC, 0.5f)
+                val textX = anchorX + skillIconSize + gap
+                val matrices = context.matrices
+                matrices.push()
+                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
+                matrices.scale(textScale, textScale, 1f)
+                context.drawTextWithShadow(textRenderer, label, 0, 0, 0xCCCCCC)
+                matrices.pop()
             }
         }
     }
