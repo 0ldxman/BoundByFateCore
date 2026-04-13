@@ -2,11 +2,12 @@ package omc.boundbyfate.system.ability
 
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.stat.Ability
+import omc.boundbyfate.api.dice.DiceRoller
 import omc.boundbyfate.component.ConcentrationData
 import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.system.dice.DiceRoller
+import omc.boundbyfate.registry.BbfStats
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  * Система концентрации.
@@ -73,7 +74,7 @@ object ConcentrationSystem {
             ?: return
         
         // DC = 10 или половина урона (что больше)
-        val dc = kotlin.math.max(10, (damage / 2).toInt())
+        val dc = max(10, (damage / 2).toInt())
         
         // Спасбросок на Constitution
         val success = makeConcentrationSave(player, dc)
@@ -107,8 +108,9 @@ object ConcentrationSystem {
     private fun makeConcentrationSave(player: ServerPlayerEntity, dc: Int): Boolean {
         val stats = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
         
-        val roll = DiceRoller.rollD20()
-        val conMod = stats?.getModifier(Ability.CONSTITUTION) ?: 0
+        val rollResult = DiceRoller.rollD20()
+        val roll = rollResult.total - rollResult.modifier // Get just the die roll
+        val conMod = stats?.getStatValue(BbfStats.CONSTITUTION.id)?.dndModifier ?: 0
         
         // TODO: Добавить бонус мастерства, если есть proficiency в CON saves
         val total = roll + conMod

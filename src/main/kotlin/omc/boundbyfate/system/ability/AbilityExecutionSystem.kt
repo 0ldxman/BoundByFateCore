@@ -138,7 +138,7 @@ object AbilityExecutionSystem {
                 if (targetPos == null) {
                     emptyList()
                 } else {
-                    val box = Box.of(targetPos, targeting.radius * 2, targeting.radius * 2, targeting.radius * 2)
+                    val box = Box.of(targetPos, targeting.radius.toDouble() * 2, targeting.radius.toDouble() * 2, targeting.radius.toDouble() * 2)
                     world.getEntitiesByClass(LivingEntity::class.java, box) { entity ->
                         entity != caster && entity.pos.distanceTo(targetPos) <= targeting.radius
                     }
@@ -148,39 +148,6 @@ object AbilityExecutionSystem {
             is TargetingComponent.Zone -> {
                 // Зоны создают persistent entity, цели разрешаются каждый тик
                 emptyList()
-            }
-            
-            is TargetingComponent.Cone -> {
-                val casterPos = caster.pos
-                val lookVec = caster.rotationVector
-                val halfAngle = Math.toRadians(targeting.angle / 2.0)
-                
-                val box = Box.of(casterPos, targeting.range * 2, targeting.range * 2, targeting.range * 2)
-                world.getEntitiesByClass(LivingEntity::class.java, box) { entity ->
-                    if (entity == caster) return@getEntitiesByClass false
-                    
-                    val toEntity = entity.pos.subtract(casterPos).normalize()
-                    val distance = entity.pos.distanceTo(casterPos)
-                    
-                    if (distance > targeting.range) return@getEntitiesByClass false
-                    
-                    val angle = Math.acos(lookVec.dotProduct(toEntity))
-                    angle <= halfAngle
-                }
-            }
-            
-            is TargetingComponent.Line -> {
-                val casterPos = caster.pos
-                val lookVec = caster.rotationVector
-                val endPos = casterPos.add(lookVec.multiply(targeting.range.toDouble()))
-                
-                val box = Box.of(casterPos, targeting.range * 2, targeting.range * 2, targeting.range * 2)
-                world.getEntitiesByClass(LivingEntity::class.java, box) { entity ->
-                    if (entity == caster) return@getEntitiesByClass false
-                    
-                    val distance = distanceToLineSegment(entity.pos, casterPos, endPos)
-                    distance <= targeting.width
-                }
             }
         }
     }
@@ -202,20 +169,21 @@ object AbilityExecutionSystem {
                         if (levelsAboveBase > 0) {
                             // Сохраняем информацию о масштабировании в data
                             modifiedContext.data["upcast_levels"] = levelsAboveBase
-                            modifiedContext.data["upcast_per_level"] = scaling.perLevel
+                            modifiedContext.data["upcast_dice_per_level"] = scaling.dicePerLevel
+                            modifiedContext.data["upcast_targets_per_level"] = scaling.targetsPerLevel
+                            modifiedContext.data["upcast_radius_per_level"] = scaling.radiusPerLevel
                         }
                     }
                 }
                 
                 is ScalingComponent.CharacterLevel -> {
                     val level = context.casterLevel
-                    val scalingValue = when {
-                        level >= 17 -> scaling.at17
-                        level >= 11 -> scaling.at11
-                        level >= 5 -> scaling.at5
-                        else -> 0
+                    var tier = 0
+                    for (threshold in scaling.scaleAt) {
+                        if (level >= threshold) tier++
                     }
                     
+                    val scalingValue = tier * scaling.dicePerTier
                     modifiedContext.data["character_level_scaling"] = scalingValue
                 }
             }
@@ -248,7 +216,7 @@ object AbilityExecutionSystem {
     private fun handleConcentration(caster: LivingEntity, ability: AbilityDefinition) {
         val spell = ability.getMetadata<MetadataComponent.Spell>() ?: return
         
-        if (spell.requiresConcentration && caster is ServerPlayerEntity) {
+        if (spell.concentration && caster is ServerPlayerEntity) {
             ConcentrationSystem.startConcentration(caster, ability.id)
         }
     }

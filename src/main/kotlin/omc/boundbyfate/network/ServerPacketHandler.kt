@@ -134,15 +134,7 @@ object ServerPacketHandler {
      * Gets maximum range for a targeting component.
      */
     private fun getMaxRange(targeting: omc.boundbyfate.api.ability.component.TargetingComponent): Double {
-        return when (targeting) {
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Self -> 0.0
-            is omc.boundbyfate.api.ability.component.TargetingComponent.SingleTarget -> targeting.range.toDouble()
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Projectile -> targeting.range.toDouble()
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Area -> targeting.range.toDouble()
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Zone -> targeting.range.toDouble()
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Cone -> targeting.range.toDouble()
-            is omc.boundbyfate.api.ability.component.TargetingComponent.Line -> targeting.range.toDouble()
-        }
+        return targeting.range.toDouble()
     }
 
     /**

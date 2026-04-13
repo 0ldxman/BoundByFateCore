@@ -8,7 +8,6 @@ import omc.boundbyfate.api.ability.AbilityPhase
 import omc.boundbyfate.api.ability.EffectEntry
 import omc.boundbyfate.api.ability.component.*
 import omc.boundbyfate.api.dice.DiceType
-import omc.boundbyfate.api.stat.Ability
 import omc.boundbyfate.registry.AbilityEffectRegistry
 import omc.boundbyfate.registry.AbilityRegistry
 import org.slf4j.LoggerFactory
@@ -147,38 +146,35 @@ object AbilityParser {
         if (json == null) return null
         
         val type = json.get("type")?.asString ?: return null
+        val range = json.get("range")?.asFloat ?: 60f
+        val requiresLineOfSight = json.get("requiresLineOfSight")?.asBoolean ?: true
+        val targetFilter = json.get("targetFilter")?.asString?.let { 
+            TargetFilter.valueOf(it) 
+        } ?: TargetFilter.ENEMIES
         
         return when (type) {
-            "Self" -> TargetingComponent.Self
-            "SingleTarget" -> {
-                val range = json.get("range")?.asInt ?: 30
-                TargetingComponent.SingleTarget(range)
-            }
+            "Self" -> TargetingComponent.Self(range, requiresLineOfSight, targetFilter)
+            "SingleTarget" -> TargetingComponent.SingleTarget(range, requiresLineOfSight, targetFilter)
             "Projectile" -> {
-                val range = json.get("range")?.asInt ?: 120
                 val projectileEntity = json.get("projectileEntity")?.asString?.let { Identifier(it) }
-                TargetingComponent.Projectile(range, projectileEntity)
+                    ?: return null
+                val speed = json.get("speed")?.asFloat ?: 1.5f
+                val gravity = json.get("gravity")?.asBoolean ?: false
+                val homing = json.get("homing")?.asBoolean ?: false
+                TargetingComponent.Projectile(range, requiresLineOfSight, targetFilter, projectileEntity, speed, gravity, homing)
             }
             "Area" -> {
-                val range = json.get("range")?.asInt ?: 60
-                val radius = json.get("radius")?.asDouble ?: 5.0
-                TargetingComponent.Area(range, radius)
+                val shape = json.get("shape")?.asString?.let { AreaShape.valueOf(it) } ?: AreaShape.SPHERE
+                val radius = json.get("radius")?.asFloat ?: 20f
+                val centerOnCaster = json.get("centerOnCaster")?.asBoolean ?: true
+                TargetingComponent.Area(range, requiresLineOfSight, targetFilter, shape, radius, centerOnCaster)
             }
             "Zone" -> {
-                val range = json.get("range")?.asInt ?: 60
-                val radius = json.get("radius")?.asDouble ?: 5.0
-                val durationTicks = json.get("durationTicks")?.asInt ?: 200
-                TargetingComponent.Zone(range, radius, durationTicks)
-            }
-            "Cone" -> {
-                val range = json.get("range")?.asInt ?: 15
-                val angle = json.get("angle")?.asFloat ?: 90f
-                TargetingComponent.Cone(range, angle)
-            }
-            "Line" -> {
-                val range = json.get("range")?.asInt ?: 30
-                val width = json.get("width")?.asDouble ?: 1.0
-                TargetingComponent.Line(range, width)
+                val zoneEntity = json.get("zoneEntity")?.asString?.let { Identifier(it) }
+                    ?: return null
+                val radius = json.get("radius")?.asFloat ?: 10f
+                val duration = json.get("duration")?.asInt ?: 600
+                TargetingComponent.Zone(range, requiresLineOfSight, targetFilter, zoneEntity, radius, duration)
             }
             else -> {
                 logger.warn("Unknown targeting type: $type")
@@ -273,21 +269,25 @@ object AbilityParser {
         json.forEach { el ->
             val obj = el.asJsonObject
             val type = obj.get("type")?.asString ?: return@forEach
+            val negate = obj.get("negate")?.asBoolean ?: false
             
             val condition = when (type) {
                 "HasResource" -> {
                     val resourceId = obj.get("resourceId")?.asString?.let { Identifier(it) } ?: return@forEach
                     val amount = obj.get("amount")?.asInt ?: 1
-                    ConditionComponent.HasResource(resourceId, amount)
+                    ConditionComponent.HasResource(resourceId, amount, negate)
                 }
                 "HealthThreshold" -> {
                     val threshold = obj.get("threshold")?.asFloat ?: 0.5f
-                    val above = obj.get("above")?.asBoolean ?: false
-                    ConditionComponent.HealthThreshold(threshold, above)
+                    val comparison = obj.get("comparison")?.asString?.let { 
+                        Comparison.valueOf(it) 
+                    } ?: Comparison.LESS_THAN
+                    ConditionComponent.HealthThreshold(threshold, comparison, negate)
                 }
                 "HasStatusEffect" -> {
                     val statusId = obj.get("statusId")?.asString?.let { Identifier(it) } ?: return@forEach
-                    ConditionComponent.HasStatusEffect(statusId)
+                    val checkTarget = obj.get("checkTarget")?.asBoolean ?: false
+                    ConditionComponent.HasStatusEffect(statusId, checkTarget, negate)
                 }
                 else -> {
                     logger.warn("Unknown condition type: $type")
@@ -317,14 +317,15 @@ object AbilityParser {
             
             val component = when (type) {
                 "Upcast" -> {
-                    val perLevel = obj.get("perLevel")?.asInt ?: 1
-                    ScalingComponent.Upcast(perLevel)
+                    val dicePerLevel = obj.get("dicePerLevel")?.asInt ?: 0
+                    val targetsPerLevel = obj.get("targetsPerLevel")?.asInt ?: 0
+                    val radiusPerLevel = obj.get("radiusPerLevel")?.asFloat ?: 0f
+                    ScalingComponent.Upcast(dicePerLevel, targetsPerLevel, radiusPerLevel)
                 }
                 "CharacterLevel" -> {
-                    val at5 = obj.get("at5")?.asInt ?: 0
-                    val at11 = obj.get("at11")?.asInt ?: 0
-                    val at17 = obj.get("at17")?.asInt ?: 0
-                    ScalingComponent.CharacterLevel(at5, at11, at17)
+                    val scaleAt = obj.getAsJsonArray("scaleAt")?.map { it.asInt } ?: listOf(5, 11, 17)
+                    val dicePerTier = obj.get("dicePerTier")?.asInt ?: 1
+                    ScalingComponent.CharacterLevel(scaleAt, dicePerTier)
                 }
                 else -> {
                     logger.warn("Unknown scaling type: $type")
@@ -349,20 +350,26 @@ object AbilityParser {
             val component = when (type) {
                 "Spell" -> {
                     val level = obj.get("level")?.asInt ?: 1
-                    val school = obj.get("school")?.asString ?: "EVOCATION"
-                    val requiresConcentration = obj.get("requiresConcentration")?.asBoolean ?: false
-                    MetadataComponent.Spell(level, school, requiresConcentration)
+                    val school = obj.get("school")?.asString?.let { SpellSchool.valueOf(it) } ?: SpellSchool.EVOCATION
+                    val ritual = obj.get("ritual")?.asBoolean ?: false
+                    val concentration = obj.get("concentration")?.asBoolean ?: false
+                    MetadataComponent.Spell(level, school, ritual, concentration)
                 }
                 "Availability" -> {
                     val classes = mutableListOf<Identifier>()
                     obj.getAsJsonArray("classes")?.forEach { classEl ->
                         classes.add(Identifier(classEl.asString))
                     }
-                    MetadataComponent.Availability(classes)
+                    val subclasses = mutableListOf<Identifier>()
+                    obj.getAsJsonArray("subclasses")?.forEach { subclassEl ->
+                        subclasses.add(Identifier(subclassEl.asString))
+                    }
+                    val requiresLevel = obj.get("requiresLevel")?.asInt ?: 1
+                    MetadataComponent.Availability(classes, subclasses, requiresLevel)
                 }
                 "SavingThrow" -> {
-                    val ability = obj.get("ability")?.asString?.let { Ability.valueOf(it) } ?: Ability.DEXTERITY
-                    val onSuccess = obj.get("onSuccess")?.asString ?: "HALF_DAMAGE"
+                    val ability = obj.get("ability")?.asString?.let { Identifier(it) } ?: Identifier("boundbyfate-core", "dexterity")
+                    val onSuccess = obj.get("onSuccess")?.asString?.let { SavingThrowResult.valueOf(it) } ?: SavingThrowResult.HALF_DAMAGE
                     MetadataComponent.SavingThrow(ability, onSuccess)
                 }
                 else -> {

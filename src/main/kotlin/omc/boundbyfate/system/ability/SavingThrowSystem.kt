@@ -2,10 +2,11 @@ package omc.boundbyfate.system.ability
 
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
-import omc.boundbyfate.api.stat.Ability
+import net.minecraft.util.Identifier
+import omc.boundbyfate.api.dice.DiceRoller
 import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.system.dice.DiceRoller
+import omc.boundbyfate.registry.BbfStats
 import org.slf4j.LoggerFactory
 
 /**
@@ -20,18 +21,19 @@ object SavingThrowSystem {
      * Выполняет спасбросок.
      * 
      * @param entity Сущность, выполняющая спасбросок
-     * @param ability Характеристика для спасброска
+     * @param abilityId Идентификатор характеристики для спасброска
      * @param dc Сложность (Difficulty Class)
      * @return true если спасбросок успешен
      */
-    fun makeSave(entity: LivingEntity, ability: Ability, dc: Int): Boolean {
+    fun makeSave(entity: LivingEntity, abilityId: Identifier, dc: Int): Boolean {
         val stats = entity.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
         
         // Бросок d20
-        val roll = DiceRoller.rollD20()
+        val rollResult = DiceRoller.rollD20()
+        val roll = rollResult.total - rollResult.modifier // Get just the die roll
         
         // Модификатор характеристики
-        val abilityMod = stats?.getModifier(ability) ?: 0
+        val abilityMod = stats?.getStatValue(abilityId)?.dndModifier ?: 0
         
         // Бонус мастерства (если есть)
         val proficiencyBonus = if (entity is ServerPlayerEntity) {
@@ -66,7 +68,7 @@ object SavingThrowSystem {
         
         // Получаем характеристику заклинателя
         val spellcastingAbility = getSpellcastingAbility(caster)
-        val abilityMod = stats.getModifier(spellcastingAbility)
+        val abilityMod = stats.getStatValue(spellcastingAbility).dndModifier
         
         // Бонус мастерства
         val proficiencyBonus = if (caster is ServerPlayerEntity) {
@@ -88,7 +90,7 @@ object SavingThrowSystem {
         if (stats == null) return 0
         
         val spellcastingAbility = getSpellcastingAbility(caster)
-        val abilityMod = stats.getModifier(spellcastingAbility)
+        val abilityMod = stats.getStatValue(spellcastingAbility).dndModifier
         
         val proficiencyBonus = if (caster is ServerPlayerEntity) {
             val level = caster.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level ?: 1
@@ -105,15 +107,15 @@ object SavingThrowSystem {
     /**
      * Получает характеристику заклинателя для класса.
      */
-    private fun getSpellcastingAbility(caster: LivingEntity): Ability {
-        if (caster !is ServerPlayerEntity) return Ability.INTELLIGENCE
+    private fun getSpellcastingAbility(caster: LivingEntity): Identifier {
+        if (caster !is ServerPlayerEntity) return BbfStats.INTELLIGENCE.id
         
         val classData = caster.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
-            ?: return Ability.INTELLIGENCE
+            ?: return BbfStats.INTELLIGENCE.id
         
         // TODO: Получить spellcasting ability из определения класса
         // Пока возвращаем INT по умолчанию
-        return Ability.INTELLIGENCE
+        return BbfStats.INTELLIGENCE.id
     }
     
     /**

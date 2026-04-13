@@ -182,7 +182,9 @@ object AbilityActivationSystem {
         }
         
         // Получаем цель
-        val target = state.target?.let { player.world.getEntity(it) as? LivingEntity }
+        val target = state.target?.let { uuid ->
+            (player.world as net.minecraft.server.world.ServerWorld).getEntity(uuid) as? net.minecraft.entity.LivingEntity
+        }
         
         // Выполняем способность через AbilityExecutionSystem
         val success = AbilityExecutionSystem.execute(
@@ -228,7 +230,7 @@ object AbilityActivationSystem {
                     return true
                 }
                 if (activation.interruptOnDamage) {
-                    val damageData = player.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE_DATA, null)
+                    val damageData = player.getAttachedOrElse(BbfAttachments.ENTITY_DAMAGE, null)
                     if (damageData?.lastDamageTick == player.world.time) {
                         return true
                     }
