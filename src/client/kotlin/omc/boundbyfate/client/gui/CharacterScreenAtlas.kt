@@ -9,31 +9,24 @@ import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 
-/**
- * Character sheet screen с использованием атласа.
- *
- * Все размеры в GUI-координатах (scaled pixels).
- * Стандартный экран Minecraft ~427x240 при GUI scale 2 на 1080p.
- *
- * Щит (ICON_STAT_BG): оригинал 109x172 → рисуем 22x34 (÷5)
- * Баннер конец (HEADER_LEFT/RIGHT): оригинал 66x97 → рисуем 33x48 (÷2)
- * Баннер тайл (HEADER_TILE): оригинал 53x53 → рисуем 26x48 (÷2, высота = конец)
- */
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
-    // Размеры щита (оригинал 109x172, ÷3)
-    private val shieldW = 36
-    private val shieldH = 57
+    // Щит: оригинал 109x172, ÷4
+    private val shieldW = 27
+    private val shieldH = 43
 
-    // Размеры баннера (оригинал конец 66x97, ÷2)
+    // Баннер конец: оригинал 66x97, уменьшаем высоту ÷3, ширину ÷2
     private val bannerEndW = 33
-    private val bannerEndH = 48
+    private val bannerEndH = 32
 
-    // Тайл баннера (оригинал 53x53, ÷2)
+    // Тайл баннера: оригинал 53x53, ÷2 ширина, высота = bannerEndH
     private val bannerTileW = 26
 
-    private var cx = 0  // center X
-    private var cy = 0  // center Y
+    // Диагональный отступ щитов (каждый следующий щит смещается на это значение)
+    private val shieldDiagStep = 12
+
+    private var cx = 0
+    private var cy = 0
 
     override fun init() {
         cx = width / 2
@@ -59,55 +52,52 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         )
 
         // ═══ ЩИТЫ ХАРАКТЕРИСТИК ═══
-        // Левые: STR, CON, DEX — колонка слева от игрока
-        val leftX = cx - 80
-        val rightX = cx + 80 - shieldW
-        val shieldsTopY = cy - 50
-        val shieldStep = shieldH + 8
+        // Базовые X позиции для среднего (index=1) щита
+        val leftBaseX = cx - 75
+        val rightBaseX = cx + 75 - shieldW
+        val shieldsTopY = cy - 55
+        val shieldStep = shieldH + 6
 
         val leftStats = listOf(BbfStats.STRENGTH, BbfStats.CONSTITUTION, BbfStats.DEXTERITY)
         val rightStats = listOf(BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
 
+        // Левые щиты: верхний (i=0) самый левый, нижний (i=2) ближе к центру
+        // диагональ: i=0 → -2*step, i=1 → -1*step, i=2 → 0
         leftStats.forEachIndexed { i, stat ->
-            drawStatShield(context, leftX, shieldsTopY + i * shieldStep, stat, statsData)
+            val diagOffset = (2 - i) * shieldDiagStep  // верхний дальше от центра
+            drawStatShield(context, leftBaseX - diagOffset, shieldsTopY + i * shieldStep, stat, statsData)
         }
+
+        // Правые щиты: верхний (i=0) самый правый, нижний (i=2) ближе к центру
         rightStats.forEachIndexed { i, stat ->
-            drawStatShield(context, rightX, shieldsTopY + i * shieldStep, stat, statsData)
+            val diagOffset = (2 - i) * shieldDiagStep
+            drawStatShield(context, rightBaseX + diagOffset, shieldsTopY + i * shieldStep, stat, statsData)
         }
 
         // ═══ БАННЕРЫ ═══
-        // Центральный баннер (имя) — ширина 120px
-        val nameBannerW = 120
+        val nameBannerW = 130
         val nameBannerX = cx - nameBannerW / 2
-        val nameBannerY = 10
+        val nameBannerY = 8
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
-        context.drawCenteredTextWithShadow(textRenderer, player.name, cx, nameBannerY + 18, 0xFFD700)
+        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 12, 0xFFD700)
 
-        // Левый баннер (класс) — левее и выше
-        val sideBannerW = 90
-        val sideBannerY = nameBannerY + 10
-        val classBannerX = cx - sideBannerW - 60
+        val sideBannerW = 100
+        val sideBannerY = nameBannerY + 6
+        val classBannerX = cx - sideBannerW - 70
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.replaceFirstChar { it.uppercase() } ?: "Commoner"
         val classLevel = classData?.classLevel ?: 1
-        context.drawCenteredTextWithShadow(
-            textRenderer, Text.literal("$classStr $classLevel"),
-            classBannerX + sideBannerW / 2, sideBannerY + 18, 0xD4AF37
-        )
+        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 12, 0xD4AF37)
 
-        // Правый баннер (раса) — правее и выше
-        val raceBannerX = cx + 60
+        val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceStr = raceData?.raceId?.path?.replaceFirstChar { it.uppercase() } ?: "Human"
-        context.drawCenteredTextWithShadow(
-            textRenderer, Text.literal(raceStr),
-            raceBannerX + sideBannerW / 2, sideBannerY + 18, 0xD4AF37
-        )
+        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 12, 0xD4AF37)
 
         super.render(context, mouseX, mouseY, delta)
     }
 
-    /** Рисует щит характеристики размером shieldW x shieldH */
+    /** Рисует щит с уменьшенным текстом через MatrixStack scale */
     private fun drawStatShield(
         context: DrawContext,
         x: Int, y: Int,
@@ -120,31 +110,43 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
         val modStr = if (mod >= 0) "+$mod" else "$mod"
 
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal(stat.shortName), x + shieldW / 2, y + 5, 0xD4AF37)
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("$value"), x + shieldW / 2, y + 22, 0xFFFFFF)
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal(modStr), x + shieldW / 2, y + 38, if (mod >= 0) 0x2ECC71 else 0xE74C3C)
+        val textScale = 0.7f
+        val midX = x + shieldW / 2
+
+        drawScaledCenteredText(context, stat.shortName, midX, y + 4, 0xD4AF37, textScale)
+        drawScaledCenteredText(context, "$value", midX, y + 18, 0xFFFFFF, textScale)
+        drawScaledCenteredText(context, modStr, midX, y + 30, if (mod >= 0) 0x2ECC71 else 0xE74C3C, textScale)
     }
 
-    /** Рисует баннер заданной ширины: левый конец + тайлы + правый конец */
+    /** Рисует баннер: левый конец + тайлы (своя высота, выровнены по верху) + правый конец */
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        // Концы: оригинал 66x97, рисуем 33x48
-        // Тайл: оригинал 53x53, рисуем 26x26 — своя высота, центрируем по вертикали внутри концов
-        val tileH = 26  // оригинал 53 ÷ 2
-        val tileOffsetY = 0  // верхний край тайла = верхний край концов
-
-        // Левый конец
+        val tileH = bannerEndH  // тайл растягиваем по высоте концов для единообразия
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
-        // Тайлы (на своей высоте, центрированы)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
         while (remaining > 0) {
             val drawW = minOf(bannerTileW, remaining)
-            GuiAtlas.HEADER_TILE.draw(context, tx, y + tileOffsetY, drawW, tileH)
+            GuiAtlas.HEADER_TILE.draw(context, tx, y, drawW, tileH)
             tx += drawW
             remaining -= drawW
         }
-        // Правый конец
         GuiAtlas.HEADER_RIGHT.draw(context, x + totalWidth - bannerEndW, y, bannerEndW, bannerEndH)
+    }
+
+    /** Текст с масштабированием через MatrixStack */
+    private fun drawScaledCenteredText(context: DrawContext, text: String, cx: Int, y: Int, color: Int, scale: Float) {
+        val matrices = context.matrices
+        matrices.push()
+        matrices.translate(cx.toFloat(), y.toFloat(), 0f)
+        matrices.scale(scale, scale, 1f)
+        val w = textRenderer.getWidth(text)
+        context.drawTextWithShadow(textRenderer, text, -(w / 2), 0, color)
+        matrices.pop()
+    }
+
+    /** Обычный текст чуть меньше стандартного */
+    private fun drawSmallCenteredText(context: DrawContext, text: String, cx: Int, y: Int, color: Int) {
+        drawScaledCenteredText(context, text, cx, y, color, 0.85f)
     }
 
     override fun shouldPause() = false
