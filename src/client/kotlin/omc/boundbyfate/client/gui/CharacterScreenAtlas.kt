@@ -22,13 +22,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val bannerEndH = 32
 
     // Тайл баннера
-    private val bannerTileW = 17
+    private val bannerTileW = 18
 
     // Диагональный отступ щитов
     private val shieldDiagStep = 12
 
     // Иконка навыка: оригинал 24x24, рисуем 10x10
-    private val skillIconSize = 10
+    private val skillIconSize = 5
 
     // Навыки по характеристикам (shortName для отображения)
     private val strSkills = listOf("Атлетика")
@@ -143,7 +143,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean
     ) {
-        val rowH = 12
+        val rowH = 9
         names.forEachIndexed { i, name ->
             val y = anchorY + i * rowH
             val def = defs.getOrNull(i)
@@ -161,12 +161,12 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 // Иконка у правого края (anchorX = левый край иконки)
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
                 // Текст левее иконки
-                drawScaledCenteredText(context, "$name $bonusStr", anchorX - 20, y + 3, 0xCCCCCC, 0.6f)
+                drawScaledCenteredText(context, "$name", anchorX - 20, y + 2, 0xCCCCCC, 0.5f)
             } else {
                 // Иконка у левого края (anchorX = левый край иконки)
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
                 // Текст правее иконки
-                drawScaledCenteredText(context, "$name $bonusStr", anchorX + skillIconSize + 20, y + 3, 0xCCCCCC, 0.6f)
+                drawScaledCenteredText(context, "$name", anchorX + skillIconSize + 20, y + 2, 0xCCCCCC, 0.5f)
             }
         }
     }
@@ -190,7 +190,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     }
 
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        val tileDrawH = 17
+        val tileDrawH = bannerTileW
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
