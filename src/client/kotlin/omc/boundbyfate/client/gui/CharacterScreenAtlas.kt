@@ -35,7 +35,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val conSkills = emptyList<String>()
     private val dexSkills = listOf("Акробатика", "Ловкость рук", "Скрытность")
     private val intSkills = listOf("Магия", "История", "Анализ", "Природа", "Религия")
-    private val wisSkills = listOf("Уход за жив.", "Проницат.", "Медицина", "Внимат.", "Выживание")
+    private val wisSkills = listOf("Уход за животными", "Проницательность", "Медицина", "Внимательность", "Выживание")
     private val chaSkills = listOf("Обман", "Запугивание", "Выступление", "Убеждение")
 
     private val leftSkillsByIndex = listOf(strSkills, conSkills, dexSkills)
@@ -109,7 +109,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerX = cx - nameBannerW / 2
         val nameBannerY = 8
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
-        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 4, 0xFFD700)
+        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 6, 0xFFD700)
 
         val sideBannerW = 120
         val sideBannerY = nameBannerY + 14
@@ -117,12 +117,12 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classStr = classData?.classId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Commoner"
         val classLevel = classData?.classLevel ?: 1
-        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37)
+        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceStr = raceData?.raceId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Human"
-        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37)
+        drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
 
         super.render(context, mouseX, mouseY, delta)
     }
@@ -136,7 +136,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean
     ) {
-        val rowH = 7  // расстояние между навыками
+        val rowH = 9  // расстояние между навыками
         val gap = 3   // зазор между иконкой и текстом
         val textScale = 0.5f
 
@@ -156,7 +156,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val textX = anchorX - gap
                 val matrices = context.matrices
                 matrices.push()
-                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
+                matrices.translate(textX.toFloat(), (y + 2).toFloat(), 0f)
                 matrices.scale(textScale, textScale, 1f)
                 val w = textRenderer.getWidth(label)
                 context.drawTextWithShadow(textRenderer, label, -w, 0, 0xCCCCCC)
@@ -167,7 +167,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val textX = anchorX + skillIconSize + gap
                 val matrices = context.matrices
                 matrices.push()
-                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
+                matrices.translate(textX.toFloat(), (y + 2).toFloat(), 0f)
                 matrices.scale(textScale, textScale, 1f)
                 context.drawTextWithShadow(textRenderer, label, 0, 0, 0xCCCCCC)
                 matrices.pop()
