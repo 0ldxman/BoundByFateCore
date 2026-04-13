@@ -5,6 +5,7 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
+import omc.boundbyfate.component.EntityStatsData
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 
@@ -20,9 +21,9 @@ import omc.boundbyfate.registry.BbfStats
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
     companion object {
-        // Размеры щита характеристики
-        const val STAT_SHIELD_WIDTH = 50
-        const val STAT_SHIELD_HEIGHT = 80
+        // Размеры щита характеристики (соотношение 109:172 из атласа)
+        const val STAT_SHIELD_WIDTH = 55
+        const val STAT_SHIELD_HEIGHT = 86
         const val STAT_SPACING = 10
         
         // Размеры иконки навыка
@@ -56,14 +57,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         
         InventoryScreen.drawEntity(
             context,
-            playerModelX - 25,
-            playerModelY - 30,
-            playerModelX + 25,
-            playerModelY + 70,
+            playerModelX,
+            playerModelY + 50,
             30,
-            0.0625f,
-            mouseX.toFloat(),
-            mouseY.toFloat(),
+            playerModelX - mouseX.toFloat(),
+            playerModelY - mouseY.toFloat(),
             player
         )
 
@@ -152,10 +150,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         context: DrawContext,
         x: Int, y: Int,
         stat: omc.boundbyfate.api.stat.StatDefinition,
-        statsData: omc.boundbyfate.component.EntityStatsData?,
+        statsData: EntityStatsData?,
         isLeft: Boolean
     ) {
-        // Рисуем щит (фон характеристики)
+        // Рисуем щит (фон характеристики) с правильным соотношением сторон
         GuiAtlas.ICON_STAT_BG.draw(
             context,
             x, y,
@@ -180,7 +178,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal("$value"),
             x + STAT_SHIELD_WIDTH / 2,
-            y + 35,
+            y + 40,
             0xFFFFFF
         )
 
@@ -190,7 +188,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             textRenderer,
             Text.literal(modStr),
             x + STAT_SHIELD_WIDTH / 2,
-            y + 55,
+            y + 60,
             if (mod >= 0) 0x2ECC71 else 0xE74C3C
         )
     }
