@@ -130,7 +130,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Концы: оригинал 66x97, рисуем 33x48
         // Тайл: оригинал 53x53, рисуем 26x26 — своя высота, центрируем по вертикали внутри концов
         val tileH = 26  // оригинал 53 ÷ 2
-        val tileOffsetY = (bannerEndH - tileH) / 2  // центрируем тайл по высоте концов
+        val tileOffsetY = 0  // верхний край тайла = верхний край концов
 
         // Левый конец
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
