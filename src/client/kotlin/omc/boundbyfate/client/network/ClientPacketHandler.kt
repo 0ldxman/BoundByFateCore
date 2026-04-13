@@ -137,7 +137,7 @@ object ClientPacketHandler {
             val classData = if (hasClass) {
                 val classId = buf.readIdentifier()
                 val classLevel = buf.readInt()
-                PlayerClassData(classId, classLevel)
+                PlayerClassData(classId, classLevel = classLevel)
             } else null
 
             // Race
