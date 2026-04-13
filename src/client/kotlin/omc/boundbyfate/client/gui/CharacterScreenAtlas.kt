@@ -200,7 +200,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         if (hasSaveProf) {
             val profSize = 4
             // Смещаем ниже (+1) и на 1px ближе к центру (центр щита)
-            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2 + 1, y + 3, profSize, profSize)
+            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2, y + 3, profSize, profSize)
         }
 
         val value = statsData?.getStatValue(stat.id)?.total ?: 10
