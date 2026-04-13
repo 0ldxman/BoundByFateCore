@@ -20,7 +20,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val bannerEndH = 32
 
     // Тайл баннера: оригинал 53x53, ÷2 ширина, высота = bannerEndH
-    private val bannerTileW = 12
+    private val bannerTileW = 18
 
     // Диагональный отступ щитов (каждый следующий щит смещается на это значение)
     private val shieldDiagStep = 12
