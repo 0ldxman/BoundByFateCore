@@ -27,8 +27,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     // Диагональный отступ щитов
     private val shieldDiagStep = 12
 
-    // Иконка навыка: 8x8
-    private val skillIconSize = 8
+    // Иконка навыка: 5x5
+    private val skillIconSize = 5
 
     // Навыки по характеристикам — полные названия
     private val strSkills = listOf("Атлетика")
@@ -93,7 +93,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
             drawStatShield(context, sx, sy, stat, statsData)
-            drawSkillList(context, sx - skillIconSize - 2, sy + 8, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
+            drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
         }
 
         rightStats.forEachIndexed { i, stat ->
@@ -101,7 +101,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
             drawStatShield(context, sx, sy, stat, statsData)
-            drawSkillList(context, sx + shieldW + 2, sy + 8, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
+            drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -136,9 +136,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean
     ) {
-        val rowH = 9  // расстояние между навыками
-        val gap = 3   // зазор между иконкой и текстом
-        val textScale = 0.5f
+        val rowH = 7  // расстояние между навыками
+        val gap = 2   // зазор между иконкой и текстом
+        val textScale = 0.45f
 
         names.forEachIndexed { i, name ->
             val y = anchorY + i * rowH
