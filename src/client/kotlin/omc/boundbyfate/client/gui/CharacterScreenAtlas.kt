@@ -27,8 +27,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     // Диагональный отступ щитов
     private val shieldDiagStep = 12
 
-    // Иконка навыка: 5x5
-    private val skillIconSize = 5
+    // Иконка навыка: 6x6
+    private val skillIconSize = 6
 
     // Навыки по характеристикам — полные названия
     private val strSkills = listOf("Атлетика")
@@ -136,9 +136,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean
     ) {
-        val rowH = 7  // расстояние между навыками
+        val rowH = 8  // расстояние между навыками
         val gap = 2   // зазор между иконкой и текстом
-        val textScale = 0.45f
+        val textScale = 0.48f
 
         names.forEachIndexed { i, name ->
             val y = anchorY + i * rowH
@@ -156,7 +156,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val textX = anchorX - gap
                 val matrices = context.matrices
                 matrices.push()
-                matrices.translate(textX.toFloat(), (y + 2).toFloat(), 0f)
+                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
                 matrices.scale(textScale, textScale, 1f)
                 val w = textRenderer.getWidth(label)
                 context.drawTextWithShadow(textRenderer, label, -w, 0, 0xCCCCCC)
@@ -167,7 +167,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val textX = anchorX + skillIconSize + gap
                 val matrices = context.matrices
                 matrices.push()
-                matrices.translate(textX.toFloat(), (y + 2).toFloat(), 0f)
+                matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
                 matrices.scale(textScale, textScale, 1f)
                 context.drawTextWithShadow(textRenderer, label, 0, 0, 0xCCCCCC)
                 matrices.pop()
