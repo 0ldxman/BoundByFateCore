@@ -29,9 +29,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val bannerEndW = 33
     private val bannerEndH = 48
 
-    // Тайл баннера (оригинал 53x53, ÷2, высота = bannerEndH)
+    // Тайл баннера (оригинал 53x53, ÷2)
     private val bannerTileW = 26
-    private val bannerTileH = bannerEndH
 
     private var cx = 0  // center X
     private var cy = 0  // center Y
@@ -128,15 +127,19 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
     /** Рисует баннер заданной ширины: левый конец + тайлы + правый конец */
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        val innerW = totalWidth - bannerEndW * 2
+        // Концы: оригинал 66x97, рисуем 33x48
+        // Тайл: оригинал 53x53, рисуем 26x26 — своя высота, центрируем по вертикали внутри концов
+        val tileH = 26  // оригинал 53 ÷ 2
+        val tileOffsetY = (bannerEndH - tileH) / 2  // центрируем тайл по высоте концов
+
         // Левый конец
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
-        // Тайлы
+        // Тайлы (на своей высоте, центрированы)
         var tx = x + bannerEndW
-        var remaining = innerW
+        var remaining = totalWidth - bannerEndW * 2
         while (remaining > 0) {
             val drawW = minOf(bannerTileW, remaining)
-            GuiAtlas.HEADER_TILE.draw(context, tx, y, drawW, bannerTileH)
+            GuiAtlas.HEADER_TILE.draw(context, tx, y + tileOffsetY, drawW, tileH)
             tx += drawW
             remaining -= drawW
         }
