@@ -529,11 +529,12 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                     matrices.push()
                     matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
                     matrices.scale(textScale * skillScale, textScale * skillScale, 1f)
-                    val bonusW = textRenderer.getWidth(" $bonusStr")
+                    val bonusW = textRenderer.getWidth("$bonusStr ")
                     val nameW = textRenderer.getWidth(name)
-                    // Рисуем справа налево: сначала бонус, потом название
-                    context.drawTextWithShadow(textRenderer, " $bonusStr", -(bonusW), 0, bonusAlphaColor)
-                    context.drawTextWithShadow(textRenderer, name, -(nameW + bonusW), 0, nameAlphaColor)
+                    val totalW = bonusW + nameW
+                    // Левые: бонус крайний слева, затем название
+                    context.drawTextWithShadow(textRenderer, "$bonusStr ", -totalW, 0, bonusAlphaColor)
+                    context.drawTextWithShadow(textRenderer, name, -nameW, 0, nameAlphaColor)
                     matrices.pop()
                 } else {
                     val textX = iconX + skillIconSize + gap
