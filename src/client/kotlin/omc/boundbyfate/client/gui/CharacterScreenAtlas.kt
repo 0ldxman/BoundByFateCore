@@ -106,25 +106,25 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
         val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
         val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
-        drawScaledCenteredText(context, classStr, classBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37, 0.85f)
+        drawScaledCenteredText(context, classStr, classBannerX + sideBannerW / 2, sideBannerY + 2, 0xD4AF37, 0.85f)
         // Подкласс под классом
         val subclassKey = classData?.subclassId?.let { "bbf.subclass.${it.namespace}.${it.path}" }
         if (subclassKey != null) {
             val subclassStr = Text.translatable(subclassKey).string
-            drawScaledCenteredText(context, subclassStr, classBannerX + sideBannerW / 2, sideBannerY + 12, 0xAAAAAA, 0.55f)
+            drawScaledCenteredText(context, subclassStr, classBannerX + sideBannerW / 2, sideBannerY + 10, 0xAAAAAA, 0.55f)
         }
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
         val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
         val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
-        drawScaledCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 4, 0xD4AF37, 0.85f)
+        drawScaledCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 2, 0xD4AF37, 0.85f)
         // Пол под расой
         val gender = ClientPlayerData.gender
         if (gender != null) {
             val genderKey = "bbf.gender.$gender"
             val genderStr = Text.translatable(genderKey).string
-            drawScaledCenteredText(context, genderStr, raceBannerX + sideBannerW / 2, sideBannerY + 12, 0xAAAAAA, 0.55f)
+            drawScaledCenteredText(context, genderStr, raceBannerX + sideBannerW / 2, sideBannerY + 10, 0xAAAAAA, 0.55f)
         }
 
         super.render(context, mouseX, mouseY, delta)
