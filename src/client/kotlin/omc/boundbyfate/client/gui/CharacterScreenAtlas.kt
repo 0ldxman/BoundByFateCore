@@ -124,32 +124,41 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     /** Рисует тултип уменьшенного размера с поддержкой \n и §-форматирования */
     private fun drawSmallTooltip(context: DrawContext, text: Text, mouseX: Int, mouseY: Int) {
         val scale = 0.75f
-        val raw = text.string
-        val lines = raw.split("\n")
+        val lines = text.string.split("\n")
+        val lineH = textRenderer.fontHeight + 1
+        val pad = 4
+
+        val maxW = lines.maxOf { textRenderer.getWidth(it) }
+        val totalH = lines.size * lineH
+
+        // Позиция тултипа в scaled-координатах (до scale)
+        // Переводим в пространство до scale: делим на scale
+        val tx = (mouseX + 6) / scale
+        val ty = (mouseY - 4) / scale
+
+        val bgColor  = 0xFF2b2321.toInt()
+        val brdColor = 0xFFb08a66.toInt()
 
         val matrices = context.matrices
         matrices.push()
-        matrices.translate(mouseX.toFloat() + 4, mouseY.toFloat() - 4, 400f)
         matrices.scale(scale, scale, 1f)
 
-        // Ширина самой длинной строки (без §-кодов для измерения)
-        val maxW = lines.maxOf { textRenderer.getWidth(it) }
-        val lineH = textRenderer.fontHeight + 1
-        val totalH = lines.size * lineH
-        val pad = 4
+        val x0 = tx.toInt()
+        val y0 = ty.toInt()
+        val x1 = x0 + maxW + pad * 2
+        val y1 = y0 + totalH + pad * 2
 
-        // Фон тултипа
-        context.fill(-pad, -totalH - pad + lineH, maxW + pad, pad, 0xF0100010.toInt())
-        // Рамка
-        context.fill(-pad, -totalH - pad + lineH, maxW + pad, -totalH - pad + lineH + 1, 0xFF5000FF.toInt())
-        context.fill(-pad, pad - 1, maxW + pad, pad, 0xFF5000FF.toInt())
-        context.fill(-pad, -totalH - pad + lineH, -pad + 1, pad, 0xFF5000FF.toInt())
-        context.fill(maxW + pad - 1, -totalH - pad + lineH, maxW + pad, pad, 0xFF5000FF.toInt())
+        // Фон
+        context.fill(x0, y0, x1, y1, bgColor)
+        // Рамка (1px)
+        context.fill(x0,     y0,     x1,     y0 + 1, brdColor) // top
+        context.fill(x0,     y1 - 1, x1,     y1,     brdColor) // bottom
+        context.fill(x0,     y0,     x0 + 1, y1,     brdColor) // left
+        context.fill(x1 - 1, y0,     x1,     y1,     brdColor) // right
 
-        // Текст строк снизу вверх
+        // Текст
         lines.forEachIndexed { i, line ->
-            val y = -(lines.size - i) * lineH
-            context.drawTextWithShadow(textRenderer, Text.literal(line), 0, y, 0xFFFFFF)
+            context.drawTextWithShadow(textRenderer, Text.literal(line), x0 + pad, y0 + pad + i * lineH, 0xFFFFFF)
         }
 
         matrices.pop()
