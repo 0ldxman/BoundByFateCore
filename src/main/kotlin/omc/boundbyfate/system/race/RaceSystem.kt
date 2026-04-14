@@ -97,13 +97,18 @@ object RaceSystem {
         val raceDef = RaceRegistry.getRace(raceData.raceId) ?: return
 
         val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
-        // Delay scale application to ensure player is fully loaded
-        // Use server.execute with a tick counter via the existing server tick loop
-        val targetTick = player.server.ticks + 20
-        pendingScaleTasks[player.uuid] = Pair(targetTick, {
-            applyScale(player, scale)
+        // Only apply scale on first join — Pehkui saves and restores it automatically on subsequent logins
+        val scaleApplied = player.getAttachedOrElse(BbfAttachments.SCALE_APPLIED, false)
+        if (!scaleApplied) {
+            player.setAttached(BbfAttachments.SCALE_APPLIED, true)
+            pendingScaleTasks[player.uuid] = Pair(player.server.ticks + 20, {
+                applyScale(player, scale)
+                applySpeedModifier(player, raceDef.speedMultiplier)
+            })
+        } else {
+            // Speed modifier still needs reapplication (not saved by Pehkui)
             applySpeedModifier(player, raceDef.speedMultiplier)
-        })
+        }
     }
 
     /** Call this from the server tick event in BoundByFateCore */
@@ -248,11 +253,9 @@ object RaceSystem {
         try {
             val server = player.server
             val name = player.name.string
-            // Use pehkui:height and pehkui:width for absolute scale
-            // No need to reset first — "set" is absolute in Pehkui
-            server.commandManager.executeWithPrefix(server.commandSource, "pehkui scale set pehkui:height $scale $name")
-            server.commandManager.executeWithPrefix(server.commandSource, "pehkui scale set pehkui:width $scale $name")
-            logger.info("Applied scale $scale to $name via pehkui commands")
+            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:height $scale $name")
+            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:width $scale $name")
+            logger.info("Applied scale $scale to $name via scale commands")
         } catch (e: Exception) {
             logger.warn("Scale command fallback also failed: ${e.message}")
         }

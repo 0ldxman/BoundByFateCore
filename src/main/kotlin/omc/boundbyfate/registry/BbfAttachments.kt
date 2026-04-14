@@ -123,6 +123,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_gender"))
 
+    @JvmField
+    val SCALE_APPLIED: AttachmentType<Boolean> =
+        AttachmentRegistry.builder<Boolean>()
+            .persistent(Codec.BOOL)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "scale_applied"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

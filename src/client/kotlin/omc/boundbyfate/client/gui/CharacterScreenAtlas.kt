@@ -93,7 +93,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             shieldBounds[i].y = sy
             updateShieldAnim(i, sx, sy, mouseX, mouseY)
             drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, shieldAnims[i])
-            drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY)
+            // Навыки съезжают влево при наведении на щит
+            val skillShift = ((shieldAnims[i].scale - 1f) * 20f).toInt()
+            drawSkillList(context, sx - skillIconSize - 2 - skillShift, sy + 5, leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY)
         }
 
         rightStats.forEachIndexed { i, stat ->
@@ -105,7 +107,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             shieldBounds[idx].y = sy
             updateShieldAnim(idx, sx, sy, mouseX, mouseY)
             drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, shieldAnims[idx])
-            drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY)
+            // Навыки съезжают вправо при наведении на щит
+            val skillShift = ((shieldAnims[idx].scale - 1f) * 20f).toInt()
+            drawSkillList(context, sx + shieldW + 2 + skillShift, sy + 5, rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -217,8 +221,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         matrices.translate(cx, cy, 0f)
         matrices.scale(anim.scale, anim.scale, 1f)
         // Параллакс: смещаем позицию щита в сторону курсора — выглядит как 3D без искажений
-        val parallaxX = anim.tiltX * 3f
-        val parallaxY = anim.tiltY * 3f
+        val parallaxX = anim.tiltX * 1.5f
+        val parallaxY = anim.tiltY * 1.5f
         matrices.translate(-cx + parallaxX, -cy + parallaxY, 0f)
 
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
