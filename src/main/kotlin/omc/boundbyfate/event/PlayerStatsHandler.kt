@@ -125,6 +125,7 @@ object PlayerStatsHandler {
                 omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
 
                 // Broadcast this player's skin to all, and send all existing skins to this player
+                // Delay by 20 ticks (1 second) to ensure client is fully connected
                 val skinData = player.getAttachedOrElse(BbfAttachments.PLAYER_SKIN, null)
                 if (skinData != null) {
                     val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
@@ -132,7 +133,7 @@ object PlayerStatsHandler {
                     if (base64 != null) {
                         val skinName = skinData.skinName
                         val skinModel = skinData.skinModel
-                        player.server.execute {
+                        scheduleDelayed(player.server, 20) {
                             omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
                                 playerName, base64, skinModel, player.server
                             )
@@ -210,6 +211,11 @@ object PlayerStatsHandler {
                     omc.boundbyfate.system.feat.FeatSystem.applyFeatsFromConfig(player, profile.feats)
                 }
 
+                // Save gender from config
+                if (profile.gender != null) {
+                    player.setAttached(omc.boundbyfate.registry.BbfAttachments.PLAYER_GENDER, profile.gender)
+                }
+
                 // Apply skin from config (first join)
                 if (profile.skin != null) {
                     player.setAttached(
@@ -221,8 +227,8 @@ object PlayerStatsHandler {
                     val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
                     val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinName)
                     if (base64 != null) {
-                        // Delay skin broadcast by 1 tick so the client is fully connected
-                        player.server.execute {
+                        // Delay skin broadcast by 20 ticks (1 second) so the client is fully connected
+                        scheduleDelayed(player.server, 20) {
                             omc.boundbyfate.network.ServerPacketHandler.broadcastSkin(
                                 playerName, base64, skinModel, player.server
                             )
@@ -275,5 +281,30 @@ object PlayerStatsHandler {
                 stats[statId] = 10 // Default value
             }
         }
+    }
+
+    /**
+     * Schedules a task to run after a given number of server ticks.
+     */
+    private fun scheduleDelayed(server: net.minecraft.server.MinecraftServer, delayTicks: Int, task: () -> Unit) {
+        var remaining = delayTicks
+        val listener = net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick { _ ->
+            remaining--
+            if (remaining <= 0) task()
+        }
+        // Register a one-shot tick listener
+        val wrapper = object : net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick {
+            var fired = false
+            var ticks = delayTicks
+            override fun onEndTick(s: net.minecraft.server.MinecraftServer) {
+                if (fired) return
+                ticks--
+                if (ticks <= 0) {
+                    fired = true
+                    task()
+                }
+            }
+        }
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(wrapper)
     }
 }

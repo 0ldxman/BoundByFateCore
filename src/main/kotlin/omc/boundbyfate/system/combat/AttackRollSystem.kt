@@ -98,8 +98,8 @@ object AttackRollSystem {
 
     private fun isProficientWithHeld(player: ServerPlayerEntity): Boolean {
         val item = player.mainHandStack
-        // Unarmed — proficiency bonus always applies
-        if (item.isEmpty) return true
+        // Unarmed — no proficiency bonus by default (requires Tavern Brawler feat or similar)
+        if (item.isEmpty) return false
 
         // If item is not a registered weapon — treat as improvised, no proficiency bonus
         val weaponDef = omc.boundbyfate.registry.WeaponRegistry.findForItem(item)

@@ -3,6 +3,14 @@
 
   "bbf.level": "Level %s",
 
+  "bbf.gender.male": "Male",
+  "bbf.gender.female": "Female",
+  "bbf.gender.other": "Other",
+
+  "bbf.subclass.boundbyfate-core.battle_master": "Battle Master",
+  "bbf.subclass.boundbyfate-core.champion": "Champion",
+  "bbf.subclass.boundbyfate-core.eldritch_knight": "Eldritch Knight",
+
   "bbf.race.boundbyfate-core.human": "Human",
   "bbf.race.boundbyfate-core.dwarf": "Dwarf",
   "bbf.race.boundbyfate-core.elf": "Elf",

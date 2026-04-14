@@ -338,6 +338,10 @@ object ServerPacketHandler {
         if (hasClass) {
             buf.writeIdentifier(classData!!.classId)
             buf.writeInt(classData.classLevel)
+            // Subclass
+            val hasSubclass = classData.subclassId != null
+            buf.writeBoolean(hasSubclass)
+            if (hasSubclass) buf.writeIdentifier(classData.subclassId!!)
         }
 
         // Race
@@ -349,6 +353,11 @@ object ServerPacketHandler {
 
         // Level
         buf.writeInt(levelData?.level ?: 1)
+
+        // Gender
+        val gender = player.getAttachedOrElse(BbfAttachments.PLAYER_GENDER, null)
+        buf.writeBoolean(gender != null)
+        if (gender != null) buf.writeString(gender)
 
         ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)
     }

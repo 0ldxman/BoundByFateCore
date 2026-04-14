@@ -116,6 +116,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "concentration"))
 
+    @JvmField
+    val PLAYER_GENDER: AttachmentType<String> =
+        AttachmentRegistry.builder<String>()
+            .persistent(Codec.STRING)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_gender"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

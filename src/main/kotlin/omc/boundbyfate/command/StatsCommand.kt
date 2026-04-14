@@ -159,6 +159,9 @@ object StatsCommand {
         val classDef = classData?.let { ClassRegistry.getClass(it.classId) }
         val level = classData?.classLevel ?: 1
         HitPointsSystem.applyHitPoints(player, classDef, level)
+
+        // Sync updated stats to client
+        omc.boundbyfate.network.ServerPacketHandler.syncPlayerData(player)
         
         // Send confirmation
         val newValue = updatedStats.getStatValue(statId)

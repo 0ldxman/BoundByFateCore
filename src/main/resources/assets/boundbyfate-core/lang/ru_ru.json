@@ -3,6 +3,14 @@
 
   "bbf.level": "Уровень %s",
 
+  "bbf.gender.male": "Мужской",
+  "bbf.gender.female": "Женский",
+  "bbf.gender.other": "Другой",
+
+  "bbf.subclass.boundbyfate-core.battle_master": "Мастер битвы",
+  "bbf.subclass.boundbyfate-core.champion": "Чемпион",
+  "bbf.subclass.boundbyfate-core.eldritch_knight": "Мистический рыцарь",
+
   "bbf.race.boundbyfate-core.human": "Человек",
   "bbf.race.boundbyfate-core.dwarf": "Дварф",
   "bbf.race.boundbyfate-core.elf": "Эльф",

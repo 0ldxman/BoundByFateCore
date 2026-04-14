@@ -137,7 +137,9 @@ object ClientPacketHandler {
             val classData = if (hasClass) {
                 val classId = buf.readIdentifier()
                 val classLevel = buf.readInt()
-                PlayerClassData(classId, classLevel = classLevel)
+                val hasSubclass = buf.readBoolean()
+                val subclassId = if (hasSubclass) buf.readIdentifier() else null
+                PlayerClassData(classId, subclassId, classLevel)
             } else null
 
             // Race
@@ -147,12 +149,17 @@ object ClientPacketHandler {
             // Level
             val level = buf.readInt()
 
+            // Gender
+            val hasGender = buf.readBoolean()
+            val gender = if (hasGender) buf.readString() else null
+
             client.execute {
                 ClientPlayerData.statsData = EntityStatData(baseStats = baseStats)
                 ClientPlayerData.skillData = EntitySkillData(proficiencies = proficiencies)
                 ClientPlayerData.classData = classData
                 ClientPlayerData.raceData = raceData
                 ClientPlayerData.level = level
+                ClientPlayerData.gender = gender
             }
         }
     }

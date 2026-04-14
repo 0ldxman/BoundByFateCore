@@ -16,6 +16,7 @@ object ClientPlayerData {
     var classData: PlayerClassData? = null
     var raceData: PlayerRaceData? = null
     var level: Int = 1
+    var gender: String? = null
 
     fun clear() {
         statsData = null
@@ -23,5 +24,6 @@ object ClientPlayerData {
         classData = null
         raceData = null
         level = 1
+        gender = null
     }
 }
