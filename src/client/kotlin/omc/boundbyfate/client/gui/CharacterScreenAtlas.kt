@@ -64,7 +64,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Hover навыков: scale для каждого навыка (макс 5)
         val skillScales: FloatArray = FloatArray(5) { 1f },
         // Смещение щита от наведённого навыка
-        var shieldPushX: Float = 0f
+        var shieldPushX: Float = 0f,
+        // Отдельный прогресс выезда для каждого навыка (задержка по индексу)
+        val skillSlides: FloatArray = FloatArray(5) { 0f },
+        val textAlphas: FloatArray = FloatArray(5) { 0f }
     )
     private val shieldAnims = Array(6) { ShieldAnim() }
 
@@ -89,6 +92,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             it.scale = 1f; it.tiltX = 0f; it.tiltY = 0f
             it.shieldPushX = 0f
             it.skillScales.fill(1f)
+            it.skillSlides.fill(0f)
+            it.textAlphas.fill(0f)
         }
         tooltipAnimW = 0f; tooltipAnimH = 0f; tooltipWidthTimer = 0f; lastTooltipKey = ""
     }
@@ -133,7 +138,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             // Навыки рисуются ДО щита (под ним по Z)
             drawSkillList(context, skillAnchorX, sy + 5,
                 leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY,
-                anim.skillSlide, anim.textAlpha, anim.profScale, anim.skillScales)
+                anim.skillSlides, anim.textAlphas, anim.profScale, anim.skillScales)
 
             // Щит со смещением от навыков
             drawStatShield(context, sx + anim.shieldPushX.toInt(), sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, anim)
@@ -153,7 +158,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
             drawSkillList(context, skillAnchorX, sy + 5,
                 rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY,
-                anim.skillSlide, anim.textAlpha, anim.profScale, anim.skillScales)
+                anim.skillSlides, anim.textAlphas, anim.profScale, anim.skillScales)
 
             drawStatShield(context, sx + anim.shieldPushX.toInt(), sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, anim)
         }
@@ -277,14 +282,17 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         anim.slideX = lerp(anim.slideX, slideStartX[idx] * (1f - anim.introProgress), 0.25f)
         anim.slideY = lerp(anim.slideY, slideStartY[idx] * (1f - anim.introProgress), 0.25f)
 
-        // Навыки выезжают только когда щит полностью на месте
+        // Навыки выезжают когда щит полностью на месте — каждый с задержкой по индексу
         if (anim.introProgress > 0.97f) {
-            anim.skillSlide = lerp(anim.skillSlide, 1f, 0.1f)
-        }
-
-        // Текст fade-in
-        if (anim.skillSlide > 0.7f) {
-            anim.textAlpha = lerp(anim.textAlpha, 1f, 0.08f)
+            for (si in 0..4) {
+                val skillDelay = si * 0.12f  // задержка между навыками
+                val skillTarget = easeOut(((anim.skillSlide - skillDelay) / (1f - skillDelay)).coerceIn(0f, 1f))
+                anim.skillSlides[si] = lerp(anim.skillSlides[si], skillTarget, 0.12f)
+                if (anim.skillSlides[si] > 0.7f) {
+                    anim.textAlphas[si] = lerp(anim.textAlphas[si], 1f, 0.08f)
+                }
+            }
+            anim.skillSlide = lerp(anim.skillSlide, 1f, 0.08f)
         }
 
         // Иконки владения появляются после всего остального
@@ -434,18 +442,22 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         skillData: EntitySkillData?,
         isLeft: Boolean,
         mouseX: Int, mouseY: Int,
-        slideProgress: Float,
-        textAlpha: Float,
+        slideProgresses: FloatArray,
+        textAlphas: FloatArray,
         profScale: Float,
         skillScales: FloatArray = FloatArray(5) { 1f }
     ) {
-        if (slideProgress <= 0.01f) return
+        if (slideProgresses.all { it <= 0.01f }) return
 
         val rowH = 8
         val gap = 2
         val textScale = 0.48f
 
         defs.forEachIndexed { i, def ->
+            val slideProgress = slideProgresses.getOrElse(i) { 0f }
+            val textAlpha = textAlphas.getOrElse(i) { 0f }
+            if (slideProgress <= 0.01f) return@forEachIndexed
+
             val skillScale = skillScales.getOrElse(i) { 1f }
 
             // Расталкивание: соседние навыки смещаются от наведённого
