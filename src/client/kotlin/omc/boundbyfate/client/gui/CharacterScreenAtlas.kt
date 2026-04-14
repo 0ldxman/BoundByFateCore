@@ -328,6 +328,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         } else 0f
         anim.shieldPushX = lerp(anim.shieldPushX, pushTarget, 0.15f)
     }
+
+    private fun updateTooltipAnim() {
         val currentKey = pendingTooltip?.string ?: ""
         if (currentKey != lastTooltipKey) {
             // Новый тултип — сбрасываем анимацию
