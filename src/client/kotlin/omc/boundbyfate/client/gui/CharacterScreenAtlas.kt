@@ -55,14 +55,17 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         var tiltX: Float = 0f,
         var tiltY: Float = 0f,
         var scale: Float = 1f,
-        var slideX: Float = 0f,     // текущее смещение X (въезд)
-        var slideY: Float = 0f,     // текущее смещение Y (въезд)
-        var introProgress: Float = 0f, // 0→1 прогресс въезда
+        var slideX: Float = 0f,
+        var slideY: Float = 0f,
+        var introProgress: Float = 0f,
         var skillSlide: Float = 0f,
         var textAlpha: Float = 0f,
-        var profScale: Float = 0f   // 0→1 для иконок владения
+        var profScale: Float = 0f
     )
     private val shieldAnims = Array(6) { ShieldAnim() }
+
+    // Анимация баннеров: 0=имя, 1=класс, 2=раса
+    private val bannerScales = FloatArray(3) { 1f }
 
     // Направления въезда для каждого щита (нормализованные векторы * дистанция)
     // 0=STR(лево), 1=CON(низ-лево), 2=DEX(низ), 3=INT(право), 4=WIS(низ-право), 5=CHA(низ)
@@ -147,59 +150,88 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerOffY = ((1f - nameProgress) * (bannerEndH + 20)).toInt()
         val nameBannerY = nameBannerBaseY - nameBannerOffY
 
-        // Параллакс убран
-        val nameParX = 0
-        val nameParY = 0
+        val sideBannerW = 120
+        val sideBannerBaseY = nameBannerBaseY + 14
+        val sideDelay = 0.18f
+        val sideProgress = easeOut(((openTime - sideDelay) / (1f - sideDelay)).coerceIn(0f, 1f))
+        val sideBannerOffY = ((1f - sideProgress) * (bannerEndH + 20)).toInt()
+        val sideBannerY = sideBannerBaseY - sideBannerOffY
+        val classBannerX = cx - sideBannerW - 70
+        val raceBannerX = cx + 70
+
+        // Hit-test баннеров для hover
+        val nameHovered = mouseX in nameBannerX..(nameBannerX + nameBannerW) && mouseY in nameBannerY..(nameBannerY + bannerEndH)
+        val classHovered = mouseX in classBannerX..(classBannerX + sideBannerW) && mouseY in sideBannerY..(sideBannerY + bannerEndH)
+        val raceHovered = mouseX in raceBannerX..(raceBannerX + sideBannerW) && mouseY in sideBannerY..(sideBannerY + bannerEndH)
+
+        // Обновляем scale баннеров
+        bannerScales[0] = lerp(bannerScales[0], if (nameHovered) 1.08f else 1f, 0.15f)
+        bannerScales[1] = lerp(bannerScales[1], if (classHovered) 1.08f else 1f, 0.15f)
+        bannerScales[2] = lerp(bannerScales[2], if (raceHovered) 1.08f else 1f, 0.15f)
+
+        // Расталкивание: боковые баннеры отодвигаются когда центральный увеличивается
+        // и наоборот — центральный не двигается, боковые расходятся
+        val namePush = (bannerScales[0] - 1f) * 30f  // пикселей расталкивания
+        val classPushX = -(bannerScales[1] - 1f) * 20f - namePush * 0.5f
+        val racePushX = (bannerScales[2] - 1f) * 20f + namePush * 0.5f
 
         if (nameProgress > 0.01f) {
-            drawBanner(context, nameBannerX + nameParX, nameBannerY + nameParY, nameBannerW)
+            val m = context.matrices
+            m.push()
+            m.translate((nameBannerX + nameBannerW / 2).toFloat(), (nameBannerY + bannerEndH / 2).toFloat(), 0f)
+            m.scale(bannerScales[0], bannerScales[0], 1f)
+            m.translate(-(nameBannerX + nameBannerW / 2).toFloat(), -(nameBannerY + bannerEndH / 2).toFloat(), 0f)
+            drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
+            m.pop()
             if (nameProgress > 0.4f) {
                 val playerName = player.name.string.replace('_', ' ')
-                drawSmallCenteredText(context, playerName, cx + nameParX, nameBannerY + nameParY + 2, 0xFFD700)
+                drawSmallCenteredText(context, playerName, cx, nameBannerY + 2, 0xFFD700)
                 val levelText = Text.translatable("bbf.level", level).string
-                drawScaledCenteredText(context, levelText, cx + nameParX, nameBannerY + nameParY + 11, 0xAAAAAA, 0.55f)
+                drawScaledCenteredText(context, levelText, cx, nameBannerY + 11, 0xAAAAAA, 0.55f)
             }
         }
 
-        val sideDelay = 0.18f
-        val sideProgress = easeOut(((openTime - sideDelay) / (1f - sideDelay)).coerceIn(0f, 1f))
-        val sideBannerBaseY = nameBannerBaseY + 14
-        val sideBannerOffY = ((1f - sideProgress) * (bannerEndH + 20)).toInt()
-        val sideBannerY = sideBannerBaseY - sideBannerOffY
-
-        // Параллакс убран
-        val classParX = 0
-        val classParY = 0
-        val raceParX = 0
-        val raceParY = 0
-
-        val sideBannerW = 120
-        val classBannerX = cx - sideBannerW - 70
-
         if (sideProgress > 0.01f) {
-            drawBanner(context, classBannerX + classParX, sideBannerY + classParY, sideBannerW)
+            val classOffX = classPushX.toInt()
+            val raceOffX = racePushX.toInt()
+
+            val m = context.matrices
+            m.push()
+            val classCenterX = (classBannerX + classOffX + sideBannerW / 2).toFloat()
+            m.translate(classCenterX, (sideBannerY + bannerEndH / 2).toFloat(), 0f)
+            m.scale(bannerScales[1], bannerScales[1], 1f)
+            m.translate(-classCenterX, -(sideBannerY + bannerEndH / 2).toFloat(), 0f)
+            drawBanner(context, classBannerX + classOffX, sideBannerY, sideBannerW)
+            m.pop()
+
             if (sideProgress > 0.4f) {
                 val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
                 val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
-                val classCx = classBannerX + sideBannerW / 2 + classParX
-                drawScaledCenteredText(context, classStr, classCx, sideBannerY + classParY + 2, 0xD4AF37, 0.85f)
+                val classCx = classBannerX + classOffX + sideBannerW / 2
+                drawScaledCenteredText(context, classStr, classCx, sideBannerY + 2, 0xD4AF37, 0.85f)
                 val subclassKey = classData?.subclassId?.let { "bbf.subclass.${it.namespace}.${it.path}" }
                 if (subclassKey != null) {
-                    drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + classParY + 10, 0xAAAAAA, 0.55f)
+                    drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
                 }
             }
 
-            val raceBannerX = cx + 70
-            drawBanner(context, raceBannerX + raceParX, sideBannerY + raceParY, sideBannerW)
+            m.push()
+            val raceCenterX = (raceBannerX + raceOffX + sideBannerW / 2).toFloat()
+            m.translate(raceCenterX, (sideBannerY + bannerEndH / 2).toFloat(), 0f)
+            m.scale(bannerScales[2], bannerScales[2], 1f)
+            m.translate(-raceCenterX, -(sideBannerY + bannerEndH / 2).toFloat(), 0f)
+            drawBanner(context, raceBannerX + raceOffX, sideBannerY, sideBannerW)
+            m.pop()
+
             if (sideProgress > 0.4f) {
                 val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
                 val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
-                val raceCx = raceBannerX + sideBannerW / 2 + raceParX
-                drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + raceParY + 2, 0xD4AF37, 0.85f)
+                val raceCx = raceBannerX + raceOffX + sideBannerW / 2
+                drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + 2, 0xD4AF37, 0.85f)
                 val gender = ClientPlayerData.gender
                 if (gender != null) {
                     val genderStr = Text.translatable("bbf.gender.$gender").string
-                    drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + raceParY + 10, 0xAAAAAA, 0.55f)
+                    drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
                 }
             }
         }
@@ -300,13 +332,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val shieldCx = (x + shieldW / 2).toFloat()
         val shieldCy = (y + shieldH / 2).toFloat()
 
-        // Scale: маленький в начале пути, вырастает до нормального на 2/3 пути
-        val introScaleFactor = if (anim.introProgress < 0.67f) {
-            lerp(0.3f, 1f, anim.introProgress / 0.67f)
-        } else {
-            1f
-        }
-        val totalScale = anim.scale * introScaleFactor
+        // Scale: только hover, без pop-in
+        val totalScale = anim.scale
         matrices.translate(shieldCx + anim.slideX, shieldCy + anim.slideY, 0f)
         matrices.scale(totalScale, totalScale, 1f)
         val parallaxX = anim.tiltX * 1.5f
