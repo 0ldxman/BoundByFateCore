@@ -97,8 +97,27 @@ object RaceSystem {
         val raceDef = RaceRegistry.getRace(raceData.raceId) ?: return
 
         val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
-        applyScale(player, scale)
-        applySpeedModifier(player, raceDef.speedMultiplier)
+        // Delay scale application to ensure player is fully loaded
+        scheduleDelayed(player.server, 20) {
+            applyScale(player, scale)
+            applySpeedModifier(player, raceDef.speedMultiplier)
+        }
+    }
+
+    private fun scheduleDelayed(server: net.minecraft.server.MinecraftServer, delayTicks: Int, task: () -> Unit) {
+        val wrapper = object : net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick {
+            var ticks = delayTicks
+            var fired = false
+            override fun onEndTick(s: net.minecraft.server.MinecraftServer) {
+                if (fired) return
+                ticks--
+                if (ticks <= 0) {
+                    fired = true
+                    task()
+                }
+            }
+        }
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(wrapper)
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
