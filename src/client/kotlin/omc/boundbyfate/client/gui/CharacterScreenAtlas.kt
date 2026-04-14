@@ -95,10 +95,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
         // Имя: заменяем _ на пробел
         val playerName = player.name.string.replace('_', ' ')
-        drawSmallCenteredText(context, playerName, cx, nameBannerY + 4, 0xFFD700)
+        drawSmallCenteredText(context, playerName, cx, nameBannerY + 2, 0xFFD700)
         // Уровень под именем
         val levelText = Text.translatable("bbf.level", level).string
-        drawScaledCenteredText(context, levelText, cx, nameBannerY + 14, 0xAAAAAA, 0.65f)
+        drawScaledCenteredText(context, levelText, cx, nameBannerY + 11, 0xAAAAAA, 0.55f)
 
         val sideBannerW = 120
         val sideBannerY = nameBannerY + 14
@@ -107,7 +107,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
         val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
         val classLevel = classData?.classLevel ?: 1
-        drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
+        drawSmallCenteredText(context, classStr, classBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
