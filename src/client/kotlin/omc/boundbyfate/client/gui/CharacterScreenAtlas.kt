@@ -80,10 +80,15 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         cx = width / 2
         cy = height / 2
         openTime = 0f
-        shieldAnims.forEach {
+        shieldAnims.forEachIndexed { idx, it ->
             it.introProgress = 0f; it.skillSlide = 0f
             it.textAlpha = 0f; it.profScale = 0f
-            it.slideX = 0f; it.slideY = 0f
+            // Сбрасываем в стартовые позиции чтобы анимация въезда работала корректно
+            it.slideX = slideStartX[idx]
+            it.slideY = slideStartY[idx]
+            it.scale = 1f; it.tiltX = 0f; it.tiltY = 0f
+            it.shieldPushX = 0f
+            it.skillScales.fill(1f)
         }
         tooltipAnimW = 0f; tooltipAnimH = 0f; tooltipWidthTimer = 0f; lastTooltipKey = ""
     }
@@ -317,7 +322,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         var anyHovered = false
         defs.forEachIndexed { i, _ ->
             val y = anchorY + i * rowH
-            val hovered = mouseX in (anchorX - hoverW)..(anchorX + skillIconSize) && mouseY in y..(y + rowH)
+            val hovered = if (isLeft) {
+                // Текст левее иконки — зона от (anchorX - hoverW) до (anchorX + skillIconSize)
+                mouseX in (anchorX - hoverW)..(anchorX + skillIconSize) && mouseY in y..(y + rowH)
+            } else {
+                // Текст правее иконки — зона от anchorX до (anchorX + skillIconSize + hoverW)
+                mouseX in anchorX..(anchorX + skillIconSize + hoverW) && mouseY in y..(y + rowH)
+            }
             anim.skillScales[i] = lerp(anim.skillScales[i], if (hovered) 1.3f else 1f, 0.15f)
             if (hovered) anyHovered = true
         }
