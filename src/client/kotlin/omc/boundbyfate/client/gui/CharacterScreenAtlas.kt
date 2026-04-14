@@ -13,8 +13,8 @@ import omc.boundbyfate.registry.BbfStats
 
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
-    // Щит: оригинал 109x172, ÷4
-    private val shieldW = 27
+    // Щит: оригинал 109x172, ÷4 (чётная ширина для точного центрирования)
+    private val shieldW = 28
     private val shieldH = 43
 
     // Баннер конец: оригинал 66x97
