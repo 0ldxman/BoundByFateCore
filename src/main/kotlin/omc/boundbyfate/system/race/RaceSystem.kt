@@ -187,18 +187,37 @@ object RaceSystem {
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
         try {
+            // Try Pehkui API via reflection
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")
             val scaleType = baseField.get(null)
             val getMethod = scaleType.javaClass.getMethod("get", net.minecraft.entity.Entity::class.java)
             val scaleData = getMethod.invoke(scaleType, player)
-            val setScaleMethod = scaleData.javaClass.getMethod("setScale", Float::class.java)
-            setScaleMethod.invoke(scaleData, scale)
-            logger.debug("Applied Pehkui scale $scale to ${player.name.string}")
+            // Try setScale(float) first, then setTargetScale(float) for newer versions
+            val setMethod = try {
+                scaleData.javaClass.getMethod("setScale", Float::class.java)
+            } catch (e: NoSuchMethodException) {
+                scaleData.javaClass.getMethod("setTargetScale", Float::class.java)
+            }
+            setMethod.invoke(scaleData, scale)
+            logger.info("Applied Pehkui scale $scale to ${player.name.string}")
         } catch (e: ClassNotFoundException) {
-            // Pehkui not installed - silently skip
+            // Pehkui not installed — use command fallback
+            applyScaleViaCommand(player, scale)
         } catch (e: Exception) {
-            logger.warn("Failed to apply Pehkui scale: ${e.message}")
+            logger.warn("Pehkui API failed (${e.javaClass.simpleName}: ${e.message}), trying command fallback")
+            applyScaleViaCommand(player, scale)
+        }
+    }
+
+    private fun applyScaleViaCommand(player: ServerPlayerEntity, scale: Float) {
+        try {
+            val server = player.server
+            val cmd = "scale set ${player.name.string} $scale"
+            server.commandManager.executeWithPrefix(server.commandSource, cmd)
+            logger.info("Applied scale $scale to ${player.name.string} via command")
+        } catch (e: Exception) {
+            logger.warn("Scale command fallback also failed: ${e.message}")
         }
     }
 
