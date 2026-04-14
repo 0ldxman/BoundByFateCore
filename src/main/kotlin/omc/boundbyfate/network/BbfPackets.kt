@@ -64,4 +64,7 @@ object BbfPackets {
 
     /** Client → Server: GM requests player data refresh */
     val GM_REQUEST_REFRESH = Identifier("boundbyfate-core", "gm_request_refresh")
+
+    /** Client → Server: GM edits a player's stats */
+    val GM_EDIT_PLAYER_STATS = Identifier("boundbyfate-core", "gm_edit_player_stats")
 }

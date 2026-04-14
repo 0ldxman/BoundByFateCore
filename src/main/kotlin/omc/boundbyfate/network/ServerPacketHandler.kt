@@ -135,6 +135,38 @@ object ServerPacketHandler {
                 server.execute { syncGmData(player) }
             }
         }
+
+        // Client → Server: GM edits a player's stats
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_STATS) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val statCount = buf.readInt()
+            val newStats = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(statCount) { newStats[buf.readIdentifier()] = buf.readInt() }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: run {
+                    logger.warn("GM ${gmPlayer.name.string} tried to edit offline player $targetName")
+                    return@execute
+                }
+                val statsData = target.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null) ?: return@execute
+                var updated = statsData
+                newStats.forEach { (id, value) ->
+                    updated = updated.withBase(id, value)
+                }
+                target.setAttached(BbfAttachments.ENTITY_STATS, updated)
+                omc.boundbyfate.system.stat.StatEffectProcessor.applyAll(target, updated)
+                // Recalculate HP
+                val classData = target.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+                val classDef = classData?.let { omc.boundbyfate.registry.ClassRegistry.getClass(it.classId) }
+                omc.boundbyfate.system.HitPointsSystem.applyHitPoints(target, classDef, classData?.classLevel ?: 1)
+                // Sync to target client
+                syncPlayerData(target)
+                // Refresh GM data
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} edited stats of $targetName")
+            }
+        }
     }
 
     /**

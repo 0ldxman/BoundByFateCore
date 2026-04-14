@@ -170,8 +170,7 @@ class GmScreen : Screen(Text.translatable("screen.boundbyfate.gm")) {
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (hoveredCard >= 0 && hoveredCard < ClientGmData.players.size) {
             val snapshot = ClientGmData.players[hoveredCard]
-            // TODO: открыть чарлист игрока в режиме редактирования
-            // MinecraftClient.getInstance().setScreen(GmPlayerEditScreen(snapshot))
+            MinecraftClient.getInstance().setScreen(GmPlayerEditScreen(snapshot))
             return true
         }
         return super.mouseClicked(mouseX, mouseY, button)
