@@ -41,8 +41,21 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private var cx = 0
     private var cy = 0
 
-    // Tooltip state — заполняется во время render, рисуется в конце
+    // Tooltip state
     private var pendingTooltip: Text? = null
+
+    // Анимация щитов: для каждого из 6 щитов храним текущий tilt и scale
+    // Индексы 0-2 = левые (STR, CON, DEX), 3-5 = правые (INT, WIS, CHA)
+    private data class ShieldAnim(
+        var tiltX: Float = 0f,   // наклон по X (влево-вправо)
+        var tiltY: Float = 0f,   // наклон по Y (вверх-вниз)
+        var scale: Float = 1f    // текущий масштаб
+    )
+    private val shieldAnims = Array(6) { ShieldAnim() }
+
+    // Позиции щитов для hit-test (заполняются в render)
+    private data class ShieldBounds(var x: Int = 0, var y: Int = 0)
+    private val shieldBounds = Array(6) { ShieldBounds() }
 
     override fun init() {
         cx = width / 2
@@ -76,7 +89,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY)
+            shieldBounds[i].x = sx
+            shieldBounds[i].y = sy
+            updateShieldAnim(i, sx, sy, mouseX, mouseY)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, shieldAnims[i])
             drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY)
         }
 
@@ -84,7 +100,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY)
+            val idx = i + 3
+            shieldBounds[idx].x = sx
+            shieldBounds[idx].y = sy
+            updateShieldAnim(idx, sx, sy, mouseX, mouseY)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, shieldAnims[idx])
             drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY)
         }
 
@@ -183,8 +203,26 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         statsData: EntityStatData?,
         skillData: EntitySkillData?,
         saveDef: SkillDefinition,
-        mouseX: Int, mouseY: Int
+        mouseX: Int, mouseY: Int,
+        anim: ShieldAnim
     ) {
+        val matrices = context.matrices
+        matrices.push()
+
+        // Центр щита для трансформации
+        val cx = (x + shieldW / 2).toFloat()
+        val cy = (y + shieldH / 2).toFloat()
+
+        // Применяем анимацию: translate к центру, scale + tilt, translate обратно
+        matrices.translate(cx, cy, 0f)
+        matrices.scale(anim.scale, anim.scale, 1f)
+        // Имитация 3D наклона через shear (skew) — простой способ без настоящей 3D матрицы
+        // tiltX: наклон влево-вправо (skew по Y), tiltY: наклон вверх-вниз (skew по X)
+        val m = matrices.peek().positionMatrix
+        m.m10 = anim.tiltX * 0.3f  // skew X по Y
+        m.m01 = anim.tiltY * 0.3f  // skew Y по X
+        matrices.translate(-cx, -cy, 0f)
+
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
 
         val hasSaveProf = (skillData?.getProficiency(saveDef.id)?.multiplier ?: 0) > 0
@@ -198,7 +236,6 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val modStr = if (mod >= 0) "+$mod" else "$mod"
         val midX = x + shieldW / 2
 
-        // Короткое название из локализации
         val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
         val shortName = Text.translatable(shortKey).string
 
@@ -206,12 +243,39 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawScaledCenteredText(context, "$value",   midX, y + 17, 0xFFFFFF, 1.0f)
         drawScaledCenteredText(context, modStr,     midX, y + 29, if (mod >= 0) 0x2ECC71 else 0xE74C3C, 0.6f)
 
-        // Тултип при наведении на щит
+        matrices.pop()
+
+        // Тултип при наведении
         if (mouseX in x..(x + shieldW) && mouseY in y..(y + shieldH)) {
             val tooltipKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.tooltip"
             pendingTooltip = Text.translatable(tooltipKey)
         }
     }
+
+    /** Обновляет анимацию щита — lerp к целевым значениям */
+    private fun updateShieldAnim(idx: Int, x: Int, y: Int, mouseX: Int, mouseY: Int) {
+        val anim = shieldAnims[idx]
+        val hovered = mouseX in x..(x + shieldW) && mouseY in y..(y + shieldH)
+
+        val lerpSpeed = 0.15f
+
+        if (hovered) {
+            // Нормализованное смещение курсора от центра щита (-1..1)
+            val normX = ((mouseX - (x + shieldW / 2)).toFloat() / (shieldW / 2)).coerceIn(-1f, 1f)
+            val normY = ((mouseY - (y + shieldH / 2)).toFloat() / (shieldH / 2)).coerceIn(-1f, 1f)
+
+            anim.tiltX = lerp(anim.tiltX, normX, lerpSpeed)
+            anim.tiltY = lerp(anim.tiltY, normY, lerpSpeed)
+            anim.scale = lerp(anim.scale, 1.25f, lerpSpeed)
+        } else {
+            // Возврат к нейтральному состоянию
+            anim.tiltX = lerp(anim.tiltX, 0f, lerpSpeed)
+            anim.tiltY = lerp(anim.tiltY, 0f, lerpSpeed)
+            anim.scale = lerp(anim.scale, 1f, lerpSpeed)
+        }
+    }
+
+    private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
     private fun drawSkillList(
         context: DrawContext,

@@ -232,8 +232,7 @@ object RaceSystem {
             val server = player.server
             val name = player.name.string
             // Pehkui uses separate height and width scale types
-            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:height $scale $name")
-            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:width $scale $name")
+            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:base $scale $name")
             logger.info("Applied scale $scale to $name via pehkui height/width commands")
         } catch (e: Exception) {
             logger.warn("Scale command fallback also failed: ${e.message}")
