@@ -60,7 +60,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         var introProgress: Float = 0f,
         var skillSlide: Float = 0f,
         var textAlpha: Float = 0f,
-        var profScale: Float = 0f
+        var profScale: Float = 0f,
+        // Hover навыков: scale для каждого навыка (макс 5)
+        val skillScales: FloatArray = FloatArray(5) { 1f },
+        // Смещение щита от наведённого навыка
+        var shieldPushX: Float = 0f
     )
     private val shieldAnims = Array(6) { ShieldAnim() }
 
@@ -116,13 +120,18 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             updateShieldAnim(i, sx, sy, mouseX, mouseY)
             val anim = shieldAnims[i]
             val skillShift = ((anim.scale - 1f) * 35f).toInt()
+            val skillAnchorX = sx - skillIconSize - 2 - skillShift
+
+            // Обновляем hover навыков и shieldPushX
+            updateSkillHover(i, skillAnchorX, sy + 5, leftSkillDefsByIndex[i], mouseX, mouseY, isLeft = true)
 
             // Навыки рисуются ДО щита (под ним по Z)
-            drawSkillList(context, sx - skillIconSize - 2 - skillShift, sy + 5,
+            drawSkillList(context, skillAnchorX, sy + 5,
                 leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY,
-                anim.skillSlide, anim.textAlpha, anim.profScale)
+                anim.skillSlide, anim.textAlpha, anim.profScale, anim.skillScales)
 
-            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, anim)
+            // Щит со смещением от навыков
+            drawStatShield(context, sx + anim.shieldPushX.toInt(), sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, anim)
         }
 
         rightStats.forEachIndexed { i, stat ->
@@ -133,12 +142,15 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             updateShieldAnim(idx, sx, sy, mouseX, mouseY)
             val anim = shieldAnims[idx]
             val skillShift = ((anim.scale - 1f) * 35f).toInt()
+            val skillAnchorX = sx + shieldW + 2 + skillShift
 
-            drawSkillList(context, sx + shieldW + 2 + skillShift, sy + 5,
+            updateSkillHover(idx, skillAnchorX, sy + 5, rightSkillDefsByIndex[i], mouseX, mouseY, isLeft = false)
+
+            drawSkillList(context, skillAnchorX, sy + 5,
                 rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY,
-                anim.skillSlide, anim.textAlpha, anim.profScale)
+                anim.skillSlide, anim.textAlpha, anim.profScale, anim.skillScales)
 
-            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, anim)
+            drawStatShield(context, sx + anim.shieldPushX.toInt(), sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, anim)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -290,7 +302,32 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         }
     }
 
-    private fun updateTooltipAnim() {
+    private fun updateSkillHover(
+        idx: Int,
+        anchorX: Int, anchorY: Int,
+        defs: List<SkillDefinition>,
+        mouseX: Int, mouseY: Int,
+        isLeft: Boolean
+    ) {
+        val anim = shieldAnims[idx]
+        val rowH = 8
+        // Ширина зоны hover: иконка + текст (примерно 60px)
+        val hoverW = if (isLeft) 65 else 65
+
+        var anyHovered = false
+        defs.forEachIndexed { i, _ ->
+            val y = anchorY + i * rowH
+            val hovered = mouseX in (anchorX - hoverW)..(anchorX + skillIconSize) && mouseY in y..(y + rowH)
+            anim.skillScales[i] = lerp(anim.skillScales[i], if (hovered) 1.3f else 1f, 0.15f)
+            if (hovered) anyHovered = true
+        }
+
+        // Щит съезжает в сторону от навыков при наведении
+        val pushTarget = if (anyHovered) {
+            if (isLeft) 6f else -6f  // левые щиты → вправо, правые → влево
+        } else 0f
+        anim.shieldPushX = lerp(anim.shieldPushX, pushTarget, 0.15f)
+    }
         val currentKey = pendingTooltip?.string ?: ""
         if (currentKey != lastTooltipKey) {
             // Новый тултип — сбрасываем анимацию
@@ -386,7 +423,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         mouseX: Int, mouseY: Int,
         slideProgress: Float,
         textAlpha: Float,
-        profScale: Float
+        profScale: Float,
+        skillScales: FloatArray = FloatArray(5) { 1f }
     ) {
         if (slideProgress <= 0.01f) return
 
@@ -395,7 +433,19 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val textScale = 0.48f
 
         defs.forEachIndexed { i, def ->
-            val y = anchorY + i * rowH
+            val skillScale = skillScales.getOrElse(i) { 1f }
+
+            // Расталкивание: соседние навыки смещаются от наведённого
+            // Навык выше смещается вверх, ниже — вниз
+            var pushY = 0f
+            for (j in defs.indices) {
+                val otherScale = skillScales.getOrElse(j) { 1f }
+                val push = (otherScale - 1f) * rowH * 0.8f
+                if (j < i) pushY += push   // навыки выше → вниз
+                if (j > i) pushY -= push   // навыки ниже → вверх
+            }
+
+            val y = (anchorY + i * rowH + pushY).toInt()
             val bonus = if (statsData != null) {
                 val statMod = statsData.getStatValue(def.linkedStat).dndModifier
                 val profLevel = skillData?.getProficiency(def.id)?.multiplier ?: 0
@@ -418,21 +468,28 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val alpha = (textAlpha * 255).toInt().coerceIn(0, 255)
             val textColor = (alpha shl 24) or 0xCCCCCC
 
-            // Рисуем иконку навыка (под щитом — Z уже ниже т.к. рисуется раньше)
+            // Рисуем иконку навыка с hover scale
+            val iconCx = (iconX + skillIconSize / 2).toFloat()
+            val iconCy = (y + skillIconSize / 2).toFloat()
+            val matrices0 = context.matrices
+            matrices0.push()
+            matrices0.translate(iconCx, iconCy, 0f)
+            matrices0.scale(skillScale, skillScale, 1f)
+            matrices0.translate(-iconCx, -iconCy, 0f)
             GuiAtlas.ICON_SKILL_BG.draw(context, iconX, y, skillIconSize, skillIconSize)
 
             // Иконка владения навыком — с анимацией scale
             if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0 && profScale > 0.01f) {
                 val profCx = (iconX + skillIconSize / 2).toFloat()
                 val profCy = (y + skillIconSize / 2).toFloat()
-                val matrices = context.matrices
-                matrices.push()
-                matrices.translate(profCx, profCy, 0f)
-                matrices.scale(profScale, profScale, 1f)
-                matrices.translate(-profCx, -profCy, 0f)
+                matrices0.push()
+                matrices0.translate(profCx, profCy, 0f)
+                matrices0.scale(profScale, profScale, 1f)
+                matrices0.translate(-profCx, -profCy, 0f)
                 GuiAtlas.ICON_PROFICIENCY.draw(context, iconX + 1, y + 1, 4, 4)
-                matrices.pop()
+                matrices0.pop()
             }
+            matrices0.pop()
 
             if (textAlpha > 0.05f) {
                 if (isLeft) {
@@ -440,7 +497,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                     val matrices = context.matrices
                     matrices.push()
                     matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
-                    matrices.scale(textScale, textScale, 1f)
+                    matrices.scale(textScale * skillScale, textScale * skillScale, 1f)
                     val w = textRenderer.getWidth(label)
                     context.drawTextWithShadow(textRenderer, label, -w, 0, textColor)
                     matrices.pop()
@@ -449,7 +506,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                     val matrices = context.matrices
                     matrices.push()
                     matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
-                    matrices.scale(textScale, textScale, 1f)
+                    matrices.scale(textScale * skillScale, textScale * skillScale, 1f)
                     context.drawTextWithShadow(textRenderer, label, 0, 0, textColor)
                     matrices.pop()
                 }
