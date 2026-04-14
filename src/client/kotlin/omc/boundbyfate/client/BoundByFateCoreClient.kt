@@ -2,6 +2,7 @@ package omc.boundbyfate.client
 
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.fabricmc.fabric.api.client.screen.v1.Screens
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.widget.ButtonWidget
 import net.minecraft.text.Text
 import omc.boundbyfate.client.gui.CharacterScreenAtlas
 import omc.boundbyfate.client.gui.FeatureScreen
+import omc.boundbyfate.client.gui.GmScreen
 import omc.boundbyfate.client.keybind.FeatureKeyBindings
 import omc.boundbyfate.client.keybind.FeatureSlotManager
 import omc.boundbyfate.client.network.ClientPacketHandler
@@ -18,11 +20,17 @@ import omc.boundbyfate.client.render.FloatingTextRenderer
 import omc.boundbyfate.client.tooltip.ItemTooltipManager
 import omc.boundbyfate.client.tooltip.ProficiencyTooltipProvider
 import omc.boundbyfate.client.tooltip.WeaponTooltipProvider
+import omc.boundbyfate.network.BbfPackets
 
 object BoundByFateCoreClient : ClientModInitializer {
     override fun onInitializeClient() {
         // Register packet handlers
         ClientPacketHandler.register()
+
+        // Open GM screen when server sends the signal
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.OPEN_GM_SCREEN) { client, _, _, _ ->
+            client.execute { client.setScreen(GmScreen()) }
+        }
 
         // Register tooltip providers
         ItemTooltipManager.register(ProficiencyTooltipProvider)

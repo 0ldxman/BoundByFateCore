@@ -55,4 +55,13 @@ object BbfPackets {
 
     /** Server → Client: sync player character data (stats, skills, class, race, level) */
     val SYNC_PLAYER_DATA = Identifier("boundbyfate-core", "sync_player_data")
+
+    /** Server → Client: sync all online players data to GM */
+    val SYNC_GM_PLAYERS = Identifier("boundbyfate-core", "sync_gm_players")
+
+    /** Server → Client: tell client to open GM screen */
+    val OPEN_GM_SCREEN = Identifier("boundbyfate-core", "open_gm_screen")
+
+    /** Client → Server: GM requests player data refresh */
+    val GM_REQUEST_REFRESH = Identifier("boundbyfate-core", "gm_request_refresh")
 }

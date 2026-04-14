@@ -128,6 +128,13 @@ object ServerPacketHandler {
                 omc.boundbyfate.system.ability.AbilityActivationSystem.cancelActivation(player, "Player cancelled")
             }
         }
+
+        // Client → Server: GM requests player data refresh
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_REQUEST_REFRESH) { server, player, _, _, _ ->
+            if (player.hasPermissionLevel(2)) {
+                server.execute { syncGmData(player) }
+            }
+        }
     }
 
     /**
@@ -360,6 +367,64 @@ object ServerPacketHandler {
         if (gender != null) buf.writeString(gender)
 
         ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)
+    }
+
+    /**
+     * Syncs all online players' character data to a GM player.
+     */
+    fun syncGmData(gmPlayer: ServerPlayerEntity) {
+        val server = gmPlayer.server
+        val buf = PacketByteBufs.create()
+
+        val onlinePlayers = server.playerManager.playerList
+        buf.writeInt(onlinePlayers.size)
+
+        onlinePlayers.forEach { player ->
+            buf.writeString(player.name.string)
+
+            // Stats
+            val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+            val stats = statsData?.baseStats ?: emptyMap()
+            buf.writeInt(stats.size)
+            stats.forEach { (id, value) -> buf.writeIdentifier(id); buf.writeInt(value) }
+            buf.writeInt(0) // modifiers placeholder
+
+            // Skills
+            val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, null)
+            val skills = skillData?.proficiencies ?: emptyMap()
+            buf.writeInt(skills.size)
+            skills.forEach { (id, level) -> buf.writeIdentifier(id); buf.writeInt(level) }
+
+            // Class
+            val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+            buf.writeBoolean(classData != null)
+            if (classData != null) {
+                buf.writeIdentifier(classData.classId)
+                buf.writeInt(classData.classLevel)
+                buf.writeBoolean(classData.subclassId != null)
+                if (classData.subclassId != null) buf.writeIdentifier(classData.subclassId!!)
+            }
+
+            // Race
+            val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+            buf.writeBoolean(raceData != null)
+            if (raceData != null) buf.writeIdentifier(raceData.raceId)
+
+            // Level
+            val levelData = player.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)
+            buf.writeInt(levelData?.level ?: 1)
+
+            // Gender
+            val gender = player.getAttachedOrElse(BbfAttachments.PLAYER_GENDER, null)
+            buf.writeBoolean(gender != null)
+            if (gender != null) buf.writeString(gender)
+
+            // HP
+            buf.writeFloat(player.health)
+            buf.writeFloat(player.maxHealth)
+        }
+
+        ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_PLAYERS, buf)
     }
 
     private fun syncWeaponRegistry(player: ServerPlayerEntity) {

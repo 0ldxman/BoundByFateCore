@@ -10,6 +10,7 @@ import omc.boundbyfate.api.combat.WeaponProperty
 import omc.boundbyfate.client.render.FloatingTextRenderer
 import omc.boundbyfate.client.skin.ClientSkinManager
 import omc.boundbyfate.client.state.ClientFeatureState
+import omc.boundbyfate.client.state.ClientGmData
 import omc.boundbyfate.client.state.ClientPlayerData
 import omc.boundbyfate.client.state.ClientWeaponRegistry
 import omc.boundbyfate.component.EntitySkillData
@@ -161,6 +162,45 @@ object ClientPacketHandler {
                 ClientPlayerData.level = level
                 ClientPlayerData.gender = gender
             }
+        }
+
+        // Server → Client: sync GM players data
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_GM_PLAYERS) { client, _, buf, _ ->
+            val count = buf.readInt()
+            val snapshots = (0 until count).map {
+                val name = buf.readString()
+                val statsCount = buf.readInt()
+                val baseStats = mutableMapOf<net.minecraft.util.Identifier, Int>()
+                repeat(statsCount) { baseStats[buf.readIdentifier()] = buf.readInt() }
+                val modCount = buf.readInt(); repeat(modCount) { buf.readIdentifier(); buf.readInt() }
+                val skillCount = buf.readInt()
+                val proficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
+                repeat(skillCount) { proficiencies[buf.readIdentifier()] = buf.readInt() }
+                val hasClass = buf.readBoolean()
+                val classData = if (hasClass) {
+                    val classId = buf.readIdentifier()
+                    val classLevel = buf.readInt()
+                    val hasSubclass = buf.readBoolean()
+                    val subclassId = if (hasSubclass) buf.readIdentifier() else null
+                    PlayerClassData(classId, subclassId, classLevel)
+                } else null
+                val hasRace = buf.readBoolean()
+                val raceData = if (hasRace) PlayerRaceData(buf.readIdentifier()) else null
+                val level = buf.readInt()
+                val hasGender = buf.readBoolean()
+                val gender = if (hasGender) buf.readString() else null
+                val hp = buf.readFloat()
+                val maxHp = buf.readFloat()
+                omc.boundbyfate.client.state.GmPlayerSnapshot(
+                    playerName = name,
+                    statsData = EntityStatData(baseStats = baseStats),
+                    skillData = EntitySkillData(proficiencies = proficiencies),
+                    classData = classData, raceData = raceData,
+                    level = level, gender = gender,
+                    currentHp = hp, maxHp = maxHp, isOnline = true
+                )
+            }
+            client.execute { ClientGmData.update(snapshots) }
         }
     }
 
