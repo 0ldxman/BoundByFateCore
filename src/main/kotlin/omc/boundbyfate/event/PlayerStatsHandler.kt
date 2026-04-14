@@ -56,11 +56,13 @@ object PlayerStatsHandler {
                 ?: 1
             val classDef = classData?.let { omc.boundbyfate.registry.ClassRegistry.getClass(it.classId) }
             omc.boundbyfate.system.HitPointsSystem.applyHitPoints(player, classDef, currentLevel)
+            // Heal to full HP on respawn
+            player.health = player.maxHealth
 
+            // Reset scale flag so Pehkui scale gets reapplied (Pehkui resets scale on death)
+            player.removeAttached(BbfAttachments.SCALE_APPLIED)
             omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
             omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
-
-            // Recalculate AC (attributes reset on join)
             omc.boundbyfate.system.combat.ArmorClassSystem.recalculate(player)
 
             logger.info("Reapplied stats after respawn for ${player.name.string}")

@@ -94,7 +94,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             updateShieldAnim(i, sx, sy, mouseX, mouseY)
             drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, shieldAnims[i])
             // Навыки съезжают влево при наведении на щит
-            val skillShift = ((shieldAnims[i].scale - 1f) * 20f).toInt()
+            val skillShift = ((shieldAnims[i].scale - 1f) * 35f).toInt()
             drawSkillList(context, sx - skillIconSize - 2 - skillShift, sy + 5, leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY)
         }
 
@@ -108,7 +108,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             updateShieldAnim(idx, sx, sy, mouseX, mouseY)
             drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, shieldAnims[idx])
             // Навыки съезжают вправо при наведении на щит
-            val skillShift = ((shieldAnims[idx].scale - 1f) * 20f).toInt()
+            val skillShift = ((shieldAnims[idx].scale - 1f) * 35f).toInt()
             drawSkillList(context, sx + shieldW + 2 + skillShift, sy + 5, rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY)
         }
 
