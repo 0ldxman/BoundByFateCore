@@ -188,9 +188,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         // Расталкивание: боковые баннеры отодвигаются когда центральный увеличивается
         // и наоборот — центральный не двигается, боковые расходятся
-        val namePush = (bannerScales[0] - 1f) * 30f  // пикселей расталкивания
-        val classPushX = -(bannerScales[1] - 1f) * 20f - namePush * 0.5f
-        val racePushX = (bannerScales[2] - 1f) * 20f + namePush * 0.5f
+        val namePush = (bannerScales[0] - 1f) * 60f  // усиленное расталкивание
+        val classPushX = -(bannerScales[1] - 1f) * 45f - namePush * 0.5f
+        val racePushX = (bannerScales[2] - 1f) * 45f + namePush * 0.5f
 
         if (nameProgress > 0.01f) {
             val m = context.matrices
@@ -202,9 +202,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             m.pop()
             if (nameProgress > 0.4f) {
                 val playerName = player.name.string.replace('_', ' ')
-                drawSmallCenteredText(context, playerName, cx, nameBannerY + 2, 0xFFD700)
+                drawSmallCenteredText(context, playerName, cx, nameBannerY + 2, 0xFFD700, bannerScales[0])
                 val levelText = Text.translatable("bbf.level", level).string
-                drawScaledCenteredText(context, levelText, cx, nameBannerY + 11, 0xAAAAAA, 0.55f)
+                drawScaledCenteredText(context, levelText, cx, nameBannerY + 11, 0xAAAAAA, 0.55f * bannerScales[0])
             }
         }
 
@@ -225,10 +225,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
                 val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
                 val classCx = classBannerX + classOffX + sideBannerW / 2
-                drawScaledCenteredText(context, classStr, classCx, sideBannerY + 2, 0xD4AF37, 0.85f)
+                drawScaledCenteredText(context, classStr, classCx, sideBannerY + 2, 0xD4AF37, 0.85f * bannerScales[1])
                 val subclassKey = classData?.subclassId?.let { "bbf.subclass.${it.namespace}.${it.path}" }
                 if (subclassKey != null) {
-                    drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
+                    drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + 10, 0xAAAAAA, 0.55f * bannerScales[1])
                 }
             }
 
@@ -244,11 +244,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
                 val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
                 val raceCx = raceBannerX + raceOffX + sideBannerW / 2
-                drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + 2, 0xD4AF37, 0.85f)
+                drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + 2, 0xD4AF37, 0.85f * bannerScales[2])
                 val gender = ClientPlayerData.gender
                 if (gender != null) {
                     val genderStr = Text.translatable("bbf.gender.$gender").string
-                    drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
+                    drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + 10, 0xAAAAAA, 0.55f * bannerScales[2])
                 }
             }
         }
@@ -468,7 +468,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
             val nameKey = "bbf.skill.${def.id.namespace}.${def.id.path}.name"
             val name = Text.translatable(nameKey).string.let { if (it == nameKey) def.displayName else it }
-            val label = "$name $bonusStr"
+            val bonusColor = when {
+                bonus > 0 -> 0x55FF55   // зелёный
+                bonus < 0 -> 0xFF5555   // красный
+                else      -> 0xAAAAAA   // серый
+            }
 
             // Иконка выезжает из-под щита
             val slideOffset = if (isLeft) {
@@ -505,14 +509,19 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             matrices0.pop()
 
             if (textAlpha > 0.05f) {
+                val nameAlphaColor = (((textAlpha * 255).toInt().coerceIn(0, 255)) shl 24) or 0xCCCCCC
+                val bonusAlphaColor = (((textAlpha * 255).toInt().coerceIn(0, 255)) shl 24) or bonusColor
                 if (isLeft) {
                     val textX = iconX - gap
                     val matrices = context.matrices
                     matrices.push()
                     matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
                     matrices.scale(textScale * skillScale, textScale * skillScale, 1f)
-                    val w = textRenderer.getWidth(label)
-                    context.drawTextWithShadow(textRenderer, label, -w, 0, textColor)
+                    val bonusW = textRenderer.getWidth(" $bonusStr")
+                    val nameW = textRenderer.getWidth(name)
+                    // Рисуем справа налево: сначала бонус, потом название
+                    context.drawTextWithShadow(textRenderer, " $bonusStr", -(bonusW), 0, bonusAlphaColor)
+                    context.drawTextWithShadow(textRenderer, name, -(nameW + bonusW), 0, nameAlphaColor)
                     matrices.pop()
                 } else {
                     val textX = iconX + skillIconSize + gap
@@ -520,7 +529,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                     matrices.push()
                     matrices.translate(textX.toFloat(), (y + 1).toFloat(), 0f)
                     matrices.scale(textScale * skillScale, textScale * skillScale, 1f)
-                    context.drawTextWithShadow(textRenderer, label, 0, 0, textColor)
+                    val nameW = textRenderer.getWidth(name)
+                    context.drawTextWithShadow(textRenderer, name, 0, 0, nameAlphaColor)
+                    context.drawTextWithShadow(textRenderer, " $bonusStr", nameW, 0, bonusAlphaColor)
                     matrices.pop()
                 }
             }
@@ -609,8 +620,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         matrices.pop()
     }
 
-    private fun drawSmallCenteredText(context: DrawContext, text: String, cx: Int, y: Int, color: Int) {
-        drawScaledCenteredText(context, text, cx, y, color, 0.85f)
+    private fun drawSmallCenteredText(context: DrawContext, text: String, cx: Int, y: Int, color: Int, scaleMultiplier: Float = 1f) {
+        drawScaledCenteredText(context, text, cx, y, color, 0.85f * scaleMultiplier)
     }
 
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
