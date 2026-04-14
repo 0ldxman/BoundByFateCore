@@ -187,22 +187,20 @@ object RaceSystem {
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
         try {
-            // Try Pehkui API via reflection
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")
             val scaleType = baseField.get(null)
-            val getMethod = scaleType.javaClass.getMethod("get", net.minecraft.entity.Entity::class.java)
+            // Find get() method by name regardless of parameter type (handles obfuscation)
+            val getMethod = scaleType.javaClass.methods.firstOrNull { it.name == "get" && it.parameterCount == 1 }
+                ?: throw NoSuchMethodException("ScaleType.get(Entity)")
             val scaleData = getMethod.invoke(scaleType, player)
-            // Try setScale(float) first, then setTargetScale(float) for newer versions
-            val setMethod = try {
-                scaleData.javaClass.getMethod("setScale", Float::class.java)
-            } catch (e: NoSuchMethodException) {
-                scaleData.javaClass.getMethod("setTargetScale", Float::class.java)
-            }
+            // Try setScale first, then setTargetScale
+            val setMethod = scaleData.javaClass.methods.firstOrNull {
+                (it.name == "setScale" || it.name == "setTargetScale") && it.parameterCount == 1
+            } ?: throw NoSuchMethodException("ScaleData.setScale/setTargetScale")
             setMethod.invoke(scaleData, scale)
-            logger.info("Applied Pehkui scale $scale to ${player.name.string}")
+            logger.info("Applied Pehkui scale $scale to ${player.name.string} via API (${setMethod.name})")
         } catch (e: ClassNotFoundException) {
-            // Pehkui not installed — use command fallback
             applyScaleViaCommand(player, scale)
         } catch (e: Exception) {
             logger.warn("Pehkui API failed (${e.javaClass.simpleName}: ${e.message}), trying command fallback")
@@ -213,9 +211,11 @@ object RaceSystem {
     private fun applyScaleViaCommand(player: ServerPlayerEntity, scale: Float) {
         try {
             val server = player.server
-            val cmd = "scale set ${player.name.string} $scale"
-            server.commandManager.executeWithPrefix(server.commandSource, cmd)
-            logger.info("Applied scale $scale to ${player.name.string} via command")
+            val name = player.name.string
+            // Pehkui uses separate height and width scale types
+            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:height $scale $name")
+            server.commandManager.executeWithPrefix(server.commandSource, "scale set pehkui:width $scale $name")
+            logger.info("Applied scale $scale to $name via pehkui height/width commands")
         } catch (e: Exception) {
             logger.warn("Scale command fallback also failed: ${e.message}")
         }
