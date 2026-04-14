@@ -46,8 +46,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     // Tooltip
     private var pendingTooltip: Text? = null
     private var lastTooltipKey: String = ""
-    private var tooltipAnimW = 0f   // 0→1 ширина
-    private var tooltipAnimH = 0f   // 0→1 высота (после ширины)
+    private var tooltipAnimW = 0f
+    private var tooltipAnimH = 0f
+    private var tooltipWidthTimer = 0f  // задержка перед раскрытием высоты
 
     // Анимация щитов
     private data class ShieldAnim(
@@ -77,7 +78,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             it.textAlpha = 0f; it.profScale = 0f
             it.slideX = 0f; it.slideY = 0f
         }
-        tooltipAnimW = 0f; tooltipAnimH = 0f; lastTooltipKey = ""
+        tooltipAnimW = 0f; tooltipAnimH = 0f; tooltipWidthTimer = 0f; lastTooltipKey = ""
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -146,10 +147,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerOffY = ((1f - nameProgress) * (bannerEndH + 20)).toInt()
         val nameBannerY = nameBannerBaseY - nameBannerOffY
 
-        // Параллакс: небольшое смещение X и Y
-        val pStrength = 0.012f
-        val nameParX = ((mouseX - cx) * pStrength * 0.3f).toInt()
-        val nameParY = ((mouseY - cy) * pStrength * 0.15f).toInt()
+        // Параллакс убран
+        val nameParX = 0
+        val nameParY = 0
 
         if (nameProgress > 0.01f) {
             drawBanner(context, nameBannerX + nameParX, nameBannerY + nameParY, nameBannerW)
@@ -167,11 +167,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val sideBannerOffY = ((1f - sideProgress) * (bannerEndH + 20)).toInt()
         val sideBannerY = sideBannerBaseY - sideBannerOffY
 
-        // Боковые баннеры: параллакс в противоположную сторону от курсора
-        val classParX = (-(mouseX - cx) * pStrength).toInt()
-        val classParY = (-(mouseY - cy) * pStrength * 0.5f).toInt()
-        val raceParX = (-(mouseX - cx) * pStrength).toInt()
-        val raceParY = (-(mouseY - cy) * pStrength * 0.5f).toInt()
+        // Параллакс убран
+        val classParX = 0
+        val classParY = 0
+        val raceParX = 0
+        val raceParY = 0
 
         val sideBannerW = 120
         val classBannerX = cx - sideBannerW - 70
@@ -228,8 +228,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         anim.slideX = lerp(anim.slideX, slideStartX[idx] * (1f - anim.introProgress), 0.25f)
         anim.slideY = lerp(anim.slideY, slideStartY[idx] * (1f - anim.introProgress), 0.25f)
 
-        // Навыки выезжают когда щит почти приехал
-        if (anim.introProgress > 0.85f) {
+        // Навыки выезжают только когда щит полностью на месте
+        if (anim.introProgress > 0.97f) {
             anim.skillSlide = lerp(anim.skillSlide, 1f, 0.1f)
         }
 
@@ -270,12 +270,17 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         }
         if (currentKey.isNotEmpty()) {
             tooltipAnimW = lerp(tooltipAnimW, 1f, 0.2f)
+            // Задержка перед раскрытием высоты: ждём пока ширина почти готова
             if (tooltipAnimW > 0.85f) {
-                tooltipAnimH = lerp(tooltipAnimH, 1f, 0.18f)
+                tooltipWidthTimer = (tooltipWidthTimer + 0.04f).coerceAtMost(1f)
+            }
+            if (tooltipWidthTimer > 0.6f) {
+                tooltipAnimH = lerp(tooltipAnimH, 1f, 0.15f)
             }
         } else {
             tooltipAnimW = 0f
             tooltipAnimH = 0f
+            tooltipWidthTimer = 0f
         }
     }
 
@@ -295,7 +300,13 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val shieldCx = (x + shieldW / 2).toFloat()
         val shieldCy = (y + shieldH / 2).toFloat()
 
-        val totalScale = anim.scale * anim.introProgress.coerceAtLeast(0.01f)
+        // Scale: маленький в начале пути, вырастает до нормального на 2/3 пути
+        val introScaleFactor = if (anim.introProgress < 0.67f) {
+            lerp(0.3f, 1f, anim.introProgress / 0.67f)
+        } else {
+            1f
+        }
+        val totalScale = anim.scale * introScaleFactor
         matrices.translate(shieldCx + anim.slideX, shieldCy + anim.slideY, 0f)
         matrices.scale(totalScale, totalScale, 1f)
         val parallaxX = anim.tiltX * 1.5f
