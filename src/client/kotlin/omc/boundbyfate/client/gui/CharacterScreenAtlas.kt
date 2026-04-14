@@ -131,8 +131,6 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val maxW = lines.maxOf { textRenderer.getWidth(it) }
         val totalH = lines.size * lineH
 
-        // Позиция тултипа в scaled-координатах (до scale)
-        // Переводим в пространство до scale: делим на scale
         val tx = (mouseX + 6) / scale
         val ty = (mouseY - 4) / scale
 
@@ -141,6 +139,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         val matrices = context.matrices
         matrices.push()
+        // Поднимаем на высокий Z чтобы рисоваться поверх всего
+        matrices.translate(0f, 0f, 500f)
         matrices.scale(scale, scale, 1f)
 
         val x0 = tx.toInt()
@@ -151,10 +151,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Фон
         context.fill(x0, y0, x1, y1, bgColor)
         // Рамка (1px)
-        context.fill(x0,     y0,     x1,     y0 + 1, brdColor) // top
-        context.fill(x0,     y1 - 1, x1,     y1,     brdColor) // bottom
-        context.fill(x0,     y0,     x0 + 1, y1,     brdColor) // left
-        context.fill(x1 - 1, y0,     x1,     y1,     brdColor) // right
+        context.fill(x0,     y0,     x1,     y0 + 1, brdColor)
+        context.fill(x0,     y1 - 1, x1,     y1,     brdColor)
+        context.fill(x0,     y0,     x0 + 1, y1,     brdColor)
+        context.fill(x1 - 1, y0,     x1,     y1,     brdColor)
 
         // Текст
         lines.forEachIndexed { i, line ->
