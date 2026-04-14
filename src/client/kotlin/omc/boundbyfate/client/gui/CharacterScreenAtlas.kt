@@ -216,11 +216,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Применяем анимацию: translate к центру, scale + tilt, translate обратно
         matrices.translate(cx, cy, 0f)
         matrices.scale(anim.scale, anim.scale, 1f)
-        // Реалистичный 3D tilt через rotateX/rotateY
-        val maxAngle = 0.25f  // ~14 градусов максимум
-        matrices.peek().positionMatrix.rotateY(anim.tiltX * maxAngle)
-        matrices.peek().positionMatrix.rotateX(-anim.tiltY * maxAngle)
-        matrices.translate(-cx, -cy, 0f)
+        // Параллакс: смещаем позицию щита в сторону курсора — выглядит как 3D без искажений
+        val parallaxX = anim.tiltX * 3f
+        val parallaxY = anim.tiltY * 3f
+        matrices.translate(-cx + parallaxX, -cy + parallaxY, 0f)
 
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
 
