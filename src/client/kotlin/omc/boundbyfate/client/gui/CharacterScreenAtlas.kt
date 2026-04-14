@@ -41,41 +41,50 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private var cy = 0
 
     // ═══ АНИМАЦИИ ═══
-
-    // Общий таймер открытия экрана (0→1)
     private var openTime = 0f
 
     // Tooltip
     private var pendingTooltip: Text? = null
+    private var lastTooltipKey: String = ""
+    private var tooltipAnimW = 0f   // 0→1 ширина
+    private var tooltipAnimH = 0f   // 0→1 высота (после ширины)
 
-    // Анимация щитов: hover tilt/scale + intro pop-in + skill slide
+    // Анимация щитов
     private data class ShieldAnim(
         var tiltX: Float = 0f,
         var tiltY: Float = 0f,
         var scale: Float = 1f,
-        var introScale: Float = 0f,   // 0→1 при открытии экрана
-        var skillSlide: Float = 0f,   // 0→1 после introScale
-        var textAlpha: Float = 0f     // 0→1 после skillSlide
+        var slideX: Float = 0f,     // текущее смещение X (въезд)
+        var slideY: Float = 0f,     // текущее смещение Y (въезд)
+        var introProgress: Float = 0f, // 0→1 прогресс въезда
+        var skillSlide: Float = 0f,
+        var textAlpha: Float = 0f,
+        var profScale: Float = 0f   // 0→1 для иконок владения
     )
     private val shieldAnims = Array(6) { ShieldAnim() }
 
-    private data class ShieldBounds(var x: Int = 0, var y: Int = 0)
-    private val shieldBounds = Array(6) { ShieldBounds() }
+    // Направления въезда для каждого щита (нормализованные векторы * дистанция)
+    // 0=STR(лево), 1=CON(низ-лево), 2=DEX(низ), 3=INT(право), 4=WIS(низ-право), 5=CHA(низ)
+    private val slideStartX = floatArrayOf(-200f, -150f, 0f, 200f, 150f, 0f)
+    private val slideStartY = floatArrayOf(0f, 150f, 200f, 0f, 150f, 200f)
 
     override fun init() {
         cx = width / 2
         cy = height / 2
-        // Сбрасываем анимации при открытии
         openTime = 0f
-        shieldAnims.forEach { it.introScale = 0f; it.skillSlide = 0f; it.textAlpha = 0f }
+        shieldAnims.forEach {
+            it.introProgress = 0f; it.skillSlide = 0f
+            it.textAlpha = 0f; it.profScale = 0f
+            it.slideX = 0f; it.slideY = 0f
+        }
+        tooltipAnimW = 0f; tooltipAnimH = 0f; lastTooltipKey = ""
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context)
         pendingTooltip = null
 
-        // Обновляем таймер открытия
-        openTime = (openTime + delta * 0.05f).coerceAtMost(1f)
+        openTime = (openTime + delta * 0.045f).coerceAtMost(1f)
 
         val player = MinecraftClient.getInstance().player ?: return
         val statsData = ClientPlayerData.statsData
@@ -100,14 +109,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
-            shieldBounds[i].x = sx
-            shieldBounds[i].y = sy
             updateShieldAnim(i, sx, sy, mouseX, mouseY)
-            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, shieldAnims[i])
-            val skillShift = ((shieldAnims[i].scale - 1f) * 35f).toInt()
+            val anim = shieldAnims[i]
+            val skillShift = ((anim.scale - 1f) * 35f).toInt()
+
+            // Навыки рисуются ДО щита (под ним по Z)
             drawSkillList(context, sx - skillIconSize - 2 - skillShift, sy + 5,
                 leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY,
-                shieldAnims[i].skillSlide, shieldAnims[i].textAlpha)
+                anim.skillSlide, anim.textAlpha, anim.profScale)
+
+            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY, anim)
         }
 
         rightStats.forEachIndexed { i, stat ->
@@ -115,14 +126,15 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
             val idx = i + 3
-            shieldBounds[idx].x = sx
-            shieldBounds[idx].y = sy
             updateShieldAnim(idx, sx, sy, mouseX, mouseY)
-            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, shieldAnims[idx])
-            val skillShift = ((shieldAnims[idx].scale - 1f) * 35f).toInt()
+            val anim = shieldAnims[idx]
+            val skillShift = ((anim.scale - 1f) * 35f).toInt()
+
             drawSkillList(context, sx + shieldW + 2 + skillShift, sy + 5,
                 rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY,
-                shieldAnims[idx].skillSlide, shieldAnims[idx].textAlpha)
+                anim.skillSlide, anim.textAlpha, anim.profScale)
+
+            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY, anim)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -130,88 +142,109 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerX = cx - nameBannerW / 2
         val nameBannerBaseY = 8
 
-        // Центральный баннер въезжает первым
         val nameProgress = easeOut(openTime.coerceIn(0f, 1f))
-        val nameBannerY = nameBannerBaseY - ((1f - nameProgress) * (bannerEndH + 10)).toInt()
-        // Параллакс: центральный почти не двигается
-        val nameParallaxX = (mouseX - cx) * 0.005f
-        drawBannerAnimated(context, nameBannerX + nameParallaxX.toInt(), nameBannerY, nameBannerW, nameProgress)
-        if (nameProgress > 0.3f) {
-            val playerName = player.name.string.replace('_', ' ')
-            drawSmallCenteredText(context, playerName, cx + nameParallaxX.toInt(), nameBannerY + 2, 0xFFD700)
-            val levelText = Text.translatable("bbf.level", level).string
-            drawScaledCenteredText(context, levelText, cx + nameParallaxX.toInt(), nameBannerY + 11, 0xAAAAAA, 0.55f)
-        }
+        val nameBannerOffY = ((1f - nameProgress) * (bannerEndH + 20)).toInt()
+        val nameBannerY = nameBannerBaseY - nameBannerOffY
 
-        val sideBannerW = 120
-        val sideBannerBaseY = nameBannerBaseY + 14
+        // Параллакс: небольшое смещение X и Y
+        val pStrength = 0.012f
+        val nameParX = ((mouseX - cx) * pStrength * 0.3f).toInt()
+        val nameParY = ((mouseY - cy) * pStrength * 0.15f).toInt()
 
-        // Боковые баннеры въезжают с задержкой
-        val sideDelay = 0.15f
-        val sideProgress = easeOut(((openTime - sideDelay) / (1f - sideDelay)).coerceIn(0f, 1f))
-        val sideBannerY = sideBannerBaseY - ((1f - sideProgress) * (bannerEndH + 10)).toInt()
-
-        // Параллакс боковых: двигаются в противоположную сторону от курсора
-        val parallaxStrength = 0.03f
-        val classParallaxX = -(mouseX - cx) * parallaxStrength
-        val raceParallaxX = -(mouseX - cx) * parallaxStrength
-
-        val classBannerX = cx - sideBannerW - 70
-        drawBannerAnimated(context, classBannerX + classParallaxX.toInt(), sideBannerY, sideBannerW, sideProgress)
-        if (sideProgress > 0.3f) {
-            val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
-            val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
-            val classCx = classBannerX + sideBannerW / 2 + classParallaxX.toInt()
-            drawScaledCenteredText(context, classStr, classCx, sideBannerY + 2, 0xD4AF37, 0.85f)
-            val subclassKey = classData?.subclassId?.let { "bbf.subclass.${it.namespace}.${it.path}" }
-            if (subclassKey != null) {
-                drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
+        if (nameProgress > 0.01f) {
+            drawBanner(context, nameBannerX + nameParX, nameBannerY + nameParY, nameBannerW)
+            if (nameProgress > 0.4f) {
+                val playerName = player.name.string.replace('_', ' ')
+                drawSmallCenteredText(context, playerName, cx + nameParX, nameBannerY + nameParY + 2, 0xFFD700)
+                val levelText = Text.translatable("bbf.level", level).string
+                drawScaledCenteredText(context, levelText, cx + nameParX, nameBannerY + nameParY + 11, 0xAAAAAA, 0.55f)
             }
         }
 
-        val raceBannerX = cx + 70
-        drawBannerAnimated(context, raceBannerX + raceParallaxX.toInt(), sideBannerY, sideBannerW, sideProgress)
-        if (sideProgress > 0.3f) {
-            val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
-            val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
-            val raceCx = raceBannerX + sideBannerW / 2 + raceParallaxX.toInt()
-            drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + 2, 0xD4AF37, 0.85f)
-            val gender = ClientPlayerData.gender
-            if (gender != null) {
-                val genderStr = Text.translatable("bbf.gender.$gender").string
-                drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + 10, 0xAAAAAA, 0.55f)
+        val sideDelay = 0.18f
+        val sideProgress = easeOut(((openTime - sideDelay) / (1f - sideDelay)).coerceIn(0f, 1f))
+        val sideBannerBaseY = nameBannerBaseY + 14
+        val sideBannerOffY = ((1f - sideProgress) * (bannerEndH + 20)).toInt()
+        val sideBannerY = sideBannerBaseY - sideBannerOffY
+
+        // Боковые баннеры: параллакс в противоположную сторону от курсора
+        val classParX = (-(mouseX - cx) * pStrength).toInt()
+        val classParY = (-(mouseY - cy) * pStrength * 0.5f).toInt()
+        val raceParX = (-(mouseX - cx) * pStrength).toInt()
+        val raceParY = (-(mouseY - cy) * pStrength * 0.5f).toInt()
+
+        val sideBannerW = 120
+        val classBannerX = cx - sideBannerW - 70
+
+        if (sideProgress > 0.01f) {
+            drawBanner(context, classBannerX + classParX, sideBannerY + classParY, sideBannerW)
+            if (sideProgress > 0.4f) {
+                val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
+                val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
+                val classCx = classBannerX + sideBannerW / 2 + classParX
+                drawScaledCenteredText(context, classStr, classCx, sideBannerY + classParY + 2, 0xD4AF37, 0.85f)
+                val subclassKey = classData?.subclassId?.let { "bbf.subclass.${it.namespace}.${it.path}" }
+                if (subclassKey != null) {
+                    drawScaledCenteredText(context, Text.translatable(subclassKey).string, classCx, sideBannerY + classParY + 10, 0xAAAAAA, 0.55f)
+                }
+            }
+
+            val raceBannerX = cx + 70
+            drawBanner(context, raceBannerX + raceParX, sideBannerY + raceParY, sideBannerW)
+            if (sideProgress > 0.4f) {
+                val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
+                val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
+                val raceCx = raceBannerX + sideBannerW / 2 + raceParX
+                drawScaledCenteredText(context, raceStr, raceCx, sideBannerY + raceParY + 2, 0xD4AF37, 0.85f)
+                val gender = ClientPlayerData.gender
+                if (gender != null) {
+                    val genderStr = Text.translatable("bbf.gender.$gender").string
+                    drawScaledCenteredText(context, genderStr, raceCx, sideBannerY + raceParY + 10, 0xAAAAAA, 0.55f)
+                }
             }
         }
 
         super.render(context, mouseX, mouseY, delta)
+
+        // Тултип с анимацией
         pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
+        updateTooltipAnim()
     }
 
-    /** Easing функция для плавного замедления */
     private fun easeOut(t: Float): Float = 1f - (1f - t) * (1f - t)
 
-    /** Обновляет все анимации щита */
     private fun updateShieldAnim(idx: Int, x: Int, y: Int, mouseX: Int, mouseY: Int) {
         val anim = shieldAnims[idx]
         val hovered = mouseX in x..(x + shieldW) && mouseY in y..(y + shieldH)
         val lerpSpeed = 0.15f
 
-        // Intro pop-in: каждый щит стартует с задержкой по индексу
-        val introDelay = idx * 0.08f
-        val introTarget = easeOut(((openTime - introDelay) / (1f - introDelay)).coerceIn(0f, 1f))
-        anim.introScale = lerp(anim.introScale, introTarget, 0.2f)
+        // Въезд с задержкой по индексу
+        val introDelay = idx * 0.07f
+        val rawProgress = ((openTime - introDelay) / (1f - introDelay)).coerceIn(0f, 1f)
+        val introTarget = easeOut(rawProgress)
+        anim.introProgress = lerp(anim.introProgress, introTarget, 0.18f)
 
-        // Skill slide: начинается когда щит почти появился
-        if (anim.introScale > 0.85f) {
+        // Смещение въезда: lerp от startOffset до 0
+        anim.slideX = lerp(anim.slideX, slideStartX[idx] * (1f - anim.introProgress), 0.25f)
+        anim.slideY = lerp(anim.slideY, slideStartY[idx] * (1f - anim.introProgress), 0.25f)
+
+        // Навыки выезжают когда щит почти приехал
+        if (anim.introProgress > 0.85f) {
             anim.skillSlide = lerp(anim.skillSlide, 1f, 0.1f)
         }
 
-        // Text alpha: начинается когда навыки почти выехали
+        // Текст fade-in
         if (anim.skillSlide > 0.7f) {
             anim.textAlpha = lerp(anim.textAlpha, 1f, 0.08f)
         }
 
-        // Hover tilt/scale
+        // Иконки владения появляются после всего остального
+        val allDone = shieldAnims.all { it.skillSlide > 0.9f }
+        if (allDone) {
+            anim.profScale = lerp(anim.profScale, 1f, 0.1f)
+        }
+
+        // Hover
         if (hovered) {
             val normX = ((mouseX - (x + shieldW / 2)).toFloat() / (shieldW / 2)).coerceIn(-1f, 1f)
             val normY = ((mouseY - (y + shieldH / 2)).toFloat() / (shieldH / 2)).coerceIn(-1f, 1f)
@@ -222,6 +255,27 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             anim.tiltX = lerp(anim.tiltX, 0f, lerpSpeed)
             anim.tiltY = lerp(anim.tiltY, 0f, lerpSpeed)
             anim.scale = lerp(anim.scale, 1f, lerpSpeed)
+        }
+    }
+
+    private fun updateTooltipAnim() {
+        val currentKey = pendingTooltip?.string ?: ""
+        if (currentKey != lastTooltipKey) {
+            // Новый тултип — сбрасываем анимацию
+            if (currentKey.isNotEmpty()) {
+                tooltipAnimW = 0f
+                tooltipAnimH = 0f
+            }
+            lastTooltipKey = currentKey
+        }
+        if (currentKey.isNotEmpty()) {
+            tooltipAnimW = lerp(tooltipAnimW, 1f, 0.2f)
+            if (tooltipAnimW > 0.85f) {
+                tooltipAnimH = lerp(tooltipAnimH, 1f, 0.18f)
+            }
+        } else {
+            tooltipAnimW = 0f
+            tooltipAnimH = 0f
         }
     }
 
@@ -241,9 +295,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val shieldCx = (x + shieldW / 2).toFloat()
         val shieldCy = (y + shieldH / 2).toFloat()
 
-        // Intro pop-in: scale от 0 до 1
-        val totalScale = anim.scale * anim.introScale
-        matrices.translate(shieldCx, shieldCy, 0f)
+        val totalScale = anim.scale * anim.introProgress.coerceAtLeast(0.01f)
+        matrices.translate(shieldCx + anim.slideX, shieldCy + anim.slideY, 0f)
         matrices.scale(totalScale, totalScale, 1f)
         val parallaxX = anim.tiltX * 1.5f
         val parallaxY = anim.tiltY * 1.5f
@@ -251,10 +304,18 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
 
+        // Иконка владения спасброском — с отдельной анимацией scale
         val hasSaveProf = (skillData?.getProficiency(saveDef.id)?.multiplier ?: 0) > 0
-        if (hasSaveProf) {
+        if (hasSaveProf && anim.profScale > 0.01f) {
             val profSize = 4
+            val profCx = (x + shieldW / 2).toFloat()
+            val profCy = (y + 3 + profSize / 2).toFloat()
+            matrices.push()
+            matrices.translate(profCx, profCy, 0f)
+            matrices.scale(anim.profScale, anim.profScale, 1f)
+            matrices.translate(-profCx, -profCy, 0f)
             GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2, y + 3, profSize, profSize)
+            matrices.pop()
         }
 
         val value = statsData?.getStatValue(stat.id)?.total ?: 10
@@ -286,7 +347,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         isLeft: Boolean,
         mouseX: Int, mouseY: Int,
         slideProgress: Float,
-        textAlpha: Float
+        textAlpha: Float,
+        profScale: Float
     ) {
         if (slideProgress <= 0.01f) return
 
@@ -307,24 +369,35 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val name = Text.translatable(nameKey).string.let { if (it == nameKey) def.displayName else it }
             val label = "$name $bonusStr"
 
-            // Иконка выезжает из щита: начальная позиция = у щита, конечная = anchorX
+            // Иконка выезжает из-под щита
             val slideOffset = if (isLeft) {
-                ((1f - slideProgress) * 20f).toInt()  // выезжает влево
+                ((1f - slideProgress) * 18f).toInt()
             } else {
-                -((1f - slideProgress) * 20f).toInt() // выезжает вправо
+                -((1f - slideProgress) * 18f).toInt()
             }
             val iconX = anchorX + slideOffset
 
-            // Цвет текста с alpha
             val alpha = (textAlpha * 255).toInt().coerceIn(0, 255)
             val textColor = (alpha shl 24) or 0xCCCCCC
 
-            if (isLeft) {
-                GuiAtlas.ICON_SKILL_BG.draw(context, iconX, y, skillIconSize, skillIconSize)
-                if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
-                    GuiAtlas.ICON_PROFICIENCY.draw(context, iconX + 1, y + 1, 4, 4)
-                }
-                if (textAlpha > 0.05f) {
+            // Рисуем иконку навыка (под щитом — Z уже ниже т.к. рисуется раньше)
+            GuiAtlas.ICON_SKILL_BG.draw(context, iconX, y, skillIconSize, skillIconSize)
+
+            // Иконка владения навыком — с анимацией scale
+            if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0 && profScale > 0.01f) {
+                val profCx = (iconX + skillIconSize / 2).toFloat()
+                val profCy = (y + skillIconSize / 2).toFloat()
+                val matrices = context.matrices
+                matrices.push()
+                matrices.translate(profCx, profCy, 0f)
+                matrices.scale(profScale, profScale, 1f)
+                matrices.translate(-profCx, -profCy, 0f)
+                GuiAtlas.ICON_PROFICIENCY.draw(context, iconX + 1, y + 1, 4, 4)
+                matrices.pop()
+            }
+
+            if (textAlpha > 0.05f) {
+                if (isLeft) {
                     val textX = iconX - gap
                     val matrices = context.matrices
                     matrices.push()
@@ -333,13 +406,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                     val w = textRenderer.getWidth(label)
                     context.drawTextWithShadow(textRenderer, label, -w, 0, textColor)
                     matrices.pop()
-                }
-            } else {
-                GuiAtlas.ICON_SKILL_BG.draw(context, iconX, y, skillIconSize, skillIconSize)
-                if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
-                    GuiAtlas.ICON_PROFICIENCY.draw(context, iconX + 1, y + 1, 4, 4)
-                }
-                if (textAlpha > 0.05f) {
+                } else {
                     val textX = iconX + skillIconSize + gap
                     val matrices = context.matrices
                     matrices.push()
@@ -357,12 +424,6 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         }
     }
 
-    /** Рисует баннер с анимацией появления (alpha через scissor не поддерживается, используем scale) */
-    private fun drawBannerAnimated(context: DrawContext, x: Int, y: Int, totalWidth: Int, progress: Float) {
-        if (progress <= 0.01f) return
-        drawBanner(context, x, y, totalWidth)
-    }
-
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
         val tileDrawH = 17
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
@@ -378,32 +439,55 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     }
 
     private fun drawSmallTooltip(context: DrawContext, text: Text, mouseX: Int, mouseY: Int) {
+        if (tooltipAnimW < 0.02f) return
+
         val scale = 0.75f
         val lines = text.string.split("\n")
         val lineH = textRenderer.fontHeight + 1
         val pad = 4
         val maxW = lines.maxOf { textRenderer.getWidth(it) }
         val totalH = lines.size * lineH
+
         val tx = (mouseX + 6) / scale
         val ty = (mouseY - 4) / scale
+
         val bgColor  = 0xFF2b2321.toInt()
         val brdColor = 0xFFb08a66.toInt()
+
         val matrices = context.matrices
         matrices.push()
         matrices.translate(0f, 0f, 500f)
         matrices.scale(scale, scale, 1f)
+
         val x0 = tx.toInt()
         val y0 = ty.toInt()
-        val x1 = x0 + maxW + pad * 2
-        val y1 = y0 + totalH + pad * 2
-        context.fill(x0, y0, x1, y1, bgColor)
-        context.fill(x0, y0, x1, y0 + 1, brdColor)
-        context.fill(x0, y1 - 1, x1, y1, brdColor)
-        context.fill(x0, y0, x0 + 1, y1, brdColor)
-        context.fill(x1 - 1, y0, x1, y1, brdColor)
-        lines.forEachIndexed { i, line ->
-            context.drawTextWithShadow(textRenderer, Text.literal(line), x0 + pad, y0 + pad + i * lineH, 0xFFFFFF)
+        // Анимированные размеры
+        val animW = ((maxW + pad * 2) * tooltipAnimW).toInt()
+        val animH = ((totalH + pad * 2) * tooltipAnimH).toInt()
+        val x1 = x0 + animW
+        val y1 = y0 + animH
+
+        if (animW > 2) {
+            context.fill(x0, y0, x1, y1, bgColor)
+            context.fill(x0, y0, x1, y0 + 1, brdColor)
+            if (animH > 1) context.fill(x0, y1 - 1, x1, y1, brdColor)
+            context.fill(x0, y0, x0 + 1, y1, brdColor)
+            context.fill(x1 - 1, y0, x1, y1, brdColor)
+
+            // Текст показываем только когда высота достаточная
+            if (tooltipAnimH > 0.6f) {
+                val textAlpha = ((tooltipAnimH - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                val alpha = (textAlpha * 255).toInt()
+                lines.forEachIndexed { i, line ->
+                    val lineY = y0 + pad + i * lineH
+                    if (lineY + lineH < y1) {
+                        val color = (alpha shl 24) or 0xFFFFFF
+                        context.drawTextWithShadow(textRenderer, Text.literal(line), x0 + pad, lineY, color)
+                    }
+                }
+            }
         }
+
         matrices.pop()
     }
 
