@@ -117,8 +117,42 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         super.render(context, mouseX, mouseY, delta)
 
-        // Рисуем тултип поверх всего
-        pendingTooltip?.let { context.drawTooltip(textRenderer, it, mouseX, mouseY) }
+        // Рисуем тултип поверх всего — кастомный маленький
+        pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
+    }
+
+    /** Рисует тултип уменьшенного размера с поддержкой \n и §-форматирования */
+    private fun drawSmallTooltip(context: DrawContext, text: Text, mouseX: Int, mouseY: Int) {
+        val scale = 0.75f
+        val raw = text.string
+        val lines = raw.split("\n")
+
+        val matrices = context.matrices
+        matrices.push()
+        matrices.translate(mouseX.toFloat() + 4, mouseY.toFloat() - 4, 400f)
+        matrices.scale(scale, scale, 1f)
+
+        // Ширина самой длинной строки (без §-кодов для измерения)
+        val maxW = lines.maxOf { textRenderer.getWidth(it) }
+        val lineH = textRenderer.fontHeight + 1
+        val totalH = lines.size * lineH
+        val pad = 4
+
+        // Фон тултипа
+        context.fill(-pad, -totalH - pad + lineH, maxW + pad, pad, 0xF0100010.toInt())
+        // Рамка
+        context.fill(-pad, -totalH - pad + lineH, maxW + pad, -totalH - pad + lineH + 1, 0xFF5000FF.toInt())
+        context.fill(-pad, pad - 1, maxW + pad, pad, 0xFF5000FF.toInt())
+        context.fill(-pad, -totalH - pad + lineH, -pad + 1, pad, 0xFF5000FF.toInt())
+        context.fill(maxW + pad - 1, -totalH - pad + lineH, maxW + pad, pad, 0xFF5000FF.toInt())
+
+        // Текст строк снизу вверх
+        lines.forEachIndexed { i, line ->
+            val y = -(lines.size - i) * lineH
+            context.drawTextWithShadow(textRenderer, Text.literal(line), 0, y, 0xFFFFFF)
+        }
+
+        matrices.pop()
     }
 
     private fun drawStatShield(
