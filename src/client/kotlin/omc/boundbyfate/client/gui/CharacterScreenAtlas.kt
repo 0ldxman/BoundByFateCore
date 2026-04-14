@@ -5,6 +5,9 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
+import net.minecraft.util.Identifier
+import omc.boundbyfate.api.skill.SkillDefinition
+import omc.boundbyfate.api.stat.StatDefinition
 import omc.boundbyfate.client.state.ClientPlayerData
 import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.EntityStatData
@@ -13,37 +16,17 @@ import omc.boundbyfate.registry.BbfStats
 
 class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.character")) {
 
-    // Щит: оригинал 109x172, ÷4 (чётная ширина для точного центрирования)
     private val shieldW = 28
     private val shieldH = 43
-
-    // Баннер конец: оригинал 66x97
     private val bannerEndW = 33
     private val bannerEndH = 32
-
-    // Тайл баннера
     private val bannerTileW = 18
-
-    // Диагональный отступ щитов
     private val shieldDiagStep = 12
-
-    // Иконка навыка: 6x6
     private val skillIconSize = 6
 
-    // Навыки по характеристикам — полные названия
-    private val strSkills = listOf("Атлетика")
-    private val conSkills = emptyList<String>()
-    private val dexSkills = listOf("Акробатика", "Ловкость рук", "Скрытность")
-    private val intSkills = listOf("Магия", "История", "Анализ", "Природа", "Религия")
-    private val wisSkills = listOf("Уход за животными", "Проницательность", "Медицина", "Внимательность", "Выживание")
-    private val chaSkills = listOf("Обман", "Запугивание", "Выступление", "Убеждение")
-
-    private val leftSkillsByIndex = listOf(strSkills, conSkills, dexSkills)
-    private val rightSkillsByIndex = listOf(intSkills, wisSkills, chaSkills)
-
-    // Соответствие навыков для получения бонуса
+    // Навыки по характеристикам
     private val strSkillDefs = listOf(BbfSkills.ATHLETICS)
-    private val conSkillDefs = emptyList<omc.boundbyfate.api.skill.SkillDefinition>()
+    private val conSkillDefs = emptyList<SkillDefinition>()
     private val dexSkillDefs = listOf(BbfSkills.ACROBATICS, BbfSkills.SLEIGHT_OF_HAND, BbfSkills.STEALTH)
     private val intSkillDefs = listOf(BbfSkills.ARCANA, BbfSkills.HISTORY, BbfSkills.INVESTIGATION, BbfSkills.NATURE, BbfSkills.RELIGION)
     private val wisSkillDefs = listOf(BbfSkills.ANIMAL_HANDLING, BbfSkills.INSIGHT, BbfSkills.MEDICINE, BbfSkills.PERCEPTION, BbfSkills.SURVIVAL)
@@ -52,12 +35,14 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     private val leftSkillDefsByIndex = listOf(strSkillDefs, conSkillDefs, dexSkillDefs)
     private val rightSkillDefsByIndex = listOf(intSkillDefs, wisSkillDefs, chaSkillDefs)
 
-    // Спасброски по характеристикам
     private val leftSaveDefs = listOf(BbfSkills.SAVE_STRENGTH, BbfSkills.SAVE_CONSTITUTION, BbfSkills.SAVE_DEXTERITY)
     private val rightSaveDefs = listOf(BbfSkills.SAVE_INTELLIGENCE, BbfSkills.SAVE_WISDOM, BbfSkills.SAVE_CHARISMA)
 
     private var cx = 0
     private var cy = 0
+
+    // Tooltip state — заполняется во время render, рисуется в конце
+    private var pendingTooltip: Text? = null
 
     override fun init() {
         cx = width / 2
@@ -66,22 +51,17 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context)
+        pendingTooltip = null
 
         val player = MinecraftClient.getInstance().player ?: return
         val statsData = ClientPlayerData.statsData
         val skillData = ClientPlayerData.skillData
         val classData = ClientPlayerData.classData
         val raceData = ClientPlayerData.raceData
+        val level = ClientPlayerData.level
 
         // ═══ МОДЕЛЬ ИГРОКА ═══
-        InventoryScreen.drawEntity(
-            context,
-            cx, cy + 85,
-            70,
-            cx - mouseX.toFloat(),
-            cy - mouseY.toFloat(),
-            player
-        )
+        InventoryScreen.drawEntity(context, cx, cy + 85, 70, cx - mouseX.toFloat(), cy - mouseY.toFloat(), player)
 
         // ═══ ЩИТЫ + НАВЫКИ ═══
         val leftBaseX = cx - 75
@@ -96,16 +76,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = leftBaseX - diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i])
-            drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillsByIndex[i], leftSkillDefsByIndex[i], statsData, skillData, isLeft = true)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, leftSaveDefs[i], mouseX, mouseY)
+            drawSkillList(context, sx - skillIconSize - 2, sy + 5, leftSkillDefsByIndex[i], statsData, skillData, isLeft = true, mouseX, mouseY)
         }
 
         rightStats.forEachIndexed { i, stat ->
             val diagOffset = (2 - i) * shieldDiagStep
             val sx = rightBaseX + diagOffset
             val sy = shieldsTopY + i * shieldStep
-            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i])
-            drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillsByIndex[i], rightSkillDefsByIndex[i], statsData, skillData, isLeft = false)
+            drawStatShield(context, sx, sy, stat, statsData, skillData, rightSaveDefs[i], mouseX, mouseY)
+            drawSkillList(context, sx + shieldW + 2, sy + 5, rightSkillDefsByIndex[i], statsData, skillData, isLeft = false, mouseX, mouseY)
         }
 
         // ═══ БАННЕРЫ ═══
@@ -113,51 +93,101 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val nameBannerX = cx - nameBannerW / 2
         val nameBannerY = 8
         drawBanner(context, nameBannerX, nameBannerY, nameBannerW)
-        drawSmallCenteredText(context, player.name.string, cx, nameBannerY + 6, 0xFFD700)
+        // Имя: заменяем _ на пробел
+        val playerName = player.name.string.replace('_', ' ')
+        drawSmallCenteredText(context, playerName, cx, nameBannerY + 4, 0xFFD700)
+        // Уровень под именем
+        val levelText = Text.translatable("bbf.level", level).string
+        drawScaledCenteredText(context, levelText, cx, nameBannerY + 14, 0xAAAAAA, 0.65f)
 
         val sideBannerW = 120
         val sideBannerY = nameBannerY + 14
         val classBannerX = cx - sideBannerW - 70
         drawBanner(context, classBannerX, sideBannerY, sideBannerW)
-        val classStr = classData?.classId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Commoner"
+        val classKey = classData?.classId?.let { "bbf.class.${it.namespace}.${it.path}" }
+        val classStr = if (classKey != null) Text.translatable(classKey).string else "Commoner"
         val classLevel = classData?.classLevel ?: 1
         drawSmallCenteredText(context, "$classStr $classLevel", classBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
 
         val raceBannerX = cx + 70
         drawBanner(context, raceBannerX, sideBannerY, sideBannerW)
-        val raceStr = raceData?.raceId?.path?.let { it[0].uppercaseChar() + it.substring(1) } ?: "Human"
+        val raceKey = raceData?.raceId?.let { "bbf.race.${it.namespace}.${it.path}" }
+        val raceStr = if (raceKey != null) Text.translatable(raceKey).string else "Human"
         drawSmallCenteredText(context, raceStr, raceBannerX + sideBannerW / 2, sideBannerY + 6, 0xD4AF37)
 
         super.render(context, mouseX, mouseY, delta)
+
+        // Рисуем тултип поверх всего
+        pendingTooltip?.let { context.drawTooltip(textRenderer, it, mouseX, mouseY) }
+    }
+
+    private fun drawStatShield(
+        context: DrawContext,
+        x: Int, y: Int,
+        stat: StatDefinition,
+        statsData: EntityStatData?,
+        skillData: EntitySkillData?,
+        saveDef: SkillDefinition,
+        mouseX: Int, mouseY: Int
+    ) {
+        GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
+
+        val hasSaveProf = (skillData?.getProficiency(saveDef.id)?.multiplier ?: 0) > 0
+        if (hasSaveProf) {
+            val profSize = 4
+            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2, y + 3, profSize, profSize)
+        }
+
+        val value = statsData?.getStatValue(stat.id)?.total ?: 10
+        val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
+        val modStr = if (mod >= 0) "+$mod" else "$mod"
+        val midX = x + shieldW / 2
+
+        // Короткое название из локализации
+        val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
+        val shortName = Text.translatable(shortKey).string
+
+        drawScaledCenteredText(context, shortName, midX, y + 9,  0xD4AF37, 0.6f)
+        drawScaledCenteredText(context, "$value",   midX, y + 17, 0xFFFFFF, 1.0f)
+        drawScaledCenteredText(context, modStr,     midX, y + 29, if (mod >= 0) 0x2ECC71 else 0xE74C3C, 0.6f)
+
+        // Тултип при наведении на щит
+        if (mouseX in x..(x + shieldW) && mouseY in y..(y + shieldH)) {
+            val tooltipKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.tooltip"
+            pendingTooltip = Text.translatable(tooltipKey)
+        }
     }
 
     private fun drawSkillList(
         context: DrawContext,
         anchorX: Int, anchorY: Int,
-        names: List<String>,
-        defs: List<omc.boundbyfate.api.skill.SkillDefinition>,
+        defs: List<SkillDefinition>,
         statsData: EntityStatData?,
         skillData: EntitySkillData?,
-        isLeft: Boolean
+        isLeft: Boolean,
+        mouseX: Int, mouseY: Int
     ) {
-        val rowH = 8  // расстояние между навыками
-        val gap = 2   // зазор между иконкой и текстом
+        val rowH = 8
+        val gap = 2
         val textScale = 0.48f
 
-        names.forEachIndexed { i, name ->
+        defs.forEachIndexed { i, def ->
             val y = anchorY + i * rowH
-            val def = defs.getOrNull(i)
-            val bonus = if (def != null && statsData != null) {
+            val bonus = if (statsData != null) {
                 val statMod = statsData.getStatValue(def.linkedStat).dndModifier
                 val profLevel = skillData?.getProficiency(def.id)?.multiplier ?: 0
                 statMod + 2 * profLevel
             } else 0
-            val label = "$name ${if (bonus >= 0) "+$bonus" else "$bonus"}"
+            val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+
+            // Название навыка из локализации
+            val nameKey = "bbf.skill.${def.id.namespace}.${def.id.path}.name"
+            val name = Text.translatable(nameKey).string.ifBlank { def.displayName }
+            val label = "$name $bonusStr"
 
             if (isLeft) {
-                // Иконка справа от anchorX, текст прилегает правым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
-                if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
+                if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
                     GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX + 1, y + 1, 4, 4)
                 }
                 val textX = anchorX - gap
@@ -169,9 +199,8 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 context.drawTextWithShadow(textRenderer, label, -w, 0, 0xCCCCCC)
                 matrices.pop()
             } else {
-                // Иконка слева от anchorX, текст прилегает левым краем к иконке
                 GuiAtlas.ICON_SKILL_BG.draw(context, anchorX, y, skillIconSize, skillIconSize)
-                if (def != null && (skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
+                if ((skillData?.getProficiency(def.id)?.multiplier ?: 0) > 0) {
                     GuiAtlas.ICON_PROFICIENCY.draw(context, anchorX + 1, y + 1, 4, 4)
                 }
                 val textX = anchorX + skillIconSize + gap
@@ -182,39 +211,17 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
                 context.drawTextWithShadow(textRenderer, label, 0, 0, 0xCCCCCC)
                 matrices.pop()
             }
+
+            // Тултип при наведении на иконку навыка
+            if (mouseX in anchorX..(anchorX + skillIconSize) && mouseY in y..(y + skillIconSize)) {
+                val tooltipKey = "bbf.skill.${def.id.namespace}.${def.id.path}.tooltip"
+                pendingTooltip = Text.translatable(tooltipKey)
+            }
         }
-    }
-
-    private fun drawStatShield(
-        context: DrawContext,
-        x: Int, y: Int,
-        stat: omc.boundbyfate.api.stat.StatDefinition,
-        statsData: EntityStatData?,
-        skillData: EntitySkillData?,
-        saveDef: omc.boundbyfate.api.skill.SkillDefinition
-    ) {
-        GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)
-
-        // Иконка владения спасброском — сверху по центру щита
-        val hasSaveProf = (skillData?.getProficiency(saveDef.id)?.multiplier ?: 0) > 0
-        if (hasSaveProf) {
-            val profSize = 4
-            // Смещаем ниже (+1) и на 1px ближе к центру (центр щита)
-            GuiAtlas.ICON_PROFICIENCY.draw(context, x + shieldW / 2 - profSize / 2 -1, y + 3, profSize, profSize)
-        }
-
-        val value = statsData?.getStatValue(stat.id)?.total ?: 10
-        val mod = statsData?.getStatValue(stat.id)?.dndModifier ?: 0
-        val modStr = if (mod >= 0) "+$mod" else "$mod"
-        val midX = x + shieldW / 2
-
-        drawScaledCenteredText(context, stat.shortName, midX, y + 9,  0xD4AF37, 0.6f)
-        drawScaledCenteredText(context, "$value",        midX, y + 17, 0xFFFFFF, 1.0f)
-        drawScaledCenteredText(context, modStr,          midX, y + 29, if (mod >= 0) 0x2ECC71 else 0xE74C3C, 0.6f)
     }
 
     private fun drawBanner(context: DrawContext, x: Int, y: Int, totalWidth: Int) {
-        val tileDrawH = bannerTileW
+        val tileDrawH = 17
         GuiAtlas.HEADER_LEFT.draw(context, x, y, bannerEndW, bannerEndH)
         var tx = x + bannerEndW
         var remaining = totalWidth - bannerEndW * 2
