@@ -98,11 +98,28 @@ object RaceSystem {
 
         val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
         // Delay scale application to ensure player is fully loaded
-        scheduleDelayed(player.server, 20) {
+        // Use server.execute with a tick counter via the existing server tick loop
+        val targetTick = player.server.ticks + 20
+        pendingScaleTasks[player.uuid] = Pair(targetTick, {
             applyScale(player, scale)
             applySpeedModifier(player, raceDef.speedMultiplier)
+        })
+    }
+
+    /** Call this from the server tick event in BoundByFateCore */
+    fun tickPendingScales(server: net.minecraft.server.MinecraftServer) {
+        val currentTick = server.ticks
+        val iter = pendingScaleTasks.iterator()
+        while (iter.hasNext()) {
+            val entry = iter.next()
+            if (currentTick >= entry.value.first) {
+                entry.value.second.invoke()
+                iter.remove()
+            }
         }
     }
+
+    private val pendingScaleTasks = java.util.concurrent.ConcurrentHashMap<java.util.UUID, Pair<Int, () -> Unit>>()
 
     private fun scheduleDelayed(server: net.minecraft.server.MinecraftServer, delayTicks: Int, task: () -> Unit) {
         val wrapper = object : net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.EndTick {

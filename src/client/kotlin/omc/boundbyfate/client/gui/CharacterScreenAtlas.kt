@@ -216,11 +216,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         // Применяем анимацию: translate к центру, scale + tilt, translate обратно
         matrices.translate(cx, cy, 0f)
         matrices.scale(anim.scale, anim.scale, 1f)
-        // Имитация 3D наклона через shear используя публичный API JOML
-        val shearMatrix = org.joml.Matrix4f()
-        shearMatrix.m10(anim.tiltX * 0.3f)  // skew X по Y
-        shearMatrix.m01(anim.tiltY * 0.3f)  // skew Y по X
-        matrices.peek().positionMatrix.mul(shearMatrix)
+        // Реалистичный 3D tilt через rotateX/rotateY
+        val maxAngle = 0.25f  // ~14 градусов максимум
+        matrices.peek().positionMatrix.rotateY(anim.tiltX * maxAngle)
+        matrices.peek().positionMatrix.rotateX(-anim.tiltY * maxAngle)
         matrices.translate(-cx, -cy, 0f)
 
         GuiAtlas.ICON_STAT_BG.draw(context, x, y, shieldW, shieldH)

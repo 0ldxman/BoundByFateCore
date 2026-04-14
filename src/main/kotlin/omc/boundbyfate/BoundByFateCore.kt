@@ -75,6 +75,8 @@ object BoundByFateCore : ModInitializer {
 		// Periodic cleanup of expired pending check requests
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register { server ->
 			omc.boundbyfate.system.check.PendingCheckStore.onServerTick()
+			// Tick pending scale tasks (race scale applied after player fully loads)
+			omc.boundbyfate.system.race.RaceSystem.tickPendingScales(server)
 			// Tick status effects for all online players
 			server.playerManager.playerList.forEach { player ->
 				omc.boundbyfate.system.feature.StatusEffectSystem.tick(player)
