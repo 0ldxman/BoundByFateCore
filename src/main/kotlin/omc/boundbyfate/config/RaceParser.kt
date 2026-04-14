@@ -58,6 +58,8 @@ object RaceParser {
                 runCatching { RaceSize.valueOf(it.uppercase()) }.getOrElse { RaceSize.MEDIUM }
             } ?: RaceSize.MEDIUM
 
+            val scaleOverride = json.get("scaleOverride")?.asFloat
+
             val speedMultiplier = json.get("speedMultiplier")?.asFloat ?: 1.0f
 
             val statBonuses = parseIdentifierIntMap(json, "statBonuses", id)
@@ -75,6 +77,7 @@ object RaceParser {
                 id = id,
                 displayName = displayName,
                 size = size,
+                scaleOverride = scaleOverride,
                 speedMultiplier = speedMultiplier,
                 statBonuses = statBonuses,
                 senses = senses,

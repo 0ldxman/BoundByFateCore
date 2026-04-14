@@ -74,8 +74,9 @@ object RaceSystem {
             applyRaceBonuses(player, subraceDef, raceSourceId(subraceDef.id))
         }
 
-        // Apply scale via Pehkui (if available)
-        applyScale(player, raceDef.size.scaleMultiplier)
+        // Apply scale via Pehkui (if available) — scaleOverride takes priority over size
+        val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
+        applyScale(player, scale)
 
         // Apply speed modifier
         applySpeedModifier(player, raceDef.speedMultiplier)
@@ -95,7 +96,8 @@ object RaceSystem {
         val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null) ?: return
         val raceDef = RaceRegistry.getRace(raceData.raceId) ?: return
 
-        applyScale(player, raceDef.size.scaleMultiplier)
+        val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
+        applyScale(player, scale)
         applySpeedModifier(player, raceDef.speedMultiplier)
     }
 
@@ -184,7 +186,6 @@ object RaceSystem {
     }
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
-        if (scale == 1.0f) return
         try {
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")

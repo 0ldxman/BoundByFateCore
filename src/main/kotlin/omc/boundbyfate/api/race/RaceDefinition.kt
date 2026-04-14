@@ -23,6 +23,7 @@ data class RaceDefinition(
     val id: Identifier,
     val displayName: String,
     val size: RaceSize = RaceSize.MEDIUM,
+    val scaleOverride: Float? = null,
     val speedMultiplier: Float = 1.0f,
     val statBonuses: Map<Identifier, Int> = emptyMap(),
     val senses: RaceSenses = RaceSenses(),
