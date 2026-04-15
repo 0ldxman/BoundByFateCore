@@ -8,7 +8,6 @@ import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.skill.ProficiencyLevel
 import omc.boundbyfate.client.state.ClientGmRegistry
 import omc.boundbyfate.client.state.GmPlayerSnapshot
 import omc.boundbyfate.network.BbfPackets
@@ -16,8 +15,24 @@ import omc.boundbyfate.registry.BbfSkills
 import omc.boundbyfate.registry.BbfStats
 
 /**
- * GM edit screen — tabbed interface for editing a player's character.
- * Tabs: Stats | Identity | Skills | Features
+ * GM character edit screen — single-page D&D charsheet layout with editing controls.
+ *
+ * Layout (scaled to screen):
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │  [← Back]                              [Apply Changes]      │
+ * │  Name: Pisechnitsa  Class: [Fighter▼] Lv:[3-+] Race:[▼] ♂  │
+ * │  Subclass: [Battle Master▼]                                  │
+ * ├──────────────┬──────────────────────────┬───────────────────┤
+ * │ ABILITY      │   [Player Model]         │ SAVING THROWS     │
+ * │ STR 15 [-][+]│                          │ ○ STR  +5         │
+ * │ CON 14 [-][+]│                          │ ● DEX  +3         │
+ * │ DEX 13 [-][+]│                          │ ...               │
+ * │ INT 10 [-][+]│                          ├───────────────────┤
+ * │ WIS 11 [-][+]│                          │ SKILLS            │
+ * │ CHA  8 [-][+]│                          │ ○ Athletics  +4   │
+ * │              │                          │ ● Acrobatics +2   │
+ * │              │                          │ ...               │
+ * └──────────────┴──────────────────────────┴───────────────────┘
  */
 class GmPlayerEditScreen(
     private val snapshot: GmPlayerSnapshot
@@ -26,332 +41,254 @@ class GmPlayerEditScreen(
     private var cx = 0
     private var cy = 0
 
-    // ═══ TABS ═══
-    private enum class Tab { STATS, IDENTITY, SKILLS, FEATURES }
-    private var activeTab = Tab.STATS
-
     // ═══ EDITABLE STATE ═══
-    // Stats
     private val editedStats = mutableMapOf<Identifier, Int>().also { map ->
         listOf(BbfStats.STRENGTH, BbfStats.CONSTITUTION, BbfStats.DEXTERITY,
                BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA).forEach { stat ->
             map[stat.id] = snapshot.statsData?.getStatValue(stat.id)?.total ?: 10
         }
     }
-
-    // Identity
     private var editedClassId: Identifier? = snapshot.classData?.classId
     private var editedSubclassId: Identifier? = snapshot.classData?.subclassId
     private var editedLevel: Int = snapshot.level
     private var editedRaceId: Identifier? = snapshot.raceData?.raceId
     private var editedGender: String = snapshot.gender ?: "male"
-
-    // Skills — map of skillId -> proficiency level (0=none, 1=proficient, 2=expertise)
     private val editedSkills = mutableMapOf<Identifier, Int>().also { map ->
         snapshot.skillData?.proficiencies?.forEach { (id, level) -> map[id] = level }
     }
 
-    // Features
-    private val editedFeatures = mutableSetOf<Identifier>()
-
-    // UI state
-    private var hasUnsavedChanges = false
+    // ═══ UI STATE ═══
     private var statusMessage = ""
     private var statusTimer = 0f
-
-    // Scroll for long lists
-    private var skillScrollOffset = 0
-    private var featureScrollOffset = 0
-    private val visibleRows = 12
-
-    // Dropdown state
     private var classDropdownOpen = false
     private var subclassDropdownOpen = false
     private var raceDropdownOpen = false
+    private var skillScrollOffset = 0
 
-    private data class UiButton(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
-    private val buttons = mutableListOf<UiButton>()
+    // All clickable buttons registered each frame
+    private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
+    private val frameButtons = mutableListOf<Btn>()
 
     override fun init() {
         cx = width / 2
         cy = height / 2
-        buttons.clear()
-        buildCommonButtons()
-    }
-
-    private fun buildCommonButtons() {
-        // Back
-        buttons.add(UiButton(8, 8, 45, 12, "§7← Back") {
-            MinecraftClient.getInstance().setScreen(GmScreen())
-        })
-        // Apply
-        buttons.add(UiButton(cx - 25, height - 18, 50, 12, "§aApply") { applyAll() })
-        // Tabs
-        val tabW = 55
-        val tabY = 22
-        Tab.values().forEachIndexed { i, tab ->
-            val tx = 8 + i * (tabW + 2)
-            buttons.add(UiButton(tx, tabY, tabW, 12, tabLabel(tab)) {
-                activeTab = tab
-                classDropdownOpen = false; subclassDropdownOpen = false; raceDropdownOpen = false
-            })
-        }
-    }
-
-    private fun tabLabel(tab: Tab) = when (tab) {
-        Tab.STATS -> "§eStats"
-        Tab.IDENTITY -> "§bIdentity"
-        Tab.SKILLS -> "§aSkills"
-        Tab.FEATURES -> "§dFeatures"
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context)
+        frameButtons.clear()
+
         if (statusTimer > 0f) statusTimer -= delta * 0.05f
 
-        // Header
-        context.drawCenteredTextWithShadow(textRenderer, "§6${snapshot.playerName} §7— GM Edit", cx, 8, 0xFFFFFF)
+        val pad = 8
+        val colLeft = pad
+        val colRight = width - pad
+        val statColW = 90
+        val skillColW = 130
+        val modelColX = colLeft + statColW + pad
+        val modelColW = colRight - statColW - skillColW - pad * 3
+        val skillColX = colRight - skillColW
 
-        // Tab content
-        val contentY = 38
-        when (activeTab) {
-            Tab.STATS -> renderStats(context, mouseX, mouseY, contentY)
-            Tab.IDENTITY -> renderIdentity(context, mouseX, mouseY, contentY)
-            Tab.SKILLS -> renderSkills(context, mouseX, mouseY, contentY)
-            Tab.FEATURES -> renderFeatures(context, mouseX, mouseY, contentY)
+        // ═══ TOP BAR ═══
+        var topY = pad
+
+        // Back button
+        addBtn(context, mouseX, mouseY, pad, topY, 40, 11, "§7← Back") {
+            MinecraftClient.getInstance().setScreen(GmScreen())
         }
 
-        // Common buttons
-        buttons.forEach { btn ->
-            val isTab = Tab.values().any { tabLabel(it) == btn.label }
-            val isActive = isTab && Tab.values().any { activeTab == it && tabLabel(it) == btn.label }
-            drawButton(context, btn, mouseX, mouseY, isActive)
+        // Apply button
+        addBtn(context, mouseX, mouseY, width - 55, topY, 50, 11, "§aApply") { applyAll() }
+
+        topY += 14
+
+        // Name
+        drawLabel(context, "§6${snapshot.playerName}", pad, topY, 1.0f, 0xFFD700)
+        topY += 12
+
+        // Class row
+        val classLabel = editedClassId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "None"
+        drawLabel(context, "Class:", pad, topY + 2, 0.75f, 0x888888)
+        addBtn(context, mouseX, mouseY, pad + 28, topY, 70, 11, "§f$classLabel §e▼") {
+            classDropdownOpen = !classDropdownOpen; subclassDropdownOpen = false; raceDropdownOpen = false
         }
 
-        // Unsaved indicator
-        if (hasUnsavedChanges) {
-            context.drawCenteredTextWithShadow(textRenderer, "§e● Unsaved", cx, height - 28, 0xFFFF55)
-        }
-        if (statusTimer > 0f) {
-            val alpha = (statusTimer * 255).toInt().coerceIn(0, 255)
-            context.drawCenteredTextWithShadow(textRenderer, statusMessage, cx, height - 38, (alpha shl 24) or 0x55FF55)
+        // Level
+        drawLabel(context, "Lv:", pad + 105, topY + 2, 0.75f, 0x888888)
+        addBtn(context, mouseX, mouseY, pad + 120, topY, 10, 11, "§c-") { editedLevel = (editedLevel - 1).coerceAtLeast(1) }
+        drawLabel(context, "$editedLevel", pad + 132, topY + 2, 0.75f, 0xFFFFFF)
+        addBtn(context, mouseX, mouseY, pad + 140, topY, 10, 11, "§a+") { editedLevel = (editedLevel + 1).coerceAtMost(20) }
+
+        // Race
+        val raceLabel = editedRaceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "None"
+        drawLabel(context, "Race:", pad + 158, topY + 2, 0.75f, 0x888888)
+        addBtn(context, mouseX, mouseY, pad + 183, topY, 65, 11, "§f$raceLabel §e▼") {
+            raceDropdownOpen = !raceDropdownOpen; classDropdownOpen = false; subclassDropdownOpen = false
         }
 
-        super.render(context, mouseX, mouseY, delta)
-    }
+        // Gender toggle
+        val genderIcon = when (editedGender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
+        addBtn(context, mouseX, mouseY, pad + 253, topY, 14, 11, genderIcon) {
+            editedGender = when (editedGender) { "male" -> "female"; "female" -> "other"; else -> "male" }
+        }
 
-    // ═══ STATS TAB ═══
-    private fun renderStats(context: DrawContext, mouseX: Int, mouseY: Int, startY: Int) {
+        topY += 14
+
+        // Subclass row
+        val subclasses = editedClassId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.subclasses } ?: emptyList()
+        if (subclasses.isNotEmpty()) {
+            val subLabel = editedSubclassId?.let { id -> subclasses.find { it.id == id }?.displayName ?: id.path } ?: "None"
+            drawLabel(context, "Subclass:", pad, topY + 2, 0.75f, 0x888888)
+            addBtn(context, mouseX, mouseY, pad + 42, topY, 90, 11, "§f$subLabel §e▼") {
+                subclassDropdownOpen = !subclassDropdownOpen; classDropdownOpen = false; raceDropdownOpen = false
+            }
+            topY += 14
+        }
+
+        val contentY = topY + 4
+        drawHLine(context, pad, width - pad, contentY - 2, 0xFF6b5a3e.toInt())
+
+        // ═══ LEFT COLUMN — ABILITY SCORES ═══
+        drawLabel(context, "ABILITY SCORES", colLeft, contentY, 0.75f, 0xD4AF37)
+        var statY = contentY + 10
+
         val stats = listOf(BbfStats.STRENGTH, BbfStats.CONSTITUTION, BbfStats.DEXTERITY,
                            BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
-        val colW = (width - 20) / 3
-        stats.forEachIndexed { i, stat ->
-            val col = i % 3
-            val row = i / 2
-            val x = 10 + col * colW
-            val y = startY + row * 30
+        stats.forEach { stat ->
             val value = editedStats[stat.id] ?: 10
             val mod = (value - 10) / 2
             val modStr = if (mod >= 0) "+$mod" else "$mod"
             val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
             val shortName = Text.translatable(shortKey).string
             val changed = value != (snapshot.statsData?.getStatValue(stat.id)?.total ?: 10)
+            val nameColor = if (changed) 0xFFAA44 else 0xCCCCCC
 
-            // Label
-            drawSmall(context, "$shortName: §f$value §7($modStr)", x + 14, y + 3, if (changed) 0xFFAA44 else 0xD4AF37)
-
-            // Minus
-            val minusBtn = UiButton(x, y, 12, 10, "§c-") {
-                editedStats[stat.id] = ((editedStats[stat.id] ?: 10) - 1).coerceAtLeast(1)
-                hasUnsavedChanges = true
+            addBtn(context, mouseX, mouseY, colLeft, statY, 10, 10, "§c-") {
+                editedStats[stat.id] = (value - 1).coerceAtLeast(1)
             }
-            drawButton(context, minusBtn, mouseX, mouseY)
-
-            // Plus
-            val plusBtn = UiButton(x + colW - 14, y, 12, 10, "§a+") {
-                editedStats[stat.id] = ((editedStats[stat.id] ?: 10) + 1).coerceAtMost(30)
-                hasUnsavedChanges = true
+            drawLabel(context, "$shortName", colLeft + 12, statY + 1, 0.75f, nameColor)
+            drawLabel(context, "§f$value", colLeft + 38, statY + 1, 0.75f, 0xFFFFFF)
+            drawLabel(context, "§7($modStr)", colLeft + 52, statY + 1, 0.75f, if (mod >= 0) 0x55FF55 else 0xFF5555)
+            addBtn(context, mouseX, mouseY, colLeft + 72, statY, 10, 10, "§a+") {
+                editedStats[stat.id] = (value + 1).coerceAtMost(30)
             }
-            drawButton(context, plusBtn, mouseX, mouseY)
+            statY += 13
         }
 
-        // Player model
+        // ═══ CENTER — PLAYER MODEL ═══
         val mc = MinecraftClient.getInstance()
         val player = mc.world?.players?.find { it.name.string == snapshot.playerName }
         if (player != null) {
-            InventoryScreen.drawEntity(context, cx, cy + 60, 40, cx - mouseX.toFloat(), cy - mouseY.toFloat(), player)
+            val modelX = modelColX + modelColW / 2
+            val modelY = contentY + 80
+            InventoryScreen.drawEntity(context, modelX, modelY, 45, modelX - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-    }
 
-    // ═══ IDENTITY TAB ═══
-    private fun renderIdentity(context: DrawContext, mouseX: Int, mouseY: Int, startY: Int) {
-        var y = startY
+        // ═══ RIGHT COLUMN — SAVES + SKILLS ═══
+        var rightY = contentY
+        drawLabel(context, "SAVING THROWS", skillColX, rightY, 0.75f, 0xD4AF37)
+        rightY += 10
 
-        // Level
-        drawSmall(context, "Level: §f$editedLevel", 10, y + 3, 0xAAAAAA)
-        drawInlineButton(context, mouseX, mouseY, 80, y, "§c-") { editedLevel = (editedLevel - 1).coerceAtLeast(1); hasUnsavedChanges = true }
-        drawInlineButton(context, mouseX, mouseY, 94, y, "§a+") { editedLevel = (editedLevel + 1).coerceAtMost(20); hasUnsavedChanges = true }
-        y += 18
-
-        // Gender
-        drawSmall(context, "Gender: §f$editedGender", 10, y + 3, 0xAAAAAA)
-        drawInlineButton(context, mouseX, mouseY, 80, y, "§e↔") {
-            editedGender = when (editedGender) { "male" -> "female"; "female" -> "other"; else -> "male" }
-            hasUnsavedChanges = true
-        }
-        y += 18
-
-        // Class dropdown
-        val className = editedClassId?.let { id ->
-            ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path
-        } ?: "None"
-        drawSmall(context, "Class: §f$className", 10, y + 3, 0xAAAAAA)
-        drawInlineButton(context, mouseX, mouseY, 10 + textRenderer.getWidth("Class: $className") * 6 / 10 + 4, y, "§e▼") {
-            classDropdownOpen = !classDropdownOpen; subclassDropdownOpen = false
-        }
-        y += 14
-
-        if (classDropdownOpen) {
-            ClientGmRegistry.classes.forEachIndexed { i, cls ->
-                val btnY = y + i * 11
-                val selected = cls.id == editedClassId
-                val btn = UiButton(10, btnY, 120, 10, if (selected) "§a${cls.displayName}" else "§7${cls.displayName}") {
-                    editedClassId = cls.id; editedSubclassId = null
-                    classDropdownOpen = false; hasUnsavedChanges = true
-                }
-                drawButton(context, btn, mouseX, mouseY)
+        val saves = listOf(BbfSkills.SAVE_STRENGTH, BbfSkills.SAVE_CONSTITUTION, BbfSkills.SAVE_DEXTERITY,
+                           BbfSkills.SAVE_INTELLIGENCE, BbfSkills.SAVE_WISDOM, BbfSkills.SAVE_CHARISMA)
+        saves.forEach { save ->
+            val level = editedSkills[save.id] ?: 0
+            val icon = if (level > 0) "§a●" else "§7○"
+            addBtn(context, mouseX, mouseY, skillColX, rightY, 8, 8, icon) {
+                editedSkills[save.id] = if (level == 0) 1 else 0
             }
-            y += ClientGmRegistry.classes.size * 11 + 2
+            val statMod = editedStats[save.linkedStat]?.let { (it - 10) / 2 } ?: 0
+            val bonus = statMod + if (level > 0) 2 else 0
+            val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+            val shortSaveName = save.displayName.replace("Спасбросок ", "").replace("Saving Throw", "").trim().take(3).uppercase()
+            drawLabel(context, "$shortSaveName §7$bonusStr", skillColX + 10, rightY + 1, 0.7f, if (level > 0) 0x55FF55 else 0xAAAAAA)
+            rightY += 10
         }
 
-        // Subclass dropdown
-        val subclasses = editedClassId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.subclasses } ?: emptyList()
-        if (subclasses.isNotEmpty()) {
-            val subName = editedSubclassId?.let { id -> subclasses.find { it.id == id }?.displayName ?: id.path } ?: "None"
-            drawSmall(context, "Subclass: §f$subName", 10, y + 3, 0xAAAAAA)
-            drawInlineButton(context, mouseX, mouseY, 10 + textRenderer.getWidth("Subclass: $subName") * 6 / 10 + 4, y, "§e▼") {
-                subclassDropdownOpen = !subclassDropdownOpen; classDropdownOpen = false
-            }
-            y += 14
+        rightY += 4
+        drawHLine(context, skillColX, colRight, rightY, 0xFF6b5a3e.toInt())
+        rightY += 4
 
-            if (subclassDropdownOpen) {
-                subclasses.forEachIndexed { i, sub ->
-                    val btnY = y + i * 11
-                    val selected = sub.id == editedSubclassId
-                    val btn = UiButton(10, btnY, 120, 10, if (selected) "§a${sub.displayName}" else "§7${sub.displayName}") {
-                        editedSubclassId = sub.id; subclassDropdownOpen = false; hasUnsavedChanges = true
-                    }
-                    drawButton(context, btn, mouseX, mouseY)
-                }
-                y += subclasses.size * 11 + 2
-            }
-        }
+        drawLabel(context, "SKILLS", skillColX, rightY, 0.75f, 0xD4AF37)
+        rightY += 10
 
-        // Race dropdown
-        val raceName = editedRaceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "None"
-        drawSmall(context, "Race: §f$raceName", 10, y + 3, 0xAAAAAA)
-        drawInlineButton(context, mouseX, mouseY, 10 + textRenderer.getWidth("Race: $raceName") * 6 / 10 + 4, y, "§e▼") {
-            raceDropdownOpen = !raceDropdownOpen; classDropdownOpen = false; subclassDropdownOpen = false
-        }
-        y += 14
-
-        if (raceDropdownOpen) {
-            ClientGmRegistry.races.forEachIndexed { i, race ->
-                val btnY = y + i * 11
-                val selected = race.id == editedRaceId
-                val btn = UiButton(10, btnY, 120, 10, if (selected) "§a${race.displayName}" else "§7${race.displayName}") {
-                    editedRaceId = race.id; raceDropdownOpen = false; hasUnsavedChanges = true
-                }
-                drawButton(context, btn, mouseX, mouseY)
-            }
-        }
-    }
-
-    // ═══ SKILLS TAB ═══
-    private fun renderSkills(context: DrawContext, mouseX: Int, mouseY: Int, startY: Int) {
-        val allSkills = ClientGmRegistry.skills
-        val saves = allSkills.filter { it.isSavingThrow }
-        val skills = allSkills.filter { !it.isSavingThrow }
-
-        var y = startY
-        drawSmall(context, "§7Saving Throws:", 10, y, 0x888888)
-        y += 10
-
-        saves.forEach { skill ->
-            val level = editedSkills[skill.id] ?: 0
-            val label = when (level) { 0 -> "§7○"; 1 -> "§a●"; else -> "§b◆" }
-            val btn = UiButton(10, y, 8, 8, label) {
-                editedSkills[skill.id] = (level + 1) % 3; hasUnsavedChanges = true
-            }
-            drawButton(context, btn, mouseX, mouseY)
-            drawSmall(context, skill.displayName, 22, y + 1, if (level > 0) 0x55FF55 else 0xAAAAAA)
-            y += 10
-        }
-
-        y += 4
-        drawSmall(context, "§7Skills:", 10, y, 0x888888)
-        y += 10
-
-        val visibleSkills = skills.drop(skillScrollOffset).take(visibleRows)
+        val allSkills = ClientGmRegistry.skills.filter { !it.isSavingThrow }
+        val visibleSkills = allSkills.drop(skillScrollOffset).take(14)
         visibleSkills.forEach { skill ->
             val level = editedSkills[skill.id] ?: 0
-            val label = when (level) { 0 -> "§7○"; 1 -> "§a●"; else -> "§b◆" }
-            val btn = UiButton(10, y, 8, 8, label) {
-                editedSkills[skill.id] = (level + 1) % 3; hasUnsavedChanges = true
+            val icon = when (level) { 0 -> "§7○"; 1 -> "§a●"; else -> "§b◆" }
+            addBtn(context, mouseX, mouseY, skillColX, rightY, 8, 8, icon) {
+                editedSkills[skill.id] = (level + 1) % 3
             }
-            drawButton(context, btn, mouseX, mouseY)
-            drawSmall(context, skill.displayName, 22, y + 1, if (level > 0) 0x55FF55 else 0xAAAAAA)
-            y += 10
+            val statMod = editedStats[skill.linkedStat]?.let { (it - 10) / 2 } ?: 0
+            val bonus = statMod + level * 2
+            val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+            val skillName = skill.displayName.take(14)
+            drawLabel(context, "$skillName §7$bonusStr", skillColX + 10, rightY + 1, 0.65f, if (level > 0) 0x55FF55 else 0xAAAAAA)
+            rightY += 9
         }
 
-        // Scroll buttons
+        // Scroll
         if (skillScrollOffset > 0) {
-            drawInlineButton(context, mouseX, mouseY, width - 20, startY + 20, "§7▲") { skillScrollOffset-- }
+            addBtn(context, mouseX, mouseY, colRight - 12, contentY + 80, 10, 10, "§7▲") { skillScrollOffset-- }
         }
-        if (skillScrollOffset + visibleRows < skills.size) {
-            drawInlineButton(context, mouseX, mouseY, width - 20, startY + 30, "§7▼") { skillScrollOffset++ }
+        if (skillScrollOffset + 14 < allSkills.size) {
+            addBtn(context, mouseX, mouseY, colRight - 12, contentY + 92, 10, 10, "§7▼") { skillScrollOffset++ }
         }
-    }
 
-    // ═══ FEATURES TAB ═══
-    private fun renderFeatures(context: DrawContext, mouseX: Int, mouseY: Int, startY: Int) {
-        val allFeatures = ClientGmRegistry.features
-        var y = startY
-
-        drawSmall(context, "§7Click to toggle. §a● = granted", 10, y, 0x888888)
-        y += 12
-
-        val visible = allFeatures.drop(featureScrollOffset).take(visibleRows)
-        visible.forEach { feat ->
-            val has = editedFeatures.contains(feat.id)
-            val label = if (has) "§a●" else "§7○"
-            val btn = UiButton(10, y, 8, 8, label) {
-                if (has) editedFeatures.remove(feat.id) else editedFeatures.add(feat.id)
-                hasUnsavedChanges = true
+        // ═══ DROPDOWNS (rendered on top) ═══
+        if (classDropdownOpen) {
+            var dy = topY - 14 + 11
+            ClientGmRegistry.classes.forEach { cls ->
+                val selected = cls.id == editedClassId
+                addBtn(context, mouseX, mouseY, pad + 28, dy, 70, 10,
+                    if (selected) "§a${cls.displayName}" else "§7${cls.displayName}") {
+                    editedClassId = cls.id; editedSubclassId = null; classDropdownOpen = false
+                }
+                dy += 11
             }
-            drawButton(context, btn, mouseX, mouseY)
-            drawSmall(context, feat.displayName, 22, y + 1, if (has) 0x55FF55 else 0xAAAAAA)
-            y += 10
+        }
+        if (subclassDropdownOpen) {
+            val subs = editedClassId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.subclasses } ?: emptyList()
+            var dy = topY + 11
+            subs.forEach { sub ->
+                val selected = sub.id == editedSubclassId
+                addBtn(context, mouseX, mouseY, pad + 42, dy, 90, 10,
+                    if (selected) "§a${sub.displayName}" else "§7${sub.displayName}") {
+                    editedSubclassId = sub.id; subclassDropdownOpen = false
+                }
+                dy += 11
+            }
+        }
+        if (raceDropdownOpen) {
+            var dy = topY - 14 + 11
+            ClientGmRegistry.races.forEach { race ->
+                val selected = race.id == editedRaceId
+                addBtn(context, mouseX, mouseY, pad + 183, dy, 65, 10,
+                    if (selected) "§a${race.displayName}" else "§7${race.displayName}") {
+                    editedRaceId = race.id; raceDropdownOpen = false
+                }
+                dy += 11
+            }
         }
 
-        if (featureScrollOffset > 0) {
-            drawInlineButton(context, mouseX, mouseY, width - 20, startY + 12, "§7▲") { featureScrollOffset-- }
+        // Status
+        if (statusTimer > 0f) {
+            val alpha = (statusTimer * 255).toInt().coerceIn(0, 255)
+            context.drawCenteredTextWithShadow(textRenderer, statusMessage, cx, height - 12, (alpha shl 24) or 0x55FF55)
         }
-        if (featureScrollOffset + visibleRows < allFeatures.size) {
-            drawInlineButton(context, mouseX, mouseY, width - 20, startY + 22, "§7▼") { featureScrollOffset++ }
-        }
+
+        super.render(context, mouseX, mouseY, delta)
     }
 
     // ═══ APPLY ═══
     private fun applyAll() {
-        // Stats
         val statBuf = PacketByteBufs.create()
         statBuf.writeString(snapshot.playerName)
         statBuf.writeInt(editedStats.size)
         editedStats.forEach { (id, v) -> statBuf.writeIdentifier(id); statBuf.writeInt(v) }
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_STATS, statBuf)
 
-        // Identity
         val idBuf = PacketByteBufs.create()
         idBuf.writeString(snapshot.playerName)
         idBuf.writeBoolean(editedClassId != null)
@@ -361,80 +298,68 @@ class GmPlayerEditScreen(
         idBuf.writeInt(editedLevel)
         idBuf.writeBoolean(editedRaceId != null)
         if (editedRaceId != null) idBuf.writeIdentifier(editedRaceId!!)
-        idBuf.writeBoolean(true)
-        idBuf.writeString(editedGender)
+        idBuf.writeBoolean(true); idBuf.writeString(editedGender)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDENTITY, idBuf)
 
-        // Skills
         val skillBuf = PacketByteBufs.create()
         skillBuf.writeString(snapshot.playerName)
         skillBuf.writeInt(editedSkills.size)
         editedSkills.forEach { (id, level) -> skillBuf.writeIdentifier(id); skillBuf.writeInt(level) }
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_SKILLS, skillBuf)
 
-        // Features — send each change
-        editedFeatures.forEach { featId ->
-            val buf = PacketByteBufs.create()
-            buf.writeString(snapshot.playerName)
-            buf.writeIdentifier(featId)
-            buf.writeBoolean(true)
-            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FEATURE, buf)
-        }
-
-        hasUnsavedChanges = false
         statusMessage = "§aApplied!"
         statusTimer = 1f
     }
 
     // ═══ UI HELPERS ═══
-    private fun drawButton(context: DrawContext, btn: UiButton, mouseX: Int, mouseY: Int, active: Boolean = false) {
-        val hovered = mouseX in btn.x..(btn.x + btn.w) && mouseY in btn.y..(btn.y + btn.h)
-        val bg = when { active -> 0xCC5a4a2a.toInt(); hovered -> 0xCC4a3a2a.toInt(); else -> 0xCC2b2321.toInt() }
-        val border = if (hovered || active) 0xFFd4a96a.toInt() else 0xFF6b5a3e.toInt()
-        context.fill(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, bg)
-        context.fill(btn.x, btn.y, btn.x + btn.w, btn.y + 1, border)
-        context.fill(btn.x, btn.y + btn.h - 1, btn.x + btn.w, btn.y + btn.h, border)
-        context.fill(btn.x, btn.y, btn.x + 1, btn.y + btn.h, border)
-        context.fill(btn.x + btn.w - 1, btn.y, btn.x + btn.w, btn.y + btn.h, border)
+
+    /** Registers and draws a button, returns true if hovered */
+    private fun addBtn(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, label: String, action: () -> Unit) {
+        frameButtons.add(Btn(x, y, w, h, label, action))
+        val hovered = mouseX in x..(x + w) && mouseY in y..(y + h)
+        val bg = if (hovered) 0xCC4a3a2a.toInt() else 0xCC2b2321.toInt()
+        val border = if (hovered) 0xFFd4a96a.toInt() else 0xFF6b5a3e.toInt()
+        context.fill(x, y, x + w, y + h, bg)
+        context.fill(x, y, x + w, y + 1, border)
+        context.fill(x, y + h - 1, x + w, y + h, border)
+        context.fill(x, y, x + 1, y + h, border)
+        context.fill(x + w - 1, y, x + w, y + h, border)
         val m = context.matrices
         m.push()
-        m.translate((btn.x + btn.w / 2).toFloat(), (btn.y + btn.h / 2 - 3).toFloat(), 0f)
+        m.translate((x + w / 2).toFloat(), (y + h / 2 - 3).toFloat(), 0f)
         m.scale(0.75f, 0.75f, 1f)
-        val tw = textRenderer.getWidth(btn.label)
-        context.drawTextWithShadow(textRenderer, btn.label, -(tw / 2), 0, 0xFFFFFF)
+        val tw = textRenderer.getWidth(label)
+        context.drawTextWithShadow(textRenderer, label, -(tw / 2), 0, 0xFFFFFF)
         m.pop()
     }
 
-    private fun drawInlineButton(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, label: String, action: () -> Unit) {
-        val btn = UiButton(x, y, 10, 10, label, action)
-        drawButton(context, btn, mouseX, mouseY)
-    }
-
-    private fun drawSmall(context: DrawContext, text: String, x: Int, y: Int, color: Int) {
+    private fun drawLabel(context: DrawContext, text: String, x: Int, y: Int, scale: Float = 0.75f, color: Int = 0xCCCCCC) {
         val m = context.matrices
         m.push()
         m.translate(x.toFloat(), y.toFloat(), 0f)
-        m.scale(0.75f, 0.75f, 1f)
+        m.scale(scale, scale, 1f)
         context.drawTextWithShadow(textRenderer, text, 0, 0, color)
         m.pop()
     }
 
+    private fun drawHLine(context: DrawContext, x1: Int, x2: Int, y: Int, color: Int) {
+        context.fill(x1, y, x2, y + 1, color)
+    }
+
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val mx = mouseX.toInt(); val my = mouseY.toInt()
-        buttons.forEach { btn ->
+        // Iterate in reverse so topmost (last drawn) buttons get priority
+        for (btn in frameButtons.reversed()) {
             if (mx in btn.x..(btn.x + btn.w) && my in btn.y..(btn.y + btn.h)) {
-                btn.action(); return true
+                btn.action()
+                return true
             }
         }
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        when (activeTab) {
-            Tab.SKILLS -> skillScrollOffset = (skillScrollOffset - amount.toInt()).coerceAtLeast(0)
-            Tab.FEATURES -> featureScrollOffset = (featureScrollOffset - amount.toInt()).coerceAtLeast(0)
-            else -> {}
-        }
+        skillScrollOffset = (skillScrollOffset - amount.toInt()).coerceAtLeast(0)
         return true
     }
 
