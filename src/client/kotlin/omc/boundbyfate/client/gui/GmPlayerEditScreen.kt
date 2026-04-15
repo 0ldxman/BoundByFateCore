@@ -71,17 +71,25 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7← Back") { MinecraftClient.getInstance().setScreen(GmScreen()) }
         btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§aApply") { applyAll() }
 
-        val headerY = pad + 13; val headerH = 38
+        val headerY = pad + 13; val headerH = 48
         // Name box — small, left
         val nameBoxW = W / 4
         box(context, pad, headerY, nameBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "§7Name", pad + 3, headerY + 2, 0.55f, 0x888888)
+        // Name + gender on same line
         lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.9f, 0xFFD700)
-        // Gender button inside name box
         val gIcon = when (gender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
-        btn(context, mouseX, mouseY, pad + nameBoxW - 16, headerY + headerH - 14, 14, 12, gIcon) {
+        btn(context, mouseX, mouseY, pad + nameBoxW - 18, headerY + 8, 16, 12, gIcon) {
             gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" }
         }
+        // Level + EXP below name
+        val xpNeeded = xpForNextLevel(level)
+        lbl(context, "Lv $level", pad + 3, headerY + 24, 0.65f, 0xCCCCCC)
+        btn(context, mouseX, mouseY, pad + 20, headerY + 23, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
+        btn(context, mouseX, mouseY, pad + 30, headerY + 23, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
+        lbl(context, "EXP: $experience / $xpNeeded", pad + 3, headerY + 34, 0.55f, 0x888888)
+        btn(context, mouseX, mouseY, pad + nameBoxW - 18, headerY + 33, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
+        btn(context, mouseX, mouseY, pad + nameBoxW - 8, headerY + 33, 8, 9, "§a+") { experience += 100 }
 
         // Info box — large, right
         val infoX = pad + nameBoxW + 4; val infoW = W - infoX - pad
@@ -96,11 +104,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                                BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
         statOrder.forEachIndexed { i, stat ->
             val sy = bodyY + i * statBoxH
-            renderStatBox(context, mouseX, mouseY, pad + 10, sy, statBoxW, statBoxH - 1, stat)
+            // Square box: width = height
+            val sqSize = statBoxH - 1
+            renderStatBox(context, mouseX, mouseY, pad + 12, sy, sqSize, sqSize, stat)
         }
 
         // ── MIDDLE: SAVES + SKILLS ────────────────────────────────────────────
-        val midX = pad + 10 + statBoxW + 14; val midW = (W - midX - pad) * 55 / 100
+        val midX = pad + 12 + (H - bodyY - pad) / 6 + 14 + 11
+        val midW = (W - midX - pad) * 55 / 100
         val savesH = 80
         box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
@@ -135,29 +146,20 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderInfoBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
-        val col2 = x + w / 2
-        // Row 1: Class + Level
-        lbl(context, "Class:", x, y, 0.6f, 0x888888)
+        val col1 = x; val col2 = x + w / 2 + 4
+        // Col 1: Class + Subclass
+        lbl(context, "Class:", col1, y, 0.6f, 0x888888)
         val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, x + 24, y - 1, 70, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        lbl(context, "Lv:", col2, y, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, col2 + 14, y - 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
-        lbl(context, "$level", col2 + 24, y, 0.75f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, col2 + 32, y - 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
-        // Row 2: Subclass + EXP
-        lbl(context, "Sub:", x, y + 10, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col1 + 24, y - 1, w / 2 - 28, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        lbl(context, "Sub:", col1, y + 12, 0.6f, 0x888888)
         val subName = subclassId?.let { id -> classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, x + 20, y + 9, 74, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        lbl(context, "EXP:", col2, y + 10, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, col2 + 18, y + 9, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
-        lbl(context, "$experience", col2 + 28, y + 10, 0.65f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, col2 + 52, y + 9, 8, 9, "§a+") { experience += 100 }
-        // Row 3: Race + Alignment
-        lbl(context, "Race:", x, y + 20, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col1 + 20, y + 11, w / 2 - 24, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        // Col 2: Race + Alignment
+        lbl(context, "Race:", col2, y, 0.6f, 0x888888)
         val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, x + 22, y + 19, 72, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false }
-        lbl(context, "Align:", col2, y + 20, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, col2 + 22, y + 19, 80, 9, "§f$alignment §e▼") { alignDropOpen = !alignDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false }
+        btn(context, mouseX, mouseY, col2 + 22, y - 1, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false }
+        lbl(context, "Align:", col2, y + 12, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col2 + 24, y + 11, w / 2 - 28, 9, "§f$alignment §e▼") { alignDropOpen = !alignDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false }
     }
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
@@ -183,13 +185,18 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         m.push(); m.translate((x + w / 2).toFloat(), (y + h - 9).toFloat(), 0f); m.scale(0.7f, 0.7f, 1f)
         val mw = textRenderer.getWidth(modStr)
         context.drawTextWithShadow(textRenderer, modStr, -(mw / 2), 0, modColor); m.pop()
-        // Buttons outside box
-        btn(context, mouseX, mouseY, x - 11, y + h / 2 - 5, 10, 10, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
-        btn(context, mouseX, mouseY, x + w + 1, y + h / 2 - 5, 10, 10, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
+        // Buttons outside box — full height of box
+        btn(context, mouseX, mouseY, x - 12, y, 11, h, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
+        btn(context, mouseX, mouseY, x + w + 1, y, 11, h, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
     }
 
     private fun recalcProfBonus() {
         profBonus = when { level >= 17 -> 6; level >= 13 -> 5; level >= 9 -> 4; level >= 5 -> 3; else -> 2 }
+    }
+
+    private fun xpForNextLevel(lv: Int): Int {
+        val thresholds = intArrayOf(0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000)
+        return if (lv >= 20) 355000 else thresholds.getOrElse(lv) { 355000 }
     }
 
     private fun renderSaves(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int) {
