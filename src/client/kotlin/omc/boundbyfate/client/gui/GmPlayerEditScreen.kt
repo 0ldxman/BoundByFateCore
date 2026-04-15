@@ -73,54 +73,69 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7← Back") { MinecraftClient.getInstance().setScreen(GmScreen()) }
         btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§aApply") { applyAll() }
 
-        val headerY = pad + 13; val headerH = 48
-        val nameBoxW = W / 8       // Имя + пол — маленький
-        val lvBoxW = W / 8         // Уровень + EXP — маленький
+        val headerY = pad + 13
+        // Name+Level boxes width = same as each other, ending where infoBox starts
+        val leftHeaderW = W / 5   // total width for name+level blocks
+        val nameBoxH = 26; val lvBoxH = 26
+        val headerH = nameBoxH + lvBoxH + 2  // total header height
 
-        // Block 1: Name + gender
-        box(context, pad, headerY, nameBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "§7Name", pad + 3, headerY + 2, 0.55f, 0x888888)
-        lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.85f, 0xFFD700)
+        // Block 1: Name + gender (top-left)
+        box(context, pad, headerY, leftHeaderW, nameBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "§7Name", pad + 3, headerY + 2, 0.5f, 0x888888)
+        lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.8f, 0xFFD700)
         val gIcon = when (gender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
-        btn(context, mouseX, mouseY, pad + nameBoxW - 18, headerY + 8, 16, 12, gIcon) {
+        btn(context, mouseX, mouseY, pad + leftHeaderW - 16, headerY + 7, 14, 12, gIcon) {
             gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" }
         }
 
-        // Block 2: Level + EXP
-        val lvX = pad + nameBoxW + 4
+        // Block 2: Level + EXP (below name)
+        val lvY = headerY + nameBoxH + 2
         val xpNeeded = xpForNextLevel(level)
-        box(context, lvX, headerY, lvBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "§7Level", lvX + 3, headerY + 2, 0.55f, 0x888888)
-        lbl(context, "$level", lvX + 3, headerY + 10, 0.85f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, lvX + 14, headerY + 8, 8, 10, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
-        btn(context, mouseX, mouseY, lvX + 24, headerY + 8, 8, 10, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
-        lbl(context, "§7EXP", lvX + 3, headerY + 24, 0.55f, 0x888888)
-        lbl(context, "$experience", lvX + 3, headerY + 32, 0.65f, 0xCCCCCC)
-        lbl(context, "§7/ $xpNeeded", lvX + 3, headerY + 40, 0.5f, 0x666666)
-        btn(context, mouseX, mouseY, lvX + lvBoxW - 18, headerY + 30, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
-        btn(context, mouseX, mouseY, lvX + lvBoxW - 8, headerY + 30, 8, 9, "§a+") { experience += 100 }
+        box(context, pad, lvY, leftHeaderW, lvBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "§7Lv", pad + 3, lvY + 2, 0.5f, 0x888888)
+        lbl(context, "$level", pad + 14, lvY + 2, 0.75f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, pad + 26, lvY + 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
+        btn(context, mouseX, mouseY, pad + 36, lvY + 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
+        lbl(context, "§7EXP: $experience", pad + 3, lvY + 13, 0.5f, 0x888888)
+        lbl(context, "§7/ $xpNeeded", pad + 3, lvY + 20, 0.45f, 0x555555)
+        btn(context, mouseX, mouseY, pad + leftHeaderW - 18, lvY + 12, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
+        btn(context, mouseX, mouseY, pad + leftHeaderW - 8, lvY + 12, 8, 9, "§a+") { experience += 100 }
 
-        // Info box — rest of header
-        val infoX = lvX + lvBoxW + 4; val infoW = W - infoX - pad
+        // Info box — from end of name/level blocks to right edge
+        val infoX = pad + leftHeaderW + 4; val infoW = W - infoX - pad
         box(context, infoX, headerY, infoW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         renderInfoBox(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, headerH - 4)
 
         val bodyY = headerY + headerH + 4
 
         // ── STAT COLUMN (left, individual boxes) ──────────────────────────────
-        val statBoxW = 52; val statBoxH = (H - bodyY - pad) / 6
         val statOrder = listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
                                BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
         statOrder.forEachIndexed { i, stat ->
-            val sy = bodyY + i * statBoxH
-            // Square box: width = height
-            val sqSize = statBoxH - 1
-            renderStatBox(context, mouseX, mouseY, pad + 12, sy, sqSize, sqSize, stat)
+            val sy = bodyY + i * ((H - bodyY - pad) / 6)
+            val sqSize2 = (H - bodyY - pad) / 6 - 1
+            renderStatBox(context, mouseX, mouseY, pad + 12, sy, sqSize2, sqSize2, stat)
         }
 
-        // ── MIDDLE: SAVES + SKILLS ────────────────────────────────────────────
-        val midX = pad + 12 + (H - bodyY - pad) / 6 + 14 + 11
-        val midW = (W - midX - pad) * 55 / 100
+        // ── BODY LAYOUT ───────────────────────────────────────────────────────
+        // Stat column width = square size + buttons
+        val sqSize = (H - bodyY - pad) / 6 - 1
+        val statColEnd = pad + 12 + sqSize + 12 + 11  // left edge + margin + sq + margin + btn
+
+        // Center column: 3 param boxes stacked, width = ~120px
+        val paramBoxW = 120; val paramBoxH = 50
+        val centerX = (W - paramBoxW) / 2
+        val dsY = bodyY; val hpY = dsY + paramBoxH + 4; val spY = hpY + paramBoxH + 4
+
+        box(context, centerX, dsY, paramBoxW, paramBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderDeathSaves(context, mouseX, mouseY, centerX, dsY, paramBoxW, paramBoxH)
+        box(context, centerX, hpY, paramBoxW, paramBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderHpBox(context, mouseX, mouseY, centerX, hpY, paramBoxW, paramBoxH)
+        box(context, centerX, spY, paramBoxW, paramBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderSpeedBox(context, mouseX, mouseY, centerX, spY, paramBoxW, paramBoxH)
+
+        // Middle-left: Saves + Skills (between stat col and center col)
+        val midX = statColEnd + 4; val midW = centerX - midX - 4
         val savesH = 80
         box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
@@ -131,28 +146,13 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
         renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
 
-        // ── RIGHT: PARAMS (center) + FEATURES ────────────────────────────────
-        val rightX = midX + midW + 4; val rightW = W - rightX - pad
-        val paramsH = 90
-        // 3 separate parameter boxes side by side
-        val pBoxW = (rightW - 8) / 3
-        // Box 1: Death Saves
-        box(context, rightX, bodyY, pBoxW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        renderDeathSaves(context, mouseX, mouseY, rightX, bodyY, pBoxW, paramsH)
-        // Box 2: HP
-        val hpX = rightX + pBoxW + 4
-        box(context, hpX, bodyY, pBoxW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        renderHpBox(context, mouseX, mouseY, hpX, bodyY, pBoxW, paramsH)
-        // Box 3: Speed + Size
-        val spX = hpX + pBoxW + 4
-        box(context, spX, bodyY, rightW - pBoxW * 2 - 8, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        renderSpeedBox(context, mouseX, mouseY, spX, bodyY, rightW - pBoxW * 2 - 8, paramsH)
-
-        val featY = bodyY + paramsH + 4; val featH = H - featY - pad
-        box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
-        btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
-        renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
+        // Right: Features (from bodyY to bottom, same height as info box top)
+        val rightX = centerX + paramBoxW + 4; val rightW = W - rightX - pad
+        val featH = H - bodyY - pad
+        box(context, rightX, bodyY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "FEATURES & TRAITS", rightX + 4, bodyY + 3, 0.65f, 0xD4AF37)
+        btn(context, mouseX, mouseY, rightX + rightW - 14, bodyY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
+        renderFeatures(context, mouseX, mouseY, rightX + 4, bodyY + 14, rightW - 8, featH - 18)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
         renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2)
