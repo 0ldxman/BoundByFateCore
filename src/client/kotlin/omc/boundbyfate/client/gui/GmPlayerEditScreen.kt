@@ -52,6 +52,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         "Lawful Neutral","True Neutral","Chaotic Neutral",
         "Lawful Evil","Neutral Evil","Chaotic Evil")
 
+    // ── speed (editable, stored as ft) ───────────────────────────────────────
+    private var speedFt: Int = (snapshot.speed * 200).toInt().let { if (it == 0) 30 else it }
+    // ── death saves ───────────────────────────────────────────────────────────
+    private var deathSuccesses: Int = 0
+    private var deathFailures: Int = 0
+
     override fun init() { /* layout is dynamic */ }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -59,55 +65,67 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btns.clear()
         if (statusTimer > 0f) statusTimer -= delta * 0.05f
 
-        val W = width; val H = height
-        val pad = 6
+        val W = width; val H = height; val pad = 5
 
         // ── HEADER ────────────────────────────────────────────────────────────
-        // Back / Apply
         btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7← Back") { MinecraftClient.getInstance().setScreen(GmScreen()) }
         btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§aApply") { applyAll() }
 
-        // Name (left half of header)
-        val headerH = 36
-        box(context, pad, pad + 13, W / 2 - pad - 4, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, snapshot.playerName, pad + 4, pad + 17, 1.0f, 0xFFD700)
-
-        // Info box (right half of header)
-        val infoX = W / 2; val infoY = pad + 13; val infoW = W / 2 - pad; val infoH = headerH
-        box(context, infoX, infoY, infoW, infoH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-
-        // Class + subclass
-        val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        val subName = subclassId?.let { id ->
-            classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path
-        } ?: "—"
-        lbl(context, "Class:", infoX + 3, infoY + 3, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 28, infoY + 2, 60, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        lbl(context, "Sub:", infoX + 3, infoY + 13, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 22, infoY + 12, 66, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-
-        // Level + EXP
-        lbl(context, "Lv:", infoX + 95, infoY + 3, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 110, infoY + 2, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
-        lbl(context, "$level", infoX + 120, infoY + 3, 0.65f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, infoX + 128, infoY + 2, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
-        lbl(context, "EXP:", infoX + 95, infoY + 13, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 116, infoY + 12, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
-        lbl(context, "$experience", infoX + 126, infoY + 13, 0.65f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, infoX + 148, infoY + 12, 8, 9, "§a+") { experience += 100 }
-
-        // Race + alignment + gender
-        val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        lbl(context, "Race:", infoX + 3, infoY + 24, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 26, infoY + 23, 60, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false }
-        lbl(context, "Align:", infoX + 95, infoY + 24, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, infoX + 120, infoY + 23, 70, 9, "§f$alignment §e▼") { alignDropOpen = !alignDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false }
+        val headerY = pad + 13; val headerH = 38
+        // Name box — small, left
+        val nameBoxW = W / 4
+        box(context, pad, headerY, nameBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "§7Name", pad + 3, headerY + 2, 0.55f, 0x888888)
+        lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.9f, 0xFFD700)
+        // Gender button inside name box
         val gIcon = when (gender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
-        btn(context, mouseX, mouseY, infoX + infoW - 14, infoY + 23, 12, 9, gIcon) { gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" } }
+        btn(context, mouseX, mouseY, pad + nameBoxW - 16, headerY + headerH - 14, 14, 12, gIcon) {
+            gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" }
+        }
 
-        val bodyY = infoY + infoH + 4
-        renderBody(context, mouseX, mouseY, pad, bodyY, W, H)
-        renderDropdowns(context, mouseX, mouseY, infoX, infoY)
+        // Info box — large, right
+        val infoX = pad + nameBoxW + 4; val infoW = W - infoX - pad
+        box(context, infoX, headerY, infoW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderInfoBox(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, headerH - 4)
+
+        val bodyY = headerY + headerH + 4
+
+        // ── STAT COLUMN (left, individual boxes) ──────────────────────────────
+        val statBoxW = 52; val statBoxH = (H - bodyY - pad) / 6
+        val statOrder = listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
+                               BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
+        statOrder.forEachIndexed { i, stat ->
+            val sy = bodyY + i * statBoxH
+            renderStatBox(context, mouseX, mouseY, pad + 10, sy, statBoxW, statBoxH - 1, stat)
+        }
+
+        // ── MIDDLE: SAVES + SKILLS ────────────────────────────────────────────
+        val midX = pad + 10 + statBoxW + 14; val midW = (W - midX - pad) * 55 / 100
+        val savesH = 80
+        box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
+        renderSaves(context, mouseX, mouseY, midX + 4, bodyY + 13, midW - 8)
+
+        val skillsY = bodyY + savesH + 4; val skillsH = H - skillsY - pad
+        box(context, midX, skillsY, midW, skillsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
+        renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
+
+        // ── RIGHT: PARAMS (center) + FEATURES ────────────────────────────────
+        val rightX = midX + midW + 4; val rightW = W - rightX - pad
+        val paramsH = 90
+        box(context, rightX, bodyY, rightW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "PARAMETERS", rightX + rightW / 2 - 20, bodyY + 3, 0.65f, 0xD4AF37)
+        renderParams(context, mouseX, mouseY, rightX + 4, bodyY + 13, rightW - 8)
+
+        val featY = bodyY + paramsH + 4; val featH = H - featY - pad
+        box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
+        btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
+        renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
+
+        // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
+        renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2)
 
         if (statusTimer > 0f) {
             val a = (statusTimer * 255).toInt().coerceIn(0, 255)
@@ -116,83 +134,62 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         super.render(context, mouseX, mouseY, delta)
     }
 
-    private fun recalcProfBonus() {
-        profBonus = when { level >= 17 -> 6; level >= 13 -> 5; level >= 9 -> 4; level >= 5 -> 3; else -> 2 }
+    private fun renderInfoBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
+        val col2 = x + w / 2
+        // Row 1: Class + Level
+        lbl(context, "Class:", x, y, 0.6f, 0x888888)
+        val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
+        btn(context, mouseX, mouseY, x + 24, y - 1, 70, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        lbl(context, "Lv:", col2, y, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col2 + 14, y - 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
+        lbl(context, "$level", col2 + 24, y, 0.75f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, col2 + 32, y - 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
+        // Row 2: Subclass + EXP
+        lbl(context, "Sub:", x, y + 10, 0.6f, 0x888888)
+        val subName = subclassId?.let { id -> classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path } ?: "—"
+        btn(context, mouseX, mouseY, x + 20, y + 9, 74, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        lbl(context, "EXP:", col2, y + 10, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col2 + 18, y + 9, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
+        lbl(context, "$experience", col2 + 28, y + 10, 0.65f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, col2 + 52, y + 9, 8, 9, "§a+") { experience += 100 }
+        // Row 3: Race + Alignment
+        lbl(context, "Race:", x, y + 20, 0.6f, 0x888888)
+        val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
+        btn(context, mouseX, mouseY, x + 22, y + 19, 72, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false }
+        lbl(context, "Align:", col2, y + 20, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col2 + 22, y + 19, 80, 9, "§f$alignment §e▼") { alignDropOpen = !alignDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false }
     }
 
-    private fun renderBody(context: DrawContext, mouseX: Int, mouseY: Int, pad: Int, bodyY: Int, W: Int, H: Int) {
-        val statColW = 68; val midColX = pad + statColW + 4
-        val rightColX = W - 140; val rightColW = 136
-        val midColW = rightColX - midColX - 4
+    private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
+        val v = stats[stat.id] ?: 10
+        val mod = (v - 10) / 2
+        val modStr = if (mod >= 0) "+$mod" else "$mod"
+        val modColor = if (mod > 0) 0x55FF55 else if (mod < 0) 0xFF5555 else 0x888888
+        val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
+        val shortName = Text.translatable(shortKey).string
+        val changed = v != (snapshot.statsData?.getStatValue(stat.id)?.total ?: 10)
 
-        // ── LEFT: ABILITY SCORES ──────────────────────────────────────────────
-        box(context, pad, bodyY, statColW, H - bodyY - pad, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "ABILITY", pad + 4, bodyY + 3, 0.6f, 0xD4AF37)
-        lbl(context, "SCORES", pad + 4, bodyY + 10, 0.6f, 0xD4AF37)
+        box(context, x, y, w, h, 0xCC1a1a1a.toInt(), if (changed) 0xFFFFAA44.toInt() else 0xFF8a6a3a.toInt())
+        // Name top center
+        val m = context.matrices; m.push()
+        m.translate((x + w / 2).toFloat(), (y + 3).toFloat(), 0f); m.scale(0.6f, 0.6f, 1f)
+        val nw = textRenderer.getWidth(shortName)
+        context.drawTextWithShadow(textRenderer, shortName, -(nw / 2), 0, 0xCCCCCC); m.pop()
+        // Value center big
+        m.push(); m.translate((x + w / 2).toFloat(), (y + h / 2 - 4).toFloat(), 0f); m.scale(1.1f, 1.1f, 1f)
+        val vw = textRenderer.getWidth("$v")
+        context.drawTextWithShadow(textRenderer, "$v", -(vw / 2), 0, 0xFFFFFF); m.pop()
+        // Mod bottom center
+        m.push(); m.translate((x + w / 2).toFloat(), (y + h - 9).toFloat(), 0f); m.scale(0.7f, 0.7f, 1f)
+        val mw = textRenderer.getWidth(modStr)
+        context.drawTextWithShadow(textRenderer, modStr, -(mw / 2), 0, modColor); m.pop()
+        // Buttons outside box
+        btn(context, mouseX, mouseY, x - 11, y + h / 2 - 5, 10, 10, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
+        btn(context, mouseX, mouseY, x + w + 1, y + h / 2 - 5, 10, 10, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
+    }
 
-        val statOrder = listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
-                               BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
-        var sy = bodyY + 20
-        statOrder.forEach { stat ->
-            val v = stats[stat.id] ?: 10
-            val mod = (v - 10) / 2
-            val modStr = if (mod >= 0) "+$mod" else "$mod"
-            val modColor = if (mod > 0) 0x55FF55 else if (mod < 0) 0xFF5555 else 0x888888
-            val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
-            val shortName = Text.translatable(shortKey).string
-            val changed = v != (snapshot.statsData?.getStatValue(stat.id)?.total ?: 10)
-
-            // Stat name
-            lbl(context, shortName, pad + 4, sy, 0.65f, if (changed) 0xFFAA44 else 0xCCCCCC)
-            // Value + mod
-            lbl(context, "$v", pad + 28, sy, 0.85f, 0xFFFFFF)
-            lbl(context, modStr, pad + 42, sy, 0.65f, modColor)
-            // Buttons
-            btn(context, mouseX, mouseY, pad + 2, sy - 1, 8, 9, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
-            btn(context, mouseX, mouseY, pad + statColW - 11, sy - 1, 8, 9, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
-            sy += 14
-        }
-
-        // Proficiency bonus
-        sy += 2
-        box(context, pad + 2, sy, statColW - 4, 18, 0xCC222222.toInt(), 0xFF6a5a3a.toInt())
-        lbl(context, "PROF BONUS", pad + 4, sy + 2, 0.55f, 0x888888)
-        lbl(context, "+$profBonus", pad + 4, sy + 9, 0.75f, 0xFFD700)
-        btn(context, mouseX, mouseY, pad + 36, sy + 4, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
-        btn(context, mouseX, mouseY, pad + 46, sy + 4, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
-
-        // Passive perception
-        sy += 22
-        box(context, pad + 2, sy, statColW - 4, 14, 0xCC222222.toInt(), 0xFF6a5a3a.toInt())
-        val wisVal = stats[BbfStats.WISDOM.id] ?: 10
-        val wisMod = (wisVal - 10) / 2
-        val percProf = skills[omc.boundbyfate.registry.BbfSkills.PERCEPTION.id] ?: 0
-        val passPerc = 10 + wisMod + percProf * profBonus
-        lbl(context, "PASSIVE PERC", pad + 4, sy + 2, 0.5f, 0x888888)
-        lbl(context, "$passPerc", pad + 4, sy + 8, 0.75f, 0xFFFFFF)
-
-        // ── MIDDLE: SAVES + SKILLS ────────────────────────────────────────────
-        val savesH = 80; val skillsH = H - bodyY - savesH - pad * 2 - 8
-        box(context, midColX, bodyY, midColW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SAVING THROWS", midColX + 4, bodyY + 3, 0.65f, 0xD4AF37)
-        renderSaves(context, mouseX, mouseY, midColX + 4, bodyY + 12, midColW - 8)
-
-        box(context, midColX, bodyY + savesH + 4, midColW, skillsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SKILLS", midColX + 4, bodyY + savesH + 7, 0.65f, 0xD4AF37)
-        renderSkills(context, mouseX, mouseY, midColX + 4, bodyY + savesH + 16, midColW - 8, skillsH - 20)
-
-        // ── RIGHT: PARAMS + FEATURES ─────────────────────────────────────────
-        val paramsH = 80
-        box(context, rightColX, bodyY, rightColW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "PARAMETERS", rightColX + 4, bodyY + 3, 0.65f, 0xD4AF37)
-        renderParams(context, mouseX, mouseY, rightColX + 4, bodyY + 12, rightColW - 8)
-
-        val featY = bodyY + paramsH + 4
-        val featH = H - featY - pad
-        box(context, rightColX, featY, rightColW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "FEATURES & TRAITS", rightColX + 4, featY + 3, 0.65f, 0xD4AF37)
-        btn(context, mouseX, mouseY, rightColX + rightColW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
-        renderFeatures(context, mouseX, mouseY, rightColX + 4, featY + 14, rightColW - 8, featH - 18)
+    private fun recalcProfBonus() {
+        profBonus = when { level >= 17 -> 6; level >= 13 -> 5; level >= 9 -> 4; level >= 5 -> 3; else -> 2 }
     }
 
     private fun renderSaves(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int) {
@@ -227,23 +224,34 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderParams(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int) {
-        // HP
-        lbl(context, "HP:", x, y, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, x + 16, y - 1, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
-        lbl(context, "${currentHp.toInt()}", x + 26, y, 0.75f, 0xFF5555)
-        lbl(context, "/", x + 38, y, 0.65f, 0x888888)
-        btn(context, mouseX, mouseY, x + 44, y - 1, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
-        lbl(context, "${maxHp.toInt()}", x + 54, y, 0.75f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, x + 66, y - 1, 8, 9, "§a+") { maxHp += 1f }
-
+        val cx = x + w / 2
+        // Death saves (top)
+        lbl(context, "Death Saves:", x, y, 0.6f, 0x888888)
+        lbl(context, "Successes:", x, y + 10, 0.55f, 0x55FF55)
+        for (i in 0..2) {
+            val icon = if (i < deathSuccesses) "§a●" else "§7○"
+            btn(context, mouseX, mouseY, x + 42 + i * 10, y + 9, 8, 8, icon) { deathSuccesses = if (deathSuccesses > i) i else i + 1 }
+        }
+        lbl(context, "Failures:", x, y + 20, 0.55f, 0xFF5555)
+        for (i in 0..2) {
+            val icon = if (i < deathFailures) "§c●" else "§7○"
+            btn(context, mouseX, mouseY, x + 36 + i * 10, y + 19, 8, 8, icon) { deathFailures = if (deathFailures > i) i else i + 1 }
+        }
+        // Max HP
+        lbl(context, "Max HP:", cx - 20, y + 32, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, cx + 14, y + 31, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
+        lbl(context, "${maxHp.toInt()}", cx + 24, y + 32, 0.75f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, cx + 36, y + 31, 8, 9, "§a+") { maxHp += 1f }
+        // Current HP
+        lbl(context, "Cur HP:", cx - 20, y + 43, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, cx + 14, y + 42, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
+        lbl(context, "${currentHp.toInt()}", cx + 24, y + 43, 0.75f, 0xFF5555)
+        btn(context, mouseX, mouseY, cx + 36, y + 42, 8, 9, "§a+") { currentHp = (currentHp + 1).coerceAtMost(maxHp) }
         // Speed
-        lbl(context, "Speed:", x, y + 14, 0.65f, 0x888888)
-        val speedFt = (snapshot.speed * 200).toInt()
-        lbl(context, "${speedFt}ft", x + 30, y + 14, 0.75f, 0xFFFFFF)
-
-        // Death saves
-        lbl(context, "Death Saves:", x, y + 28, 0.65f, 0x888888)
-        lbl(context, "✓✓✓ ✗✗✗", x + 4, y + 36, 0.65f, 0xAAAAAA)
+        lbl(context, "Speed:", cx - 20, y + 55, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, cx + 14, y + 54, 8, 9, "§c-") { speedFt = (speedFt - 5).coerceAtLeast(0) }
+        lbl(context, "${speedFt}ft", cx + 24, y + 55, 0.65f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, cx + 44, y + 54, 8, 9, "§a+") { speedFt += 5 }
     }
 
     private fun renderFeatures(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
@@ -269,10 +277,13 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderDropdowns(context: DrawContext, mouseX: Int, mouseY: Int, infoX: Int, infoY: Int) {
+        val m = context.matrices
+        // Render dropdowns at high Z so they appear on top
+        m.push(); m.translate(0f, 0f, 200f)
         if (classDropOpen) {
-            var dy = infoY + 11
+            var dy = infoY + 8
             ClientGmRegistry.classes.forEach { cls ->
-                btn(context, mouseX, mouseY, infoX + 28, dy, 60, 9,
+                btn(context, mouseX, mouseY, infoX + 24, dy, 70, 9,
                     if (cls.id == classId) "§a${cls.displayName}" else "§7${cls.displayName}") {
                     classId = cls.id; subclassId = null; classDropOpen = false
                 }
@@ -281,9 +292,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         }
         if (subDropOpen) {
             val subs = classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses } ?: emptyList()
-            var dy = infoY + 21
+            var dy = infoY + 18
             subs.forEach { sub ->
-                btn(context, mouseX, mouseY, infoX + 22, dy, 66, 9,
+                btn(context, mouseX, mouseY, infoX + 20, dy, 74, 9,
                     if (sub.id == subclassId) "§a${sub.displayName}" else "§7${sub.displayName}") {
                     subclassId = sub.id; subDropOpen = false
                 }
@@ -291,9 +302,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
         if (raceDropOpen) {
-            var dy = infoY + 32
+            var dy = infoY + 28
             ClientGmRegistry.races.forEach { race ->
-                btn(context, mouseX, mouseY, infoX + 26, dy, 60, 9,
+                btn(context, mouseX, mouseY, infoX + 22, dy, 72, 9,
                     if (race.id == raceId) "§a${race.displayName}" else "§7${race.displayName}") {
                     raceId = race.id; raceDropOpen = false
                 }
@@ -301,15 +312,17 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
         if (alignDropOpen) {
-            var dy = infoY + 32
+            val col2 = infoX + (width - 5 - infoX) / 2
+            var dy = infoY + 28
             ALIGNMENTS.forEach { al ->
-                btn(context, mouseX, mouseY, infoX + 120, dy, 70, 9,
+                btn(context, mouseX, mouseY, col2 + 22, dy, 80, 9,
                     if (al == alignment) "§a$al" else "§7$al") {
                     alignment = al; alignDropOpen = false
                 }
                 dy += 10
             }
         }
+        m.pop()
     }
 
     private fun applyAll() {
@@ -375,7 +388,13 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        skillScroll = (skillScroll - amount.toInt()).coerceAtLeast(0); return true
+        // Only scroll skills if mouse is in the skills area (right side of screen, below saves)
+        val pad = 5; val statBoxW = 52
+        val midX = pad + 10 + statBoxW + 14
+        if (mouseX.toInt() > midX) {
+            skillScroll = (skillScroll - amount.toInt()).coerceAtLeast(0)
+        }
+        return true
     }
 
     override fun shouldPause() = false
