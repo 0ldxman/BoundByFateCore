@@ -6,9 +6,6 @@ import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.PlayerClassData
 import omc.boundbyfate.component.PlayerRaceData
 
-/**
- * Client-side snapshot of a single player's character data for the GM screen.
- */
 data class GmPlayerSnapshot(
     val playerName: String,
     val statsData: EntityStatData?,
@@ -16,16 +13,16 @@ data class GmPlayerSnapshot(
     val classData: PlayerClassData?,
     val raceData: PlayerRaceData?,
     val level: Int,
+    val experience: Int = 0,
     val gender: String?,
+    val alignment: String = "Neutral",
     val currentHp: Float,
     val maxHp: Float,
+    val speed: Float = 0.1f,
     val isOnline: Boolean,
-    val grantedFeatures: Set<net.minecraft.util.Identifier> = emptySet()
+    val grantedFeatures: List<Identifier> = emptyList()
 )
 
-/**
- * Client-side GM data store — holds snapshots of all players.
- */
 object ClientGmData {
     val players: MutableList<GmPlayerSnapshot> = mutableListOf()
 

@@ -191,16 +191,20 @@ object ClientPacketHandler {
                 val gender = if (hasGender) buf.readString() else null
                 val hp = buf.readFloat()
                 val maxHp = buf.readFloat()
+                val speed = buf.readFloat()
+                val experience = buf.readInt()
+                val alignment = buf.readString()
                 val featureCount = buf.readInt()
-                val features = (0 until featureCount).map { buf.readIdentifier() }.toSet()
+                val features = (0 until featureCount).map { buf.readIdentifier() }
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
                     skillData = EntitySkillData(proficiencies = proficiencies),
                     classData = classData, raceData = raceData,
-                    level = level, gender = gender,
-                    currentHp = hp, maxHp = maxHp, isOnline = true,
-                    grantedFeatures = features
+                    level = level, experience = experience,
+                    gender = gender, alignment = alignment,
+                    currentHp = hp, maxHp = maxHp, speed = speed,
+                    isOnline = true, grantedFeatures = features
                 )
             }
             client.execute { ClientGmData.update(snapshots) }

@@ -649,6 +649,17 @@ object ServerPacketHandler {
             buf.writeFloat(player.health)
             buf.writeFloat(player.maxHealth)
 
+            // Speed (movement speed attribute)
+            val speedAttr = player.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
+            buf.writeFloat(speedAttr.toFloat())
+
+            // Experience
+            buf.writeInt(player.totalExperience)
+
+            // Alignment (stored as gender-like attachment, default Neutral)
+            val alignment = player.getAttachedOrElse(BbfAttachments.PLAYER_ALIGNMENT, "Neutral")
+            buf.writeString(alignment)
+
             // Granted features
             val featData = player.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null)
             val features = featData?.grantedFeatures ?: emptySet()

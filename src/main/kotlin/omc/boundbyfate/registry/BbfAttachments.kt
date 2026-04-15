@@ -130,6 +130,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "scale_applied"))
 
+    @JvmField
+    val PLAYER_ALIGNMENT: AttachmentType<String> =
+        AttachmentRegistry.builder<String>()
+            .persistent(Codec.STRING)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_alignment"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }
