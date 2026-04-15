@@ -200,7 +200,7 @@ class GmPlayerEditScreen(
             val statMod = editedStats[save.linkedStat]?.let { (it - 10) / 2 } ?: 0
             val bonus = statMod + if (level > 0) 2 else 0
             val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
-            val shortSaveName = save.displayName.replace("Спасбросок ", "").replace("Saving Throw", "").trim().take(3).uppercase()
+            val shortSaveName = save.displayName.take(3).uppercase()
             drawLabel(context, "$shortSaveName §7$bonusStr", skillColX + 10, rightY + 1, 0.7f, if (level > 0) 0x55FF55 else 0xAAAAAA)
             rightY += 10
         }

@@ -584,6 +584,7 @@ object ServerPacketHandler {
             buf.writeIdentifier(skill.id)
             buf.writeString(skill.displayName)
             buf.writeBoolean(skill.isSavingThrow)
+            buf.writeIdentifier(skill.linkedStat)
         }
 
         // Features

@@ -224,7 +224,7 @@ object ClientPacketHandler {
             }
             val skillCount = buf.readInt()
             val skills = (0 until skillCount).map {
-                omc.boundbyfate.client.state.GmSkillInfo(buf.readIdentifier(), buf.readString(), buf.readBoolean())
+                omc.boundbyfate.client.state.GmSkillInfo(buf.readIdentifier(), buf.readString(), buf.readBoolean(), buf.readIdentifier())
             }
             val featCount = buf.readInt()
             val features = (0 until featCount).map {

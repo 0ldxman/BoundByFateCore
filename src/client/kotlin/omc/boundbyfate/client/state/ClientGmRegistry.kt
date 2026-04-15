@@ -6,7 +6,7 @@ import net.minecraft.util.Identifier
 data class GmClassInfo(val id: Identifier, val displayName: String, val subclasses: List<GmSubclassInfo>)
 data class GmSubclassInfo(val id: Identifier, val displayName: String)
 data class GmRaceInfo(val id: Identifier, val displayName: String)
-data class GmSkillInfo(val id: Identifier, val displayName: String, val isSavingThrow: Boolean)
+data class GmSkillInfo(val id: Identifier, val displayName: String, val isSavingThrow: Boolean, val linkedStat: Identifier)
 data class GmFeatureInfo(val id: Identifier, val displayName: String)
 
 /**
