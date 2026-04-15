@@ -191,16 +191,48 @@ object ClientPacketHandler {
                 val gender = if (hasGender) buf.readString() else null
                 val hp = buf.readFloat()
                 val maxHp = buf.readFloat()
+                val featureCount = buf.readInt()
+                val features = (0 until featureCount).map { buf.readIdentifier() }.toSet()
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
                     skillData = EntitySkillData(proficiencies = proficiencies),
                     classData = classData, raceData = raceData,
                     level = level, gender = gender,
-                    currentHp = hp, maxHp = maxHp, isOnline = true
+                    currentHp = hp, maxHp = maxHp, isOnline = true,
+                    grantedFeatures = features
                 )
             }
             client.execute { ClientGmData.update(snapshots) }
+        }
+
+        // Server → Client: sync GM registry (classes, races, skills, features)
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_GM_REGISTRY) { client, _, buf, _ ->
+            val classCount = buf.readInt()
+            val classes = (0 until classCount).map {
+                val id = buf.readIdentifier()
+                val name = buf.readString()
+                val subCount = buf.readInt()
+                val subs = (0 until subCount).map {
+                    omc.boundbyfate.client.state.GmSubclassInfo(buf.readIdentifier(), buf.readString())
+                }
+                omc.boundbyfate.client.state.GmClassInfo(id, name, subs)
+            }
+            val raceCount = buf.readInt()
+            val races = (0 until raceCount).map {
+                omc.boundbyfate.client.state.GmRaceInfo(buf.readIdentifier(), buf.readString())
+            }
+            val skillCount = buf.readInt()
+            val skills = (0 until skillCount).map {
+                omc.boundbyfate.client.state.GmSkillInfo(buf.readIdentifier(), buf.readString(), buf.readBoolean())
+            }
+            val featCount = buf.readInt()
+            val features = (0 until featCount).map {
+                omc.boundbyfate.client.state.GmFeatureInfo(buf.readIdentifier(), buf.readString())
+            }
+            client.execute {
+                omc.boundbyfate.client.state.ClientGmRegistry.update(classes, races, skills, features)
+            }
         }
     }
 

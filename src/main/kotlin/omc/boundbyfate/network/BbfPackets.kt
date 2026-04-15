@@ -67,4 +67,16 @@ object BbfPackets {
 
     /** Client → Server: GM edits a player's stats */
     val GM_EDIT_PLAYER_STATS = Identifier("boundbyfate-core", "gm_edit_player_stats")
+
+    /** Client → Server: GM edits a player's class/race/level/gender */
+    val GM_EDIT_PLAYER_IDENTITY = Identifier("boundbyfate-core", "gm_edit_player_identity")
+
+    /** Client → Server: GM edits a player's skill/save proficiencies */
+    val GM_EDIT_PLAYER_SKILLS = Identifier("boundbyfate-core", "gm_edit_player_skills")
+
+    /** Client → Server: GM adds/removes a feature from a player */
+    val GM_EDIT_PLAYER_FEATURE = Identifier("boundbyfate-core", "gm_edit_player_feature")
+
+    /** Server → Client: sync available classes/races/skills for GM dropdowns */
+    val SYNC_GM_REGISTRY = Identifier("boundbyfate-core", "sync_gm_registry")
 }

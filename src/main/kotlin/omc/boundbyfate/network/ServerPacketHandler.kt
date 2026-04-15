@@ -129,7 +129,87 @@ object ServerPacketHandler {
             }
         }
 
-        // Client → Server: GM requests player data refresh
+        // Client → Server: GM edits identity (class/race/level/gender)
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_IDENTITY) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val newClassId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
+            val newSubclassId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
+            val newLevel = buf.readInt()
+            val newRaceId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
+            val newGender = buf.readBoolean().let { if (it) buf.readString() else null }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+
+                // Update class
+                if (newClassId != null) {
+                    val classDef = omc.boundbyfate.registry.ClassRegistry.getClass(newClassId)
+                    if (classDef != null) {
+                        val current = target.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+                        target.setAttached(BbfAttachments.PLAYER_CLASS,
+                            omc.boundbyfate.component.PlayerClassData(newClassId, newSubclassId, newLevel))
+                        omc.boundbyfate.system.HitPointsSystem.applyHitPoints(target, classDef, newLevel)
+                        target.health = target.maxHealth
+                    }
+                }
+
+                // Update level
+                target.setAttached(BbfAttachments.PLAYER_LEVEL,
+                    omc.boundbyfate.component.PlayerLevelData(level = newLevel))
+
+                // Update race
+                if (newRaceId != null) {
+                    omc.boundbyfate.system.race.RaceSystem.applyRace(target, newRaceId)
+                }
+
+                // Update gender
+                if (newGender != null) {
+                    target.setAttached(BbfAttachments.PLAYER_GENDER, newGender)
+                }
+
+                syncPlayerData(target)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} edited identity of $targetName")
+            }
+        }
+
+        // Client → Server: GM edits skill/save proficiencies
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_SKILLS) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val skillCount = buf.readInt()
+            val newProficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(skillCount) { newProficiencies[buf.readIdentifier()] = buf.readInt() }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                val updated = omc.boundbyfate.component.EntitySkillData(proficiencies = newProficiencies)
+                target.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
+                syncPlayerData(target)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} edited skills of $targetName")
+            }
+        }
+
+        // Client → Server: GM adds/removes a feature
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_FEATURE) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val featureId = buf.readIdentifier()
+            val add = buf.readBoolean()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                val featData = target.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES,
+                    omc.boundbyfate.component.EntityFeatureData())
+                val updated = if (add) featData.withFeature(featureId)
+                              else featData.withoutFeature(featureId)
+                target.setAttached(BbfAttachments.ENTITY_FEATURES, updated)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} ${if (add) "added" else "removed"} feature $featureId for $targetName")
+            }
+        }
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_REQUEST_REFRESH) { server, player, _, _, _ ->
             if (player.hasPermissionLevel(2)) {
                 server.execute { syncGmData(player) }
@@ -145,26 +225,100 @@ object ServerPacketHandler {
             repeat(statCount) { newStats[buf.readIdentifier()] = buf.readInt() }
 
             server.execute {
-                val target = server.playerManager.getPlayer(targetName) ?: run {
-                    logger.warn("GM ${gmPlayer.name.string} tried to edit offline player $targetName")
-                    return@execute
-                }
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
                 val statsData = target.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null) ?: return@execute
                 var updated = statsData
-                newStats.forEach { (id, value) ->
-                    updated = updated.withBase(id, value)
-                }
+                newStats.forEach { (id, value) -> updated = updated.withBase(id, value) }
                 target.setAttached(BbfAttachments.ENTITY_STATS, updated)
                 omc.boundbyfate.system.stat.StatEffectProcessor.applyAll(target, updated)
-                // Recalculate HP
                 val classData = target.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
                 val classDef = classData?.let { omc.boundbyfate.registry.ClassRegistry.getClass(it.classId) }
                 omc.boundbyfate.system.HitPointsSystem.applyHitPoints(target, classDef, classData?.classLevel ?: 1)
-                // Sync to target client
                 syncPlayerData(target)
-                // Refresh GM data
                 syncGmData(gmPlayer)
                 logger.info("GM ${gmPlayer.name.string} edited stats of $targetName")
+            }
+        }
+
+        // Client → Server: GM edits class/race/level/gender
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_IDENTITY) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val hasClass = buf.readBoolean()
+            val classId = if (hasClass) buf.readIdentifier() else null
+            val hasSubclass = buf.readBoolean()
+            val subclassId = if (hasSubclass) buf.readIdentifier() else null
+            val level = buf.readInt()
+            val hasRace = buf.readBoolean()
+            val raceId = if (hasRace) buf.readIdentifier() else null
+            val hasGender = buf.readBoolean()
+            val gender = if (hasGender) buf.readString() else null
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                // Apply class change
+                if (classId != null) {
+                    omc.boundbyfate.system.charclass.ClassSystem.applyClass(target, classId, subclassId, level)
+                }
+                // Apply race change
+                if (raceId != null) {
+                    val currentRace = target.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+                    if (currentRace?.raceId != raceId) {
+                        omc.boundbyfate.system.race.RaceSystem.applyRace(target, raceId)
+                    }
+                }
+                // Apply gender
+                if (gender != null) {
+                    target.setAttached(BbfAttachments.PLAYER_GENDER, gender)
+                }
+                // Update level
+                val levelData = target.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)
+                if (levelData != null) {
+                    target.setAttached(BbfAttachments.PLAYER_LEVEL, levelData.copy(level = level))
+                }
+                syncPlayerData(target)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} edited identity of $targetName")
+            }
+        }
+
+        // Client → Server: GM edits skill/save proficiencies
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_SKILLS) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val count = buf.readInt()
+            val proficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(count) { proficiencies[buf.readIdentifier()] = buf.readInt() }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                var skillData = omc.boundbyfate.component.EntitySkillData()
+                proficiencies.forEach { (id, level) ->
+                    if (level > 0) {
+                        skillData = skillData.withProficiency(id, omc.boundbyfate.api.skill.ProficiencyLevel.fromInt(level))
+                    }
+                }
+                target.setAttached(BbfAttachments.ENTITY_SKILLS, skillData)
+                syncPlayerData(target)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} edited skills of $targetName")
+            }
+        }
+
+        // Client → Server: GM adds/removes a feature
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_FEATURE) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val featureId = buf.readIdentifier()
+            val add = buf.readBoolean()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                val featureData = target.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, omc.boundbyfate.component.EntityFeatureData())
+                val updated = if (add) featureData.withFeature(featureId) else featureData.withoutFeature(featureId)
+                target.setAttached(BbfAttachments.ENTITY_FEATURES, updated)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} ${if (add) "added" else "removed"} feature $featureId for $targetName")
             }
         }
     }
@@ -402,6 +556,45 @@ object ServerPacketHandler {
     }
 
     /**
+     * Syncs available classes/races/skills/features to GM client.
+     */
+    fun syncGmRegistry(gmPlayer: ServerPlayerEntity) {
+        val buf = PacketByteBufs.create()
+
+        // Classes + subclasses
+        val classes = omc.boundbyfate.registry.ClassRegistry.getAllClasses().toList()
+        buf.writeInt(classes.size)
+        classes.forEach { cls ->
+            buf.writeIdentifier(cls.id)
+            buf.writeString(cls.displayName)
+            val subs = omc.boundbyfate.registry.ClassRegistry.getSubclassesFor(cls.id).toList()
+            buf.writeInt(subs.size)
+            subs.forEach { sub -> buf.writeIdentifier(sub.id); buf.writeString(sub.displayName) }
+        }
+
+        // Races
+        val races = omc.boundbyfate.registry.RaceRegistry.getAllRaces().toList()
+        buf.writeInt(races.size)
+        races.forEach { race -> buf.writeIdentifier(race.id); buf.writeString(race.displayName) }
+
+        // Skills + saving throws
+        val skills = omc.boundbyfate.registry.SkillRegistry.getAll().toList()
+        buf.writeInt(skills.size)
+        skills.forEach { skill ->
+            buf.writeIdentifier(skill.id)
+            buf.writeString(skill.displayName)
+            buf.writeBoolean(skill.isSavingThrow)
+        }
+
+        // Features
+        val features = omc.boundbyfate.registry.FeatureRegistry.getAllFeatures().toList()
+        buf.writeInt(features.size)
+        features.forEach { feat -> buf.writeIdentifier(feat.id); buf.writeString(feat.displayName) }
+
+        ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_REGISTRY, buf)
+    }
+
+    /**
      * Syncs all online players' character data to a GM player.
      */
     fun syncGmData(gmPlayer: ServerPlayerEntity) {
@@ -454,6 +647,12 @@ object ServerPacketHandler {
             // HP
             buf.writeFloat(player.health)
             buf.writeFloat(player.maxHealth)
+
+            // Granted features
+            val featData = player.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null)
+            val features = featData?.grantedFeatures ?: emptySet()
+            buf.writeInt(features.size)
+            features.forEach { buf.writeIdentifier(it) }
         }
 
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_PLAYERS, buf)

@@ -19,7 +19,8 @@ data class GmPlayerSnapshot(
     val gender: String?,
     val currentHp: Float,
     val maxHp: Float,
-    val isOnline: Boolean
+    val isOnline: Boolean,
+    val grantedFeatures: Set<net.minecraft.util.Identifier> = emptySet()
 )
 
 /**

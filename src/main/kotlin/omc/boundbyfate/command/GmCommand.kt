@@ -25,6 +25,8 @@ object GmCommand {
                             val player = context.source.playerOrThrow
                             // Sync all player data to GM
                             ServerPacketHandler.syncGmData(player)
+                            // Sync registry (classes, races, skills, features)
+                            ServerPacketHandler.syncGmRegistry(player)
                             // Tell client to open GM screen
                             ServerPlayNetworking.send(player, BbfPackets.OPEN_GM_SCREEN, PacketByteBufs.empty())
                             context.source.sendFeedback({ Text.literal("§aOpening GM panel...") }, false)
