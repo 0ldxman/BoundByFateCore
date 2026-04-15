@@ -47,6 +47,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var subraceId: Identifier? = snapshot.raceData?.subraceId
     private var subraceDropOpen = false
     private var editingExp = false
+    private var expInputBuffer = ""
+    // Stored for click detection outside render
+    private var lastExpTextX = 0; private var lastExpTextY = 0; private var lastExpTextW = 0
 
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
     private val btns = mutableListOf<Btn>()
@@ -78,7 +81,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val headerY = pad + 13
         // Name+Level boxes width = same as each other, ending where infoBox starts
         val leftHeaderW = W / 5   // total width for name+level blocks
-        val nameBoxH = 26; val lvBoxH = 28
+        val nameBoxH = 26; val lvBoxH = 24
         val headerH = nameBoxH + lvBoxH + 2
 
         // Block 1: Name + gender (top-left)
@@ -95,10 +98,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val xpNeeded = xpForNextLevel(level)
         box(context, pad, lvY, leftHeaderW, lvBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         val lvCx = pad + leftHeaderW / 2
-        // Level centered with symmetric buttons
-        btn(context, mouseX, mouseY, lvCx - 20, lvY + 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
+        // Level centered with wider spacing between buttons
+        btn(context, mouseX, mouseY, lvCx - 24, lvY + 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
         lbl(context, "Lv $level", lvCx - 8, lvY + 2, 0.65f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, lvCx + 12, lvY + 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
+        btn(context, mouseX, mouseY, lvCx + 16, lvY + 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
         // XP progress bar
         val barX = pad + 3; val barY = lvY + 13; val barW = leftHeaderW - 6; val barH = 4
         val xpPrev = xpForNextLevel(level - 1)
@@ -106,14 +109,18 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         context.fill(barX, barY, barX + barW, barY + barH, 0xFF333333.toInt())
         context.fill(barX, barY, barX + (barW * xpFrac).toInt(), barY + barH, 0xFF4488FF.toInt())
         context.fill(barX, barY, barX + barW, barY + 1, 0xFF555555.toInt())
-        // EXP centered: [-] exp / needed [+]
+        // EXP: [-] clickable_text [+] — dynamic spacing based on text width
         val expText = "$experience / $xpNeeded"
-        val expTextW = (textRenderer.getWidth(expText) * 0.45f).toInt()
-        val expCx = lvCx
-        btn(context, mouseX, mouseY, expCx - expTextW / 2 - 10, lvY + 19, 8, 7, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
-        // Clickable EXP text — click to set manually
-        btn(context, mouseX, mouseY, expCx - expTextW / 2, lvY + 18, expTextW + 2, 9, "§7$expText") { setExpManually() }
-        btn(context, mouseX, mouseY, expCx + expTextW / 2 + 2, lvY + 19, 8, 7, "§a+") { experience += 100 }
+        val expScaledW = (textRenderer.getWidth(expText) * 0.45f).toInt()
+        val expBtnGap = 3
+        val expMinusX = lvCx - expScaledW / 2 - expBtnGap - 8
+        val expPlusX = lvCx + expScaledW / 2 + expBtnGap
+        btn(context, mouseX, mouseY, expMinusX, lvY + 19, 8, 7, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
+        // Clickable EXP text — shows input buffer when editing
+        val displayExp = if (editingExp) "${expInputBuffer}_" else expText
+        val displayColor = if (editingExp) 0xFFFF55 else if (expClickHovered(mouseX, mouseY, lvCx, lvY, expScaledW)) 0xFFFF55 else 0x888888
+        lbl(context, displayExp, lvCx - expScaledW / 2, lvY + 19, 0.45f, displayColor)
+        btn(context, mouseX, mouseY, expPlusX, lvY + 19, 8, 7, "§a+") { experience += 100 }
 
         // Info box — from end of name/level blocks to right edge
         val infoX = pad + leftHeaderW + 4; val infoW = W - infoX - pad
@@ -160,13 +167,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
         renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
 
-        // Right: Features — 1/3 of available height
+        // Right: Features — 1/3 of available height, anchored to BOTTOM
         val rightX = centerX + paramBoxW + 4; val rightW = W - rightX - pad
         val featH = (H - bodyY - pad) / 3
-        box(context, rightX, bodyY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "FEATURES & TRAITS", rightX + 4, bodyY + 3, 0.65f, 0xD4AF37)
-        btn(context, mouseX, mouseY, rightX + rightW - 14, bodyY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
-        renderFeatures(context, mouseX, mouseY, rightX + 4, bodyY + 14, rightW - 8, featH - 18)
+        val featY = H - pad - featH
+        box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
+        btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
+        renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
         renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2)
@@ -227,6 +235,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // Buttons outside box — full height of box
         btn(context, mouseX, mouseY, x - 12, y, 11, h, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
         btn(context, mouseX, mouseY, x + w + 1, y, 11, h, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
+    }
+
+    private fun expClickHovered(mouseX: Int, mouseY: Int, cx: Int, lvY: Int, w: Int): Boolean {
+        return mouseX in (cx - w / 2)..(cx + w / 2) && mouseY in (lvY + 18)..(lvY + 27)
     }
 
     private fun recalcProfBonus() {
@@ -457,10 +469,47 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val mx = mouseX.toInt(); val my = mouseY.toInt()
+        // Check EXP text click — stored bounds
+        val pad = 5; val headerY = pad + 13; val lvY = headerY + 26 + 2
+        val lvCx = pad + (width / 5) / 2
+        val expText = "$experience / ${xpForNextLevel(level)}"
+        val expScaledW = (textRenderer.getWidth(expText) * 0.45f).toInt()
+        if (mx in (lvCx - expScaledW / 2)..(lvCx + expScaledW / 2) && my in (lvY + 18)..(lvY + 27)) {
+            editingExp = !editingExp
+            if (editingExp) expInputBuffer = "$experience"
+            return true
+        }
+        if (editingExp) { editingExp = false; return true }
         for (b in btns.reversed()) {
             if (mx in b.x..(b.x + b.w) && my in b.y..(b.y + b.h)) { b.action(); return true }
         }
         return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (editingExp) {
+            when (keyCode) {
+                256 -> { editingExp = false; return true } // ESC
+                257, 335 -> { // Enter
+                    experience = expInputBuffer.toIntOrNull()?.coerceAtLeast(0) ?: experience
+                    editingExp = false; return true
+                }
+                259 -> { // Backspace
+                    if (expInputBuffer.isNotEmpty()) expInputBuffer = expInputBuffer.dropLast(1)
+                    return true
+                }
+            }
+            return true
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    override fun charTyped(chr: Char, modifiers: Int): Boolean {
+        if (editingExp && chr.isDigit()) {
+            expInputBuffer += chr
+            return true
+        }
+        return super.charTyped(chr, modifiers)
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
