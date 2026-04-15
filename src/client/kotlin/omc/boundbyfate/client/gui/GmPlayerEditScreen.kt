@@ -44,6 +44,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var raceDropOpen = false; private var alignDropOpen = false
     private var featDropOpen = false; private var skillScroll = 0
     private var selectedFeat: Identifier? = null
+    private var subraceId: Identifier? = snapshot.raceData?.subraceId
+    private var subraceDropOpen = false
 
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
     private val btns = mutableListOf<Btn>()
@@ -72,27 +74,34 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§aApply") { applyAll() }
 
         val headerY = pad + 13; val headerH = 48
-        // Name box — small, left
-        val nameBoxW = W / 4
+        val nameBoxW = W / 8       // Имя + пол — маленький
+        val lvBoxW = W / 8         // Уровень + EXP — маленький
+
+        // Block 1: Name + gender
         box(context, pad, headerY, nameBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "§7Name", pad + 3, headerY + 2, 0.55f, 0x888888)
-        // Name + gender on same line
-        lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.9f, 0xFFD700)
+        lbl(context, snapshot.playerName, pad + 3, headerY + 10, 0.85f, 0xFFD700)
         val gIcon = when (gender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
         btn(context, mouseX, mouseY, pad + nameBoxW - 18, headerY + 8, 16, 12, gIcon) {
             gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" }
         }
-        // Level + EXP below name
-        val xpNeeded = xpForNextLevel(level)
-        lbl(context, "Lv $level", pad + 3, headerY + 24, 0.65f, 0xCCCCCC)
-        btn(context, mouseX, mouseY, pad + 20, headerY + 23, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
-        btn(context, mouseX, mouseY, pad + 30, headerY + 23, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
-        lbl(context, "EXP: $experience / $xpNeeded", pad + 3, headerY + 34, 0.55f, 0x888888)
-        btn(context, mouseX, mouseY, pad + nameBoxW - 18, headerY + 33, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
-        btn(context, mouseX, mouseY, pad + nameBoxW - 8, headerY + 33, 8, 9, "§a+") { experience += 100 }
 
-        // Info box — large, right
-        val infoX = pad + nameBoxW + 4; val infoW = W - infoX - pad
+        // Block 2: Level + EXP
+        val lvX = pad + nameBoxW + 4
+        val xpNeeded = xpForNextLevel(level)
+        box(context, lvX, headerY, lvBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "§7Level", lvX + 3, headerY + 2, 0.55f, 0x888888)
+        lbl(context, "$level", lvX + 3, headerY + 10, 0.85f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, lvX + 14, headerY + 8, 8, 10, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
+        btn(context, mouseX, mouseY, lvX + 24, headerY + 8, 8, 10, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
+        lbl(context, "§7EXP", lvX + 3, headerY + 24, 0.55f, 0x888888)
+        lbl(context, "$experience", lvX + 3, headerY + 32, 0.65f, 0xCCCCCC)
+        lbl(context, "§7/ $xpNeeded", lvX + 3, headerY + 40, 0.5f, 0x666666)
+        btn(context, mouseX, mouseY, lvX + lvBoxW - 18, headerY + 30, 8, 9, "§c-") { experience = (experience - 100).coerceAtLeast(0) }
+        btn(context, mouseX, mouseY, lvX + lvBoxW - 8, headerY + 30, 8, 9, "§a+") { experience += 100 }
+
+        // Info box — rest of header
+        val infoX = lvX + lvBoxW + 4; val infoW = W - infoX - pad
         box(context, infoX, headerY, infoW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         renderInfoBox(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, headerH - 4)
 
@@ -125,9 +134,19 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // ── RIGHT: PARAMS (center) + FEATURES ────────────────────────────────
         val rightX = midX + midW + 4; val rightW = W - rightX - pad
         val paramsH = 90
-        box(context, rightX, bodyY, rightW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "PARAMETERS", rightX + rightW / 2 - 20, bodyY + 3, 0.65f, 0xD4AF37)
-        renderParams(context, mouseX, mouseY, rightX + 4, bodyY + 13, rightW - 8)
+        // 3 separate parameter boxes side by side
+        val pBoxW = (rightW - 8) / 3
+        // Box 1: Death Saves
+        box(context, rightX, bodyY, pBoxW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderDeathSaves(context, mouseX, mouseY, rightX, bodyY, pBoxW, paramsH)
+        // Box 2: HP
+        val hpX = rightX + pBoxW + 4
+        box(context, hpX, bodyY, pBoxW, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderHpBox(context, mouseX, mouseY, hpX, bodyY, pBoxW, paramsH)
+        // Box 3: Speed + Size
+        val spX = hpX + pBoxW + 4
+        box(context, spX, bodyY, rightW - pBoxW * 2 - 8, paramsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderSpeedBox(context, mouseX, mouseY, spX, bodyY, rightW - pBoxW * 2 - 8, paramsH)
 
         val featY = bodyY + paramsH + 4; val featH = H - featY - pad
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
@@ -154,12 +173,13 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, "Sub:", col1, y + 12, 0.6f, 0x888888)
         val subName = subclassId?.let { id -> classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path } ?: "—"
         btn(context, mouseX, mouseY, col1 + 20, y + 11, w / 2 - 24, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        // Col 2: Race + Alignment
+        // Col 2: Race + Subrace
         lbl(context, "Race:", col2, y, 0.6f, 0x888888)
         val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col2 + 22, y - 1, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false }
-        lbl(context, "Align:", col2, y + 12, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, col2 + 24, y + 11, w / 2 - 28, 9, "§f$alignment §e▼") { alignDropOpen = !alignDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false }
+        btn(context, mouseX, mouseY, col2 + 22, y - 1, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false; subraceDropOpen = false }
+        lbl(context, "Sub:", col2, y + 12, 0.6f, 0x888888)
+        val subraceName = subraceId?.path?.replace("_", " ")?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "—"
+        btn(context, mouseX, mouseY, col2 + 20, y + 11, w / 2 - 24, 9, "§f$subraceName §e▼") { subraceDropOpen = !subraceDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
     }
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
@@ -230,35 +250,48 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         if (skillScroll + h / 9 < skillList.size) btn(context, mouseX, mouseY, x + w - 10, y + h - 10, 10, 9, "§7▼") { skillScroll++ }
     }
 
-    private fun renderParams(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int) {
-        val cx = x + w / 2
-        // Death saves (top)
-        lbl(context, "Death Saves:", x, y, 0.6f, 0x888888)
-        lbl(context, "Successes:", x, y + 10, 0.55f, 0x55FF55)
+    private fun renderDeathSaves(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
+        val cx = bx + bw / 2
+        lbl(context, "DEATH SAVES", cx - 22, by + 3, 0.55f, 0xD4AF37)
+        // Successes / Failures centered
+        val iconY1 = by + 16; val iconY2 = by + 30
+        lbl(context, "§a✓", cx - 18, iconY1, 0.65f, 0x55FF55)
         for (i in 0..2) {
             val icon = if (i < deathSuccesses) "§a●" else "§7○"
-            btn(context, mouseX, mouseY, x + 42 + i * 10, y + 9, 8, 8, icon) { deathSuccesses = if (deathSuccesses > i) i else i + 1 }
+            btn(context, mouseX, mouseY, cx - 10 + i * 10, iconY1 - 1, 8, 8, icon) { deathSuccesses = if (deathSuccesses > i) i else i + 1 }
         }
-        lbl(context, "Failures:", x, y + 20, 0.55f, 0xFF5555)
+        lbl(context, "§c✗", cx - 18, iconY2, 0.65f, 0xFF5555)
         for (i in 0..2) {
             val icon = if (i < deathFailures) "§c●" else "§7○"
-            btn(context, mouseX, mouseY, x + 36 + i * 10, y + 19, 8, 8, icon) { deathFailures = if (deathFailures > i) i else i + 1 }
+            btn(context, mouseX, mouseY, cx - 10 + i * 10, iconY2 - 1, 8, 8, icon) { deathFailures = if (deathFailures > i) i else i + 1 }
         }
-        // Max HP
-        lbl(context, "Max HP:", cx - 20, y + 32, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, cx + 14, y + 31, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
-        lbl(context, "${maxHp.toInt()}", cx + 24, y + 32, 0.75f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, cx + 36, y + 31, 8, 9, "§a+") { maxHp += 1f }
-        // Current HP
-        lbl(context, "Cur HP:", cx - 20, y + 43, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, cx + 14, y + 42, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
-        lbl(context, "${currentHp.toInt()}", cx + 24, y + 43, 0.75f, 0xFF5555)
-        btn(context, mouseX, mouseY, cx + 36, y + 42, 8, 9, "§a+") { currentHp = (currentHp + 1).coerceAtMost(maxHp) }
-        // Speed
-        lbl(context, "Speed:", cx - 20, y + 55, 0.6f, 0x888888)
-        btn(context, mouseX, mouseY, cx + 14, y + 54, 8, 9, "§c-") { speedFt = (speedFt - 5).coerceAtLeast(0) }
-        lbl(context, "${speedFt}ft", cx + 24, y + 55, 0.65f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, cx + 44, y + 54, 8, 9, "§a+") { speedFt += 5 }
+    }
+
+    private fun renderHpBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
+        val cx = bx + bw / 2
+        lbl(context, "HIT POINTS", cx - 18, by + 3, 0.55f, 0xD4AF37)
+        // Current HP (top)
+        lbl(context, "§7Cur", bx + 4, by + 16, 0.55f, 0x888888)
+        btn(context, mouseX, mouseY, bx + 4, by + 25, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
+        lbl(context, "${currentHp.toInt()}", bx + 14, by + 26, 0.8f, 0xFF5555)
+        btn(context, mouseX, mouseY, bx + 28, by + 25, 8, 9, "§a+") { currentHp = (currentHp + 1).coerceAtMost(maxHp) }
+        // Max HP (bottom)
+        lbl(context, "§7Max", bx + 4, by + 40, 0.55f, 0x888888)
+        btn(context, mouseX, mouseY, bx + 4, by + 49, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
+        lbl(context, "${maxHp.toInt()}", bx + 14, by + 50, 0.8f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, bx + 28, by + 49, 8, 9, "§a+") { maxHp += 1f }
+    }
+
+    private fun renderSpeedBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
+        val cx = bx + bw / 2
+        lbl(context, "MOVEMENT", cx - 16, by + 3, 0.55f, 0xD4AF37)
+        lbl(context, "§7Speed", bx + 4, by + 16, 0.55f, 0x888888)
+        btn(context, mouseX, mouseY, bx + 4, by + 25, 8, 9, "§c-") { speedFt = (speedFt - 5).coerceAtLeast(0) }
+        lbl(context, "${speedFt}ft", bx + 14, by + 26, 0.75f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, bx + 36, by + 25, 8, 9, "§a+") { speedFt += 5 }
+        lbl(context, "§7Size", bx + 4, by + 40, 0.55f, 0x888888)
+        val sizeFactor = speedFt / 30f
+        lbl(context, "%.2f".format(sizeFactor), bx + 4, by + 50, 0.75f, 0xCCCCCC)
     }
 
     private fun renderFeatures(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
