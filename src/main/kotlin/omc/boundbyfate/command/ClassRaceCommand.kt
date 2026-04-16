@@ -3,6 +3,7 @@ package omc.boundbyfate.command
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import net.minecraft.command.CommandRegistryAccess
 import net.minecraft.command.argument.EntityArgumentType
@@ -17,6 +18,7 @@ import omc.boundbyfate.registry.ClassRegistry
 import omc.boundbyfate.registry.RaceRegistry
 import omc.boundbyfate.system.charclass.ClassSystem
 import omc.boundbyfate.system.race.RaceSystem
+import java.util.concurrent.CompletableFuture
 
 /**
  * Admin commands for changing a player's class and race.
@@ -214,32 +216,29 @@ object ClassRaceCommand {
 
     // ── Suggestions ───────────────────────────────────────────────────────────
 
-    private fun suggestClasses(builder: SuggestionsBuilder) =
-        net.minecraft.server.command.CommandManager.suggestMatching(
-            ClassRegistry.getAllClasses().map { it.id.toString() },
-            builder
-        )
+    private fun suggestClasses(builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        ClassRegistry.getAllClasses().forEach { builder.suggest(it.id.toString()) }
+        return builder.buildFuture()
+    }
 
-    private fun suggestSubclasses(ctx: CommandContext<ServerCommandSource>, builder: SuggestionsBuilder) =
-        net.minecraft.server.command.CommandManager.suggestMatching(
-            ClassRegistry.getAllClasses()
-                .flatMap { ClassRegistry.getSubclassesFor(it.id) }
-                .map { it.id.toString() },
-            builder
-        )
+    private fun suggestSubclasses(ctx: CommandContext<ServerCommandSource>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        ClassRegistry.getAllClasses()
+            .flatMap { ClassRegistry.getSubclassesFor(it.id) }
+            .forEach { builder.suggest(it.id.toString()) }
+        return builder.buildFuture()
+    }
 
-    private fun suggestRaces(builder: SuggestionsBuilder) =
-        net.minecraft.server.command.CommandManager.suggestMatching(
-            RaceRegistry.getAllRaces().map { it.id.toString() },
-            builder
-        )
+    private fun suggestRaces(builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        RaceRegistry.getAllRaces().forEach { builder.suggest(it.id.toString()) }
+        return builder.buildFuture()
+    }
 
-    private fun suggestSubraces(ctx: CommandContext<ServerCommandSource>, builder: SuggestionsBuilder) =
-        net.minecraft.server.command.CommandManager.suggestMatching(
-            RaceRegistry.getAllRaces()
-                .flatMap { race -> RaceRegistry.getSubracesFor(race.id).map { it.id.toString() } },
-            builder
-        )
+    private fun suggestSubraces(ctx: CommandContext<ServerCommandSource>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        RaceRegistry.getAllRaces()
+            .flatMap { race -> RaceRegistry.getSubracesFor(race.id) }
+            .forEach { builder.suggest(it.id.toString()) }
+        return builder.buildFuture()
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
