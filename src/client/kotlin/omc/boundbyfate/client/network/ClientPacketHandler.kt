@@ -219,11 +219,12 @@ object ClientPacketHandler {
             val classes = (0 until classCount).map {
                 val id = buf.readIdentifier()
                 val name = buf.readString()
+                val subclassLevel = buf.readInt()
                 val subCount = buf.readInt()
                 val subs = (0 until subCount).map {
                     omc.boundbyfate.client.state.GmSubclassInfo(buf.readIdentifier(), buf.readString())
                 }
-                omc.boundbyfate.client.state.GmClassInfo(id, name, subs)
+                omc.boundbyfate.client.state.GmClassInfo(id, name, subs, subclassLevel)
             }
             val raceCount = buf.readInt()
             val races = (0 until raceCount).map {

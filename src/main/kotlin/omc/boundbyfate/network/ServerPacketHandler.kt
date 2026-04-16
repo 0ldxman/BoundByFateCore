@@ -506,6 +506,7 @@ object ServerPacketHandler {
         classes.forEach { cls ->
             buf.writeIdentifier(cls.id)
             buf.writeString(cls.displayName)
+            buf.writeInt(cls.subclassLevel)
             val subs = omc.boundbyfate.registry.ClassRegistry.getSubclassesFor(cls.id).toList()
             buf.writeInt(subs.size)
             subs.forEach { sub -> buf.writeIdentifier(sub.id); buf.writeString(sub.displayName) }

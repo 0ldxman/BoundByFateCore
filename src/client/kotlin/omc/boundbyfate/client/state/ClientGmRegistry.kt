@@ -3,7 +3,7 @@ package omc.boundbyfate.client.state
 import net.minecraft.util.Identifier
 
 /** Lightweight class info for GM dropdowns */
-data class GmClassInfo(val id: Identifier, val displayName: String, val subclasses: List<GmSubclassInfo>)
+data class GmClassInfo(val id: Identifier, val displayName: String, val subclasses: List<GmSubclassInfo>, val subclassLevel: Int = 3)
 data class GmSubclassInfo(val id: Identifier, val displayName: String)
 data class GmRaceInfo(val id: Identifier, val displayName: String)
 data class GmSkillInfo(val id: Identifier, val displayName: String, val isSavingThrow: Boolean, val linkedStat: Identifier)

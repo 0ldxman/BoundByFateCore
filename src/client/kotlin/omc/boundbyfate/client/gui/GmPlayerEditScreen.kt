@@ -47,7 +47,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var skillScroll = 0
     private var selectedFeat: Identifier? = null
     private var subraceId: Identifier? = snapshot.raceData?.subraceId
-    private var featDropOpen = false
     private var editingExp = false
     private var expInputBuffer = ""
     private var lastExpTextX = 0; private var lastExpTextY = 0; private var lastExpTextW = 0
@@ -225,7 +224,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
-        btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
+        btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { openFeaturePicker() }
         renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
@@ -292,9 +291,15 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun openSubclassPicker() {
         val cls = classId ?: return
-        val subs = ClientGmRegistry.classes.find { it.id == cls }?.subclasses ?: return
-        if (subs.isEmpty()) return
-        val items = subs.map { it.id to it.displayName }
+        val clsInfo = ClientGmRegistry.classes.find { it.id == cls } ?: return
+        if (clsInfo.subclasses.isEmpty()) return
+        // Only allow subclass selection if player reached the required level
+        if (level < clsInfo.subclassLevel) {
+            statusMsg = "§cПодкласс доступен с ${clsInfo.subclassLevel} уровня"
+            statusTimer = 2f
+            return
+        }
+        val items = clsInfo.subclasses.map { it.id to it.displayName }
         client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId, this) { picked ->
             subclassId = picked
             sendCommand("/bbf class subclass set ${snapshot.playerName} \"$picked\"")
@@ -316,6 +321,16 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
             subraceId = picked
             sendCommand("/bbf race subrace set ${snapshot.playerName} \"$picked\"")
+        })
+    }
+
+    private fun openFeaturePicker() {
+        val alreadyHas = features.toSet()
+        val items = ClientGmRegistry.features
+            .filter { it.id !in alreadyHas }
+            .map { it.id to it.displayName }
+        client?.setScreen(GmPickerScreen("Добавить особенность", items, null, this) { picked ->
+            if (!features.contains(picked)) features.add(picked)
         })
     }
 
@@ -496,17 +511,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
             lbl(context, featName, x, fy + 1, 0.65f, if (hovered) 0xFFD700 else 0xCCCCCC)
             btn(context, mouseX, mouseY, x + w - 12, fy, 10, 9, "§cX") { features.remove(featId) }
-        }
-        // Feature add dropdown
-        if (featDropOpen) {
-            val dropX = x; var dropY = y + features.size * 11
-            ClientGmRegistry.features.take(10).forEach { feat ->
-                btn(context, mouseX, mouseY, dropX, dropY, w - 4, 9, "§7${feat.displayName}") {
-                    if (!features.contains(feat.id)) features.add(feat.id)
-                    featDropOpen = false
-                }
-                dropY += 10
-            }
         }
     }
 
