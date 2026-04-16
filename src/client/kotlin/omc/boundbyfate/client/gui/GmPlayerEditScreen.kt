@@ -147,12 +147,15 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val infoBoxH = headerH  // same height as name+level combined
         box(context, profBoxX, headerY, profBoxW, infoBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         val profCx = profBoxX + profBoxW / 2
-        lbl(context, "§7PROF", profCx - 8, headerY + 4, 0.5f, 0x888888)
+        // Vertically center: label(6) + gap(3) + value(9) + gap(3) + buttons(9) = 30px total
+        val profBlockH = 30
+        val profBlockY = headerY + (infoBoxH - profBlockH) / 2
+        lbl(context, "§7PROF", profCx - 8, profBlockY, 0.5f, 0x888888)
         val profStr = "+$profBonus"
         val profStrW = (textRenderer.getWidth(profStr) * 0.85f).toInt()
-        lbl(context, profStr, profCx - profStrW / 2, headerY + 13, 0.85f, 0xFFD700)
-        btn(context, mouseX, mouseY, profCx - 10, headerY + infoBoxH - 13, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
-        btn(context, mouseX, mouseY, profCx + 2, headerY + infoBoxH - 13, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
+        lbl(context, profStr, profCx - profStrW / 2, profBlockY + 9, 0.85f, 0xFFD700)
+        btn(context, mouseX, mouseY, profCx - 10, profBlockY + 21, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
+        btn(context, mouseX, mouseY, profCx + 2, profBlockY + 21, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
 
         val infoX = profBoxX + profBoxW + 4; val infoW = W - infoX - pad
         box(context, infoX, headerY, infoW, infoBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
@@ -211,12 +214,15 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // Player model
         val mc = MinecraftClient.getInstance()
         val player = mc.world?.players?.find { it.name.string == snapshot.playerName }
+        val changeBtnH = 11; val changeBtnW = 54
+        val changeBtnY = featY - changeBtnH - 2
         if (player != null && modelAreaH > 20) {
             val modelCx = rightX + rightW / 2
-            val modelY = bodyY + modelAreaH - 10
-            InventoryScreen.drawEntity(context, modelCx, modelY, 60, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
+            // Raise model above the button with a small gap
+            val modelY = changeBtnY - 6
+            InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        btn(context, mouseX, mouseY, rightX + rightW / 2 - 20, featY - 12, 40, 10, "§7Change") { /* TODO */ }
+        btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, "§7Change Skin") { /* TODO */ }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
@@ -224,7 +230,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
-        renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2)
+        renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, infoBoxH - 4)
 
         if (statusTimer > 0f) {
             val a = (statusTimer * 255).toInt().coerceIn(0, 255)
@@ -235,25 +241,30 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderInfoBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
         val col1 = x; val col2 = x + w / 2 + 4
+        // Vertically center 3 rows (row0=Class/Race, row1=Sub/Sub, row2=nav) with spacing 12px
+        // Total content height: 9 + 12 + 9 + 12 + 9 = 42px (approx with labels)
+        val contentH = 36
+        val startY = y + (h - contentH) / 2
+        val row0 = startY; val row1 = startY + 13; val row2 = startY + 26
         // Col 1: Class + Subclass
-        lbl(context, "Class:", col1, y, 0.6f, 0x888888)
+        lbl(context, "Class:", col1, row0 + 1, 0.6f, 0x888888)
         val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col1 + 24, y - 1, w / 2 - 28, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        lbl(context, "Sub:", col1, y + 12, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col1 + 24, row0, w / 2 - 28, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        lbl(context, "Sub:", col1, row1 + 1, 0.6f, 0x888888)
         val subName = subclassId?.let { id -> classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col1 + 20, y + 11, w / 2 - 24, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        btn(context, mouseX, mouseY, col1 + 20, row1, w / 2 - 24, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
         // Col 2: Race + Subrace
-        lbl(context, "Race:", col2, y, 0.6f, 0x888888)
+        lbl(context, "Race:", col2, row0 + 1, 0.6f, 0x888888)
         val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col2 + 22, y - 1, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false; subraceDropOpen = false }
-        lbl(context, "Sub:", col2, y + 12, 0.6f, 0x888888)
+        btn(context, mouseX, mouseY, col2 + 22, row0, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false; subraceDropOpen = false }
+        lbl(context, "Sub:", col2, row1 + 1, 0.6f, 0x888888)
         val subraceName = subraceId?.path?.replace("_", " ")?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "—"
-        btn(context, mouseX, mouseY, col2 + 20, y + 11, w / 2 - 24, 9, "§f$subraceName §e▼") { subraceDropOpen = !subraceDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        btn(context, mouseX, mouseY, col2 + 20, row1, w / 2 - 24, 9, "§f$subraceName §e▼") { subraceDropOpen = !subraceDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
         // Nav buttons inside info box (bottom row)
-        val navY = y + 24; val navBtnW = (w - 8) / 3
-        btn(context, mouseX, mouseY, x, navY, navBtnW, 9, "§eЛичность") { /* TODO */ }
-        btn(context, mouseX, mouseY, x + navBtnW + 4, navY, navBtnW, 9, "§eСпособности") { /* TODO */ }
-        btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, navY, navBtnW, 9, "§eМагия") { /* TODO */ }
+        val navBtnW = (w - 8) / 3
+        btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§eЛичность") { /* TODO */ }
+        btn(context, mouseX, mouseY, x + navBtnW + 4, row2, navBtnW, 9, "§eСпособности") { /* TODO */ }
+        btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, row2, navBtnW, 9, "§eМагия") { /* TODO */ }
     }
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
@@ -416,7 +427,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         }
     }
 
-    private fun renderDropdowns(context: DrawContext, mouseX: Int, mouseY: Int, infoX: Int, infoY: Int) {
+    private fun renderDropdowns(context: DrawContext, mouseX: Int, mouseY: Int, infoX: Int, infoY: Int, infoW: Int, infoH: Int) {
         val m = context.matrices
         m.push(); m.translate(0f, 0f, 300f)
 
@@ -437,15 +448,17 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
 
-        val col1X = infoX; val col2X = infoX + (width - 5 - infoX) / 2 + 4
-        val dropY = infoY + 10  // just below the Class/Race row
+        val col1X = infoX; val col2X = infoX + infoW / 2 + 4
+        // Match the vertical centering from renderInfoBox
+        val contentH = 36
+        val row0 = infoY + (infoH - contentH) / 2
 
         if (classDropOpen) {
             val items = ClientGmRegistry.classes.map { cls ->
                 val label = if (cls.id == classId) "§a${cls.displayName}" else "§f${cls.displayName}"
                 label to { classId = cls.id; subclassId = null; classDropOpen = false }
             }
-            drawDropdown(items, col1X + 24, dropY, (width - 5 - infoX) / 2 - 28)
+            drawDropdown(items, col1X + 24, row0 + 9, infoW / 2 - 28)
         }
         if (subDropOpen) {
             val subs = classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses } ?: emptyList()
@@ -453,14 +466,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 val label = if (sub.id == subclassId) "§a${sub.displayName}" else "§f${sub.displayName}"
                 label to { subclassId = sub.id; subDropOpen = false }
             }
-            if (items.isNotEmpty()) drawDropdown(items, col1X + 20, dropY + 12, (width - 5 - infoX) / 2 - 24)
+            if (items.isNotEmpty()) drawDropdown(items, col1X + 20, row0 + 22, infoW / 2 - 24)
         }
         if (raceDropOpen) {
             val items = ClientGmRegistry.races.map { race ->
                 val label = if (race.id == raceId) "§a${race.displayName}" else "§f${race.displayName}"
                 label to { raceId = race.id; raceDropOpen = false }
             }
-            drawDropdown(items, col2X + 22, dropY, (width - 5 - infoX) / 2 - 26)
+            drawDropdown(items, col2X + 22, row0 + 9, infoW / 2 - 26)
         }
         if (subraceDropOpen) {
             // TODO: populate subraces from registry
