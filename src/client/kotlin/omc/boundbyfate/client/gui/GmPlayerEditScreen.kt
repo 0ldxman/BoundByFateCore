@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
+import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 import omc.boundbyfate.client.state.ClientGmRegistry
@@ -48,8 +49,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var subraceDropOpen = false
     private var editingExp = false
     private var expInputBuffer = ""
-    // Stored for click detection outside render
     private var lastExpTextX = 0; private var lastExpTextY = 0; private var lastExpTextW = 0
+    // Skills box bounds for scroll detection
+    private var skillsBoxX = 0; private var skillsBoxY = 0; private var skillsBoxW = 0; private var skillsBoxH2 = 0
 
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
     private val btns = mutableListOf<Btn>()
@@ -127,32 +129,56 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, displayExp, lvCx - expScaledW / 2, lvY + 19, 0.45f, displayColor)
 
         // Info box — smaller height (2 rows only), nav buttons INSIDE at bottom
+        // ── PROF BONUS BOX (between name/level and info box) ─────────────────
+        val profBoxW = 40
+        val profBoxX = pad + leftHeaderW + 4
+        box(context, profBoxX, headerY, profBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "§7PROF", profBoxX + 4, headerY + 2, 0.5f, 0x888888)
+        lbl(context, "+$profBonus", profBoxX + 4, headerY + 10, 0.85f, 0xFFD700)
+        btn(context, mouseX, mouseY, profBoxX + 3, headerY + 22, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
+        btn(context, mouseX, mouseY, profBoxX + 13, headerY + 22, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
+
         val infoBoxH = 38  // 2 rows of dropdowns + nav buttons row
-        val infoX = pad + leftHeaderW + 4; val infoW = W - infoX - pad
+        val infoX = profBoxX + profBoxW + 4; val infoW = W - infoX - pad
         // Info box is shorter than name+level combined — align to top
         box(context, infoX, headerY, infoW, infoBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         renderInfoBox(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, infoBoxH - 4)
 
         val bodyY = headerY + headerH + 4
 
-        // ── STAT COLUMN (left, individual boxes) ──────────────────────────────
+        // ── STAT COLUMN — shifted right for equal margins ──────────────────────
         val statOrder = listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
                                BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA)
+        val statMarginL = pad + 14  // equal margin left
         statOrder.forEachIndexed { i, stat ->
             val slotH = (H - bodyY - pad) / 6
-            val sqSize2 = (slotH - 1).coerceAtMost(slotH)  // use full slot height
+            val sqSize2 = slotH - 1
             val sy = bodyY + i * slotH
-            renderStatBox(context, mouseX, mouseY, pad + 10, sy, sqSize2 + 4, sqSize2, stat)
+            renderStatBox(context, mouseX, mouseY, statMarginL, sy, sqSize2 + 4, sqSize2, stat)
         }
 
         // ── BODY LAYOUT ───────────────────────────────────────────────────────
-        // Stat column width = square size + buttons
         val sqSize = (H - bodyY - pad) / 6 - 1
-        val statColEnd = pad + 12 + sqSize + 12 + 11  // left edge + margin + sq + margin + btn
+        val statColEnd = statMarginL + sqSize + 4 + 12  // stat box right edge + btn + gap
 
-        // Center column: 3 param boxes stacked, width = ~120px
+        // Saves + Skills — narrower
+        val midW = (W - statColEnd - pad) * 38 / 100  // narrower
+        val midX = statColEnd + 4
+        val savesH = 80
+        box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
+        renderSaves(context, mouseX, mouseY, midX + 4, bodyY + 13, midW - 8)
+
+        val skillsY = bodyY + savesH + 4; val skillsH = H - skillsY - pad
+        // Store skills box bounds for scroll detection
+        skillsBoxX = midX; skillsBoxY = skillsY; skillsBoxW = midW; skillsBoxH2 = skillsH
+        box(context, midX, skillsY, midW, skillsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
+        renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
+
+        // Center column: 3 param boxes stacked
         val paramBoxW = 60; val paramBoxH = 50
-        val centerX = (W - paramBoxW) * 3 / 5  // смещён правее центра
+        val centerX = midX + midW + 4
         val dsY = bodyY; val hpY = dsY + paramBoxH + 4; val spY = hpY + paramBoxH + 4
 
         box(context, centerX, dsY, paramBoxW, paramBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
@@ -162,22 +188,22 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         box(context, centerX, spY, paramBoxW, paramBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         renderSpeedBox(context, mouseX, mouseY, centerX, spY, paramBoxW, paramBoxH)
 
-        // Middle-left: Saves + Skills (between stat col and center col)
-        val midX = statColEnd + 4; val midW = centerX - midX - 4
-        val savesH = 80
-        box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
-        renderSaves(context, mouseX, mouseY, midX + 4, bodyY + 13, midW - 8)
-
-        val skillsY = bodyY + savesH + 4; val skillsH = H - skillsY - pad
-        box(context, midX, skillsY, midW, skillsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
-        renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
-
-        // Right: Features — 1/3 of available height, anchored to BOTTOM
+        // Right: player model above Features
         val rightX = centerX + paramBoxW + 4; val rightW = W - rightX - pad
         val featH = (H - bodyY - pad) / 3
         val featY = H - pad - featH
+        val modelAreaH = featY - bodyY - 4
+
+        // Player model
+        val mc = MinecraftClient.getInstance()
+        val player = mc.world?.players?.find { it.name.string == snapshot.playerName }
+        if (player != null && modelAreaH > 20) {
+            val modelCx = rightX + rightW / 2
+            val modelY = bodyY + modelAreaH - 10
+            InventoryScreen.drawEntity(context, modelCx, modelY, 30, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
+        }
+        btn(context, mouseX, mouseY, rightX + rightW / 2 - 20, featY - 12, 40, 10, "§7Change") { /* TODO */ }
+
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { featDropOpen = !featDropOpen }
@@ -342,9 +368,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // "Spd" label above speed
         lbl(context, "§7Spd", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
-        btn(context, mouseX, mouseY, cx - 18, row1Y, 8, 9, "§c-") { speedFt = (speedFt - 5).coerceAtLeast(0) }
+        btn(context, mouseX, mouseY, cx - 18, row1Y, 8, 9, "§c-") { speedFt = (speedFt - 1).coerceAtLeast(0) }
         lbl(context, "${speedFt}ft", cx - 8, row1Y + 1, 0.75f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, cx + 12, row1Y, 8, 9, "§a+") { speedFt += 5 }
+        btn(context, mouseX, mouseY, cx + 12, row1Y, 8, 9, "§a+") { speedFt += 1 }
         // Size
         val row2Y = by + 32
         btn(context, mouseX, mouseY, cx - 18, row2Y, 8, 9, "§c-") { sizeFactor = (sizeFactor - 0.05f).coerceAtLeast(0.1f) }
@@ -378,49 +404,53 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderDropdowns(context: DrawContext, mouseX: Int, mouseY: Int, infoX: Int, infoY: Int) {
         val m = context.matrices
-        // Render dropdowns at high Z so they appear on top
-        m.push(); m.translate(0f, 0f, 200f)
-        if (classDropOpen) {
-            var dy = infoY + 8
-            ClientGmRegistry.classes.forEach { cls ->
-                btn(context, mouseX, mouseY, infoX + 24, dy, 70, 9,
-                    if (cls.id == classId) "§a${cls.displayName}" else "§7${cls.displayName}") {
-                    classId = cls.id; subclassId = null; classDropOpen = false
-                }
-                dy += 10
+        m.push(); m.translate(0f, 0f, 300f)
+
+        fun drawDropdown(items: List<Pair<String, () -> Unit>>, x: Int, y: Int, w: Int) {
+            val itemH = 10
+            val totalH = items.size * itemH + 2
+            // Background
+            context.fill(x, y, x + w, y + totalH, 0xFF1a1a1a.toInt())
+            context.fill(x, y, x + w, y + 1, 0xFFd4a96a.toInt())
+            context.fill(x, y + totalH - 1, x + w, y + totalH, 0xFFd4a96a.toInt())
+            context.fill(x, y, x + 1, y + totalH, 0xFFd4a96a.toInt())
+            context.fill(x + w - 1, y, x + w, y + totalH, 0xFFd4a96a.toInt())
+            items.forEachIndexed { i, (label, action) ->
+                val iy = y + 1 + i * itemH
+                val hov = mouseX in x..(x + w) && mouseY in iy..(iy + itemH)
+                if (hov) context.fill(x + 1, iy, x + w - 1, iy + itemH, 0xFF3a2a1a.toInt())
+                btn(context, mouseX, mouseY, x + 1, iy, w - 2, itemH, label, action)
             }
+        }
+
+        val col1X = infoX; val col2X = infoX + (width - 5 - infoX) / 2 + 4
+        val dropY = infoY + 10  // just below the Class/Race row
+
+        if (classDropOpen) {
+            val items = ClientGmRegistry.classes.map { cls ->
+                val label = if (cls.id == classId) "§a${cls.displayName}" else "§f${cls.displayName}"
+                label to { classId = cls.id; subclassId = null; classDropOpen = false }
+            }
+            drawDropdown(items, col1X + 24, dropY, (width - 5 - infoX) / 2 - 28)
         }
         if (subDropOpen) {
             val subs = classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses } ?: emptyList()
-            var dy = infoY + 18
-            subs.forEach { sub ->
-                btn(context, mouseX, mouseY, infoX + 20, dy, 74, 9,
-                    if (sub.id == subclassId) "§a${sub.displayName}" else "§7${sub.displayName}") {
-                    subclassId = sub.id; subDropOpen = false
-                }
-                dy += 10
+            val items = subs.map { sub ->
+                val label = if (sub.id == subclassId) "§a${sub.displayName}" else "§f${sub.displayName}"
+                label to { subclassId = sub.id; subDropOpen = false }
             }
+            if (items.isNotEmpty()) drawDropdown(items, col1X + 20, dropY + 12, (width - 5 - infoX) / 2 - 24)
         }
         if (raceDropOpen) {
-            var dy = infoY + 28
-            ClientGmRegistry.races.forEach { race ->
-                btn(context, mouseX, mouseY, infoX + 22, dy, 72, 9,
-                    if (race.id == raceId) "§a${race.displayName}" else "§7${race.displayName}") {
-                    raceId = race.id; raceDropOpen = false
-                }
-                dy += 10
+            val items = ClientGmRegistry.races.map { race ->
+                val label = if (race.id == raceId) "§a${race.displayName}" else "§f${race.displayName}"
+                label to { raceId = race.id; raceDropOpen = false }
             }
+            drawDropdown(items, col2X + 22, dropY, (width - 5 - infoX) / 2 - 26)
         }
-        if (alignDropOpen) {
-            val col2 = infoX + (width - 5 - infoX) / 2
-            var dy = infoY + 28
-            ALIGNMENTS.forEach { al ->
-                btn(context, mouseX, mouseY, col2 + 22, dy, 80, 9,
-                    if (al == alignment) "§a$al" else "§7$al") {
-                    alignment = al; alignDropOpen = false
-                }
-                dy += 10
-            }
+        if (subraceDropOpen) {
+            // TODO: populate subraces from registry
+            subraceDropOpen = false
         }
         m.pop()
     }
@@ -525,13 +555,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        // Only scroll skills if mouse is in the skills area (right side of screen, below saves)
-        val pad = 5; val statBoxW = 52
-        val midX = pad + 10 + statBoxW + 14
-        if (mouseX.toInt() > midX) {
+        val mx = mouseX.toInt(); val my = mouseY.toInt()
+        if (mx in skillsBoxX..(skillsBoxX + skillsBoxW) && my in skillsBoxY..(skillsBoxY + skillsBoxH2)) {
             skillScroll = (skillScroll - amount.toInt()).coerceAtLeast(0)
+            return true
         }
-        return true
+        return super.mouseScrolled(mouseX, mouseY, amount)
     }
 
     override fun shouldPause() = false
