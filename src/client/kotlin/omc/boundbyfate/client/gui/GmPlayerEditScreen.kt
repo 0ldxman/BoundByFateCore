@@ -614,7 +614,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
         val mx = mouseX.toInt(); val my = mouseY.toInt()
         if (mx in skillsBoxX..(skillsBoxX + skillsBoxW) && my in skillsBoxY..(skillsBoxY + skillsBoxH2)) {
-            skillScroll = (skillScroll - amount.toInt()).coerceAtLeast(0)
+            val skillList = ClientGmRegistry.skills.filter { !it.isSavingThrow }
+            val visibleCount = (skillsBoxH2 - 16) / 9
+            val maxScroll = (skillList.size - visibleCount).coerceAtLeast(0)
+            skillScroll = (skillScroll - amount.toInt()).coerceIn(0, maxScroll)
             return true
         }
         return super.mouseScrolled(mouseX, mouseY, amount)
