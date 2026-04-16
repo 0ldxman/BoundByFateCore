@@ -2,6 +2,7 @@ package omc.boundbyfate.event
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import omc.boundbyfate.component.EntityStatData
@@ -10,6 +11,7 @@ import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.BbfStats
 import omc.boundbyfate.system.stat.StatEffectProcessor
 import omc.boundbyfate.system.charclass.ClassSystem
+import omc.boundbyfate.system.VitalitySystem
 import org.slf4j.LoggerFactory
 
 /**
@@ -29,6 +31,13 @@ object PlayerStatsHandler {
         // Reapply HP and stats after respawn (attributes reset on death)
         ServerPlayerEvents.AFTER_RESPAWN.register { oldPlayer, newPlayer, alive ->
             onPlayerRespawn(newPlayer)
+        }
+
+        // Trigger vitality death roll when a player dies
+        ServerLivingEntityEvents.AFTER_DEATH.register { entity, damageSource ->
+            if (entity is ServerPlayerEntity) {
+                VitalitySystem.onPlayerDeath(entity)
+            }
         }
     }
 

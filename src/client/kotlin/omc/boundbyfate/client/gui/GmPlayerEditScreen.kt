@@ -386,13 +386,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val vitStrW = (textRenderer.getWidth(vitStr) * 0.6f).toInt()
         lbl(context, vitStr, cx - vitStrW / 2, pipsY + pipSize + 3, 0.6f, 0xCCCCCC)
 
-        // Scars row
+        // Scars button (functionality TBD)
         val scarY = by + 36
-        lbl(context, "§7Scars:", cx - 14, scarY + 1, 0.5f, 0x888888)
-        btn(context, mouseX, mouseY, cx - 2, scarY, 8, 9, "§c-") { scarCount = (scarCount - 1).coerceAtLeast(0) }
-        val scarW = (textRenderer.getWidth("$scarCount") * 0.75f).toInt()
-        lbl(context, "$scarCount", cx + 8, scarY + 1, 0.75f, if (scarCount > 0) 0xFF5555 else 0x888888)
-        btn(context, mouseX, mouseY, cx + 14, scarY, 8, 9, "§a+") { scarCount++ }
+        val scarBtnW = bw - 8
+        val scarBtnX = bx + 4
+        val scarLabel = if (scarCount > 0) "§cШрамы ($scarCount)" else "§7Шрамы"
+        btn(context, mouseX, mouseY, scarBtnX, scarY, scarBtnW, 10, scarLabel) { /* TODO: open scars screen */ }
     }
 
     private fun renderHpBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
