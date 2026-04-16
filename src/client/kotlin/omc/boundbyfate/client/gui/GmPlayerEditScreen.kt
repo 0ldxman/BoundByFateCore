@@ -124,11 +124,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val barMargin = 14  // space for buttons
         val barX = pad + barMargin; val barY = lvY + 13
         val barW = leftHeaderW - barMargin * 2; val barH = 3
-        val xpPrev = xpForNextLevel(level - 1)  // XP needed to reach current level
-        // Fix: progress within current level only
-        val xpInLevel = (experience - xpPrev).coerceAtLeast(0)
-        val xpForLevel = (xpNeeded - xpPrev).coerceAtLeast(1)
-        val xpFrac = (xpInLevel.toFloat() / xpForLevel).coerceIn(0f, 1f)
+        // experience is per-level XP (resets to 0 on level up), xpNeeded is XP required to advance from current level
+        val xpFrac = if (xpNeeded > 0) (experience.toFloat() / xpNeeded).coerceIn(0f, 1f) else 0f
         context.fill(barX, barY, barX + barW, barY + barH, 0xFF333333.toInt())
         context.fill(barX, barY, barX + (barW * xpFrac).toInt(), barY + barH, 0xFF4488FF.toInt())
         // Buttons on sides of bar — square 8x8
@@ -296,18 +293,18 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun setExpManually() {
-        // Simple: add 1000 as placeholder — in real impl would open text input
-        // For now cycle through common XP values
-        val thresholds = intArrayOf(0,300,900,2700,6500,14000,23000,34000,48000,64000,85000)
-        val next = thresholds.firstOrNull { it > experience } ?: (experience + 1000)
-        experience = next
+        // Placeholder — manual XP editing is handled via the clickable EXP text input
     }
 
     private fun xpForNextLevel(lv: Int): Int {
-        // thresholds[i] = XP needed to REACH level i+1
-        // thresholds[0]=0 (start), thresholds[1]=300 (reach lv2), thresholds[2]=900 (reach lv3)...
-        val thresholds = intArrayOf(0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000)
-        return if (lv <= 0) 0 else if (lv >= 20) 355000 else thresholds.getOrElse(lv) { 355000 }
+        // Per-level XP required to advance FROM the given level (XP resets to 0 on level up)
+        return when (lv) {
+            1 -> 300; 2 -> 900; 3 -> 2700; 4 -> 6500; 5 -> 14000
+            6 -> 23000; 7 -> 34000; 8 -> 48000; 9 -> 64000; 10 -> 85000
+            11 -> 100000; 12 -> 120000; 13 -> 140000; 14 -> 165000; 15 -> 195000
+            16 -> 225000; 17 -> 265000; 18 -> 305000; 19 -> 355000
+            else -> Int.MAX_VALUE // level 20 is max
+        }
     }
 
     private fun renderSaves(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int) {
