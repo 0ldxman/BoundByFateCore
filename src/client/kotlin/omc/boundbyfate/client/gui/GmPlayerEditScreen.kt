@@ -88,7 +88,24 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // Block 1: Name + gender (top-left)
         box(context, pad, headerY, leftHeaderW, nameBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "§7Name", pad + 3, headerY + 2, 0.5f, 0x888888)
-        lbl(context, snapshot.playerName, pad + 3, headerY + 9, 1.1f, 0xFFD700)
+        // Name: scale 0.85, clip/scroll if too wide
+        val nameScale = 0.85f
+        val maxNameW = leftHeaderW - 22  // leave room for gender button
+        val namePixelW = (textRenderer.getWidth(snapshot.playerName) * nameScale).toInt()
+        val m0 = context.matrices; m0.push()
+        if (namePixelW > maxNameW) {
+            // Scroll: offset so end of name is visible
+            val overflow = namePixelW - maxNameW
+            val scrollX = -(overflow * ((System.currentTimeMillis() / 30) % (overflow * 2 + 40)).let {
+                if (it < overflow + 20) it.toFloat() else (overflow * 2 + 40 - it).toFloat()
+            }.coerceIn(0f, overflow.toFloat()) / overflow)
+            m0.translate((pad + 3 + scrollX).toFloat(), (headerY + 9).toFloat(), 0f)
+        } else {
+            m0.translate((pad + 3).toFloat(), (headerY + 9).toFloat(), 0f)
+        }
+        m0.scale(nameScale, nameScale, 1f)
+        context.drawTextWithShadow(textRenderer, snapshot.playerName, 0, 0, 0xFFD700)
+        m0.pop()
         val gIcon = when (gender) { "male" -> "♂"; "female" -> "♀"; else -> "⚧" }
         btn(context, mouseX, mouseY, pad + leftHeaderW - 16, headerY + 7, 14, 12, gIcon) {
             gender = when (gender) { "male" -> "female"; "female" -> "other"; else -> "male" }
@@ -127,19 +144,20 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val displayColor = if (editingExp) 0xFFFF55 else if (expClickHovered(mouseX, mouseY, lvCx, lvY, expScaledW)) 0xFFFF55 else 0x888888
         lbl(context, displayExp, lvCx - expScaledW / 2, lvY + 19, 0.45f, displayColor)
 
-        // Info box — smaller height (2 rows only), nav buttons INSIDE at bottom
-        // ── PROF BONUS BOX (between name/level and info box) ─────────────────
+        // ── PROF BONUS BOX — centered content, same height as info box ──────
         val profBoxW = 40
         val profBoxX = pad + leftHeaderW + 4
-        box(context, profBoxX, headerY, profBoxW, headerH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "§7PROF", profBoxX + 4, headerY + 2, 0.5f, 0x888888)
-        lbl(context, "+$profBonus", profBoxX + 4, headerY + 10, 0.85f, 0xFFD700)
-        btn(context, mouseX, mouseY, profBoxX + 3, headerY + 22, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
-        btn(context, mouseX, mouseY, profBoxX + 13, headerY + 22, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
+        val infoBoxH = headerH  // same height as name+level combined
+        box(context, profBoxX, headerY, profBoxW, infoBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        val profCx = profBoxX + profBoxW / 2
+        lbl(context, "§7PROF", profCx - 8, headerY + 4, 0.5f, 0x888888)
+        val profStr = "+$profBonus"
+        val profStrW = (textRenderer.getWidth(profStr) * 0.85f).toInt()
+        lbl(context, profStr, profCx - profStrW / 2, headerY + 13, 0.85f, 0xFFD700)
+        btn(context, mouseX, mouseY, profCx - 10, headerY + infoBoxH - 13, 8, 9, "§c-") { profBonus = (profBonus - 1).coerceAtLeast(1) }
+        btn(context, mouseX, mouseY, profCx + 2, headerY + infoBoxH - 13, 8, 9, "§a+") { profBonus = (profBonus + 1).coerceAtMost(9) }
 
-        val infoBoxH = 38  // 2 rows of dropdowns + nav buttons row
         val infoX = profBoxX + profBoxW + 4; val infoW = W - infoX - pad
-        // Info box is shorter than name+level combined — align to top
         box(context, infoX, headerY, infoW, infoBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         renderInfoBox(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, infoBoxH - 4)
 
@@ -199,7 +217,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         if (player != null && modelAreaH > 20) {
             val modelCx = rightX + rightW / 2
             val modelY = bodyY + modelAreaH - 10
-            InventoryScreen.drawEntity(context, modelCx, modelY, 30, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
+            InventoryScreen.drawEntity(context, modelCx, modelY, 60, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
         btn(context, mouseX, mouseY, rightX + rightW / 2 - 20, featY - 12, 40, 10, "§7Change") { /* TODO */ }
 
