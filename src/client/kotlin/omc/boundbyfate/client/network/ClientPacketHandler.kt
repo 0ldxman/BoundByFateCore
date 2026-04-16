@@ -243,11 +243,19 @@ object ClientPacketHandler {
             }
         }
 
-        // Server → Client: sync available skin names for GM picker
+        // Server → Client: sync available skin names + base64 for GM picker
         ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_SKIN_LIST) { client, _, buf, _ ->
             val count = buf.readInt()
-            val skins = (0 until count).map { buf.readString() }
-            client.execute { omc.boundbyfate.client.state.ClientGmRegistry.updateSkins(skins) }
+            val entries = (0 until count).map { buf.readString() to buf.readString() } // name to base64
+            client.execute {
+                val names = entries.map { it.first }
+                omc.boundbyfate.client.state.ClientGmRegistry.updateSkins(names)
+                entries.forEach { (name, base64) ->
+                    if (base64.isNotEmpty()) {
+                        omc.boundbyfate.client.state.ClientGmRegistry.registerSkinTexture(name, base64)
+                    }
+                }
+            }
         }
     }
 

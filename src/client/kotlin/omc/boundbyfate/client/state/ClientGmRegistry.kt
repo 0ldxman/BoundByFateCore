@@ -19,6 +19,8 @@ object ClientGmRegistry {
     val skills: MutableList<GmSkillInfo> = mutableListOf()
     val features: MutableList<GmFeatureInfo> = mutableListOf()
     val availableSkins: MutableList<String> = mutableListOf()
+    // Map of skinName → registered texture Identifier (for preview rendering)
+    val skinTextures: MutableMap<String, Identifier> = mutableMapOf()
 
     fun update(
         classes: List<GmClassInfo>,
@@ -35,5 +37,22 @@ object ClientGmRegistry {
     fun updateSkins(skins: List<String>) {
         this.availableSkins.clear()
         this.availableSkins.addAll(skins)
+    }
+
+    fun registerSkinTexture(skinName: String, base64: String) {
+        try {
+            val bytes = java.util.Base64.getDecoder().decode(base64)
+            val image = net.minecraft.client.texture.NativeImage.read(java.io.ByteArrayInputStream(bytes))
+            val texture = net.minecraft.client.texture.NativeImageBackedTexture(image)
+            val id = net.minecraft.util.Identifier("boundbyfate-core", "gm_skin_preview/${skinName.lowercase()}")
+            net.minecraft.client.MinecraftClient.getInstance().execute {
+                val tm = net.minecraft.client.MinecraftClient.getInstance().textureManager
+                skinTextures[skinName]?.let { tm.destroyTexture(it) }
+                tm.registerTexture(id, texture)
+                skinTextures[skinName] = id
+            }
+        } catch (e: Exception) {
+            // silently skip broken skin
+        }
     }
 }

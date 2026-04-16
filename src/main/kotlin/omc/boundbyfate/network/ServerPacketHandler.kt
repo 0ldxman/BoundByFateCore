@@ -608,12 +608,16 @@ object ServerPacketHandler {
 
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_REGISTRY, buf)
 
-        // Also send available skin names
+        // Also send available skin names + base64 data for previews
         val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(gmPlayer.server)
         val skins = omc.boundbyfate.system.skin.SkinLoader.listAvailableSkins(worldDir)
         val skinBuf = PacketByteBufs.create()
         skinBuf.writeInt(skins.size)
-        skins.forEach { skinBuf.writeString(it) }
+        skins.forEach { skinName ->
+            skinBuf.writeString(skinName)
+            val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinName) ?: ""
+            skinBuf.writeString(base64)
+        }
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_SKIN_LIST, skinBuf)
     }
 

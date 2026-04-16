@@ -323,12 +323,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun openSkinPicker() {
-        val items = ClientGmRegistry.availableSkins.map {
-            Identifier("skin", it) to it
-        }
-        val currentSkin = pendingSkinName?.let { Identifier("skin", it) }
-        client?.setScreen(GmPickerScreen("Выбор скина", items, currentSkin, this) { picked ->
-            pendingSkinName = picked.path
+        client?.setScreen(GmSkinPickerScreen(pendingSkinName, this) { picked ->
+            pendingSkinName = picked
         })
     }
 
