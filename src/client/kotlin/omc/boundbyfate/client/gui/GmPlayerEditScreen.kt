@@ -286,7 +286,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.setScreen(GmPickerScreen("Выбор класса", items, classId, this) { picked ->
             classId = picked
             subclassId = null
-            sendCommand("/bbf class set ${snapshot.playerName} $picked")
+            sendCommand("/bbf class set ${snapshot.playerName} \"$picked\"")
         })
     }
 
@@ -297,7 +297,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val items = subs.map { it.id to it.displayName }
         client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId, this) { picked ->
             subclassId = picked
-            sendCommand("/bbf class subclass set ${snapshot.playerName} $picked")
+            sendCommand("/bbf class subclass set ${snapshot.playerName} \"$picked\"")
         })
     }
 
@@ -306,7 +306,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.setScreen(GmPickerScreen("Выбор расы", items, raceId, this) { picked ->
             raceId = picked
             subraceId = null
-            sendCommand("/bbf race set ${snapshot.playerName} $picked")
+            sendCommand("/bbf race set ${snapshot.playerName} \"$picked\"")
         })
     }
 
@@ -315,7 +315,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val items = emptyList<Pair<Identifier, String>>()
         client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
             subraceId = picked
-            sendCommand("/bbf race subrace set ${snapshot.playerName} $picked")
+            sendCommand("/bbf race subrace set ${snapshot.playerName} \"$picked\"")
         })
     }
 

@@ -10,12 +10,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
  * It only decreases on death (via a d20 + CON roll) and can only be
  * restored through deliberate in-game actions (rest, rituals, GM intervention).
  *
- * Roll thresholds on death:
- *   ≥15 → no change
- *   10–14 → -1
- *   5–9  → -2
- *   <5   → -3
- *   nat 1 → -3 (forced, no choice)
+ * Roll thresholds on death (roll + CON modifier):
+ *   nat 1  → -2 (always, regardless of CON)
+ *   nat 20 → +1 vitality (lucky recovery)
+ *   total ≥10 → no loss
+ *   total <10  → -1
  *
  * Vitality = 0 → permanent death (or retirement, GM's call).
  *
@@ -36,17 +35,16 @@ data class PlayerVitalityData(
      */
     fun applyDeathRoll(roll: Int, conModifier: Int): Pair<PlayerVitalityData, Int> {
         val total = roll + conModifier
+        // loss > 0 = vitality lost, loss < 0 = vitality gained (nat 20)
         val loss = when {
-            roll == 1 -> 3          // nat 1 — always -3
-            total >= 15 -> 0        // success — no loss
-            total >= 10 -> 1        // partial — -1
-            total >= 5  -> 2        // failure — -2
-            else        -> 3        // critical failure — -3
+            roll == 1   ->  2   // nat 1 — always -2 regardless of CON
+            total >= 10 ->  0   // success — no loss
+            else        ->  1   // failure (total < 10) — -1
         }
         val scarGained = if (loss > 0) 1 else 0
         return Pair(
             copy(
-                vitality = (vitality - loss).coerceAtLeast(0),
+                vitality = (vitality - loss).coerceIn(0, MAX_VITALITY),
                 scarCount = scarCount + scarGained
             ),
             loss

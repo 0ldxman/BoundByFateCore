@@ -103,10 +103,9 @@ object VitalitySystem {
     ) {
         val outcome: String get() = when {
             isPermanentDeath -> "PERMANENT DEATH"
-            vitalityLost == 0 -> "No loss (≥15)"
-            vitalityLost == 1 -> "-1 Vitality (10–14)"
-            vitalityLost == 2 -> "-2 Vitality (5–9)"
-            else -> "-3 Vitality (<5)"
+            vitalityLost == 0 -> "No loss (total ≥10)"
+            vitalityLost == 1 -> "-1 Vitality (total <10)"
+            else -> "-2 Vitality (nat 1)"
         }
     }
 }
