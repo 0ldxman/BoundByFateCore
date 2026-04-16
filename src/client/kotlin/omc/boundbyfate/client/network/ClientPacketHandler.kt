@@ -196,6 +196,8 @@ object ClientPacketHandler {
                 val alignment = buf.readString()
                 val featureCount = buf.readInt()
                 val features = (0 until featureCount).map { buf.readIdentifier() }
+                val vitality = buf.readInt()
+                val scarCount = buf.readInt()
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
@@ -204,7 +206,8 @@ object ClientPacketHandler {
                     level = level, experience = experience,
                     gender = gender, alignment = alignment,
                     currentHp = hp, maxHp = maxHp, speed = speed,
-                    isOnline = true, grantedFeatures = features
+                    isOnline = true, grantedFeatures = features,
+                    vitality = vitality, scarCount = scarCount
                 )
             }
             client.execute { ClientGmData.update(snapshots) }

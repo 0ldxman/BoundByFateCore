@@ -305,20 +305,22 @@ object ServerPacketHandler {
             }
         }
 
-        // Client → Server: GM adds/removes a feature
-        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_FEATURE) { server, gmPlayer, _, buf, _ ->
+        // Client → Server: GM sets vitality/scars for a player
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_VITALITY) { server, gmPlayer, _, buf, _ ->
             if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
             val targetName = buf.readString()
-            val featureId = buf.readIdentifier()
-            val add = buf.readBoolean()
+            val newVitality = buf.readInt()
+            val newScars = buf.readInt()
 
             server.execute {
                 val target = server.playerManager.getPlayer(targetName) ?: return@execute
-                val featureData = target.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, omc.boundbyfate.component.EntityFeatureData())
-                val updated = if (add) featureData.withFeature(featureId) else featureData.withoutFeature(featureId)
-                target.setAttached(BbfAttachments.ENTITY_FEATURES, updated)
+                val current = target.getAttachedOrElse(BbfAttachments.PLAYER_VITALITY, omc.boundbyfate.component.PlayerVitalityData())
+                target.setAttached(
+                    BbfAttachments.PLAYER_VITALITY,
+                    current.withVitality(newVitality).withScars(newScars)
+                )
                 syncGmData(gmPlayer)
-                logger.info("GM ${gmPlayer.name.string} ${if (add) "added" else "removed"} feature $featureId for $targetName")
+                logger.info("GM ${gmPlayer.name.string} set vitality=$newVitality scars=$newScars for $targetName")
             }
         }
     }
@@ -596,6 +598,16 @@ object ServerPacketHandler {
     }
 
     /**
+     * Syncs GM data to all online players who have GM permission.
+     * Called after vitality/scar changes so all GMs see updated data.
+     */
+    fun syncGmDataToAll(server: net.minecraft.server.MinecraftServer) {
+        server.playerManager.playerList.forEach { player ->
+            if (player.hasPermissionLevel(2)) syncGmData(player)
+        }
+    }
+
+    /**
      * Syncs all online players' character data to a GM player.
      */
     fun syncGmData(gmPlayer: ServerPlayerEntity) {
@@ -665,6 +677,11 @@ object ServerPacketHandler {
             val features = featData?.grantedFeatures ?: emptySet()
             buf.writeInt(features.size)
             features.forEach { buf.writeIdentifier(it) }
+
+            // Vitality
+            val vitalityData = player.getAttachedOrElse(BbfAttachments.PLAYER_VITALITY, omc.boundbyfate.component.PlayerVitalityData())
+            buf.writeInt(vitalityData.vitality)
+            buf.writeInt(vitalityData.scarCount)
         }
 
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_PLAYERS, buf)

@@ -38,6 +38,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
     private val features = mutableListOf<Identifier>().also { it.addAll(snapshot.grantedFeatures) }
 
+    // ── Vitality state ────────────────────────────────────────────────────────
+    private var vitality: Int = snapshot.vitality
+    private var scarCount: Int = snapshot.scarCount
+
     // ── UI state ──────────────────────────────────────────────────────────────
     private var statusMsg = ""; private var statusTimer = 0f
     private var classDropOpen = false; private var subDropOpen = false
@@ -62,9 +66,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     // ── speed (editable, stored as ft) ───────────────────────────────────────
     private var speedFt: Int = (snapshot.speed * 200).toInt().let { if (it == 0) 30 else it }
     private var sizeFactor: Float = 1.0f
-    // ── death saves ───────────────────────────────────────────────────────────
-    private var deathSuccesses: Int = 0
-    private var deathFailures: Int = 0
 
     override fun init() { /* layout is dynamic */ }
 
@@ -351,20 +352,47 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderDeathSaves(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
-        lbl(context, "DEATH SAVES", cx - 22, by + 3, 0.55f, 0xD4AF37)
-        // Bullets only centered (✓/✗ to the left of centered bullets)
-        val bulletsW = 30; val bulletsStartX = cx - bulletsW / 2
-        val iconY1 = by + 16; val iconY2 = by + 28
-        lbl(context, "§a✓", bulletsStartX - 10, iconY1 + 1, 0.65f, 0x55FF55)
-        for (i in 0..2) {
-            val icon = if (i < deathSuccesses) "§a●" else "§7○"
-            btn(context, mouseX, mouseY, bulletsStartX + i * 10, iconY1, 8, 8, icon) { deathSuccesses = if (deathSuccesses > i) i else i + 1 }
+        lbl(context, "VITALITY", cx - 16, by + 3, 0.55f, 0xD4AF37)
+
+        // 5 pip slots — filled = vitality remaining, empty = lost
+        val maxVit = 5
+        val pipSize = 8; val pipGap = 3
+        val totalPipsW = maxVit * pipSize + (maxVit - 1) * pipGap
+        val pipsStartX = cx - totalPipsW / 2
+        val pipsY = by + 14
+
+        for (i in 0 until maxVit) {
+            val px = pipsStartX + i * (pipSize + pipGap)
+            val filled = i < vitality
+            val pipColor = when {
+                filled && vitality >= 4 -> 0xFF55FF55.toInt()  // green — safe
+                filled && vitality >= 2 -> 0xFFFFAA00.toInt()  // orange — warning
+                filled -> 0xFFFF5555.toInt()                    // red — critical
+                else -> 0xFF333333.toInt()                      // dark — lost
+            }
+            val borderColor = if (filled) 0xFF888888.toInt() else 0xFF444444.toInt()
+            // Draw pip (filled square with border)
+            context.fill(px, pipsY, px + pipSize, pipsY + pipSize, borderColor)
+            context.fill(px + 1, pipsY + 1, px + pipSize - 1, pipsY + pipSize - 1, pipColor)
+            // Click to toggle (GM can set vitality by clicking pips)
+            val finalI = i
+            btn(context, mouseX, mouseY, px, pipsY, pipSize, pipSize, "") {
+                vitality = if (vitality == finalI + 1) finalI else finalI + 1
+            }
         }
-        lbl(context, "§c✗", bulletsStartX - 10, iconY2 + 1, 0.65f, 0xFF5555)
-        for (i in 0..2) {
-            val icon = if (i < deathFailures) "§c●" else "§7○"
-            btn(context, mouseX, mouseY, bulletsStartX + i * 10, iconY2, 8, 8, icon) { deathFailures = if (deathFailures > i) i else i + 1 }
-        }
+
+        // Vitality number label
+        val vitStr = "$vitality/$maxVit"
+        val vitStrW = (textRenderer.getWidth(vitStr) * 0.6f).toInt()
+        lbl(context, vitStr, cx - vitStrW / 2, pipsY + pipSize + 3, 0.6f, 0xCCCCCC)
+
+        // Scars row
+        val scarY = by + 36
+        lbl(context, "§7Scars:", cx - 14, scarY + 1, 0.5f, 0x888888)
+        btn(context, mouseX, mouseY, cx - 2, scarY, 8, 9, "§c-") { scarCount = (scarCount - 1).coerceAtLeast(0) }
+        val scarW = (textRenderer.getWidth("$scarCount") * 0.75f).toInt()
+        lbl(context, "$scarCount", cx + 8, scarY + 1, 0.75f, if (scarCount > 0) 0xFF5555 else 0x888888)
+        btn(context, mouseX, mouseY, cx + 14, scarY, 8, 9, "§a+") { scarCount++ }
     }
 
     private fun renderHpBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
@@ -503,6 +531,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         skillBuf.writeInt(skills.size)
         skills.forEach { (id, lv) -> skillBuf.writeIdentifier(id); skillBuf.writeInt(lv) }
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_SKILLS, skillBuf)
+
+        val vitalityBuf = PacketByteBufs.create()
+        vitalityBuf.writeString(snapshot.playerName)
+        vitalityBuf.writeInt(vitality)
+        vitalityBuf.writeInt(scarCount)
+        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_VITALITY, vitalityBuf)
 
         statusMsg = "§aApplied!"; statusTimer = 1f
     }

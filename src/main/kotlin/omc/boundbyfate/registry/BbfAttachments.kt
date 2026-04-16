@@ -137,6 +137,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_alignment"))
 
+    @JvmField
+    val PLAYER_VITALITY: AttachmentType<omc.boundbyfate.component.PlayerVitalityData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerVitalityData>()
+            .persistent(omc.boundbyfate.component.PlayerVitalityData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_vitality"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

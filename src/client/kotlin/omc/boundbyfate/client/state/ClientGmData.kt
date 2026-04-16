@@ -20,7 +20,9 @@ data class GmPlayerSnapshot(
     val maxHp: Float,
     val speed: Float = 0.1f,
     val isOnline: Boolean,
-    val grantedFeatures: List<Identifier> = emptyList()
+    val grantedFeatures: List<Identifier> = emptyList(),
+    val vitality: Int = 5,
+    val scarCount: Int = 0
 )
 
 object ClientGmData {
