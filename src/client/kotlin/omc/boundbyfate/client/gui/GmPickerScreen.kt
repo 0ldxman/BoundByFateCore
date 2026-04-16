@@ -219,7 +219,7 @@ class GmPickerScreen(
 
     override fun shouldPause() = false
 
-    private fun close() {
+    override fun close() {
         client?.setScreen(null)
     }
 }
