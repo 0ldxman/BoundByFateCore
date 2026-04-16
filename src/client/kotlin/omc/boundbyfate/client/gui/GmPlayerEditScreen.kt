@@ -42,6 +42,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var vitality: Int = snapshot.vitality
     private var scarCount: Int = snapshot.scarCount
 
+    // ── Extended state ────────────────────────────────────────────────────────
+    private var tempHp: Int = 0   // temporary HP (absorption)
+    private var pendingSkinName: String? = null  // null = no change
+
     // ── UI state ──────────────────────────────────────────────────────────────
     private var statusMsg = ""; private var statusTimer = 0f
     private var skillScroll = 0
@@ -220,7 +224,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val modelY = changeBtnY - 6
             InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, "§7Change Skin") { /* TODO */ }
+        btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, "§7Change Skin") { openSkinPicker() }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
@@ -285,7 +289,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.setScreen(GmPickerScreen("Выбор класса", items, classId, this) { picked ->
             classId = picked
             subclassId = null
-            sendCommand("/bbf class set ${snapshot.playerName} \"$picked\"")
         })
     }
 
@@ -293,7 +296,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val cls = classId ?: return
         val clsInfo = ClientGmRegistry.classes.find { it.id == cls } ?: return
         if (clsInfo.subclasses.isEmpty()) return
-        // Only allow subclass selection if player reached the required level
         if (level < clsInfo.subclassLevel) {
             statusMsg = "§cПодкласс доступен с ${clsInfo.subclassLevel} уровня"
             statusTimer = 2f
@@ -302,7 +304,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val items = clsInfo.subclasses.map { it.id to it.displayName }
         client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId, this) { picked ->
             subclassId = picked
-            sendCommand("/bbf class subclass set ${snapshot.playerName} \"$picked\"")
         })
     }
 
@@ -311,16 +312,23 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.setScreen(GmPickerScreen("Выбор расы", items, raceId, this) { picked ->
             raceId = picked
             subraceId = null
-            sendCommand("/bbf race set ${snapshot.playerName} \"$picked\"")
         })
     }
 
     private fun openSubracePicker() {
-        // TODO: populate subraces from registry when available
         val items = emptyList<Pair<Identifier, String>>()
         client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
             subraceId = picked
-            sendCommand("/bbf race subrace set ${snapshot.playerName} \"$picked\"")
+        })
+    }
+
+    private fun openSkinPicker() {
+        val items = ClientGmRegistry.availableSkins.map {
+            Identifier("skin", it) to it
+        }
+        val currentSkin = pendingSkinName?.let { Identifier("skin", it) }
+        client?.setScreen(GmPickerScreen("Выбор скина", items, currentSkin, this) { picked ->
+            pendingSkinName = picked.path
         })
     }
 
@@ -474,7 +482,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btn(context, mouseX, mouseY, cx - 14, row1Y, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
         val curW = (textRenderer.getWidth("${currentHp.toInt()}") * 0.8f).toInt()
         lbl(context, "${currentHp.toInt()}", cx - curW / 2, row1Y + 1, 0.8f, 0xFF5555)
-        btn(context, mouseX, mouseY, cx + 8, row1Y, 8, 9, "§a+") { currentHp = (currentHp + 1).coerceAtMost(maxHp) }
+        btn(context, mouseX, mouseY, cx + 8, row1Y, 8, 9, "§a+") { currentHp += 1f }  // can exceed max = temp HP
         // Max HP
         val row2Y = by + 32
         btn(context, mouseX, mouseY, cx - 14, row2Y, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
@@ -483,6 +491,15 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         btn(context, mouseX, mouseY, cx + 8, row2Y, 8, 9, "§a+") { maxHp += 1f }
         // "Max" label below max HP
         lbl(context, "§7Max", cx - 4, by + 43, 0.5f, 0x888888)
+        // Temp HP indicator (when currentHp > maxHp)
+        val overheal = (currentHp - maxHp).toInt()
+        if (overheal > 0) {
+            tempHp = overheal
+            val tmpW = (textRenderer.getWidth("+$overheal tmp") * 0.5f).toInt()
+            lbl(context, "§e+$overheal tmp", cx - tmpW / 2, by + 43, 0.5f, 0xFFFF55)
+        } else {
+            tempHp = 0
+        }
     }
 
     private fun renderSpeedBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
@@ -541,6 +558,30 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         vitalityBuf.writeInt(vitality)
         vitalityBuf.writeInt(scarCount)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_VITALITY, vitalityBuf)
+
+        // HP (current, max, temp)
+        val hpBuf = PacketByteBufs.create()
+        hpBuf.writeString(snapshot.playerName)
+        hpBuf.writeFloat(currentHp)
+        hpBuf.writeFloat(maxHp)
+        hpBuf.writeInt(tempHp)
+        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_HP, hpBuf)
+
+        // Speed and scale
+        val speedBuf = PacketByteBufs.create()
+        speedBuf.writeString(snapshot.playerName)
+        speedBuf.writeInt(speedFt)
+        speedBuf.writeFloat(sizeFactor)
+        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_SPEED_SCALE, speedBuf)
+
+        // Skin (only if changed)
+        if (pendingSkinName != null) {
+            val skinBuf = PacketByteBufs.create()
+            skinBuf.writeString(snapshot.playerName)
+            skinBuf.writeString(pendingSkinName!!)
+            skinBuf.writeString("default")  // model — could be made configurable
+            ClientPlayNetworking.send(BbfPackets.GM_SET_PLAYER_SKIN, skinBuf)
+        }
 
         statusMsg = "§aApplied!"; statusTimer = 1f
     }

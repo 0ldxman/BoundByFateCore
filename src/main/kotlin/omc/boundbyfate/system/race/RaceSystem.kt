@@ -227,6 +227,13 @@ object RaceSystem {
     }
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
+        applyScaleDirect(player, scale)
+    }
+
+    /**
+     * Public: directly set player scale (used by GM override, not tied to race).
+     */
+    fun applyScaleDirect(player: ServerPlayerEntity, scale: Float) {
         try {
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")

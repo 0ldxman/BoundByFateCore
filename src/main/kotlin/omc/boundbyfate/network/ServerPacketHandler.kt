@@ -260,6 +260,80 @@ object ServerPacketHandler {
                 logger.info("GM ${gmPlayer.name.string} set vitality=$newVitality scars=$newScars for $targetName")
             }
         }
+
+        // Client → Server: GM sets HP (current, max, temp)
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_HP) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val newCurrentHp = buf.readFloat()
+            val newMaxHp = buf.readFloat()
+            val tempHp = buf.readInt()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                // Set max HP via attribute override (same UUID as HitPointsSystem)
+                val maxHpVal = newMaxHp.coerceAtLeast(1f)
+                val attribute = target.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH)
+                if (attribute != null) {
+                    val modUuid = java.util.UUID.fromString("bbf00001-0000-0000-0000-000000000001")
+                    attribute.getModifier(modUuid)?.let { attribute.removeModifier(it) }
+                    attribute.baseValue = 1.0
+                    attribute.addPersistentModifier(net.minecraft.entity.attribute.EntityAttributeModifier(
+                        modUuid, "BoundByFate D&D HP", (maxHpVal - 1).toDouble(),
+                        net.minecraft.entity.attribute.EntityAttributeModifier.Operation.ADDITION
+                    ))
+                }
+                target.health = newCurrentHp.coerceIn(0f, maxHpVal)
+                // Temp HP via absorption (Minecraft's built-in temp HP mechanism)
+                if (tempHp > 0) target.absorptionAmount = tempHp.toFloat()
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} set HP $newCurrentHp/$newMaxHp (temp=$tempHp) for $targetName")
+            }
+        }
+
+        // Client → Server: GM sets speed (ft) and scale
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_SPEED_SCALE) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val speedFt = buf.readInt()
+            val scale = buf.readFloat()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                // Speed: convert ft to Minecraft units (30ft = 0.1 base speed)
+                val speedMc = (speedFt / 300.0)
+                val speedAttr = target.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
+                if (speedAttr != null) {
+                    val modUuid = java.util.UUID.fromString("bbf00020-0000-0000-0000-000000000001")
+                    speedAttr.getModifier(modUuid)?.let { speedAttr.removeModifier(it) }
+                    speedAttr.baseValue = speedMc
+                }
+                // Scale via Pehkui if available
+                omc.boundbyfate.system.race.RaceSystem.applyScaleDirect(target, scale)
+                syncGmData(gmPlayer)
+                logger.info("GM ${gmPlayer.name.string} set speed=${speedFt}ft scale=$scale for $targetName")
+            }
+        }
+
+        // Client → Server: GM sets skin by name
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_SET_PLAYER_SKIN) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val skinName = buf.readString()
+            val skinModel = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(server)
+                val base64 = omc.boundbyfate.system.skin.SkinLoader.loadAsBase64(worldDir, skinName) ?: run {
+                    logger.warn("GM ${gmPlayer.name.string}: skin '$skinName' not found")
+                    return@execute
+                }
+                target.setAttached(BbfAttachments.PLAYER_SKIN, omc.boundbyfate.component.PlayerSkinData(skinName, skinModel))
+                broadcastSkin(targetName, base64, skinModel, server)
+                logger.info("GM ${gmPlayer.name.string} set skin=$skinName for $targetName")
+            }
+        }
     }
 
     /**
@@ -533,6 +607,14 @@ object ServerPacketHandler {
         features.forEach { feat -> buf.writeIdentifier(feat.id); buf.writeString(feat.displayName) }
 
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_REGISTRY, buf)
+
+        // Also send available skin names
+        val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(gmPlayer.server)
+        val skins = omc.boundbyfate.system.skin.SkinLoader.listAvailableSkins(worldDir)
+        val skinBuf = PacketByteBufs.create()
+        skinBuf.writeInt(skins.size)
+        skins.forEach { skinBuf.writeString(it) }
+        ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_SKIN_LIST, skinBuf)
     }
 
     /**

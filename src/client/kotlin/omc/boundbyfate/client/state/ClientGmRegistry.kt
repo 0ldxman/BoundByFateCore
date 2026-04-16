@@ -18,6 +18,7 @@ object ClientGmRegistry {
     val races: MutableList<GmRaceInfo> = mutableListOf()
     val skills: MutableList<GmSkillInfo> = mutableListOf()
     val features: MutableList<GmFeatureInfo> = mutableListOf()
+    val availableSkins: MutableList<String> = mutableListOf()
 
     fun update(
         classes: List<GmClassInfo>,
@@ -29,5 +30,10 @@ object ClientGmRegistry {
         this.races.clear(); this.races.addAll(races)
         this.skills.clear(); this.skills.addAll(skills)
         this.features.clear(); this.features.addAll(features)
+    }
+
+    fun updateSkins(skins: List<String>) {
+        this.availableSkins.clear()
+        this.availableSkins.addAll(skins)
     }
 }

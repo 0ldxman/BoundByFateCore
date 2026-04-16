@@ -242,6 +242,13 @@ object ClientPacketHandler {
                 omc.boundbyfate.client.state.ClientGmRegistry.update(classes, races, skills, features)
             }
         }
+
+        // Server → Client: sync available skin names for GM picker
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_SKIN_LIST) { client, _, buf, _ ->
+            val count = buf.readInt()
+            val skins = (0 until count).map { buf.readString() }
+            client.execute { omc.boundbyfate.client.state.ClientGmRegistry.updateSkins(skins) }
+        }
     }
 
     private fun spawnParticles(
