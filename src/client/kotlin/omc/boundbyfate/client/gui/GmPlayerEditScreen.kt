@@ -283,10 +283,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun openClassPicker() {
         val items = ClientGmRegistry.classes.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор класса", items, classId) { picked ->
+        client?.setScreen(GmPickerScreen("Выбор класса", items, classId, this) { picked ->
             classId = picked
-            subclassId = null  // reset subclass when class changes
-            client?.setScreen(this)
+            subclassId = null
+            sendCommand("/bbf class set ${snapshot.playerName} $picked")
         })
     }
 
@@ -295,29 +295,33 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val subs = ClientGmRegistry.classes.find { it.id == cls }?.subclasses ?: return
         if (subs.isEmpty()) return
         val items = subs.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId) { picked ->
+        client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId, this) { picked ->
             subclassId = picked
-            client?.setScreen(this)
+            sendCommand("/bbf class subclass set ${snapshot.playerName} $picked")
         })
     }
 
     private fun openRacePicker() {
         val items = ClientGmRegistry.races.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор расы", items, raceId) { picked ->
+        client?.setScreen(GmPickerScreen("Выбор расы", items, raceId, this) { picked ->
             raceId = picked
-            subraceId = null  // reset subrace when race changes
-            client?.setScreen(this)
+            subraceId = null
+            sendCommand("/bbf race set ${snapshot.playerName} $picked")
         })
     }
 
     private fun openSubracePicker() {
         // TODO: populate subraces from registry when available
-        // For now show empty picker
         val items = emptyList<Pair<Identifier, String>>()
-        client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId) { picked ->
+        client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
             subraceId = picked
-            client?.setScreen(this)
+            sendCommand("/bbf race subrace set ${snapshot.playerName} $picked")
         })
+    }
+
+    /** Sends a chat command to the server as the current player. */
+    private fun sendCommand(command: String) {
+        client?.player?.networkHandler?.sendChatCommand(command.removePrefix("/"))
     }
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {

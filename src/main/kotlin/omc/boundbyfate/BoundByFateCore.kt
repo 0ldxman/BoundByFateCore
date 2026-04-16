@@ -99,6 +99,7 @@ object BoundByFateCore : ModInitializer {
 			omc.boundbyfate.command.RollCommand.register(dispatcher, registryAccess, environment)
 			omc.boundbyfate.command.SkinCommand.register(dispatcher, registryAccess, environment)
 			omc.boundbyfate.command.GmCommand.register(dispatcher, registryAccess, environment)
+			omc.boundbyfate.command.ClassRaceCommand.register(dispatcher, registryAccess, environment)
 		}
 		
 		logger.info("BoundByFate Core initialized!")

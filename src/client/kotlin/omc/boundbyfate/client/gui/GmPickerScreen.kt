@@ -13,12 +13,14 @@ import net.minecraft.util.Identifier
  * @param title Title shown at the top of the picker
  * @param items Full list of (id, displayName) pairs
  * @param currentId Currently selected id (highlighted)
+ * @param parentScreen Screen to return to after picking/closing
  * @param onPick Callback invoked when an item is selected
  */
 class GmPickerScreen(
     private val title: String,
     private val items: List<Pair<Identifier, String>>,
     private val currentId: Identifier?,
+    private val parentScreen: Screen?,
     private val onPick: (Identifier) -> Unit
 ) : Screen(Text.literal(title)) {
 
@@ -220,6 +222,6 @@ class GmPickerScreen(
     override fun shouldPause() = false
 
     override fun close() {
-        client?.setScreen(null)
+        client?.setScreen(parentScreen)
     }
 }
