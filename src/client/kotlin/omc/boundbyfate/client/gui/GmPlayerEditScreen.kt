@@ -44,12 +44,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     // ── UI state ──────────────────────────────────────────────────────────────
     private var statusMsg = ""; private var statusTimer = 0f
-    private var classDropOpen = false; private var subDropOpen = false
-    private var raceDropOpen = false; private var alignDropOpen = false
-    private var featDropOpen = false; private var skillScroll = 0
+    private var skillScroll = 0
     private var selectedFeat: Identifier? = null
     private var subraceId: Identifier? = snapshot.raceData?.subraceId
-    private var subraceDropOpen = false
+    private var featDropOpen = false
     private var editingExp = false
     private var expInputBuffer = ""
     private var lastExpTextX = 0; private var lastExpTextY = 0; private var lastExpTextW = 0
@@ -231,7 +229,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
-        renderDropdowns(context, mouseX, mouseY, infoX + 3, headerY + 2, infoW - 6, infoBoxH - 4)
+        // Dropdowns replaced by GmPickerScreen modal overlay
 
         if (statusTimer > 0f) {
             val a = (statusTimer * 255).toInt().coerceIn(0, 255)
@@ -242,30 +240,84 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderInfoBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
         val col1 = x; val col2 = x + w / 2 + 4
-        // Vertically center 3 rows (row0=Class/Race, row1=Sub/Sub, row2=nav) with spacing 12px
-        // Total content height: 9 + 12 + 9 + 12 + 9 = 42px (approx with labels)
         val contentH = 36
         val startY = y + (h - contentH) / 2
         val row0 = startY; val row1 = startY + 13; val row2 = startY + 26
+
         // Col 1: Class + Subclass
         lbl(context, "Class:", col1, row0 + 1, 0.6f, 0x888888)
         val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col1 + 24, row0, w / 2 - 28, 9, "§f$clsName §e▼") { classDropOpen = !classDropOpen; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        btn(context, mouseX, mouseY, col1 + 24, row0, w / 2 - 28, 9, "§f$clsName §e▼") {
+            openClassPicker()
+        }
         lbl(context, "Sub:", col1, row1 + 1, 0.6f, 0x888888)
-        val subName = subclassId?.let { id -> classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName } ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col1 + 20, row1, w / 2 - 24, 9, "§f$subName §e▼") { subDropOpen = !subDropOpen; classDropOpen = false; raceDropOpen = false; alignDropOpen = false }
+        val subName = subclassId?.let { id ->
+            classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName }
+            ?: id.path
+        } ?: "—"
+        btn(context, mouseX, mouseY, col1 + 20, row1, w / 2 - 24, 9, "§f$subName §e▼") {
+            openSubclassPicker()
+        }
+
         // Col 2: Race + Subrace
         lbl(context, "Race:", col2, row0 + 1, 0.6f, 0x888888)
         val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
-        btn(context, mouseX, mouseY, col2 + 22, row0, w / 2 - 26, 9, "§f$raceName §e▼") { raceDropOpen = !raceDropOpen; classDropOpen = false; subDropOpen = false; alignDropOpen = false; subraceDropOpen = false }
+        btn(context, mouseX, mouseY, col2 + 22, row0, w / 2 - 26, 9, "§f$raceName §e▼") {
+            openRacePicker()
+        }
         lbl(context, "Sub:", col2, row1 + 1, 0.6f, 0x888888)
-        val subraceName = subraceId?.path?.replace("_", " ")?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "—"
-        btn(context, mouseX, mouseY, col2 + 20, row1, w / 2 - 24, 9, "§f$subraceName §e▼") { subraceDropOpen = !subraceDropOpen; classDropOpen = false; subDropOpen = false; raceDropOpen = false; alignDropOpen = false }
-        // Nav buttons inside info box (bottom row)
+        val subraceName = subraceId?.path?.replace("_", " ")
+            ?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "—"
+        btn(context, mouseX, mouseY, col2 + 20, row1, w / 2 - 24, 9, "§f$subraceName §e▼") {
+            openSubracePicker()
+        }
+
+        // Nav buttons (bottom row)
         val navBtnW = (w - 8) / 3
         btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§eЛичность") { /* TODO */ }
         btn(context, mouseX, mouseY, x + navBtnW + 4, row2, navBtnW, 9, "§eСпособности") { /* TODO */ }
         btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, row2, navBtnW, 9, "§eМагия") { /* TODO */ }
+    }
+
+    // ── Picker helpers ────────────────────────────────────────────────────────
+
+    private fun openClassPicker() {
+        val items = ClientGmRegistry.classes.map { it.id to it.displayName }
+        client?.setScreen(GmPickerScreen("Выбор класса", items, classId) { picked ->
+            classId = picked
+            subclassId = null  // reset subclass when class changes
+            client?.setScreen(this)
+        })
+    }
+
+    private fun openSubclassPicker() {
+        val cls = classId ?: return
+        val subs = ClientGmRegistry.classes.find { it.id == cls }?.subclasses ?: return
+        if (subs.isEmpty()) return
+        val items = subs.map { it.id to it.displayName }
+        client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId) { picked ->
+            subclassId = picked
+            client?.setScreen(this)
+        })
+    }
+
+    private fun openRacePicker() {
+        val items = ClientGmRegistry.races.map { it.id to it.displayName }
+        client?.setScreen(GmPickerScreen("Выбор расы", items, raceId) { picked ->
+            raceId = picked
+            subraceId = null  // reset subrace when race changes
+            client?.setScreen(this)
+        })
+    }
+
+    private fun openSubracePicker() {
+        // TODO: populate subraces from registry when available
+        // For now show empty picker
+        val items = emptyList<Pair<Identifier, String>>()
+        client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId) { picked ->
+            subraceId = picked
+            client?.setScreen(this)
+        })
     }
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
@@ -452,61 +504,6 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 dropY += 10
             }
         }
-    }
-
-    private fun renderDropdowns(context: DrawContext, mouseX: Int, mouseY: Int, infoX: Int, infoY: Int, infoW: Int, infoH: Int) {
-        val m = context.matrices
-        m.push(); m.translate(0f, 0f, 300f)
-
-        fun drawDropdown(items: List<Pair<String, () -> Unit>>, x: Int, y: Int, w: Int) {
-            val itemH = 10
-            val totalH = items.size * itemH + 2
-            // Background
-            context.fill(x, y, x + w, y + totalH, 0xFF1a1a1a.toInt())
-            context.fill(x, y, x + w, y + 1, 0xFFd4a96a.toInt())
-            context.fill(x, y + totalH - 1, x + w, y + totalH, 0xFFd4a96a.toInt())
-            context.fill(x, y, x + 1, y + totalH, 0xFFd4a96a.toInt())
-            context.fill(x + w - 1, y, x + w, y + totalH, 0xFFd4a96a.toInt())
-            items.forEachIndexed { i, (label, action) ->
-                val iy = y + 1 + i * itemH
-                val hov = mouseX in x..(x + w) && mouseY in iy..(iy + itemH)
-                if (hov) context.fill(x + 1, iy, x + w - 1, iy + itemH, 0xFF3a2a1a.toInt())
-                btn(context, mouseX, mouseY, x + 1, iy, w - 2, itemH, label, action)
-            }
-        }
-
-        val col1X = infoX; val col2X = infoX + infoW / 2 + 4
-        // Match the vertical centering from renderInfoBox
-        val contentH = 36
-        val row0 = infoY + (infoH - contentH) / 2
-
-        if (classDropOpen) {
-            val items = ClientGmRegistry.classes.map { cls ->
-                val label = if (cls.id == classId) "§a${cls.displayName}" else "§f${cls.displayName}"
-                label to { classId = cls.id; subclassId = null; classDropOpen = false }
-            }
-            drawDropdown(items, col1X + 24, row0 + 9, infoW / 2 - 28)
-        }
-        if (subDropOpen) {
-            val subs = classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses } ?: emptyList()
-            val items = subs.map { sub ->
-                val label = if (sub.id == subclassId) "§a${sub.displayName}" else "§f${sub.displayName}"
-                label to { subclassId = sub.id; subDropOpen = false }
-            }
-            if (items.isNotEmpty()) drawDropdown(items, col1X + 20, row0 + 22, infoW / 2 - 24)
-        }
-        if (raceDropOpen) {
-            val items = ClientGmRegistry.races.map { race ->
-                val label = if (race.id == raceId) "§a${race.displayName}" else "§f${race.displayName}"
-                label to { raceId = race.id; raceDropOpen = false }
-            }
-            drawDropdown(items, col2X + 22, row0 + 9, infoW / 2 - 26)
-        }
-        if (subraceDropOpen) {
-            // TODO: populate subraces from registry
-            subraceDropOpen = false
-        }
-        m.pop()
     }
 
     private fun applyAll() {

@@ -129,69 +129,6 @@ object ServerPacketHandler {
             }
         }
 
-        // Client → Server: GM edits identity (class/race/level/gender)
-        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_IDENTITY) { server, gmPlayer, _, buf, _ ->
-            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
-            val targetName = buf.readString()
-            val newClassId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
-            val newSubclassId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
-            val newLevel = buf.readInt()
-            val newRaceId = buf.readBoolean().let { if (it) buf.readIdentifier() else null }
-            val newGender = buf.readBoolean().let { if (it) buf.readString() else null }
-
-            server.execute {
-                val target = server.playerManager.getPlayer(targetName) ?: return@execute
-
-                // Update class
-                if (newClassId != null) {
-                    val classDef = omc.boundbyfate.registry.ClassRegistry.getClass(newClassId)
-                    if (classDef != null) {
-                        val current = target.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
-                        target.setAttached(BbfAttachments.PLAYER_CLASS,
-                            omc.boundbyfate.component.PlayerClassData(newClassId, newSubclassId, newLevel))
-                        omc.boundbyfate.system.HitPointsSystem.applyHitPoints(target, classDef, newLevel)
-                        target.health = target.maxHealth
-                    }
-                }
-
-                // Update level
-                target.setAttached(BbfAttachments.PLAYER_LEVEL,
-                    omc.boundbyfate.component.PlayerLevelData(level = newLevel))
-
-                // Update race
-                if (newRaceId != null) {
-                    omc.boundbyfate.system.race.RaceSystem.applyRace(target, newRaceId)
-                }
-
-                // Update gender
-                if (newGender != null) {
-                    target.setAttached(BbfAttachments.PLAYER_GENDER, newGender)
-                }
-
-                syncPlayerData(target)
-                syncGmData(gmPlayer)
-                logger.info("GM ${gmPlayer.name.string} edited identity of $targetName")
-            }
-        }
-
-        // Client → Server: GM edits skill/save proficiencies
-        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_SKILLS) { server, gmPlayer, _, buf, _ ->
-            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
-            val targetName = buf.readString()
-            val skillCount = buf.readInt()
-            val newProficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
-            repeat(skillCount) { newProficiencies[buf.readIdentifier()] = buf.readInt() }
-
-            server.execute {
-                val target = server.playerManager.getPlayer(targetName) ?: return@execute
-                val updated = omc.boundbyfate.component.EntitySkillData(proficiencies = newProficiencies)
-                target.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
-                syncPlayerData(target)
-                syncGmData(gmPlayer)
-                logger.info("GM ${gmPlayer.name.string} edited skills of $targetName")
-            }
-        }
-
         // Client → Server: GM adds/removes a feature
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_FEATURE) { server, gmPlayer, _, buf, _ ->
             if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
