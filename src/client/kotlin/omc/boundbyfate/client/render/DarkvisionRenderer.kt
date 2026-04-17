@@ -64,16 +64,6 @@ object DarkvisionRenderer {
             return
         }
 
-        // Apply Night Vision client-side to make Minecraft render the world brightly.
-        // Duration 30 ticks, refreshed every tick — effectively permanent while active.
-        // ambient=true, showParticles=false, showIcon=false — invisible to player.
-        val currentNV = player.getStatusEffect(StatusEffects.NIGHT_VISION)
-        if (currentNV == null || currentNV.duration < 10) {
-            player.addStatusEffect(
-                StatusEffectInstance(StatusEffects.NIGHT_VISION, 30, 0, true, false, false)
-            )
-        }
-
         shouldRender = true
         if (lightLevel <= 7) {
             // Darkness: full grayscale — Night Vision shows the world, shader makes it gray
