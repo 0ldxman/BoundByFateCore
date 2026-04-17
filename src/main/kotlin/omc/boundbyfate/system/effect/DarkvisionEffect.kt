@@ -1,42 +1,42 @@
 package omc.boundbyfate.system.effect
 
+import net.minecraft.entity.effect.StatusEffectInstance
+import net.minecraft.entity.effect.StatusEffects
 import net.minecraft.server.network.ServerPlayerEntity
 import omc.boundbyfate.api.effect.BbfEffect
 import omc.boundbyfate.api.effect.BbfEffectContext
 import omc.boundbyfate.component.DarkvisionData
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.registry.BbfAttachments
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
-import org.slf4j.LoggerFactory
 
 /**
- * Grants darkvision to the source entity.
- * Stores the range in an attachment and syncs to client.
- *
- * JSON params:
- * - rangeFt: Int (default 60)
+ * Grants darkvision by applying vanilla Night Vision effect.
+ * 
+ * This uses Minecraft's built-in night vision which already works perfectly.
+ * We just add our custom desaturation shader on top.
  */
-class DarkvisionEffect(
-    private val rangeFt: Int = 60
-) : BbfEffect {
-    private val logger = LoggerFactory.getLogger(javaClass)
+class DarkvisionEffect(private val rangeFt: Int = 60) : BbfEffect {
 
     override fun apply(context: BbfEffectContext): Boolean {
         val player = context.source as? ServerPlayerEntity ?: return false
 
-        // Store darkvision data
-        val existing = player.getAttachedOrElse(BbfAttachments.DARKVISION, null)
-        // Keep the larger range if multiple sources grant darkvision
-        val newRange = if (existing != null) maxOf(existing.rangeFt, rangeFt) else rangeFt
-        player.setAttached(BbfAttachments.DARKVISION, DarkvisionData(newRange))
+        // Store darkvision data for client shader
+        player.setAttached(BbfAttachments.DARKVISION, DarkvisionData(rangeFt))
 
-        // Sync to client
-        val buf = PacketByteBufs.create()
-        buf.writeInt(newRange)
-        ServerPlayNetworking.send(player, BbfPackets.SYNC_DARKVISION, buf)
+        // Apply vanilla Night Vision effect (infinite duration, no particles)
+        val nightVision = StatusEffectInstance(
+            StatusEffects.NIGHT_VISION,
+            Int.MAX_VALUE, // Infinite duration
+            0, // Amplifier 0
+            false, // No ambient
+            false, // No particles
+            false  // No icon
+        )
+        player.addStatusEffect(nightVision)
 
-        logger.debug("Granted darkvision ${newRange}ft to ${player.name.string}")
+        // Sync to client for desaturation shader
+        BbfPackets.sendDarkvisionSync(player, rangeFt)
+
         return true
     }
 }

@@ -65,10 +65,35 @@ object FeatureSystem {
 
     /**
      * Removes a feature from an entity.
+     * Also cleans up any effects applied by the feature.
      */
     fun removeFeature(entity: LivingEntity, featureId: Identifier) {
         val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
         entity.setAttached(BbfAttachments.ENTITY_FEATURES, data.withoutFeature(featureId))
+        
+        // Clean up darkvision if this was a darkvision feature
+        if (featureId.path.contains("darkvision")) {
+            // Remove Night Vision effect
+            if (entity is net.minecraft.server.network.ServerPlayerEntity) {
+                entity.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION)
+            }
+            
+            // Clear darkvision attachment
+            entity.removeAttached(BbfAttachments.DARKVISION)
+            
+            // Sync to client (rangeFt=0 means disabled)
+            if (entity is net.minecraft.server.network.ServerPlayerEntity) {
+                val buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create()
+                buf.writeInt(0)
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
+                    entity, 
+                    omc.boundbyfate.network.BbfPackets.SYNC_DARKVISION, 
+                    buf
+                )
+            }
+        }
+        
+        logger.debug("Removed feature $featureId from ${entity.name.string}")
     }
 
     /**

@@ -149,17 +149,8 @@ object ServerPacketHandler {
                     // grantFeature records the feature AND applies its effects
                     omc.boundbyfate.system.feature.FeatureSystem.grantFeature(target, featureId)
                 } else {
+                    // removeFeature handles cleanup (Night Vision removal, sync, etc.)
                     omc.boundbyfate.system.feature.FeatureSystem.removeFeature(target, featureId)
-                    // If darkvision was removed, sync rangeFt=0 to client
-                    if (featureId.path.contains("darkvision")) {
-                        val hasDarkvision = target.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null)
-                            ?.grantedFeatures?.any { it.path.contains("darkvision") } == true
-                        if (!hasDarkvision) {
-                            val dvBuf = PacketByteBufs.create()
-                            dvBuf.writeInt(0)
-                            ServerPlayNetworking.send(target, BbfPackets.SYNC_DARKVISION, dvBuf)
-                        }
-                    }
                 }
                 syncGmData(gmPlayer)
                 logger.info("GM ${gmPlayer.name.string} ${if (add) "added" else "removed"} feature $featureId for $targetName")
