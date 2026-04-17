@@ -8,10 +8,10 @@ import net.minecraft.util.Identifier
 import omc.boundbyfate.client.state.DarkvisionState
 
 /**
- * Darkvision renderer using gamma boost + desaturation shader.
+ * Darkvision renderer using lightmap modification + desaturation shader.
  *
- * Gamma boost brightens dark areas (like vanilla night vision).
- * Shader applies grayscale desaturation to dark pixels.
+ * LightmapMixin brightens dark areas (like vanilla night vision).
+ * This shader applies grayscale desaturation to dark pixels.
  */
 object DarkvisionRenderer {
 
@@ -20,9 +20,6 @@ object DarkvisionRenderer {
 
     var shouldRender = false
         private set
-
-    private var originalGamma: Double = 1.0
-    private var gammaModified = false
 
     fun register() {
         ShaderEffectRenderCallback.EVENT.register { tickDelta ->
@@ -42,19 +39,7 @@ object DarkvisionRenderer {
 
         if (world == null || player == null || !DarkvisionState.hasDarkvision) {
             shouldRender = false
-            // Restore original gamma
-            if (gammaModified) {
-                client.options.gamma.value = originalGamma
-                gammaModified = false
-            }
             return
-        }
-
-        // Save original gamma and boost it
-        if (!gammaModified) {
-            originalGamma = client.options.gamma.value
-            client.options.gamma.value = 5.0 // Bright enough to see in darkness
-            gammaModified = true
         }
 
         // Render desaturation shader
