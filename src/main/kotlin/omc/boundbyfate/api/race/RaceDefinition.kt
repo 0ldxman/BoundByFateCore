@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier
  * @property id Unique identifier (e.g. "boundbyfate-core:dwarf")
  * @property displayName Human-readable name
  * @property size Physical size category (affects scale and future mechanics)
- * @property speedMultiplier Speed multiplier relative to base (1.0 = normal, 0.9 = slower)
+ * @property speedFt Walking speed in D&D feet (30 = normal human speed)
  * @property statBonuses Flat bonuses added to base stats
  * @property senses Sensory capabilities
  * @property resistances Damage type resistance levels (sourceId = race id)
@@ -24,7 +24,7 @@ data class RaceDefinition(
     val displayName: String,
     val size: RaceSize = RaceSize.MEDIUM,
     val scaleOverride: Float? = null,
-    val speedMultiplier: Float = 1.0f,
+    val speedFt: Int = 30,
     val statBonuses: Map<Identifier, Int> = emptyMap(),
     val senses: RaceSenses = RaceSenses(),
     val resistances: Map<Identifier, Int> = emptyMap(),

@@ -304,7 +304,7 @@ object ServerPacketHandler {
                 val speedMc = speedFt / 300.0
                 val speedAttr = target.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
                 if (speedAttr != null) {
-                    // Remove race speed modifier before setting base to avoid double-apply
+                    // Remove any existing BBF modifier, set base directly
                     val raceModUuid = java.util.UUID.fromString("bbf00020-0000-0000-0000-000000000001")
                     speedAttr.getModifier(raceModUuid)?.let { speedAttr.removeModifier(it) }
                     speedAttr.baseValue = speedMc

@@ -18,7 +18,7 @@ import java.io.InputStream
  * {
  *   "displayName": "Дварф",
  *   "size": "MEDIUM",
- *   "speedMultiplier": 0.9,
+ *   "speedFt": 25,
  *   "statBonuses": { "boundbyfate-core:constitution": 2 },
  *   "senses": { "darkvision": 60 },
  *   "resistances": { "boundbyfate-core:poison": -1 },
@@ -60,7 +60,12 @@ object RaceParser {
 
             val scaleOverride = json.get("scaleOverride")?.asFloat
 
-            val speedMultiplier = json.get("speedMultiplier")?.asFloat ?: 1.0f
+            // Support both new "speedFt" (preferred) and old "speedMultiplier" (legacy)
+            val speedFt: Int = when {
+                json.has("speedFt") -> json.get("speedFt").asInt
+                json.has("speedMultiplier") -> (json.get("speedMultiplier").asFloat * 30).toInt()
+                else -> 30
+            }
 
             val statBonuses = parseIdentifierIntMap(json, "statBonuses", id)
             val resistances = parseIdentifierIntMap(json, "resistances", id)
@@ -78,7 +83,7 @@ object RaceParser {
                 displayName = displayName,
                 size = size,
                 scaleOverride = scaleOverride,
-                speedMultiplier = speedMultiplier,
+                speedFt = speedFt,
                 statBonuses = statBonuses,
                 senses = senses,
                 resistances = resistances,

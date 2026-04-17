@@ -78,8 +78,8 @@ object RaceSystem {
         val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
         applyScale(player, scale)
 
-        // Apply speed modifier
-        applySpeedModifier(player, raceDef.speedMultiplier)
+        // Apply speed: set base value directly in Minecraft units (30ft = 0.1)
+        applySpeedFt(player, raceDef.speedFt)
 
         // Recalculate HP (CON may have changed)
         val classData = ClassSystem.getClassData(player)
@@ -107,7 +107,7 @@ object RaceSystem {
             })
         } else {
             // Speed modifier still needs reapplication (not saved by Pehkui)
-            applySpeedModifier(player, raceDef.speedMultiplier)
+            applySpeedFt(player, raceDef.speedFt)
         }
     }
 
@@ -298,21 +298,16 @@ object RaceSystem {
         }
     }
 
-    private fun applySpeedModifier(player: ServerPlayerEntity, multiplier: Float) {
-        if (multiplier == 1.0f) return
+    private fun applySpeedFt(player: ServerPlayerEntity, speedFt: Int) {
         val attribute = player.getAttributeInstance(
             net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED
         ) ?: return
-
+        // Remove any existing BBF race speed modifier
         val uuid = java.util.UUID.fromString("bbf00020-0000-0000-0000-000000000001")
         attribute.getModifier(uuid)?.let { attribute.removeModifier(it) }
-
-        val modifier = net.minecraft.entity.attribute.EntityAttributeModifier(
-            uuid,
-            "BoundByFate race speed",
-            (multiplier - 1.0).toDouble(),
-            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.MULTIPLY_BASE
-        )
-        attribute.addPersistentModifier(modifier)
+        // Set base value directly: 30ft = 0.1, formula: speedFt / 300.0
+        attribute.baseValue = speedFt / 300.0
+        // Store for GM panel readback
+        player.setAttached(BbfAttachments.PLAYER_SPEED_FT, speedFt)
     }
 }

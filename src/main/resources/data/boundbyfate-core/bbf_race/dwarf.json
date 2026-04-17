@@ -2,7 +2,7 @@
   "displayName": "Дварф",
   "size": "MEDIUM",
   "scaleOverride": 0.5,
-  "speedMultiplier": 0.9,
+  "speedFt": 25,
   "statBonuses": {
     "boundbyfate-core:constitution": 2
   },
