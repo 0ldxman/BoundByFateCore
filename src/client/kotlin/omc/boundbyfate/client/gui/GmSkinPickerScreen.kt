@@ -122,18 +122,15 @@ class GmSkinPickerScreen(
             val texId = ClientGmRegistry.skinTextures[skinName]
             if (texId != null) {
                 val scale = 1  // 1px per skin pixel — guaranteed to fit
-                // Each view: body+arms width = 4+8+4=16px, height = 8+12+12=32px
-                // Center each view in its half: half = CARD_W/2 = 26px, offset = (26-16)/2 = 5px
-                val halfW = CARD_W / 2
-                val viewW = 16 * scale  // total width: arms + body
-                val viewH = 32 * scale  // total height: head + body + legs
-                val marginX = (halfW - viewW) / 2
-                val previewY = cy + (CARD_H - 10 - viewH) / 2  // vertically centered, leaving 10px for name
-                val frontX = cx + marginX
-                val backX  = cx + halfW + marginX
+                // Each view: width = 16px (4+8+4), height = 32px (8+12+12)
+                // Two views side by side in card width 52px, with 2px gap between them
+                val viewW = 16 * scale
+                val totalW = viewW * 2 + 2  // front + gap + back
+                val startX = cx + (CARD_W - totalW) / 2  // center both together
+                val startY = cy + (CARD_H - 10 - 32 * scale) / 2  // center vertically, leave 10px for name
 
-                drawSkinView(context, texId, frontX, previewY, scale, false)
-                drawSkinView(context, texId, backX,  previewY, scale, true)
+                drawSkinView(context, texId, startX,          startY, scale, false)
+                drawSkinView(context, texId, startX + viewW + 2, startY, scale, true)
             } else {
                 // No texture yet — show placeholder
                 m.push(); m.translate((cx + CARD_W / 2).toFloat(), (cy + 40).toFloat(), 0f); m.scale(0.6f, 0.6f, 1f)
@@ -162,56 +159,62 @@ class GmSkinPickerScreen(
 
     /**
      * Draws the front or back 2D skin view from the UV layout.
-     * Renders base layer first, then overlay layer on top.
-     * Scale = pixel size multiplier (4 = each skin pixel becomes 4×4 screen pixels).
+     * All parts positioned absolutely relative to x (left edge of view area).
+     * At scale=1: total width=16px (4+8+4), total height=32px (8+12+12).
+     *
+     * Layout (x offsets from view left):
+     *   left arm:   x=0,  w=4
+     *   body:       x=4,  w=8
+     *   right arm:  x=12, w=4
+     *   head:       x=4,  w=8  (centered over body)
+     *   right leg:  x=4,  w=4
+     *   left leg:   x=8,  w=4
      */
     private fun drawSkinView(context: DrawContext, texId: Identifier, x: Int, y: Int, scale: Int, back: Boolean) {
         val texSize = 64
+        val s = scale
 
-        // Base layer parts: (srcU, srcV, srcW, srcH, dstXOffset, dstYOffset)
+        // Base layer parts: (srcU, srcV, srcW, srcH, dstX, dstY) — all relative to x,y
         val baseParts: List<IntArray> = if (!back) listOf(
-            intArrayOf(8,  8,  8, 8,  0,             0),             // head
-            intArrayOf(20, 20, 8, 12, 0,             8 * scale),     // body
-            intArrayOf(44, 20, 4, 12, -4 * scale,    8 * scale),     // right arm
-            intArrayOf(36, 52, 4, 12, 8 * scale,     8 * scale),     // left arm
-            intArrayOf(4,  20, 4, 12, 0,             20 * scale),    // right leg
-            intArrayOf(20, 52, 4, 12, 4 * scale,     20 * scale)     // left leg
+            intArrayOf(8,  8,  8, 8,  4*s, 0),        // head
+            intArrayOf(20, 20, 8, 12, 4*s, 8*s),       // body
+            intArrayOf(36, 52, 4, 12, 0,   8*s),       // left arm
+            intArrayOf(44, 20, 4, 12, 12*s,8*s),       // right arm
+            intArrayOf(20, 52, 4, 12, 4*s, 20*s),      // left leg
+            intArrayOf(4,  20, 4, 12, 8*s, 20*s)       // right leg
         ) else listOf(
-            intArrayOf(24, 8,  8, 8,  0,             0),
-            intArrayOf(32, 20, 8, 12, 0,             8 * scale),
-            intArrayOf(52, 20, 4, 12, -4 * scale,    8 * scale),
-            intArrayOf(44, 52, 4, 12, 8 * scale,     8 * scale),
-            intArrayOf(12, 20, 4, 12, 0,             20 * scale),
-            intArrayOf(28, 52, 4, 12, 4 * scale,     20 * scale)
+            intArrayOf(24, 8,  8, 8,  4*s, 0),
+            intArrayOf(32, 20, 8, 12, 4*s, 8*s),
+            intArrayOf(44, 52, 4, 12, 0,   8*s),
+            intArrayOf(52, 20, 4, 12, 12*s,8*s),
+            intArrayOf(28, 52, 4, 12, 4*s, 20*s),
+            intArrayOf(12, 20, 4, 12, 8*s, 20*s)
         )
 
-        // Overlay (second/hat) layer parts — drawn on top with same offsets
         val overlayParts: List<IntArray> = if (!back) listOf(
-            intArrayOf(40, 8,  8, 8,  0,             0),             // head overlay
-            intArrayOf(20, 36, 8, 12, 0,             8 * scale),     // body overlay
-            intArrayOf(44, 36, 4, 12, -4 * scale,    8 * scale),     // right arm overlay
-            intArrayOf(52, 52, 4, 12, 8 * scale,     8 * scale),     // left arm overlay
-            intArrayOf(4,  36, 4, 12, 0,             20 * scale),    // right leg overlay
-            intArrayOf(4,  52, 4, 12, 4 * scale,     20 * scale)     // left leg overlay
+            intArrayOf(40, 8,  8, 8,  4*s, 0),
+            intArrayOf(20, 36, 8, 12, 4*s, 8*s),
+            intArrayOf(52, 52, 4, 12, 0,   8*s),
+            intArrayOf(44, 36, 4, 12, 12*s,8*s),
+            intArrayOf(4,  52, 4, 12, 4*s, 20*s),
+            intArrayOf(4,  36, 4, 12, 8*s, 20*s)
         ) else listOf(
-            intArrayOf(56, 8,  8, 8,  0,             0),
-            intArrayOf(32, 36, 8, 12, 0,             8 * scale),
-            intArrayOf(52, 36, 4, 12, -4 * scale,    8 * scale),
-            intArrayOf(60, 52, 4, 12, 8 * scale,     8 * scale),
-            intArrayOf(12, 36, 4, 12, 0,             20 * scale),
-            intArrayOf(12, 52, 4, 12, 4 * scale,     20 * scale)
+            intArrayOf(56, 8,  8, 8,  4*s, 0),
+            intArrayOf(32, 36, 8, 12, 4*s, 8*s),
+            intArrayOf(60, 52, 4, 12, 0,   8*s),
+            intArrayOf(52, 36, 4, 12, 12*s,8*s),
+            intArrayOf(12, 52, 4, 12, 4*s, 20*s),
+            intArrayOf(12, 36, 4, 12, 8*s, 20*s)
         )
 
-        // Draw base layer
         for (p in baseParts) {
             val (su, sv, sw, sh, ox, oy) = p
-            context.drawTexture(texId, x + ox, y + oy, sw * scale, sh * scale,
+            context.drawTexture(texId, x + ox, y + oy, sw * s, sh * s,
                 su.toFloat(), sv.toFloat(), sw, sh, texSize, texSize)
         }
-        // Draw overlay layer on top
         for (p in overlayParts) {
             val (su, sv, sw, sh, ox, oy) = p
-            context.drawTexture(texId, x + ox, y + oy, sw * scale, sh * scale,
+            context.drawTexture(texId, x + ox, y + oy, sw * s, sh * s,
                 su.toFloat(), sv.toFloat(), sw, sh, texSize, texSize)
         }
     }

@@ -65,8 +65,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         "Lawful Evil","Neutral Evil","Chaotic Evil")
 
     // ── speed and scale (editable, speed in ft) ──────────────────────────────
-    // speed: Minecraft base speed 0.1 = 30ft, formula: speed * 300 = ft
-    private var speedFt: Int = (snapshot.speed * 300).toInt().let { if (it < 5) 30 else it }
+    // snapshot.speed is now in ft directly (server sends ft, not attribute value)
+    private var speedFt: Int = snapshot.speed.toInt().let { if (it < 5) 30 else it }
     private var sizeFactor: Float = snapshot.scale.let { if (it <= 0f) 1.0f else it }
 
     override fun init() { /* layout is dynamic */ }
@@ -224,14 +224,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val modelY = changeBtnY - 6
             InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        // Show pending skin name below the button if changed
-        val btnLabel = if (pendingSkinName != null) "§e✦ Change Skin" else "§7Change Skin"
+        val btnLabel = if (pendingSkinName != null) "§e${pendingSkinName}" else "§7Change Skin"
         btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, btnLabel) { openSkinPicker() }
-        if (pendingSkinName != null) {
-            val skinLabel = "§e→ $pendingSkinName"
-            val skinLabelW = (textRenderer.getWidth(skinLabel) * 0.5f).toInt()
-            lbl(context, skinLabel, rightX + rightW / 2 - skinLabelW / 2, changeBtnY + changeBtnH + 2, 0.5f, 0xFFD700)
-        }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
@@ -479,30 +473,23 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderHpBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
         lbl(context, "HIT POINTS", cx - 18, by + 3, 0.55f, 0xD4AF37)
-        // "Cur" label above current HP
         lbl(context, "§7Cur", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
+        val hasTempHp = currentHp > maxHp
+        val curColor = if (hasTempHp) 0xFFFF55 else 0xFF5555  // yellow if temp HP, red otherwise
         btn(context, mouseX, mouseY, cx - 14, row1Y, 8, 9, "§c-") { currentHp = (currentHp - 1).coerceAtLeast(0f) }
         val curW = (textRenderer.getWidth("${currentHp.toInt()}") * 0.8f).toInt()
-        lbl(context, "${currentHp.toInt()}", cx - curW / 2, row1Y + 1, 0.8f, 0xFF5555)
-        btn(context, mouseX, mouseY, cx + 8, row1Y, 8, 9, "§a+") { currentHp += 1f }  // can exceed max = temp HP
+        lbl(context, "${currentHp.toInt()}", cx - curW / 2, row1Y + 1, 0.8f, curColor)
+        btn(context, mouseX, mouseY, cx + 8, row1Y, 8, 9, "§a+") { currentHp += 1f }
         // Max HP
         val row2Y = by + 32
         btn(context, mouseX, mouseY, cx - 14, row2Y, 8, 9, "§c-") { maxHp = (maxHp - 1).coerceAtLeast(1f) }
         val maxW = (textRenderer.getWidth("${maxHp.toInt()}") * 0.8f).toInt()
         lbl(context, "${maxHp.toInt()}", cx - maxW / 2, row2Y + 1, 0.8f, 0xFFFFFF)
         btn(context, mouseX, mouseY, cx + 8, row2Y, 8, 9, "§a+") { maxHp += 1f }
-        // "Max" label below max HP
         lbl(context, "§7Max", cx - 4, by + 43, 0.5f, 0x888888)
-        // Temp HP indicator (when currentHp > maxHp)
-        val overheal = (currentHp - maxHp).toInt()
-        if (overheal > 0) {
-            tempHp = overheal
-            val tmpW = (textRenderer.getWidth("+$overheal tmp") * 0.5f).toInt()
-            lbl(context, "§e+$overheal tmp", cx - tmpW / 2, by + 43, 0.5f, 0xFFFF55)
-        } else {
-            tempHp = 0
-        }
+        // Calculate tempHp for apply
+        tempHp = if (hasTempHp) (currentHp - maxHp).toInt() else 0
     }
 
     private fun renderSpeedBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {

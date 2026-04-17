@@ -144,6 +144,22 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_vitality"))
 
+    // Stores the last GM-set speed in ft (avoids attribute modifier stacking on re-read)
+    @JvmField
+    val PLAYER_SPEED_FT: AttachmentType<Int> =
+        AttachmentRegistry.builder<Int>()
+            .persistent(Codec.INT)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_speed_ft"))
+
+    // Stores the last GM-set scale override
+    @JvmField
+    val PLAYER_SCALE_OVERRIDE: AttachmentType<Float> =
+        AttachmentRegistry.builder<Float>()
+            .persistent(Codec.FLOAT)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_scale_override"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }
