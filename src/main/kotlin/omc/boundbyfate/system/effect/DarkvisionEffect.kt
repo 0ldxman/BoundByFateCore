@@ -1,5 +1,7 @@
 package omc.boundbyfate.system.effect
 
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.entity.effect.StatusEffectInstance
 import net.minecraft.entity.effect.StatusEffects
 import net.minecraft.server.network.ServerPlayerEntity
@@ -35,7 +37,9 @@ class DarkvisionEffect(private val rangeFt: Int = 60) : BbfEffect {
         player.addStatusEffect(nightVision)
 
         // Sync to client for desaturation shader
-        BbfPackets.sendDarkvisionSync(player, rangeFt)
+        val buf = PacketByteBufs.create()
+        buf.writeInt(rangeFt)
+        ServerPlayNetworking.send(player, BbfPackets.SYNC_DARKVISION, buf)
 
         return true
     }
