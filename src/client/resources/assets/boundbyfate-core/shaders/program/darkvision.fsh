@@ -22,27 +22,31 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // DEBUG: Visualize PlayerLightLevel as color
-    // Red = low light, Green = high light
-    // TEMPORARY - remove this after debugging
+    // DEBUG: Remove this after confirming it works
     if (PlayerLightLevel < 0.1) {
-        // Uniform not set or 0 - show as MAGENTA
+        // Uniform not set - show as MAGENTA for debugging
         fragColor = vec4(1.0, 0.0, 1.0, 1.0);
         return;
     }
     
-    // DESATURATION based on PERCEIVED light level (after darkvision boost)
-    // PlayerLightLevel is the light level AFTER darkvision boost:
-    // - Real darkness (0-7) → perceived as dim (7-14)
-    // - Real dim (8-14) → perceived as bright (15)
-    // - Real bright (15) → perceived as bright (15)
-    //
-    // Desaturation thresholds:
-    // - Perceived light 0-7: grayscale (shouldn't happen with darkvision, but just in case)
-    // - Perceived light 8-12: partial color
-    // - Perceived light 13-15: full color
+    // DESATURATION based on PERCEIVED light level AND pixel brightness
+    // 
+    // Rules:
+    // 1. Very bright pixels (luminance > 0.7) = always full color (torches, lava, emissives)
+    // 2. Perceived light 13-15 = full color
+    // 3. Perceived light 8-12 = partial color
+    // 4. Perceived light 0-7 = grayscale
     
-    float colorAmount = smoothstep(8.0, 13.0, PlayerLightLevel);
+    float colorAmount;
+    
+    if (luminance > 0.7) {
+        // Very bright pixels (torches, lava, emissives) - always colorful
+        colorAmount = 1.0;
+    } else {
+        // Normal desaturation based on perceived light level
+        colorAmount = smoothstep(8.0, 13.0, PlayerLightLevel);
+    }
+    
     vec3 grayscale = vec3(luminance);
     vec3 result = mix(grayscale, color.rgb, colorAmount);
     

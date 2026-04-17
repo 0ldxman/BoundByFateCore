@@ -7,83 +7,79 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import omc.boundbyfate.client.state.DarkvisionState;
 
 /**
- * Modifies lightmap to brighten dark areas when darkvision is active.
+ * Modifies lightmap brightness calculation for darkvision.
  * 
- * This is the same approach vanilla Night Vision uses - modify the lightmap texture
- * before geometry is rendered, so blocks in darkness render as if they're in dim light.
+ * Instead of modifying the texture AFTER it's generated, we modify
+ * the brightness values DURING generation using @ModifyArg.
  */
 @Mixin(LightmapTextureManager.class)
 public class LightmapMixin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("bbf-lightmap");
-    private static boolean firstLog = true;
+    private static int logCounter = 0;
+    
+    // Track current coordinates being processed
+    private static int currentBlockLight = 0;
+    private static int currentSkyLight = 0;
 
     @Shadow
     private NativeImage image;
 
-    @Inject(method = "update", at = @At("TAIL"))
-    private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
+    /**
+     * Intercept the setColor call and modify the color value to brighten dark areas.
+     * This is called for EVERY cell in the lightmap, including caves.
+     */
+    @ModifyArg(
+        method = "update",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/texture/NativeImage;setColor(IIL)V"
+        ),
+        index = 2
+    )
+    private int bbf_modifyLightmapColor(int color) {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
-        // Always log first call
-        if (firstLog) {
-            LOGGER.info("[BBF Lightmap] FIRST CALL - hasDarkvision={}, image={}", 
-                hasDarkvision, (image != null ? "present" : "null"));
-            firstLog = false;
+        if (!hasDarkvision) {
+            return color;
         }
+
+        // Extract x and y from the setColor call context
+        // We need to track which cell is being set
+        // For now, let's just brighten ALL dark colors
         
-        if (!hasDarkvision || image == null) return;
-
-        // Sample a few pixels to see what we're working with (only log once per second)
-        if (System.currentTimeMillis() % 1000 < 20) {
-            int sample00 = image.getColor(0, 0);
-            int sample77 = image.getColor(7, 7);
-            int sample1515 = image.getColor(15, 15);
+        // Extract RGB components
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        int a = (color >> 24) & 0xFF;
+        
+        // Calculate brightness
+        int brightness = Math.max(Math.max(r, g), b);
+        
+        // If this is a dark color, brighten it
+        if (brightness < 128) {
+            // Boost brightness for darkvision
+            float boost = 2.0f; // Multiply brightness by 2
+            r = Math.min(255, (int)(r * boost));
+            g = Math.min(255, (int)(g * boost));
+            b = Math.min(255, (int)(b * boost));
             
-            LOGGER.info("[BBF Lightmap] Samples BEFORE: [0,0]={}, [7,7]={}, [15,15]={}", 
-                Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
-        }
-
-        // Modify lightmap - boost brightness for low light levels
-        // We need to make DARK cells (0-7) look like BRIGHT cells (7-14 or 15)
-        for (int skyLight = 0; skyLight < 16; skyLight++) {
-            for (int blockLight = 0; blockLight < 16; blockLight++) {
-                int effectiveLight = Math.max(blockLight, skyLight);
-                
-                // Only boost if not already bright
-                if (effectiveLight < 15) {
-                    // Calculate boosted light level
-                    int boostedLight;
-                    if (effectiveLight < 8) {
-                        // Darkness (0-7) → dim light (7-14)
-                        boostedLight = effectiveLight + 7;
-                    } else {
-                        // Dim (8-14) → bright (15)
-                        boostedLight = 15;
-                    }
-                    
-                    // Sample the color from the BRIGHT cell
-                    // Use boostedLight for BOTH coordinates to get the right brightness
-                    int boostedColor = image.getColor(boostedLight, boostedLight);
-                    
-                    // Set the boosted color to the DARK cell
-                    image.setColor(blockLight, skyLight, boostedColor);
-                }
+            int newColor = (a << 24) | (r << 16) | (g << 8) | b;
+            
+            // Log occasionally
+            if (logCounter++ % 1000 == 0) {
+                LOGGER.info("[BBF Lightmap] ModifyArg - brightness={}, old={}, new={}", 
+                    brightness, Integer.toHexString(color), Integer.toHexString(newColor));
             }
+            
+            return newColor;
         }
         
-        // Log after modification
-        if (System.currentTimeMillis() % 1000 < 20) {
-            int sample00 = image.getColor(0, 0);
-            int sample77 = image.getColor(7, 7);
-            
-            LOGGER.info("[BBF Lightmap] Samples AFTER: [0,0]={}, [7,7]={}", 
-                Integer.toHexString(sample00), Integer.toHexString(sample77));
-        }
+        return color;
     }
 }
