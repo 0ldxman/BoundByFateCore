@@ -39,6 +39,9 @@ object DarkvisionRenderer {
                 try {
                     shader.findUniform1f("DarkvisionThreshold")?.set(currentThreshold)
                     shader.findUniform1f("DarkvisionStrength")?.set(currentStrength)
+                    // Range: convert ft to blocks (5ft = 1.5 blocks)
+                    val rangeBlocks = DarkvisionState.rangeFt / 5.0f * 1.5f
+                    shader.findUniform1f("DarkvisionRange")?.set(rangeBlocks)
                 } catch (e: Exception) { /* shader not yet loaded */ }
                 shader.render(tickDelta)
             }
