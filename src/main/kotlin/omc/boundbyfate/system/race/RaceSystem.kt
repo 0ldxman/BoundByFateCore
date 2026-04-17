@@ -103,7 +103,7 @@ object RaceSystem {
             player.setAttached(BbfAttachments.SCALE_APPLIED, true)
             pendingScaleTasks[player.uuid] = Pair(player.server.ticks + 20, {
                 applyScale(player, scale)
-                applySpeedModifier(player, raceDef.speedMultiplier)
+                applySpeedFt(player, raceDef.speedFt)
             })
         } else {
             // Speed modifier still needs reapplication (not saved by Pehkui)
