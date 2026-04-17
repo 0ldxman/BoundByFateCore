@@ -190,7 +190,7 @@ class FeatureScreen : Screen(Text.translatable("screen.boundbyfate.features")) {
         if (feature.description.isNotBlank()) {
             lines.add(Text.literal(feature.description).styled { it.withColor(0xAAAAAA.toInt()) })
         }
-        val typeLabel = if (feature.trigger != null) "Triggered: ${feature.trigger.event}" else "Passive"
+        val typeLabel = feature.trigger?.let { "Triggered: ${it.event}" } ?: "Passive"
         lines.add(Text.literal("§8$typeLabel"))
         context.drawTooltip(textRenderer, lines, mouseX, mouseY)
     }
