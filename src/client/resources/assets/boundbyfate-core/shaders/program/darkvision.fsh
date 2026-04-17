@@ -4,6 +4,7 @@ uniform sampler2D DiffuseSampler;
 uniform sampler2D DiffuseDepthSampler;
 
 uniform float DarkvisionRange;
+uniform float PlayerLightLevel;
 uniform float NearPlane;
 uniform float FarPlane;
 
@@ -21,16 +22,16 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // DESATURATION based on PIXEL brightness (not player position)
-    // Dark pixels = grayscale (like looking at dark areas in darkness)
-    // Bright pixels = full color (like looking at torches, lava, bright textures)
+    // DESATURATION based on player's current light level
+    // In darkness (light 0-7): grayscale
+    // In dim light (light 8-14): partial color
+    // In bright light (light 15): full color
     //
-    // Thresholds:
-    // - Below 0.08 (~light level 2-3): fully grayscale
-    // - Above 0.5 (~light level 12-13): full color
-    // - Smooth gradient between
+    // Light level 0-2: fully gray
+    // Light level 12-15: full color
+    // Smooth gradient between
     
-    float colorAmount = smoothstep(0.08, 0.5, luminance);
+    float colorAmount = smoothstep(2.0, 12.0, PlayerLightLevel);
     vec3 grayscale = vec3(luminance);
     vec3 result = mix(grayscale, color.rgb, colorAmount);
     

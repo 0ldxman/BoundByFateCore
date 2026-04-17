@@ -73,11 +73,6 @@ object FeatureSystem {
         
         // Clean up darkvision if this was a darkvision feature
         if (featureId.path.contains("darkvision")) {
-            // Remove Night Vision effect
-            if (entity is net.minecraft.server.network.ServerPlayerEntity) {
-                entity.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.NIGHT_VISION)
-            }
-            
             // Clear darkvision attachment
             entity.removeAttached(BbfAttachments.DARKVISION)
             

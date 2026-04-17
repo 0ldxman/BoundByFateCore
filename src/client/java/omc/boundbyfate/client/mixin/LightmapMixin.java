@@ -21,29 +21,27 @@ import omc.boundbyfate.client.state.DarkvisionState;
 public class LightmapMixin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("bbf-lightmap");
-    private static int logCounter = 0;
+    private static boolean firstLog = true;
 
     @Shadow
     private NativeImage image;
 
     @Inject(method = "update", at = @At("RETURN"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
-        logCounter++;
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
-        // Log every 100 calls
-        if (logCounter % 100 == 0) {
-            LOGGER.info("[BBF Lightmap] update() called, hasDarkvision={}, image={}", 
+        // Always log first call
+        if (firstLog) {
+            LOGGER.info("[BBF Lightmap] FIRST CALL - hasDarkvision={}, image={}", 
                 hasDarkvision, (image != null ? "present" : "null"));
+            firstLog = false;
         }
         
         if (!hasDarkvision || image == null) return;
 
-        // Log first modification
-        if (logCounter % 100 == 1) {
-            LOGGER.info("[BBF Lightmap] Modifying lightmap image ({}x{})", 
-                image.getWidth(), image.getHeight());
-        }
+        // Log when modifying
+        LOGGER.info("[BBF Lightmap] MODIFYING lightmap ({}x{})", 
+            image.getWidth(), image.getHeight());
 
         // Modify lightmap similar to vanilla night vision
         // For each light level combination (blockLight × skyLight):
