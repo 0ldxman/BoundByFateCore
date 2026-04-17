@@ -72,10 +72,6 @@ object RaceSystem {
                 scaleOverride = raceDef.scaleOverride,
                 speedFt = raceDef.speedFt,
                 statBonuses = raceDef.statBonuses,
-                senses = raceDef.senses,
-                resistances = raceDef.resistances,
-                proficiencies = raceDef.proficiencies,
-                itemProficiencies = raceDef.itemProficiencies,
                 features = raceDef.features
             )
         }
@@ -113,10 +109,6 @@ object RaceSystem {
                 scaleOverride = raceDef.scaleOverride,
                 speedFt = raceDef.speedFt,
                 statBonuses = raceDef.statBonuses,
-                senses = raceDef.senses,
-                resistances = raceDef.resistances,
-                proficiencies = raceDef.proficiencies,
-                itemProficiencies = raceDef.itemProficiencies,
                 features = raceDef.features
             )
 
@@ -197,12 +189,9 @@ object RaceSystem {
         raceId: Identifier,
         subraceId: Identifier?
     ) {
-        DamageResistanceSystem.removeSource(player, raceSourceId(raceId))
-        if (subraceId != null) {
-            DamageResistanceSystem.removeSource(player, raceSourceId(subraceId))
-        }
-        // Note: stat bonuses and proficiencies are not removed on race change
-        // as they may have been modified by other sources
+        // Resistances and proficiencies are now handled via Features.
+        // Features are not removed on race change to avoid breaking other sources.
+        // TODO: track and remove race-granted features when race changes
     }
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
