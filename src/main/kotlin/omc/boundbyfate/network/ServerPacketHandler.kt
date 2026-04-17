@@ -681,8 +681,8 @@ object ServerPacketHandler {
             buf.writeBoolean(gender != null)
             if (gender != null) buf.writeString(gender)
 
-            // HP
-            buf.writeFloat(player.health)
+            // HP (current includes absorption/temp HP, max is the base max)
+            buf.writeFloat(player.health + player.absorptionAmount)
             buf.writeFloat(player.maxHealth)
 
             // Speed (movement speed attribute) — stored as ft (30ft = 0.1 base)

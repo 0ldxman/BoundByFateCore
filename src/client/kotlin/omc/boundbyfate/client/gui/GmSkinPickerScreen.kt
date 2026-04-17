@@ -121,15 +121,19 @@ class GmSkinPickerScreen(
             // Skin preview (front + back side by side, scaled up 4x)
             val texId = ClientGmRegistry.skinTextures[skinName]
             if (texId != null) {
-                val scale = 2  // 2px per skin pixel — fits in smaller card
-                val previewY = cy + 4
-                val frontX = cx + 3
-                val backX = cx + CARD_W / 2 + 1
+                val scale = 1  // 1px per skin pixel — guaranteed to fit
+                // Each view: body+arms width = 4+8+4=16px, height = 8+12+12=32px
+                // Center each view in its half: half = CARD_W/2 = 26px, offset = (26-16)/2 = 5px
+                val halfW = CARD_W / 2
+                val viewW = 16 * scale  // total width: arms + body
+                val viewH = 32 * scale  // total height: head + body + legs
+                val marginX = (halfW - viewW) / 2
+                val previewY = cy + (CARD_H - 10 - viewH) / 2  // vertically centered, leaving 10px for name
+                val frontX = cx + marginX
+                val backX  = cx + halfW + marginX
 
-                // Front view
                 drawSkinView(context, texId, frontX, previewY, scale, false)
-                // Back view
-                drawSkinView(context, texId, backX, previewY, scale, true)
+                drawSkinView(context, texId, backX,  previewY, scale, true)
             } else {
                 // No texture yet — show placeholder
                 m.push(); m.translate((cx + CARD_W / 2).toFloat(), (cy + 40).toFloat(), 0f); m.scale(0.6f, 0.6f, 1f)

@@ -268,9 +268,19 @@ object RaceSystem {
     }
 
     /**
-     * Public: read current Pehkui scale for a player (for GM display). Returns 1.0 if unavailable.
+     * Public: read current scale for a player.
+     * Reads from RaceDefinition directly (most reliable) rather than Pehkui API.
      */
     fun getScaleDirect(player: ServerPlayerEntity): Float {
+        // Primary: read from race definition (this is what was applied)
+        val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+        if (raceData != null) {
+            val raceDef = RaceRegistry.getRace(raceData.raceId)
+            if (raceDef != null) {
+                return raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
+            }
+        }
+        // Fallback: try Pehkui API
         return try {
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")
@@ -278,8 +288,9 @@ object RaceSystem {
             val getMethod = scaleType.javaClass.methods.firstOrNull { it.name == "get" && it.parameterCount == 1 }
                 ?: return 1.0f
             val scaleData = getMethod.invoke(scaleType, player)
-            val getScaleMethod = scaleData.javaClass.methods.firstOrNull {
-                it.name == "getScale" && it.parameterCount == 0
+            // Try various getter names
+            val getScaleMethod = scaleData.javaClass.methods.firstOrNull { m ->
+                (m.name == "getScale" || m.name == "getTargetScale") && m.parameterCount == 0
             } ?: return 1.0f
             (getScaleMethod.invoke(scaleData) as? Float) ?: 1.0f
         } catch (e: Exception) {

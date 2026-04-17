@@ -224,15 +224,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val modelY = changeBtnY - 6
             InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        // Show pending skin name above the button if changed
-        if (pendingSkinName != null) {
-            val skinLabelY = changeBtnY - 11
-            val skinLabel = "§e→ $pendingSkinName"
-            val skinLabelW = (textRenderer.getWidth(skinLabel) * 0.55f).toInt()
-            lbl(context, skinLabel, rightX + rightW / 2 - skinLabelW / 2, skinLabelY, 0.55f, 0xFFD700)
-        }
-        val btnLabel = if (pendingSkinName != null) "§eSkin: $pendingSkinName" else "§7Change Skin"
+        // Show pending skin name below the button if changed
+        val btnLabel = if (pendingSkinName != null) "§e✦ Change Skin" else "§7Change Skin"
         btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, btnLabel) { openSkinPicker() }
+        if (pendingSkinName != null) {
+            val skinLabel = "§e→ $pendingSkinName"
+            val skinLabelW = (textRenderer.getWidth(skinLabel) * 0.5f).toInt()
+            lbl(context, skinLabel, rightX + rightW / 2 - skinLabelW / 2, changeBtnY + changeBtnH + 2, 0.5f, 0xFFD700)
+        }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
