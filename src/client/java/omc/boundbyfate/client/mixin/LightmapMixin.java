@@ -3,7 +3,8 @@ package omc.boundbyfate.client.mixin;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImage;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -12,25 +13,25 @@ import omc.boundbyfate.client.state.DarkvisionState;
 /**
  * Boosts lightmap brightness for darkvision.
  *
- * Uses @Shadow to access the NativeImage directly (avoids reflection + remapping issues).
+ * Uses an @Accessor interface pattern to safely access the NativeImage field
+ * without relying on field name strings (which break with remapping).
  *
- * Rules:
- *   - Light 0-7 (darkness): appears as light 7-14 (dim light range)
- *   - Light 8-14 (dim): appears as light 15 (full bright)
- *   - Light 15: unchanged
- *
- * Grayscale/desaturation is handled by the post-process shader (darkvision.fsh)
- * which uses the player's actual light level uniform, not pixel brightness.
+ * Darkvision brightness rules:
+ *   Light 0-7 (darkness): appears as light 7-14 (dim light range)
+ *   Light 8-14 (dim):     appears as light 15 (full bright)
+ *   Light 15:             unchanged
  */
 @Mixin(LightmapTextureManager.class)
-public class LightmapMixin {
+public abstract class LightmapMixin {
 
-    @Shadow
-    private NativeImage image;
+    @Accessor("image")
+    protected abstract NativeImage bbf_getImage();
 
     @Inject(method = "update", at = @At("RETURN"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
         if (!DarkvisionState.INSTANCE.getHasDarkvision()) return;
+
+        NativeImage image = bbf_getImage();
         if (image == null) return;
 
         for (int blockLight = 0; blockLight < 16; blockLight++) {
@@ -55,13 +56,10 @@ public class LightmapMixin {
                 //   light 0 → target light 7  (0.467)
                 //   light 7 → target light 14 (0.933)
                 //   light 8 → target light 15 (1.0)
-                //   light 14 → target light 15 (1.0)
                 float targetBrightness;
                 if (effectiveLight < 8) {
-                    // Darkness: shift up by 7 levels
                     targetBrightness = (effectiveLight + 7.0f) / 15.0f;
                 } else {
-                    // Dim light: boost to full bright
                     targetBrightness = 1.0f;
                 }
 
@@ -69,7 +67,7 @@ public class LightmapMixin {
 
                 if (lum < targetBrightness) {
                     if (lum < 0.001f) {
-                        // Pitch black pixel: set to neutral gray at target brightness
+                        // Pitch black: set to neutral gray at target brightness
                         fr = targetBrightness;
                         fg = targetBrightness;
                         fb = targetBrightness;
