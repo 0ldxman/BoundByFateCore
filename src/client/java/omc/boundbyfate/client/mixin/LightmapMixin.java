@@ -57,8 +57,8 @@ public class LightmapMixin {
 
                     if (effectiveLight < 8) {
                         // DARKNESS (0-7): raise brightness + desaturate
-                        // Target brightness: 0.5 at light=0, 0.7 at light=7
-                        float targetBrightness = 0.5f + (effectiveLight / 7.0f) * 0.2f;
+                        // Target brightness: 0.65 at light=0, 0.80 at light=7
+                        float targetBrightness = 0.65f + (effectiveLight / 7.0f) * 0.15f;
 
                         // Luminance of current pixel
                         float lum = (r * 0.2126f + g * 0.7152f + b * 0.0722f) / 255.0f;
