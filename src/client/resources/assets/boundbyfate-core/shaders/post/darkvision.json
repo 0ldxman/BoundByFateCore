@@ -7,6 +7,13 @@
             "name": "boundbyfate-core:darkvision",
             "intarget": "minecraft:main",
             "outtarget": "swap",
+            "auxtargets": [
+                {
+                    "name": "DiffuseSampler",
+                    "id": "minecraft:main",
+                    "useDepth": false
+                }
+            ],
             "uniforms": [
                 { "name": "DarkvisionThreshold",  "values": [ 0.4 ] },
                 { "name": "DarkvisionStrength",   "values": [ 1.0 ] },
