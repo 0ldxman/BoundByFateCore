@@ -42,7 +42,14 @@ object DarkvisionRenderer {
             return
         }
 
-        // Render desaturation shader
-        shouldRender = true
+        // Only render shader in dark/dim conditions
+        // In bright daylight (light 15), no desaturation needed
+        val pos = net.minecraft.util.math.BlockPos.ofFloored(player.x, player.eyeY, player.z)
+        val blockLight = world.getLightLevel(net.minecraft.world.LightType.BLOCK, pos)
+        val skyLight = world.getLightLevel(net.minecraft.world.LightType.SKY, pos)
+        val lightLevel = maxOf(blockLight, skyLight)
+
+        // Render shader only when not in full bright light
+        shouldRender = lightLevel < 15
     }
 }

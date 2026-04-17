@@ -2,7 +2,8 @@ package omc.boundbyfate.client.mixin;
 
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImage;
-import org.spongepowered.asm.mixin.Final;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,13 +20,30 @@ import omc.boundbyfate.client.state.DarkvisionState;
 @Mixin(LightmapTextureManager.class)
 public class LightmapMixin {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("bbf-lightmap");
+    private static int logCounter = 0;
+
     @Shadow
-    @Final
     private NativeImage image;
 
     @Inject(method = "update", at = @At("RETURN"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
-        if (!DarkvisionState.INSTANCE.getHasDarkvision() || image == null) return;
+        logCounter++;
+        boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
+        
+        // Log every 100 calls
+        if (logCounter % 100 == 0) {
+            LOGGER.info("[BBF Lightmap] update() called, hasDarkvision={}, image={}", 
+                hasDarkvision, (image != null ? "present" : "null"));
+        }
+        
+        if (!hasDarkvision || image == null) return;
+
+        // Log first modification
+        if (logCounter % 100 == 1) {
+            LOGGER.info("[BBF Lightmap] Modifying lightmap image ({}x{})", 
+                image.getWidth(), image.getHeight());
+        }
 
         // Modify lightmap similar to vanilla night vision
         // For each light level combination (blockLight × skyLight):
