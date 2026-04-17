@@ -42,3 +42,8 @@ replay_*.log
 # local docs
 
 docs/
+
+# local files
+
+FOR_INSPO/
+latest.log

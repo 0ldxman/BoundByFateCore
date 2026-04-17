@@ -34,17 +34,36 @@ object DarkvisionRenderer {
                     val world = client.world
                     if (player != null && world != null) {
                         val pos = net.minecraft.util.math.BlockPos.ofFloored(player.x, player.eyeY, player.z)
+                        
+                        // Get light levels using the correct method (from LightLevel mod reference)
                         val blockLight = world.getLightLevel(net.minecraft.world.LightType.BLOCK, pos)
                         val skyLight = world.getLightLevel(net.minecraft.world.LightType.SKY, pos)
-                        val lightLevel = maxOf(blockLight, skyLight)
                         
-                        // Pass light level (0-15) to shader
-                        shader.findUniform1f("PlayerLightLevel")?.set(lightLevel.toFloat())
+                        // Calculate effective light (max of block and sky)
+                        val effectiveLight = maxOf(blockLight, skyLight)
                         
-                        // Log occasionally
-                        if (System.currentTimeMillis() % 1000 < 50) {
+                        // IMPORTANT: Apply darkvision boost to the light level we pass to shader
+                        // This way the shader knows the "perceived" light level, not the real one
+                        val perceivedLight = if (effectiveLight < 8) {
+                            // Darkness (0-7) → appears as dim light (7-14)
+                            effectiveLight + 7
+                        } else if (effectiveLight < 15) {
+                            // Dim (8-14) → appears as bright (15)
+                            15
+                        } else {
+                            // Already bright
+                            15
+                        }
+                        
+                        // Pass PERCEIVED light level to shader for desaturation
+                        // Low perceived light = grayscale, high perceived light = color
+                        shader.findUniform1f("PlayerLightLevel")?.set(perceivedLight.toFloat())
+                        
+                        // Log occasionally (every ~2 seconds)
+                        if (System.currentTimeMillis() % 2000 < 50) {
                             org.slf4j.LoggerFactory.getLogger("bbf-darkvision")
-                                .info("Light level: block={}, sky={}, effective={}", blockLight, skyLight, lightLevel)
+                                .info("Light: real={}(block)+{}(sky)={}, perceived={}", 
+                                    blockLight, skyLight, effectiveLight, perceivedLight)
                         }
                     }
                 } catch (e: Exception) { /* shader not loaded */ }

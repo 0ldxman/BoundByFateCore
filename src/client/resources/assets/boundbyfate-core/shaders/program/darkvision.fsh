@@ -22,16 +22,18 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // DESATURATION based on player's current light level
-    // In darkness (light 0-7): grayscale
-    // In dim light (light 8-14): partial color
-    // In bright light (light 15): full color
+    // DESATURATION based on PERCEIVED light level (after darkvision boost)
+    // PlayerLightLevel is the light level AFTER darkvision boost:
+    // - Real darkness (0-7) → perceived as dim (7-14)
+    // - Real dim (8-14) → perceived as bright (15)
+    // - Real bright (15) → perceived as bright (15)
     //
-    // Light level 0-2: fully gray
-    // Light level 12-15: full color
-    // Smooth gradient between
+    // Desaturation thresholds:
+    // - Perceived light 0-7: grayscale (shouldn't happen with darkvision, but just in case)
+    // - Perceived light 8-12: partial color
+    // - Perceived light 13-15: full color
     
-    float colorAmount = smoothstep(2.0, 12.0, PlayerLightLevel);
+    float colorAmount = smoothstep(8.0, 13.0, PlayerLightLevel);
     vec3 grayscale = vec3(luminance);
     vec3 result = mix(grayscale, color.rgb, colorAmount);
     

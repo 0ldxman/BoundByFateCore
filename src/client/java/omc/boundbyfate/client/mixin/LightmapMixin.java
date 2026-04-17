@@ -26,7 +26,7 @@ public class LightmapMixin {
     @Shadow
     private NativeImage image;
 
-    @Inject(method = "update", at = @At("HEAD"))
+    @Inject(method = "update", at = @At("TAIL"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
@@ -39,13 +39,16 @@ public class LightmapMixin {
         
         if (!hasDarkvision || image == null) return;
 
-        // Log when modifying
-        LOGGER.info("[BBF Lightmap] MODIFYING lightmap at HEAD ({}x{})", 
-            image.getWidth(), image.getHeight());
+        // Modify lightmap - boost brightness for low light levels
+        // Sample a few pixels to see what we're working with
+        int sample00 = image.getColor(0, 0);
+        int sample77 = image.getColor(7, 7);
+        int sample1515 = image.getColor(15, 15);
+        
+        LOGGER.info("[BBF Lightmap] MODIFYING at TAIL - samples: [0,0]={}, [7,7]={}, [15,15]={}", 
+            Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
 
         // Modify lightmap - boost brightness for low light levels
-        // This makes dark areas (light 0-7) appear as dim light (light 7-14)
-        // and dim areas (light 8-14) appear as bright (light 15)
         for (int skyLight = 0; skyLight < 16; skyLight++) {
             for (int blockLight = 0; blockLight < 16; blockLight++) {
                 int effectiveLight = Math.max(blockLight, skyLight);
@@ -63,7 +66,6 @@ public class LightmapMixin {
                     }
                     
                     // Sample the color from the boosted light level
-                    // Use the higher of block/sky for both coordinates to get max brightness
                     int sampleX = Math.min(boostedLight, 15);
                     int sampleY = Math.min(boostedLight, 15);
                     int boostedColor = image.getColor(sampleX, sampleY);
