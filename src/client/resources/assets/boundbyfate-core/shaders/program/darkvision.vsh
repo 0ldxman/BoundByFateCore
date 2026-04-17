@@ -4,7 +4,6 @@ in vec4 Position;
 in vec2 UV;
 
 uniform mat4 ProjMat;
-uniform vec2 OutSize;
 
 out vec2 texCoord;
 

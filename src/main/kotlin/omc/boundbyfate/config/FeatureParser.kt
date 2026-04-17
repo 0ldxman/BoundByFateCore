@@ -52,17 +52,21 @@ object FeatureParser {
             }
 
             // Trigger: null = always-on, object = event-based
-            val trigger = json.getAsJsonObject("trigger")?.let { triggerObj ->
+            // Skip if trigger is a string (legacy format like "PASSIVE", "MANUAL")
+            val trigger = if (json.has("trigger") && json.get("trigger").isJsonObject) {
+                val triggerObj = json.getAsJsonObject("trigger")
                 val event = triggerObj.get("event")?.asString ?: run {
                     logger.warn("Feature $id: trigger missing 'event', ignoring trigger")
-                    return@let null
+                    null
                 }
-                val filter = mutableMapOf<String, String>()
-                triggerObj.getAsJsonObject("filter")?.entrySet()?.forEach { (k, v) ->
-                    filter[k] = v.asString
-                }
-                FeatureTrigger(event, filter)
-            }
+                if (event != null) {
+                    val filter = mutableMapOf<String, String>()
+                    triggerObj.getAsJsonObject("filter")?.entrySet()?.forEach { (k, v) ->
+                        filter[k] = v.asString
+                    }
+                    FeatureTrigger(event, filter)
+                } else null
+            } else null
 
             // grantsAbilities: list of { ability, minLevel }
             val grantsAbilities = mutableListOf<AbilityGrant>()
