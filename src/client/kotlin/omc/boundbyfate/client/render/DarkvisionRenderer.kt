@@ -40,6 +40,12 @@ object DarkvisionRenderer {
                         
                         // Pass light level (0-15) to shader
                         shader.findUniform1f("PlayerLightLevel")?.set(lightLevel.toFloat())
+                        
+                        // Log occasionally
+                        if (System.currentTimeMillis() % 1000 < 50) {
+                            org.slf4j.LoggerFactory.getLogger("bbf-darkvision")
+                                .info("Light level: block={}, sky={}, effective={}", blockLight, skyLight, lightLevel)
+                        }
                     }
                 } catch (e: Exception) { /* shader not loaded */ }
                 shader.render(tickDelta)

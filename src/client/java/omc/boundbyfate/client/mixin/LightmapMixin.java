@@ -26,7 +26,7 @@ public class LightmapMixin {
     @Shadow
     private NativeImage image;
 
-    @Inject(method = "update", at = @At("RETURN"))
+    @Inject(method = "update", at = @At("HEAD"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
@@ -40,66 +40,36 @@ public class LightmapMixin {
         if (!hasDarkvision || image == null) return;
 
         // Log when modifying
-        LOGGER.info("[BBF Lightmap] MODIFYING lightmap ({}x{})", 
+        LOGGER.info("[BBF Lightmap] MODIFYING lightmap at HEAD ({}x{})", 
             image.getWidth(), image.getHeight());
 
-        // Modify lightmap similar to vanilla night vision
-        // For each light level combination (blockLight × skyLight):
-        for (int blockLight = 0; blockLight < 16; blockLight++) {
-            for (int skyLight = 0; skyLight < 16; skyLight++) {
-                int color = image.getColor(blockLight, skyLight);
-
-                // Extract RGBA components (ABGR format in NativeImage)
-                int a = (color >> 24) & 0xFF;
-                int b = (color >> 16) & 0xFF;
-                int g = (color >> 8)  & 0xFF;
-                int r = (color)       & 0xFF;
-
-                // Calculate effective light level
+        // Modify lightmap - boost brightness for low light levels
+        // This makes dark areas (light 0-7) appear as dim light (light 7-14)
+        // and dim areas (light 8-14) appear as bright (light 15)
+        for (int skyLight = 0; skyLight < 16; skyLight++) {
+            for (int blockLight = 0; blockLight < 16; blockLight++) {
                 int effectiveLight = Math.max(blockLight, skyLight);
-
-                // Darkvision rules:
-                // - Darkness (0-7): boost to appear as dim light (7-14)
-                // - Dim light (8-14): boost to appear as bright (15)
-                // - Bright (15): no change
-
+                
+                // Only boost if not already bright
                 if (effectiveLight < 15) {
-                    float fr = r / 255.0f;
-                    float fg = g / 255.0f;
-                    float fb = b / 255.0f;
-
-                    // Target brightness: shift light level up by 7-8
-                    float targetBrightness;
+                    // Calculate boosted light level
+                    int boostedLight;
                     if (effectiveLight < 8) {
-                        // Darkness → dim light
-                        targetBrightness = (effectiveLight + 7.0f) / 15.0f;
+                        // Darkness (0-7) → dim light (7-14)
+                        boostedLight = effectiveLight + 7;
                     } else {
-                        // Dim → bright
-                        targetBrightness = 1.0f;
+                        // Dim (8-14) → bright (15)
+                        boostedLight = 15;
                     }
-
-                    // Calculate current luminance
-                    float lum = fr * 0.2126f + fg * 0.7152f + fb * 0.0722f;
-
-                    // Boost if below target
-                    if (lum < targetBrightness) {
-                        if (lum < 0.001f) {
-                            // Pitch black: set to target gray
-                            fr = fg = fb = targetBrightness;
-                        } else {
-                            // Boost proportionally
-                            float boost = Math.min(targetBrightness / lum, 10.0f);
-                            fr = Math.min(fr * boost, 1.0f);
-                            fg = Math.min(fg * boost, 1.0f);
-                            fb = Math.min(fb * boost, 1.0f);
-                        }
-                    }
-
-                    r = (int)(fr * 255);
-                    g = (int)(fg * 255);
-                    b = (int)(fb * 255);
-
-                    image.setColor(blockLight, skyLight, (a << 24) | (b << 16) | (g << 8) | r);
+                    
+                    // Sample the color from the boosted light level
+                    // Use the higher of block/sky for both coordinates to get max brightness
+                    int sampleX = Math.min(boostedLight, 15);
+                    int sampleY = Math.min(boostedLight, 15);
+                    int boostedColor = image.getColor(sampleX, sampleY);
+                    
+                    // Set the boosted color
+                    image.setColor(blockLight, skyLight, boostedColor);
                 }
             }
         }
