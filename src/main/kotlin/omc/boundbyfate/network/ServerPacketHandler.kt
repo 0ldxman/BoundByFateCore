@@ -19,9 +19,9 @@ object ServerPacketHandler {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
     fun register() {
-        // Client → Server: player activates a feature via keybind
+        // Client → Server: player activates an ability from hotbar (was: USE_FEATURE)
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.USE_FEATURE) { server, player, _, buf, _ ->
-            val featureId = buf.readIdentifier()
+            val abilityId = buf.readIdentifier()
             val hasTarget = buf.readBoolean()
             val targetUuid = if (hasTarget) buf.readUuid() else null
 
@@ -32,7 +32,14 @@ object ServerPacketHandler {
                         player.boundingBox.expand(20.0)
                     ) { it.uuid == uuid }.firstOrNull()
                 }
-                FeatureSystem.execute(player, featureId, target)
+                // Try as ability first, fall back to feature event for backwards compat
+                val ability = omc.boundbyfate.registry.AbilityRegistry.get(abilityId)
+                if (ability != null) {
+                    omc.boundbyfate.system.ability.AbilityActivationSystem.beginActivation(player, ability, target, null, null)
+                } else {
+                    // Legacy: fire as feature event
+                    omc.boundbyfate.system.feature.FeatureSystem.fireEvent(player, "manual_use", mapOf("featureId" to abilityId.toString()), target)
+                }
             }
         }
 

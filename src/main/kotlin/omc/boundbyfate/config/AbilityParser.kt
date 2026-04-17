@@ -8,7 +8,7 @@ import omc.boundbyfate.api.ability.AbilityPhase
 import omc.boundbyfate.api.ability.EffectEntry
 import omc.boundbyfate.api.ability.component.*
 import omc.boundbyfate.api.dice.DiceType
-import omc.boundbyfate.registry.AbilityEffectRegistry
+import omc.boundbyfate.registry.BbfEffectRegistry
 import omc.boundbyfate.registry.AbilityRegistry
 import org.slf4j.LoggerFactory
 import java.io.InputStream
@@ -193,7 +193,7 @@ object AbilityParser {
             val effectType = obj.get("effectType")?.asString?.let { Identifier(it) } ?: return@forEach
             val phase = obj.get("phase")?.asString?.let { AbilityPhase.valueOf(it) } ?: AbilityPhase.APPLICATION
             
-            val effect = AbilityEffectRegistry.create(effectType, obj) ?: return@forEach
+            val effect = BbfEffectRegistry.create(effectType, obj) ?: return@forEach
             
             val conditions = parseConditions(obj.getAsJsonArray("conditions")) ?: emptyList()
             val stopOnFailure = obj.get("stopOnFailure")?.asBoolean ?: false
