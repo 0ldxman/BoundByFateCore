@@ -4,8 +4,6 @@ import ladysnake.satin.api.event.ShaderEffectRenderCallback
 import ladysnake.satin.api.managed.ManagedShaderEffect
 import ladysnake.satin.api.managed.ShaderEffectManager
 import net.minecraft.client.MinecraftClient
-import net.minecraft.entity.effect.StatusEffectInstance
-import net.minecraft.entity.effect.StatusEffects
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.LightType
@@ -77,7 +75,6 @@ object DarkvisionRenderer {
         }
 
         shouldRender = true
-
         if (lightLevel <= 7) {
             // Darkness: full grayscale — Night Vision shows the world, shader makes it gray
             currentStrength = 1.0f
