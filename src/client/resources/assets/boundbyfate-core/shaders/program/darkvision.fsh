@@ -3,14 +3,9 @@
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DiffuseDepthSampler;
 
-// Maximum darkvision range in blocks (60ft ≈ 18 blocks).
 uniform float DarkvisionRange;
-
-// Near and far clip planes for depth reconstruction.
 uniform float NearPlane;
 uniform float FarPlane;
-
-// Not used for desaturation anymore, kept for potential future use.
 uniform float PlayerLightLevel;
 
 in vec2 texCoord;
@@ -23,35 +18,48 @@ float linearDepth(float depth) {
 
 void main() {
     vec4 color = texture(DiffuseSampler, texCoord);
-
-    // Perceptual luminance (ITU-R BT.709)
+    
+    // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-
-    // Desaturation based on pixel brightness (luminance):
-    // - Dark pixels = dark areas in the world = fully gray
-    // - Bright pixels = lit areas in the world = full color
-    //
-    // This is correct because the lightmap mixin already boosted dark areas
-    // to appear brighter, so luminance now reflects actual world lighting.
-    //
-    // Thresholds (after lightmap boost):
-    //   luminance < 0.30 → fully gray  (corresponds to ~light level 2-3)
-    //   luminance > 0.80 → full color  (corresponds to ~light level 12-13)
-    //   smooth gradient between them
-    float colorAmount = smoothstep(0.30, 0.80, luminance);
-    vec3 grayscale = vec3(luminance);
-    vec3 desaturated = mix(grayscale, color.rgb, colorAmount);
-
-    // Range fade: beyond darkvision range, fade back to original (dark) image
+    
+    // EXPOSURE BOOST for dark pixels (like HDR/night vision camera)
+    // This pulls detail out of shadows instead of just brightening black to gray
+    float targetLuminance = 0.5; // Target middle gray
+    float exposureBoost = 1.0;
+    
+    if (luminance < targetLuminance && luminance > 0.001) {
+        // Calculate how much to boost: darker pixels get more boost
+        // Max boost of 8x for very dark pixels, tapering off for brighter ones
+        exposureBoost = min(targetLuminance / luminance, 8.0);
+    }
+    
+    // Apply exposure boost
+    vec3 boosted = color.rgb * exposureBoost;
+    
+    // Clamp to prevent over-exposure
+    boosted = min(boosted, vec3(1.0));
+    
+    // Recalculate luminance after boost
+    float boostedLuminance = dot(boosted, vec3(0.2126, 0.7152, 0.0722));
+    
+    // DESATURATION based on boosted luminance
+    // Dark areas (even after boost) = gray
+    // Bright areas = full color
+    // Threshold: 0.25-0.75 for smooth transition
+    float colorAmount = smoothstep(0.25, 0.75, boostedLuminance);
+    vec3 grayscale = vec3(boostedLuminance);
+    vec3 desaturated = mix(grayscale, boosted, colorAmount);
+    
+    // Range fade based on depth
     float depth = texture(DiffuseDepthSampler, texCoord).r;
     float rangeFade = 1.0;
     if (depth < 0.9999) {
         float dist = linearDepth(depth);
         rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
     }
-
-    // Beyond range: show original unmodified image
+    
+    // Beyond range: fade back to original dark image
     vec3 result = mix(color.rgb, desaturated, rangeFade);
-
+    
     fragColor = vec4(result, color.a);
 }
