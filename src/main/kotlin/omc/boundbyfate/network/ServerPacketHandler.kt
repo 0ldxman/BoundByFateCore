@@ -145,11 +145,12 @@ object ServerPacketHandler {
 
             server.execute {
                 val target = server.playerManager.getPlayer(targetName) ?: return@execute
-                val featData = target.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES,
-                    omc.boundbyfate.component.EntityFeatureData())
-                val updated = if (add) featData.withFeature(featureId)
-                              else featData.withoutFeature(featureId)
-                target.setAttached(BbfAttachments.ENTITY_FEATURES, updated)
+                if (add) {
+                    // grantFeature records the feature AND applies its effects
+                    omc.boundbyfate.system.feature.FeatureSystem.grantFeature(target, featureId)
+                } else {
+                    omc.boundbyfate.system.feature.FeatureSystem.removeFeature(target, featureId)
+                }
                 syncGmData(gmPlayer)
                 logger.info("GM ${gmPlayer.name.string} ${if (add) "added" else "removed"} feature $featureId for $targetName")
             }

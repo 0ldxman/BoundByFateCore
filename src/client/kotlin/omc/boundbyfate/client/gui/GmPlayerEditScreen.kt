@@ -549,6 +549,26 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         vitalityBuf.writeInt(scarCount)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_VITALITY, vitalityBuf)
 
+        // Features diff: send added and removed features
+        val originalFeatures = snapshot.grantedFeatures.toSet()
+        val currentFeatures = features.toSet()
+        val added = currentFeatures - originalFeatures
+        val removed = originalFeatures - currentFeatures
+        for (featId in added) {
+            val featBuf = PacketByteBufs.create()
+            featBuf.writeString(snapshot.playerName)
+            featBuf.writeIdentifier(featId)
+            featBuf.writeBoolean(true)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FEATURE, featBuf)
+        }
+        for (featId in removed) {
+            val featBuf = PacketByteBufs.create()
+            featBuf.writeString(snapshot.playerName)
+            featBuf.writeIdentifier(featId)
+            featBuf.writeBoolean(false)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FEATURE, featBuf)
+        }
+
         // HP (current, max, temp)
         val hpBuf = PacketByteBufs.create()
         hpBuf.writeString(snapshot.playerName)
