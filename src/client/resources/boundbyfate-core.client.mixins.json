@@ -6,7 +6,8 @@
 		"ExampleClientMixin",
 		"ItemStackTooltipMixin",
 		"PlayerSkinMixin",
-		"DarkvisionMixin"
+		"DarkvisionMixin",
+		"PostEffectProcessorAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

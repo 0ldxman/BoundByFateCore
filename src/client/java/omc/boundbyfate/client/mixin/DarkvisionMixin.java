@@ -1,6 +1,7 @@
 package omc.boundbyfate.client.mixin;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.PostEffectPass;
 import net.minecraft.client.gl.PostEffectProcessor;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.util.Identifier;
@@ -12,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import omc.boundbyfate.client.state.DarkvisionState;
+
+import java.util.List;
 
 /**
  * Applies the darkvision post-process shader when the player has darkvision
@@ -27,11 +30,10 @@ public class DarkvisionMixin {
     private static final Identifier DARKVISION_SHADER =
         new Identifier("boundbyfate-core", "shaders/post/darkvision.json");
 
-    /** Tracks whether we loaded the darkvision shader (to know when to unload it) */
     private boolean bbf_darkvisionActive = false;
 
     @Shadow
-    public PostEffectProcessor postProcessor;
+    PostEffectProcessor postProcessor;
 
     @Shadow
     public void loadPostProcessor(Identifier id) {}
@@ -47,7 +49,6 @@ public class DarkvisionMixin {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
 
         if (!hasDarkvision) {
-            // Remove our shader if we had it active
             if (bbf_darkvisionActive) {
                 disablePostProcessor();
                 bbf_darkvisionActive = false;
@@ -55,7 +56,6 @@ public class DarkvisionMixin {
             return;
         }
 
-        // Check light level at player eye position
         BlockPos eyePos = BlockPos.ofFloored(
             client.player.getX(),
             client.player.getEyeY(),
@@ -65,12 +65,9 @@ public class DarkvisionMixin {
         int skyLight = client.world.getLightLevel(LightType.SKY, eyePos);
         int lightLevel = Math.max(blockLight, skyLight);
 
-        // Darkvision is active in dim light (8-14) and darkness (0-7)
-        // In bright light (15) it has no effect
         boolean shouldApply = lightLevel < 15;
 
         if (shouldApply && !bbf_darkvisionActive) {
-            // Only load if no other post-processor is active (e.g. spectator mode)
             if (postProcessor == null) {
                 loadPostProcessor(DARKVISION_SHADER);
                 bbf_darkvisionActive = true;
@@ -80,48 +77,41 @@ public class DarkvisionMixin {
             bbf_darkvisionActive = false;
         }
 
-        // Update shader uniforms based on current light level
         if (bbf_darkvisionActive && postProcessor != null) {
             updateDarkvisionUniforms(lightLevel);
         }
     }
 
-    /**
-     * Updates the darkvision shader uniforms based on current light level.
-     *
-     * Light 0-7 (darkness): full grayscale effect, threshold = 0.4
-     *   → dark pixels become gray, bright pixels stay colorful
-     * Light 8-14 (dim light): reduced effect, threshold decreases toward 0
-     *   → less desaturation, approaching normal vision
-     */
     private void updateDarkvisionUniforms(int lightLevel) {
         if (postProcessor == null) return;
 
-        try {
-            // In darkness (0-7): full effect. In dim light (8-14): fade out.
-            float strength;
-            float threshold;
+        float strength;
+        float threshold;
 
-            if (lightLevel <= 7) {
-                // Full darkvision: dark areas are grayscale
-                strength = 1.0f;
-                threshold = 0.4f;
-            } else {
-                // Dim light: gradually reduce effect as light increases
-                float t = (lightLevel - 7) / 7.0f; // 0.0 at light=7, 1.0 at light=14
-                strength = 1.0f - t;
-                threshold = 0.4f * (1.0f - t);
-            }
+        if (lightLevel <= 7) {
+            strength = 1.0f;
+            threshold = 0.4f;
+        } else {
+            float t = (lightLevel - 7) / 7.0f;
+            strength = 1.0f - t;
+            threshold = 0.4f * (1.0f - t);
+        }
 
-            // Update uniforms on the shader pass
-            postProcessor.getPasses().forEach(pass -> {
-                try {
-                    var thresholdUniform = pass.getProgram().getUniformByName("DarkvisionThreshold");
-                    var strengthUniform = pass.getProgram().getUniformByName("DarkvisionStrength");
-                    if (thresholdUniform != null) thresholdUniform.set(threshold);
-                    if (strengthUniform != null) strengthUniform.set(strength);
-                } catch (Exception ignored) {}
-            });
-        } catch (Exception ignored) {}
+        // Access passes via the accessor mixin
+        List<PostEffectPass> passes = ((PostEffectProcessorAccessor) postProcessor).bbf_getPasses();
+        if (passes == null) return;
+
+        for (PostEffectPass pass : passes) {
+            try {
+                var program = pass.getProgram();
+                if (program == null) continue;
+
+                var thresholdUniform = program.getUniformByName("DarkvisionThreshold");
+                var strengthUniform = program.getUniformByName("DarkvisionStrength");
+
+                if (thresholdUniform != null) thresholdUniform.set(threshold);
+                if (strengthUniform != null) strengthUniform.set(strength);
+            } catch (Exception ignored) {}
+        }
     }
 }
