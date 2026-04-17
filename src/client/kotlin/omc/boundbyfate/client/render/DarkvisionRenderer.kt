@@ -30,7 +30,6 @@ object DarkvisionRenderer {
                 try {
                     val rangeBlocks = DarkvisionState.rangeFt / 5.0f * 1.5f
                     shader.findUniform1f("DarkvisionRange")?.set(rangeBlocks)
-                    shader.findUniform1f("PlayerLightLevel")?.set(0f) // Not used currently
                 } catch (e: Exception) { /* shader not yet loaded */ }
                 shader.render(tickDelta)
             }

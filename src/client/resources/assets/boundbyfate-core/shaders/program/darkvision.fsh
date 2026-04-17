@@ -6,7 +6,6 @@ uniform sampler2D DiffuseDepthSampler;
 uniform float DarkvisionRange;
 uniform float NearPlane;
 uniform float FarPlane;
-uniform float PlayerLightLevel;
 
 in vec2 texCoord;
 out vec4 fragColor;
