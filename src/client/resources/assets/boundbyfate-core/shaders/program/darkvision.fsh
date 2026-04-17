@@ -21,36 +21,46 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // EXPOSURE BOOST - only for dark pixels
-    // Bright pixels (luminance > 0.5) are left unchanged
-    // Dark pixels get boosted to pull out shadow detail
-    vec3 result;
+    // Map luminance to approximate Minecraft light levels (0-15)
+    // This is approximate because luminance is affected by textures, time of day, etc.
+    // Rough mapping after testing:
+    //   luminance 0.0-0.15  ≈ light 0-6  (darkness)
+    //   luminance 0.15-0.40 ≈ light 7-10 (dim light)
+    //   luminance 0.40-1.0  ≈ light 11-15 (bright light)
     
-    if (luminance < 0.5) {
-        // Dark pixel: apply exposure boost
-        float targetLuminance = 0.5;
-        float exposureBoost = 1.0;
+    vec3 result;
+    float boostedLuminance;
+    
+    if (luminance < 0.15) {
+        // DARKNESS (light 0-6): boost to appear as DIM LIGHT (light 7-8)
+        // Target luminance ~0.30 (dim light appearance)
+        float targetLum = 0.30;
+        float boost = (luminance > 0.001) ? min(targetLum / luminance, 10.0) : 10.0;
         
-        if (luminance > 0.001) {
-            // Calculate boost: max 6x for very dark, tapering off
-            exposureBoost = min(targetLuminance / luminance, 6.0);
-        } else {
-            // Pitch black: set to dim gray
-            exposureBoost = 6.0;
-        }
+        vec3 boosted = min(color.rgb * boost, vec3(1.0));
+        boostedLuminance = dot(boosted, vec3(0.2126, 0.7152, 0.0722));
         
-        // Apply boost and clamp
-        vec3 boosted = min(color.rgb * exposureBoost, vec3(1.0));
-        float boostedLuminance = dot(boosted, vec3(0.2126, 0.7152, 0.0722));
+        // Full grayscale in darkness
+        result = vec3(boostedLuminance);
         
-        // Desaturate dark areas (even after boost)
-        // 0.2-0.7 range for smooth transition
-        float colorAmount = smoothstep(0.2, 0.7, boostedLuminance);
+    } else if (luminance < 0.40) {
+        // DIM LIGHT (light 7-10): boost to appear as BRIGHT LIGHT (light 15)
+        // Target luminance ~0.70 (bright light appearance)
+        float targetLum = 0.70;
+        float boost = min(targetLum / luminance, 3.0);
+        
+        vec3 boosted = min(color.rgb * boost, vec3(1.0));
+        boostedLuminance = dot(boosted, vec3(0.2126, 0.7152, 0.0722));
+        
+        // Partial desaturation in dim light (smooth transition to color)
+        // At luminance 0.15: mostly gray
+        // At luminance 0.40: mostly color
+        float colorAmount = smoothstep(0.15, 0.40, luminance);
         vec3 grayscale = vec3(boostedLuminance);
         result = mix(grayscale, boosted, colorAmount);
         
     } else {
-        // Bright pixel: leave unchanged, full color
+        // BRIGHT LIGHT (light 11-15): no change, full color
         result = color.rgb;
     }
     
