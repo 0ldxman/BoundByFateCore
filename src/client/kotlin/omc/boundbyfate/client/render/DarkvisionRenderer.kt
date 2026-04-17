@@ -1,5 +1,6 @@
 package omc.boundbyfate.client.render
 
+import ladysnake.satin.api.event.ShaderEffectRenderCallback
 import ladysnake.satin.api.managed.ManagedShaderEffect
 import ladysnake.satin.api.managed.ShaderEffectManager
 import net.minecraft.client.MinecraftClient
@@ -14,6 +15,9 @@ import omc.boundbyfate.client.state.DarkvisionState
  * Satin allows loading shaders from any mod namespace, fixing the
  * "Non [a-z0-9_.-] character in namespace" error from vanilla PostEffectProcessor.
  *
+ * The shader is rendered via ShaderEffectRenderCallback — it fires after the world
+ * is drawn but before the HUD. We only call render() when darkvision is active.
+ *
  * Light levels:
  *   0-7   = darkness  → full grayscale effect
  *   8-14  = dim light → partial effect (fades out)
@@ -25,14 +29,29 @@ object DarkvisionRenderer {
 
     private val shader: ManagedShaderEffect = ShaderEffectManager.getInstance().manage(SHADER_ID)
 
-    private var wasActive = false
+    // Current shader parameters — updated each tick, used during render
+    private var currentStrength = 0f
+    private var currentThreshold = 0f
+    private var shouldRender = false
+
+    fun register() {
+        ShaderEffectRenderCallback.EVENT.register { tickDelta ->
+            if (shouldRender) {
+                try {
+                    shader.findUniform1f("DarkvisionThreshold")?.set(currentThreshold)
+                    shader.findUniform1f("DarkvisionStrength")?.set(currentStrength)
+                } catch (e: Exception) { /* shader not yet loaded */ }
+                shader.render(tickDelta)
+            }
+        }
+    }
 
     fun tick(client: MinecraftClient) {
-        val world = client.world ?: run { deactivate(); return }
-        val player = client.player ?: run { deactivate(); return }
+        val world = client.world
+        val player = client.player
 
-        if (!DarkvisionState.hasDarkvision) {
-            deactivate()
+        if (world == null || player == null || !DarkvisionState.hasDarkvision) {
+            shouldRender = false
             return
         }
 
@@ -42,40 +61,19 @@ object DarkvisionRenderer {
         val lightLevel = maxOf(blockLight, skyLight)
 
         if (lightLevel >= 15) {
-            deactivate()
+            shouldRender = false
             return
         }
 
-        // Calculate shader parameters based on light level
-        val strength: Float
-        val threshold: Float
+        shouldRender = true
+
         if (lightLevel <= 7) {
-            strength = 1.0f
-            threshold = 0.4f
+            currentStrength = 1.0f
+            currentThreshold = 0.4f
         } else {
             val t = (lightLevel - 7) / 7.0f
-            strength = 1.0f - t
-            threshold = 0.4f * (1.0f - t)
-        }
-
-        // Enable shader and update uniforms
-        if (!wasActive) {
-            shader.enable()
-            wasActive = true
-        }
-
-        try {
-            shader.findUniform1f("DarkvisionThreshold")?.set(threshold)
-            shader.findUniform1f("DarkvisionStrength")?.set(strength)
-        } catch (e: Exception) {
-            // Shader not yet loaded — will apply next tick
-        }
-    }
-
-    private fun deactivate() {
-        if (wasActive) {
-            shader.disable()
-            wasActive = false
+            currentStrength = 1.0f - t
+            currentThreshold = 0.4f * (1.0f - t)
         }
     }
 }

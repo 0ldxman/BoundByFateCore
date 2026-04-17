@@ -36,6 +36,9 @@ object BoundByFateCoreClient : ClientModInitializer {
         ItemTooltipManager.register(ProficiencyTooltipProvider)
         ItemTooltipManager.register(WeaponTooltipProvider)
 
+        // Register darkvision shader callback
+        omc.boundbyfate.client.render.DarkvisionRenderer.register()
+
         // Register floating text renderer
         WorldRenderEvents.LAST.register { context -> FloatingTextRenderer.render(context) }
 
