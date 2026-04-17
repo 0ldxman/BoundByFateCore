@@ -12,11 +12,9 @@ import omc.boundbyfate.client.state.DarkvisionState
 /**
  * Manages the darkvision visual effect.
  *
- * Lightmap mixin (LightmapMixin) handles brightness and grayscale based on light levels.
- * This renderer handles the range limit via depth buffer in the post-process shader.
- *
- * The shader only runs when the player is in dim/dark conditions and has darkvision.
- * It darkens pixels beyond the darkvision range back to normal darkness.
+ * LightmapMixin handles brightness boosting (dark areas appear brighter).
+ * This renderer passes the player's actual light level to the shader so it can
+ * correctly desaturate dark-world areas (not based on pixel brightness).
  */
 object DarkvisionRenderer {
 
@@ -24,6 +22,7 @@ object DarkvisionRenderer {
     private val shader: ManagedShaderEffect = ShaderEffectManager.getInstance().manage(SHADER_ID)
 
     private var shouldRender = false
+    private var currentLightLevel = 0
 
     fun register() {
         ShaderEffectRenderCallback.EVENT.register { tickDelta ->
@@ -31,6 +30,7 @@ object DarkvisionRenderer {
                 try {
                     val rangeBlocks = DarkvisionState.rangeFt / 5.0f * 1.5f
                     shader.findUniform1f("DarkvisionRange")?.set(rangeBlocks)
+                    shader.findUniform1f("PlayerLightLevel")?.set(currentLightLevel.toFloat())
                 } catch (e: Exception) { /* shader not yet loaded */ }
                 shader.render(tickDelta)
             }
@@ -42,7 +42,11 @@ object DarkvisionRenderer {
         val player = client.player
 
         if (world == null || player == null || !DarkvisionState.hasDarkvision) {
-            shouldRender = false
+            if (shouldRender) {
+                shouldRender = false
+                // Force lightmap refresh so boost is removed
+                client.gameRenderer.lightmapTextureManager.update(0f)
+            }
             return
         }
 
@@ -51,7 +55,14 @@ object DarkvisionRenderer {
         val skyLight = world.getLightLevel(LightType.SKY, pos)
         val lightLevel = maxOf(blockLight, skyLight)
 
+        currentLightLevel = lightLevel
+
         // Shader only needed when not in full bright light
-        shouldRender = lightLevel < 15
+        val newShouldRender = lightLevel < 15
+        if (newShouldRender != shouldRender) {
+            shouldRender = newShouldRender
+            // Force lightmap refresh when state changes
+            client.gameRenderer.lightmapTextureManager.update(0f)
+        }
     }
 }
