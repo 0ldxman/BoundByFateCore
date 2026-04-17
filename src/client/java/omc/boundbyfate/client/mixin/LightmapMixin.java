@@ -15,20 +15,19 @@ import omc.boundbyfate.client.state.DarkvisionState;
  *   X axis = block light level (0-15) — torches, lava, glowstone, etc.
  *   Y axis = sky light level (0-15)   — sunlight, moonlight
  *
- * Darkvision rules:
- * - Darkness (effective light 0-7):
- *     → Brightness raised to ~50-70% (dim light appearance)
- *     → Color desaturated toward gray (darkness = grayscale)
- *     → BUT block light sources keep their color (torch stays orange, etc.)
- * - Dim light (effective light 8-14):
- *     → Brightness raised to ~80-100% (bright light appearance)
- *     → Color preserved (dim light = full color)
- * - Bright light (15): no modification
+ * Darkvision rules applied per lightmap texel:
  *
- * The "light source color preservation" trick:
- *   When block light is high (≥ 8), the pixel is near a light source.
- *   We reduce desaturation proportionally — light sources keep their warm color.
- *   This mimics the Pale Garden effect where light sources glow with color.
+ * Darkness (effective light 0-7):
+ *   → Brightness raised to ~65-80% (dim light appearance)
+ *   → Color fully desaturated to gray (no colors in darkness)
+ *   → Exception: high block light (torch/lava) keeps its warm color
+ *     because the light source itself is bright — it's not "dark"
+ *
+ * Dim light (8-14):
+ *   → Brightness raised to ~80-100% (bright light appearance)
+ *   → Color partially preserved, fading to full color at light=14
+ *
+ * Bright light (15): no modification
  */
 @Mixin(LightmapTextureManager.class)
 public class LightmapMixin {
@@ -56,30 +55,65 @@ public class LightmapMixin {
                     int effectiveLight = Math.max(blockLight, skyLight);
 
                     if (effectiveLight < 8) {
-                        // DARKNESS (0-7): raise brightness + desaturate
-                        // Target brightness: 0.65 at light=0, 0.80 at light=7
+                        // DARKNESS (0-7):
+                        // - Raise brightness to simulate dim light appearance
+                        // - Fully desaturate to gray (darkness = no color)
+                        // - Exception: if block light is the dominant source AND it's high,
+                        //   the texel is near a light source — preserve some color
+                        //   (a torch in darkness still glows orange)
+
                         float targetBrightness = 0.65f + (effectiveLight / 7.0f) * 0.15f;
 
-                        // Luminance of current pixel
                         float lum = (r * 0.2126f + g * 0.7152f + b * 0.0722f) / 255.0f;
 
-                        // How much to desaturate: fully gray at light=0, less at light=7
-                        // Block light source preservation: if blockLight is high, keep color
-                        float blockLightFactor = blockLight / 15.0f; // 0.0 = no block light, 1.0 = full
-                        float desatBase = 1.0f - (effectiveLight / 7.0f); // 1.0 at dark, 0.0 at light=7
-                        // Reduce desaturation near block light sources (torches keep their color)
-                        float desatAmount = desatBase * (1.0f - blockLightFactor * 0.8f);
+                        // Desaturation: fully gray in darkness
+                        // Only reduce desaturation if block light is the primary source
+                        // AND it's significantly brighter than sky light (actual light source nearby)
+                        float blockDominance = (blockLight > skyLight && blockLight >= 8)
+                            ? (blockLight - skyLight) / 15.0f
+                            : 0.0f;
+                        float desatAmount = 1.0f - blockDominance * 0.7f;
 
-                        // Compute target color: mix original with gray
-                        float targetLum = Math.max(lum, targetBrightness);
-                        float newR = lerp(r / 255.0f, targetLum, desatAmount);
-                        float newG = lerp(g / 255.0f, targetLum, desatAmount);
-                        float newB = lerp(b / 255.0f, targetLum, desatAmount);
+                        // Apply desaturation
+                        float newR = lerp(r / 255.0f, lum, desatAmount);
+                        float newG = lerp(g / 255.0f, lum, desatAmount);
+                        float newB = lerp(b / 255.0f, lum, desatAmount);
 
-                        // Boost brightness to target level
+                        // Boost brightness to target
+                        float currentLum = newR * 0.2126f + newG * 0.7152f + newB * 0.0722f;
+                        if (currentLum < targetBrightness) {
+                            float boost = (currentLum > 0.001f)
+                                ? targetBrightness / currentLum
+                                : targetBrightness / 0.001f;
+                            boost = Math.min(boost, 8.0f);
+                            newR = Math.min(newR * boost, 1.0f);
+                            newG = Math.min(newG * boost, 1.0f);
+                            newB = Math.min(newB * boost, 1.0f);
+                        }
+
+                        r = (int)(newR * 255);
+                        g = (int)(newG * 255);
+                        b = (int)(newB * 255);
+
+                    } else if (effectiveLight < 15) {
+                        // DIM LIGHT (8-14):
+                        // - Boost brightness toward bright-light level
+                        // - Partial desaturation: light=8 is slightly gray, light=14 is full color
+                        float t = (effectiveLight - 8) / 6.0f; // 0.0 at light=8, 1.0 at light=14
+                        float targetBrightness = 0.80f + t * 0.20f;
+
+                        // Slight desaturation at dim light, fading to full color
+                        float desatAmount = (1.0f - t) * 0.3f; // 0.3 at light=8, 0.0 at light=14
+
+                        float lum = (r * 0.2126f + g * 0.7152f + b * 0.0722f) / 255.0f;
+
+                        float newR = lerp(r / 255.0f, lum, desatAmount);
+                        float newG = lerp(g / 255.0f, lum, desatAmount);
+                        float newB = lerp(b / 255.0f, lum, desatAmount);
+
                         float currentLum = newR * 0.2126f + newG * 0.7152f + newB * 0.0722f;
                         if (currentLum < targetBrightness && currentLum > 0.001f) {
-                            float boost = targetBrightness / currentLum;
+                            float boost = Math.min(targetBrightness / currentLum, 4.0f);
                             newR = Math.min(newR * boost, 1.0f);
                             newG = Math.min(newG * boost, 1.0f);
                             newB = Math.min(newB * boost, 1.0f);
@@ -92,25 +126,6 @@ public class LightmapMixin {
                         r = (int)(newR * 255);
                         g = (int)(newG * 255);
                         b = (int)(newB * 255);
-
-                    } else if (effectiveLight < 15) {
-                        // DIM LIGHT (8-14): boost to bright-light level, keep color
-                        // Target brightness: 0.8 at light=8, 1.0 at light=14
-                        float t = (effectiveLight - 8) / 6.0f;
-                        float targetBrightness = 0.8f + t * 0.2f;
-
-                        float lum = (r * 0.2126f + g * 0.7152f + b * 0.0722f) / 255.0f;
-                        if (lum < targetBrightness && lum > 0.001f) {
-                            float boost = targetBrightness / lum;
-                            boost = Math.min(boost, 4.0f);
-                            r = Math.min((int)(r * boost), 255);
-                            g = Math.min((int)(g * boost), 255);
-                            b = Math.min((int)(b * boost), 255);
-                        } else if (lum < targetBrightness) {
-                            r = (int)(targetBrightness * 255);
-                            g = (int)(targetBrightness * 255);
-                            b = (int)(targetBrightness * 255);
-                        }
                     }
                     // effectiveLight == 15: bright light, no modification
 
