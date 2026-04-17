@@ -192,6 +192,7 @@ object ClientPacketHandler {
                 val hp = buf.readFloat()
                 val maxHp = buf.readFloat()
                 val speed = buf.readFloat()
+                val scale = buf.readFloat()
                 val experience = buf.readInt()
                 val alignment = buf.readString()
                 val featureCount = buf.readInt()
@@ -205,7 +206,7 @@ object ClientPacketHandler {
                     classData = classData, raceData = raceData,
                     level = level, experience = experience,
                     gender = gender, alignment = alignment,
-                    currentHp = hp, maxHp = maxHp, speed = speed,
+                    currentHp = hp, maxHp = maxHp, speed = speed, scale = scale,
                     isOnline = true, grantedFeatures = features,
                     vitality = vitality, scarCount = scarCount
                 )

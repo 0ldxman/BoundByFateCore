@@ -64,9 +64,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         "Lawful Neutral","True Neutral","Chaotic Neutral",
         "Lawful Evil","Neutral Evil","Chaotic Evil")
 
-    // ── speed (editable, stored as ft) ───────────────────────────────────────
-    private var speedFt: Int = (snapshot.speed * 200).toInt().let { if (it == 0) 30 else it }
-    private var sizeFactor: Float = 1.0f
+    // ── speed and scale (editable, speed in ft) ──────────────────────────────
+    // speed: Minecraft base speed 0.1 = 30ft, formula: speed * 300 = ft
+    private var speedFt: Int = (snapshot.speed * 300).toInt().let { if (it < 5) 30 else it }
+    private var sizeFactor: Float = snapshot.scale.let { if (it <= 0f) 1.0f else it }
 
     override fun init() { /* layout is dynamic */ }
 
@@ -220,11 +221,18 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val changeBtnY = featY - changeBtnH - 2
         if (player != null && modelAreaH > 20) {
             val modelCx = rightX + rightW / 2
-            // Raise model above the button with a small gap
             val modelY = changeBtnY - 6
             InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, "§7Change Skin") { openSkinPicker() }
+        // Show pending skin name above the button if changed
+        if (pendingSkinName != null) {
+            val skinLabelY = changeBtnY - 11
+            val skinLabel = "§e→ $pendingSkinName"
+            val skinLabelW = (textRenderer.getWidth(skinLabel) * 0.55f).toInt()
+            lbl(context, skinLabel, rightX + rightW / 2 - skinLabelW / 2, skinLabelY, 0.55f, 0xFFD700)
+        }
+        val btnLabel = if (pendingSkinName != null) "§eSkin: $pendingSkinName" else "§7Change Skin"
+        btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, btnLabel) { openSkinPicker() }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)

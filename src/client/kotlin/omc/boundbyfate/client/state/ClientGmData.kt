@@ -19,6 +19,7 @@ data class GmPlayerSnapshot(
     val currentHp: Float,
     val maxHp: Float,
     val speed: Float = 0.1f,
+    val scale: Float = 1.0f,
     val isOnline: Boolean,
     val grantedFeatures: List<Identifier> = emptyList(),
     val vitality: Int = 5,

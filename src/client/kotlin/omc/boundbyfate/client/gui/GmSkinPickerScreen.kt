@@ -35,10 +35,10 @@ class GmSkinPickerScreen(
     private var editingSearch = true
 
     // Card layout
-    private val CARD_W = 80
-    private val CARD_H = 100
-    private val CARD_PAD = 8
-    private val COLS = 3
+    private val CARD_W = 52
+    private val CARD_H = 72
+    private val CARD_PAD = 6
+    private val COLS = 4
     private val HEADER_H = 38  // title + search
     private val PANEL_MARGIN = 20
 
@@ -121,10 +121,10 @@ class GmSkinPickerScreen(
             // Skin preview (front + back side by side, scaled up 4x)
             val texId = ClientGmRegistry.skinTextures[skinName]
             if (texId != null) {
-                val scale = 4
-                val previewY = cy + 6
-                val frontX = cx + 6
-                val backX = cx + CARD_W / 2 + 2
+                val scale = 2  // 2px per skin pixel — fits in smaller card
+                val previewY = cy + 4
+                val frontX = cx + 3
+                val backX = cx + CARD_W / 2 + 1
 
                 // Front view
                 drawSkinView(context, texId, frontX, previewY, scale, false)

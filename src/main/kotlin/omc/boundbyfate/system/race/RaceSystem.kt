@@ -233,8 +233,7 @@ object RaceSystem {
     /**
      * Public: directly set player scale (used by GM override, not tied to race).
      */
-    fun applyScaleDirect(player: ServerPlayerEntity, scale: Float) {
-        try {
+    fun applyScaleDirect(player: ServerPlayerEntity, scale: Float) {        try {
             val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
             val baseField = pehkuiClass.getField("BASE")
             val scaleType = baseField.get(null)
@@ -265,6 +264,26 @@ object RaceSystem {
             logger.info("Applied scale $scale to $name via scale commands")
         } catch (e: Exception) {
             logger.warn("Scale command fallback also failed: ${e.message}")
+        }
+    }
+
+    /**
+     * Public: read current Pehkui scale for a player (for GM display). Returns 1.0 if unavailable.
+     */
+    fun getScaleDirect(player: ServerPlayerEntity): Float {
+        return try {
+            val pehkuiClass = Class.forName("virtuoel.pehkui.api.ScaleTypes")
+            val baseField = pehkuiClass.getField("BASE")
+            val scaleType = baseField.get(null)
+            val getMethod = scaleType.javaClass.methods.firstOrNull { it.name == "get" && it.parameterCount == 1 }
+                ?: return 1.0f
+            val scaleData = getMethod.invoke(scaleType, player)
+            val getScaleMethod = scaleData.javaClass.methods.firstOrNull {
+                it.name == "getScale" && it.parameterCount == 0
+            } ?: return 1.0f
+            (getScaleMethod.invoke(scaleData) as? Float) ?: 1.0f
+        } catch (e: Exception) {
+            1.0f
         }
     }
 

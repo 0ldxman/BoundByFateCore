@@ -685,9 +685,13 @@ object ServerPacketHandler {
             buf.writeFloat(player.health)
             buf.writeFloat(player.maxHealth)
 
-            // Speed (movement speed attribute)
+            // Speed (movement speed attribute) — stored as ft (30ft = 0.1 base)
             val speedAttr = player.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
             buf.writeFloat(speedAttr.toFloat())
+
+            // Scale via Pehkui (read current scale, default 1.0)
+            val scale = omc.boundbyfate.system.race.RaceSystem.getScaleDirect(player)
+            buf.writeFloat(scale)
 
             // Experience
             buf.writeInt(player.totalExperience)
