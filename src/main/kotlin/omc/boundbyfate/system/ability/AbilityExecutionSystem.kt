@@ -5,38 +5,22 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.Box
 import net.minecraft.util.math.Vec3d
-import omc.boundbyfate.api.ability.AbilityContext
 import omc.boundbyfate.api.ability.AbilityDefinition
 import omc.boundbyfate.api.ability.AbilityPhase
 import omc.boundbyfate.api.ability.component.MetadataComponent
 import omc.boundbyfate.api.ability.component.ScalingComponent
 import omc.boundbyfate.api.ability.component.TargetingComponent
-import omc.boundbyfate.registry.BbfAttachments
+import omc.boundbyfate.api.effect.BbfEffectContext
 import omc.boundbyfate.network.ServerPacketHandler
+import omc.boundbyfate.registry.BbfAttachments
 import org.slf4j.LoggerFactory
 
 /**
- * Система выполнения способностей.
- * 
- * Управляет фазовым выполнением способностей:
- * 1. PREPARATION - подготовка (проверка условий, вычисление целей)
- * 2. CAST - каст (визуальные эффекты, звуки, создание проджектайлов)
- * 3. APPLICATION - применение (урон, исцеление, статусные эффекты)
- * 4. POST_APPLICATION - пост-обработка (концентрация, дополнительные эффекты)
+ * Executes abilities using BbfEffectContext.
  */
 object AbilityExecutionSystem {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
-    
-    /**
-     * Выполняет способность.
-     * 
-     * @param caster Кастер способности
-     * @param ability Определение способности
-     * @param target Первичная цель (опционально)
-     * @param targetPos Позиция цели (опционально)
-     * @param upcastLevel Уровень апкаста (опционально)
-     * @return true если способность успешно выполнена
-     */
+
     fun execute(
         caster: LivingEntity,
         ability: AbilityDefinition,
@@ -44,70 +28,48 @@ object AbilityExecutionSystem {
         targetPos: Vec3d? = null,
         upcastLevel: Int? = null
     ): Boolean {
-        if (caster.world !is ServerWorld) {
-            logger.error("Cannot execute ability on client side")
-            return false
-        }
-        
+        if (caster.world !is ServerWorld) return false
         val world = caster.world as ServerWorld
-        
-        // Получаем статы кастера
+
         val casterStats = caster.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
         val casterLevel = if (caster is ServerPlayerEntity) {
             caster.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level ?: 1
-        } else {
-            1
-        }
-        
-        // Разрешаем цели
+        } else 1
+
         val targets = resolveTargets(caster, ability.targeting, target, targetPos, world)
-        
-        // Создаём базовый контекст
-        var context = AbilityContext(
-            caster = caster,
+
+        val context = BbfEffectContext(
+            source = caster,
             targets = targets,
             targetPos = targetPos,
             world = world,
-            abilityId = ability.id,
-            phase = AbilityPhase.PREPARATION,
-            upcastLevel = upcastLevel,
-            casterLevel = casterLevel,
-            casterStats = casterStats
+            sourceId = ability.id,
+            sourceLevel = casterLevel,
+            sourceStats = casterStats,
+            upcastLevel = upcastLevel
         )
-        
-        // Применяем масштабирование
-        context = applyScaling(context, ability)
-        
-        // Выполняем спасброски (если нужны)
-        context = performSavingThrows(context, ability)
-        
-        // Выполняем все 4 фазы
+
+        applyScaling(context, ability)
+        performSavingThrows(context, ability)
+
+        // Execute all phases
         for (phase in AbilityPhase.entries) {
-            context = context.copy(phase = phase)
-            
             if (!ability.executePhase(context)) {
                 logger.debug("Ability ${ability.id} failed at phase $phase")
                 return false
             }
         }
-        
-        // Обрабатываем концентрацию
+
         handleConcentration(caster, ability)
-        
-        // Broadcast для визуальных эффектов
+
         if (caster is ServerPlayerEntity) {
             ServerPacketHandler.broadcastAbilityCast(caster, ability.id, world)
         }
-        
-        logger.debug("${caster.name?.string ?: "Entity"} executed ${ability.id}")
+
+        logger.debug("${caster.name?.string} executed ${ability.id}")
         return true
     }
-    
-    // ═══ PRIVATE HELPERS ═══
-    
-    /**
-     * Разрешает цели на основе компонента таргетинга.
-     */
+
     private fun resolveTargets(
         caster: LivingEntity,
         targeting: TargetingComponent,
@@ -116,124 +78,55 @@ object AbilityExecutionSystem {
         world: ServerWorld
     ): List<LivingEntity> {
         return when (targeting) {
-            is TargetingComponent.Self -> {
-                listOf(caster)
-            }
-            
-            is TargetingComponent.SingleTarget -> {
-                if (primaryTarget != null) {
-                    listOf(primaryTarget)
-                } else {
-                    emptyList()
-                }
-            }
-            
-            is TargetingComponent.Projectile -> {
-                // Проджектайлы разрешают цели при попадании
-                // Здесь возвращаем пустой список, цели будут добавлены позже
-                emptyList()
-            }
-            
+            is TargetingComponent.Self -> listOf(caster)
+            is TargetingComponent.SingleTarget -> if (primaryTarget != null) listOf(primaryTarget) else emptyList()
+            is TargetingComponent.Projectile -> emptyList()
             is TargetingComponent.Area -> {
-                if (targetPos == null) {
-                    emptyList()
-                } else {
-                    val box = Box.of(targetPos, targeting.radius.toDouble() * 2, targeting.radius.toDouble() * 2, targeting.radius.toDouble() * 2)
-                    world.getEntitiesByClass(LivingEntity::class.java, box) { entity ->
-                        entity != caster && entity.pos.distanceTo(targetPos) <= targeting.radius
-                    }
+                if (targetPos == null) emptyList()
+                else {
+                    val r = targeting.radius.toDouble()
+                    val box = Box.of(targetPos, r * 2, r * 2, r * 2)
+                    world.getEntitiesByClass(LivingEntity::class.java, box) { it != caster && it.pos.distanceTo(targetPos) <= targeting.radius }
                 }
             }
-            
-            is TargetingComponent.Zone -> {
-                // Зоны создают persistent entity, цели разрешаются каждый тик
-                emptyList()
-            }
+            is TargetingComponent.Zone -> emptyList()
         }
     }
-    
-    /**
-     * Применяет масштабирование к контексту.
-     */
-    private fun applyScaling(context: AbilityContext, ability: AbilityDefinition): AbilityContext {
-        var modifiedContext = context
-        
+
+    private fun applyScaling(context: BbfEffectContext, ability: AbilityDefinition) {
         for (scaling in ability.scaling) {
             when (scaling) {
                 is ScalingComponent.Upcast -> {
-                    val upcastLevel = context.upcastLevel
-                    if (upcastLevel != null) {
-                        val baseLevel = ability.getMetadata<MetadataComponent.Spell>()?.level ?: 1
-                        val levelsAboveBase = upcastLevel - baseLevel
-                        
-                        if (levelsAboveBase > 0) {
-                            // Сохраняем информацию о масштабировании в data
-                            modifiedContext.data["upcast_levels"] = levelsAboveBase
-                            modifiedContext.data["upcast_dice_per_level"] = scaling.dicePerLevel
-                            modifiedContext.data["upcast_targets_per_level"] = scaling.targetsPerLevel
-                            modifiedContext.data["upcast_radius_per_level"] = scaling.radiusPerLevel
-                        }
+                    val upcastLevel = context.upcastLevel ?: continue
+                    val baseLevel = ability.getMetadata<MetadataComponent.Spell>()?.level ?: 1
+                    val levelsAbove = upcastLevel - baseLevel
+                    if (levelsAbove > 0) {
+                        context.putExtra("upcast_levels", levelsAbove)
+                        context.putExtra("upcast_dice_per_level", scaling.dicePerLevel)
                     }
                 }
-                
                 is ScalingComponent.CharacterLevel -> {
-                    val level = context.casterLevel
                     var tier = 0
-                    for (threshold in scaling.scaleAt) {
-                        if (level >= threshold) tier++
-                    }
-                    
-                    val scalingValue = tier * scaling.dicePerTier
-                    modifiedContext.data["character_level_scaling"] = scalingValue
+                    for (threshold in scaling.scaleAt) { if (context.sourceLevel >= threshold) tier++ }
+                    context.putExtra("character_level_scaling", tier * scaling.dicePerTier)
                 }
             }
         }
-        
-        return modifiedContext
     }
-    
-    /**
-     * Выполняет спасброски для всех целей.
-     */
-    private fun performSavingThrows(context: AbilityContext, ability: AbilityDefinition): AbilityContext {
-        val savingThrow = ability.getMetadata<MetadataComponent.SavingThrow>()
-            ?: return context
-        
-        val dc = SavingThrowSystem.calculateSpellSaveDC(context.caster, context.casterStats)
-        val results = mutableMapOf<java.util.UUID, Boolean>()
-        
+
+    private fun performSavingThrows(context: BbfEffectContext, ability: AbilityDefinition) {
+        val savingThrow = ability.getMetadata<MetadataComponent.SavingThrow>() ?: return
+        val dc = SavingThrowSystem.calculateSpellSaveDC(context.source, context.sourceStats)
         for (target in context.targets) {
             val success = SavingThrowSystem.makeSave(target, savingThrow.ability, dc)
-            results[target.uuid] = success
+            context.putExtra("save_${target.uuid}", success)
         }
-        
-        return context.copy(savingThrowResults = results)
     }
-    
-    /**
-     * Обрабатывает концентрацию для заклинаний.
-     */
+
     private fun handleConcentration(caster: LivingEntity, ability: AbilityDefinition) {
         val spell = ability.getMetadata<MetadataComponent.Spell>() ?: return
-        
         if (spell.concentration && caster is ServerPlayerEntity) {
             ConcentrationSystem.startConcentration(caster, ability.id)
         }
-    }
-    
-    /**
-     * Вычисляет расстояние от точки до отрезка.
-     */
-    private fun distanceToLineSegment(point: Vec3d, lineStart: Vec3d, lineEnd: Vec3d): Double {
-        val lineVec = lineEnd.subtract(lineStart)
-        val pointVec = point.subtract(lineStart)
-        
-        val lineLength = lineVec.length()
-        if (lineLength == 0.0) return point.distanceTo(lineStart)
-        
-        val t = (pointVec.dotProduct(lineVec) / (lineLength * lineLength)).coerceIn(0.0, 1.0)
-        val projection = lineStart.add(lineVec.multiply(t))
-        
-        return point.distanceTo(projection)
     }
 }

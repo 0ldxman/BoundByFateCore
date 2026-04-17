@@ -9,6 +9,35 @@ import java.io.InputStream
 
 /**
  * Parses FeatureDefinition and BbfStatusEffectDefinition from JSON.
+ *
+ * Feature JSON format:
+ * ```json
+ * {
+ *   "displayName": "Тёмное зрение",
+ *   "description": "...",
+ *   "effects": [ { "type": "boundbyfate-core:add_darkvision", "range": 60 } ]
+ * }
+ * ```
+ *
+ * Triggered feature:
+ * ```json
+ * {
+ *   "displayName": "Жестокая критика",
+ *   "trigger": { "event": "on_critical_hit" },
+ *   "effects": [ { "type": "boundbyfate-core:damage", "diceCount": 1, "diceType": "D6" } ]
+ * }
+ * ```
+ *
+ * Feature granting abilities:
+ * ```json
+ * {
+ *   "displayName": "Дьявольское наследие",
+ *   "grantsAbilities": [
+ *     { "ability": "boundbyfate-core:hellish_rebuke", "minLevel": 3 },
+ *     { "ability": "boundbyfate-core:darkness", "minLevel": 5 }
+ *   ]
+ * }
+ * ```
  */
 object FeatureParser {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
@@ -22,22 +51,26 @@ object FeatureParser {
                 return null
             }
 
-            val type = json.get("type")?.asString?.let {
-                runCatching { FeatureType.valueOf(it.uppercase()) }.getOrElse { FeatureType.PASSIVE }
-            } ?: FeatureType.PASSIVE
+            // Trigger: null = always-on, object = event-based
+            val trigger = json.getAsJsonObject("trigger")?.let { triggerObj ->
+                val event = triggerObj.get("event")?.asString ?: run {
+                    logger.warn("Feature $id: trigger missing 'event', ignoring trigger")
+                    return@let null
+                }
+                val filter = mutableMapOf<String, String>()
+                triggerObj.getAsJsonObject("filter")?.entrySet()?.forEach { (k, v) ->
+                    filter[k] = v.asString
+                }
+                FeatureTrigger(event, filter)
+            }
 
-            val trigger = json.get("trigger")?.asString?.let {
-                runCatching { FeatureTrigger.valueOf(it.uppercase()) }.getOrElse { FeatureTrigger.PASSIVE }
-            } ?: FeatureTrigger.PASSIVE
-
-            val targeting = parseTargeting(json.getAsJsonObject("targeting"))
-            val targetFilter = json.get("targetFilter")?.asString?.let {
-                runCatching { TargetFilter.valueOf(it.uppercase()) }.getOrElse { TargetFilter.SELF_ONLY }
-            } ?: TargetFilter.SELF_ONLY
-
-            val cost = json.getAsJsonObject("cost")?.let { costObj ->
-                val resourceId = costObj.get("resource")?.asString?.let { Identifier(it) } ?: return@let null
-                ResourceCost(resourceId, costObj.get("amount")?.asInt ?: 1)
+            // grantsAbilities: list of { ability, minLevel }
+            val grantsAbilities = mutableListOf<AbilityGrant>()
+            json.getAsJsonArray("grantsAbilities")?.forEach { el ->
+                val obj = el as? JsonObject ?: return@forEach
+                val abilityId = obj.get("ability")?.asString?.let { Identifier(it) } ?: return@forEach
+                val minLevel = obj.get("minLevel")?.asInt ?: 0
+                grantsAbilities.add(AbilityGrant(abilityId, minLevel))
             }
 
             FeatureDefinition(
@@ -45,15 +78,9 @@ object FeatureParser {
                 displayName = displayName,
                 description = json.get("description")?.asString ?: "",
                 icon = json.get("icon")?.asString ?: "item:minecraft:nether_star",
-                type = type,
                 trigger = trigger,
-                targeting = targeting,
-                targetFilter = targetFilter,
-                range = json.get("range")?.asFloat ?: 0f,
-                cost = cost,
-                cooldownTicks = json.get("cooldown")?.asInt ?: 0,
-                conditions = parseConditions(json, id),
-                effects = parseEffects(json.getAsJsonArray("effects"), id)
+                effects = parseEffects(json.getAsJsonArray("effects"), id),
+                grantsAbilities = grantsAbilities
             )
         } catch (e: Exception) {
             logger.error("Failed to parse feature $id", e)
@@ -88,38 +115,13 @@ object FeatureParser {
         }
     }
 
-    private fun parseTargeting(obj: JsonObject?): TargetingMode {
-        if (obj == null) return TargetingMode.Self
-        return when (obj.get("type")?.asString?.lowercase()) {
-            "self" -> TargetingMode.Self
-            "single_target" -> TargetingMode.SingleTarget
-            "sphere" -> TargetingMode.Sphere(obj.get("radius")?.asFloat ?: 5f)
-            "targeted_sphere" -> TargetingMode.TargetedSphere(obj.get("radius")?.asFloat ?: 5f)
-            "cylinder" -> TargetingMode.Cylinder(obj.get("radius")?.asFloat ?: 3f, obj.get("height")?.asFloat ?: 3f)
-            "cone" -> TargetingMode.Cone(obj.get("length")?.asFloat ?: 5f, obj.get("angle")?.asFloat ?: 60f)
-            "line" -> TargetingMode.Line(obj.get("length")?.asFloat ?: 10f, obj.get("width")?.asFloat ?: 1f)
-            else -> TargetingMode.Self
-        }
-    }
-
-    private fun parseEffects(array: com.google.gson.JsonArray?, id: Identifier): List<FeatureEffectConfig> {
+    fun parseEffects(array: com.google.gson.JsonArray?, id: Identifier): List<FeatureEffectConfig> {
         if (array == null) return emptyList()
         return array.mapNotNull { el ->
             val obj = el as? JsonObject ?: return@mapNotNull null
             val typeStr = obj.get("type")?.asString ?: return@mapNotNull null
             val params = obj.deepCopy().asJsonObject.also { it.remove("type") }
             FeatureEffectConfig(Identifier(typeStr), params)
-        }
-    }
-
-    private fun parseConditions(json: JsonObject, id: Identifier): List<FeatureConditionConfig> {
-        val array = json.getAsJsonArray("conditions") ?: return emptyList()
-        return array.mapNotNull { el ->
-            val obj = el as? JsonObject ?: return@mapNotNull null
-            val typeStr = obj.get("type")?.asString ?: return@mapNotNull null
-            val negate = obj.get("negate")?.asBoolean ?: false
-            val params = obj.deepCopy().asJsonObject.also { it.remove("type"); it.remove("negate") }
-            FeatureConditionConfig(Identifier(typeStr), negate, params)
         }
     }
 }

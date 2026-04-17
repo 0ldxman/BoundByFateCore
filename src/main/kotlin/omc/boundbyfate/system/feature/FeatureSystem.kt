@@ -4,37 +4,36 @@ import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
-import omc.boundbyfate.api.feature.FeatureContext
-import omc.boundbyfate.api.feature.FeatureType
-import omc.boundbyfate.api.feature.TargetingMode
+import omc.boundbyfate.api.effect.BbfEffectContext
+import omc.boundbyfate.api.feature.FeatureEffectConfig
 import omc.boundbyfate.component.EntityFeatureData
 import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.registry.FeatureConditionRegistry
-import omc.boundbyfate.registry.FeatureEffectRegistry
+import omc.boundbyfate.registry.BbfEffectRegistry
 import omc.boundbyfate.registry.FeatureRegistry
-import omc.boundbyfate.system.resource.ResourceSystem
 import org.slf4j.LoggerFactory
 
 /**
- * Core system for executing features.
+ * Core system for Features (Особенности).
+ *
+ * Features are passive properties — they either apply on grant or fire
+ * automatically when a game event matches their trigger condition.
  *
  * Usage:
  * ```kotlin
- * // Grant a feature to a player
- * FeatureSystem.grantFeature(player, Identifier("boundbyfate-core", "second_wind"))
+ * // Grant a feature to a player (applies immediately if no trigger)
+ * FeatureSystem.grantFeature(player, Identifier("boundbyfate-core", "darkvision"))
  *
- * // Execute an active feature
- * FeatureSystem.execute(player, Identifier("boundbyfate-core", "second_wind"))
- *
- * // Apply a passive feature (called on grant)
- * FeatureSystem.applyPassive(player, Identifier("boundbyfate-core", "celestial_resistance"))
+ * // Fire an event — all matching triggered features will execute
+ * FeatureSystem.fireEvent(entity, "on_critical_hit", mapOf("damage" to 15f))
  * ```
  */
 object FeatureSystem {
     private val logger = LoggerFactory.getLogger("boundbyfate-core")
 
     /**
-     * Grants a feature to an entity and applies it if passive.
+     * Grants a feature to an entity.
+     * If the feature has no trigger (ALWAYS), its effects are applied immediately.
+     * If the feature grants abilities, those are also granted.
      */
     fun grantFeature(entity: LivingEntity, featureId: Identifier) {
         val definition = FeatureRegistry.getFeature(featureId) ?: run {
@@ -45,10 +44,20 @@ object FeatureSystem {
         val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, EntityFeatureData())
         entity.setAttached(BbfAttachments.ENTITY_FEATURES, data.withFeature(featureId))
 
-        // Apply passive features immediately
-        if (definition.type == FeatureType.PASSIVE) {
-            val context = buildContext(entity, featureId, emptyList(), null)
+        // Apply effects immediately for always-on features (no trigger)
+        if (!definition.isTriggered && definition.effects.isNotEmpty()) {
+            val context = buildContext(entity, featureId, listOf(entity), null)
             executeEffects(definition.effects, context)
+        }
+
+        // Grant abilities from this feature (level-gated)
+        if (definition.grantsAbilities.isNotEmpty()) {
+            val level = getEntityLevel(entity)
+            for (grant in definition.grantsAbilities) {
+                if (level >= grant.minLevel) {
+                    grantAbility(entity, grant.abilityId)
+                }
+            }
         }
 
         logger.debug("Granted feature $featureId to ${entity.name.string}")
@@ -63,118 +72,65 @@ object FeatureSystem {
     }
 
     /**
-     * Executes an active feature.
+     * Fires a game event. All triggered features on the entity whose trigger.event
+     * matches [eventId] and whose filters match [eventData] will execute.
      *
-     * @param caster The entity using the feature
-     * @param featureId The feature to execute
-     * @param explicitTarget Optional explicit target
-     * @param targetPos Optional target position (for AoE)
-     * @return true if the feature was executed successfully
+     * @param entity The entity whose features are checked
+     * @param eventId The event identifier (e.g. "on_critical_hit", "on_hit")
+     * @param eventData Key-value data from the event (e.g. "damage" -> 15f)
+     * @param target Optional target entity (e.g. the entity that was hit)
      */
-    fun execute(
-        caster: LivingEntity,
-        featureId: Identifier,
-        explicitTarget: LivingEntity? = null,
-        targetPos: Vec3d? = null
-    ): Boolean {
-        val definition = FeatureRegistry.getFeature(featureId) ?: run {
-            logger.warn("Unknown feature: $featureId")
-            return false
-        }
-
-        val world = caster.world as? net.minecraft.server.world.ServerWorld ?: return false
-
-        // Check cooldown
-        val featureData = caster.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, EntityFeatureData())
-        if (featureData.isOnCooldown(featureId)) {
-            logger.debug("Feature $featureId is on cooldown for ${caster.name.string}")
-            return false
-        }
-
-        // Resolve targets
-        val targets = TargetResolver.resolve(
-            caster = caster,
-            world = world,
-            mode = definition.targeting,
-            filter = definition.targetFilter,
-            range = definition.range,
-            explicitTarget = explicitTarget
-        )
-
-        // Build context
-        val context = buildContext(caster, featureId, targets, targetPos)
-
-        // Check conditions
-        for (conditionConfig in definition.conditions) {
-            val condition = FeatureConditionRegistry.create(conditionConfig.type, conditionConfig.params) ?: continue
-            val result = condition.check(context)
-            val passes = if (conditionConfig.negate) !result else result
-            if (!passes) {
-                logger.debug("Feature $featureId condition ${conditionConfig.type} failed for ${caster.name.string}")
-                return false
-            }
-        }
-
-        // Consume resource
-        if (definition.cost != null && caster is ServerPlayerEntity) {
-            if (!ResourceSystem.spend(caster, definition.cost.resourceId, definition.cost.amount)) {
-                logger.debug("Feature $featureId: insufficient resource ${definition.cost.resourceId}")
-                return false
-            }
-        }
-
-        // Execute effects
-        executeEffects(definition.effects, context)
-
-        // Apply cooldown
-        if (definition.cooldownTicks > 0) {
-            val updated = featureData.withCooldown(featureId, definition.cooldownTicks)
-            caster.setAttached(BbfAttachments.ENTITY_FEATURES, updated)
-        }
-
-        logger.debug("Executed feature $featureId for ${caster.name.string} on ${targets.size} targets")
-        return true
-    }
-
-    /**
-     * Fires trigger-based features (ON_HIT, ON_TAKE_DAMAGE, etc.)
-     */
-    fun fireTrigger(
+    fun fireEvent(
         entity: LivingEntity,
-        trigger: omc.boundbyfate.api.feature.FeatureTrigger,
-        target: LivingEntity? = null,
-        triggerData: Map<String, Any> = emptyMap()
+        eventId: String,
+        eventData: Map<String, Any> = emptyMap(),
+        target: LivingEntity? = null
     ) {
         val featureData = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
-        val world = entity.world as? net.minecraft.server.world.ServerWorld ?: return
 
         for (featureId in featureData.grantedFeatures) {
             val definition = FeatureRegistry.getFeature(featureId) ?: continue
-            if (definition.trigger != trigger) continue
+            val trigger = definition.trigger ?: continue
+            if (trigger.event != eventId) continue
+
+            // Check filters — all filter entries must match eventData
+            val filtersMatch = trigger.filter.all { (key, value) ->
+                eventData[key]?.toString() == value
+            }
+            if (!filtersMatch) continue
 
             val targets = if (target != null) listOf(target) else listOf(entity)
-            val context = buildContext(entity, featureId, targets, target?.pos, triggerData)
+            val context = buildContext(entity, featureId, targets, target?.pos, eventData)
+            executeEffects(definition.effects, context)
+        }
+    }
 
-            // Check conditions
-            val conditionsMet = definition.conditions.all { condConfig ->
-                val condition = FeatureConditionRegistry.create(condConfig.type, condConfig.params)
-                    ?: return@all true
-                val result = condition.check(context)
-                if (condConfig.negate) !result else result
-            }
+    /**
+     * Re-evaluates level-gated ability grants for a feature.
+     * Call this when a player levels up to grant newly unlocked abilities.
+     */
+    fun reapplyAbilityGrants(entity: LivingEntity) {
+        val featureData = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
+        val level = getEntityLevel(entity)
 
-            if (conditionsMet) {
-                executeEffects(definition.effects, context)
+        for (featureId in featureData.grantedFeatures) {
+            val definition = FeatureRegistry.getFeature(featureId) ?: continue
+            for (grant in definition.grantsAbilities) {
+                if (level >= grant.minLevel) {
+                    grantAbility(entity, grant.abilityId)
+                }
             }
         }
     }
 
+    // ── Private helpers ───────────────────────────────────────────────────────
+
     private fun executeEffects(
-        effectConfigs: List<omc.boundbyfate.api.feature.FeatureEffectConfig>,
-        context: FeatureContext
+        effectConfigs: List<FeatureEffectConfig>,
+        context: BbfEffectContext
     ) {
         for (config in effectConfigs) {
-            val effect = FeatureEffectRegistry.create(config.type, config.params) ?: run {
+            val effect = BbfEffectRegistry.create(config.type, config.params) ?: run {
                 logger.warn("Unknown effect type: ${config.type}")
                 continue
             }
@@ -185,27 +141,35 @@ object FeatureSystem {
     }
 
     private fun buildContext(
-        caster: LivingEntity,
+        source: LivingEntity,
         featureId: Identifier,
         targets: List<LivingEntity>,
         targetPos: Vec3d?,
-        triggerData: Map<String, Any> = emptyMap()
-    ): FeatureContext {
-        val world = caster.world as net.minecraft.server.world.ServerWorld
-        val statsData = caster.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
-        val level = if (caster is ServerPlayerEntity) {
-            caster.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level ?: 1
-        } else 1
+        eventData: Map<String, Any> = emptyMap()
+    ): BbfEffectContext {
+        val world = source.world as net.minecraft.server.world.ServerWorld
+        val statsData = source.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+        val level = getEntityLevel(source)
 
-        return FeatureContext(
-            caster = caster,
+        return BbfEffectContext(
+            source = source,
             targets = targets,
             targetPos = targetPos,
             world = world,
-            featureId = featureId,
-            casterLevel = level,
-            casterStats = statsData,
-            triggerData = triggerData
+            sourceId = featureId,
+            sourceLevel = level,
+            sourceStats = statsData,
+            eventData = eventData
         )
+    }
+
+    private fun getEntityLevel(entity: LivingEntity): Int {
+        if (entity !is ServerPlayerEntity) return 1
+        return entity.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level ?: 1
+    }
+
+    private fun grantAbility(entity: LivingEntity, abilityId: Identifier) {
+        // TODO: add to entity's ability hotbar/granted abilities when ability system is ready
+        logger.debug("Feature grants ability $abilityId to ${entity.name.string} (hotbar TODO)")
     }
 }

@@ -122,9 +122,15 @@ object FeatSystem {
             ProficiencySystem.addProficiency(player, profId)
         }
 
-        // Abilities are stubs
+        // Apply features (passive properties)
+        for (featureId in feat.grants.features) {
+            omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
+        }
+
+        // Apply abilities directly (active actions)
+        // TODO: add to player's ability hotbar when ability hotbar system is implemented
         for (abilityId in feat.grants.abilities) {
-            logger.debug("TODO: Apply ability $abilityId from feat $featId")
+            logger.debug("Granting ability $abilityId from feat $featId (hotbar TODO)")
         }
 
         logger.info("Applied feat '${feat.displayName}' to ${player.name.string}")

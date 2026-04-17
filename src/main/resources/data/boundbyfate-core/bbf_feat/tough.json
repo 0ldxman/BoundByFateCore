@@ -3,7 +3,7 @@
   "description": "+2 к максимальному HP за каждый уровень персонажа",
   "prerequisites": {},
   "grants": {
-    "abilities": [
+    "features": [
       "boundbyfate-core:tough_hp_bonus"
     ]
   }

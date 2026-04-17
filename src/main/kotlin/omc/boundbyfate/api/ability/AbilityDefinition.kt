@@ -74,7 +74,7 @@ data class AbilityDefinition(
      * @param context Контекст выполнения
      * @return true если все эффекты успешно выполнены
      */
-    fun executePhase(context: AbilityContext): Boolean {
+    fun executePhase(context: omc.boundbyfate.api.effect.BbfEffectContext): Boolean {
         var success = true
         for (effectEntry in effects) {
             if (!effectEntry.execute(context)) {

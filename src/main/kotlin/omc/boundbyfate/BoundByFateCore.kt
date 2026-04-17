@@ -127,21 +127,22 @@ object BoundByFateCore : ModInitializer {
 	}
 
 	private fun registerBuiltinFeatureEffects() {
-		val reg = omc.boundbyfate.registry.FeatureEffectRegistry
+		val reg = omc.boundbyfate.registry.BbfEffectRegistry
 		val id = { path: String -> net.minecraft.util.Identifier("boundbyfate-core", path) }
 
 		reg.register(id("heal")) { params ->
-			omc.boundbyfate.system.feature.effect.HealEffect(
+			omc.boundbyfate.system.effect.HealEffect(
 				diceCount = params.get("diceCount")?.asInt ?: 1,
 				diceType = omc.boundbyfate.api.dice.DiceType.valueOf(params.get("diceType")?.asString?.uppercase() ?: "D8"),
 				bonusStatId = params.get("bonusStat")?.asString?.let { net.minecraft.util.Identifier(it) },
 				bonusFlat = params.get("bonusFlat")?.asInt ?: 0,
-				bonusLevel = params.get("bonusLevel")?.asBoolean ?: false
+				bonusLevel = params.get("bonusLevel")?.asBoolean ?: false,
+				overhealAsTemp = params.get("overhealAsTemp")?.asBoolean ?: false
 			)
 		}
 
 		reg.register(id("damage")) { params ->
-			omc.boundbyfate.system.feature.effect.DamageEffect(
+			omc.boundbyfate.system.effect.DamageEffect(
 				diceCount = params.get("diceCount")?.asInt ?: 1,
 				diceType = omc.boundbyfate.api.dice.DiceType.valueOf(params.get("diceType")?.asString?.uppercase() ?: "D6"),
 				damageTypeId = params.get("damageType")?.asString?.let { net.minecraft.util.Identifier(it) }
@@ -153,7 +154,7 @@ object BoundByFateCore : ModInitializer {
 		}
 
 		reg.register(id("add_resistance")) { params ->
-			omc.boundbyfate.system.feature.effect.AddResistanceEffect(
+			omc.boundbyfate.system.effect.AddResistanceEffect(
 				damageTypeId = net.minecraft.util.Identifier(params.get("damageType")?.asString ?: "boundbyfate-core:force"),
 				level = params.get("level")?.asInt ?: -1,
 				sourceIdOverride = params.get("sourceId")?.asString?.let { net.minecraft.util.Identifier(it) }
@@ -161,14 +162,14 @@ object BoundByFateCore : ModInitializer {
 		}
 
 		reg.register(id("apply_status")) { params ->
-			omc.boundbyfate.system.feature.effect.ApplyStatusEffect(
+			omc.boundbyfate.system.effect.ApplyStatusEffect(
 				statusId = net.minecraft.util.Identifier(params.get("statusId")?.asString ?: ""),
 				durationOverride = params.get("durationOverride")?.asInt
 			)
 		}
 
 		reg.register(id("play_sound")) { params ->
-			omc.boundbyfate.system.feature.effect.PlaySoundEffect(
+			omc.boundbyfate.system.effect.PlaySoundEffect(
 				soundId = net.minecraft.util.Identifier(params.get("sound")?.asString ?: "minecraft:entity.player.levelup"),
 				volume = params.get("volume")?.asFloat ?: 1.0f,
 				pitch = params.get("pitch")?.asFloat ?: 1.0f
@@ -176,18 +177,18 @@ object BoundByFateCore : ModInitializer {
 		}
 
 		reg.register(id("spawn_particles")) { params ->
-			omc.boundbyfate.system.feature.effect.SpawnParticlesEffect(
+			omc.boundbyfate.system.effect.SpawnParticlesEffect(
 				particleId = net.minecraft.util.Identifier(params.get("particle")?.asString ?: "minecraft:heart"),
 				count = params.get("count")?.asInt ?: 10,
 				spread = params.get("spread")?.asFloat ?: 0.5f,
 				speed = params.get("speed")?.asFloat ?: 0.1f,
-				onCaster = params.get("onCaster")?.asBoolean ?: true,
+				onSource = params.get("onCaster")?.asBoolean ?: true,
 				onTargets = params.get("onTargets")?.asBoolean ?: false
 			)
 		}
 
 		reg.register(id("apply_minecraft_effect")) { params ->
-			omc.boundbyfate.system.feature.effect.ApplyMinecraftStatusEffect(
+			omc.boundbyfate.system.effect.ApplyMinecraftStatusEffect(
 				effectId = net.minecraft.util.Identifier(params.get("effect")?.asString ?: "minecraft:regeneration"),
 				duration = params.get("duration")?.asInt ?: 200,
 				amplifier = params.get("amplifier")?.asInt ?: 0,
@@ -197,13 +198,7 @@ object BoundByFateCore : ModInitializer {
 			)
 		}
 
-		reg.register(id("remove_minecraft_effect")) { params ->
-			omc.boundbyfate.system.feature.effect.RemoveMinecraftStatusEffect(
-				effectId = net.minecraft.util.Identifier(params.get("effect")?.asString ?: "minecraft:poison")
-			)
-		}
-
-		logger.info("Registered built-in feature effects")
+		logger.info("Registered built-in effects")
 	}
 
 	private fun registerBuiltinFeatureConditions() {
@@ -213,7 +208,7 @@ object BoundByFateCore : ModInitializer {
 		reg.register(id("has_status")) { params ->
 			val statusId = net.minecraft.util.Identifier(params.get("statusId")?.asString ?: "")
 			omc.boundbyfate.api.feature.FeatureCondition { ctx ->
-				ctx.caster.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
+				ctx.source.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
 					?.hasStatus(statusId) == true
 			}
 		}
@@ -221,7 +216,7 @@ object BoundByFateCore : ModInitializer {
 		reg.register(id("not_has_status")) { params ->
 			val statusId = net.minecraft.util.Identifier(params.get("statusId")?.asString ?: "")
 			omc.boundbyfate.api.feature.FeatureCondition { ctx ->
-				ctx.caster.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
+				ctx.source.getAttachedOrElse(omc.boundbyfate.registry.BbfAttachments.ENTITY_FEATURES, null)
 					?.hasStatus(statusId) != true
 			}
 		}
@@ -229,7 +224,7 @@ object BoundByFateCore : ModInitializer {
 		reg.register(id("health_below")) { params ->
 			val threshold = params.get("threshold")?.asFloat ?: 0.5f
 			omc.boundbyfate.api.feature.FeatureCondition { ctx ->
-				ctx.caster.health / ctx.caster.maxHealth < threshold
+				ctx.source.health / ctx.source.maxHealth < threshold
 			}
 		}
 
@@ -237,8 +232,8 @@ object BoundByFateCore : ModInitializer {
 			val resourceId = net.minecraft.util.Identifier(params.get("resource")?.asString ?: "")
 			val amount = params.get("amount")?.asInt ?: 1
 			omc.boundbyfate.api.feature.FeatureCondition { ctx ->
-				if (ctx.caster is net.minecraft.server.network.ServerPlayerEntity) {
-					omc.boundbyfate.system.resource.ResourceSystem.canSpend(ctx.caster, resourceId, amount)
+				if (ctx.source is net.minecraft.server.network.ServerPlayerEntity) {
+					omc.boundbyfate.system.resource.ResourceSystem.canSpend(ctx.source, resourceId, amount)
 				} else false
 			}
 		}
