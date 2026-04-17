@@ -6,18 +6,11 @@
   "statBonuses": {
     "boundbyfate-core:constitution": 2
   },
-  "senses": {
-    "darkvision": 60
-  },
-  "resistances": {
-    "boundbyfate-core:poison": -1
-  },
-  "proficiencies": [
-    "boundbyfate-core:save_constitution"
-  ],
   "features": [
+    "boundbyfate-core:darkvision_60",
+    "boundbyfate-core:dwarven_resilience",
     "boundbyfate-core:stonecunning",
-    "boundbyfate-core:dwarven_resilience"
+    "boundbyfate-core:save_proficiency_constitution"
   ],
   "subraces": [
     "boundbyfate-core:hill_dwarf",

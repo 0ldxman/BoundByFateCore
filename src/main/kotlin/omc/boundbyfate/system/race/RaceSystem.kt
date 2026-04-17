@@ -4,15 +4,11 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.race.RaceDefinition
 import omc.boundbyfate.api.race.SubraceDefinition
-import omc.boundbyfate.api.skill.ProficiencyLevel
-import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.PlayerRaceData
 import omc.boundbyfate.registry.BbfAttachments
 import omc.boundbyfate.registry.RaceRegistry
 import omc.boundbyfate.system.HitPointsSystem
 import omc.boundbyfate.system.charclass.ClassSystem
-import omc.boundbyfate.system.damage.DamageResistanceSystem
-import omc.boundbyfate.system.proficiency.ProficiencySystem
 import omc.boundbyfate.system.stat.StatEffectProcessor
 import org.slf4j.LoggerFactory
 
@@ -189,27 +185,8 @@ object RaceSystem {
             }
         }
 
-        // Resistances
-        for ((damageTypeId, level) in resolved.resistances) {
-            DamageResistanceSystem.addResistance(player, sourceId, damageTypeId, level)
-        }
-
-        // Skill proficiencies
-        if (resolved.proficiencies.isNotEmpty()) {
-            val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, EntitySkillData())
-            var updated = skillData
-            for (profId in resolved.proficiencies) {
-                updated = updated.withProficiency(profId, ProficiencyLevel.PROFICIENT)
-            }
-            player.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
-        }
-
-        // Item proficiencies
-        for (profId in resolved.itemProficiencies) {
-            ProficiencySystem.addProficiency(player, profId)
-        }
-
-        // Features (passive properties)
+        // Features — everything else (darkvision, resistances, proficiencies, etc.)
+        // is implemented as Features and applied via FeatureSystem
         for (featureId in resolved.features) {
             omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
         }

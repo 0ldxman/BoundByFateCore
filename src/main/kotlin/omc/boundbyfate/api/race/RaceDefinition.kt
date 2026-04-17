@@ -7,18 +7,15 @@ import net.minecraft.util.Identifier
  *
  * Loaded from data/<namespace>/bbf_race/<name>.json
  *
- * @property id Unique identifier (e.g. "boundbyfate-core:dwarf")
- * @property displayName Human-readable name
- * @property size Physical size category (affects scale and future mechanics)
- * @property scaleOverride Explicit Pehkui scale override (overrides size.scaleMultiplier)
- * @property speedFt Walking speed in D&D feet (30 = normal human speed)
- * @property statBonuses Flat bonuses added to base stats
- * @property senses Sensory capabilities
- * @property resistances Damage type resistance levels
- * @property proficiencies Skill/save proficiency IDs granted
- * @property itemProficiencies Weapon/armor/tool proficiency IDs granted
- * @property features Feature IDs granted (passive properties, triggered reactions)
- * @property subraces IDs of available subraces (empty = no subraces)
+ * A race provides exactly:
+ * - Stat bonuses (увеличение характеристик)
+ * - Size category (размер)
+ * - Scale override (размер модельки)
+ * - Walking speed in ft (скорость)
+ * - Features (особенности) — references to bbf_feature definitions
+ *
+ * Everything else (darkvision, resistances, proficiencies, etc.) is
+ * implemented as Features and referenced via the features list.
  */
 data class RaceDefinition(
     val id: Identifier,
@@ -27,10 +24,6 @@ data class RaceDefinition(
     val scaleOverride: Float? = null,
     val speedFt: Int = 30,
     val statBonuses: Map<Identifier, Int> = emptyMap(),
-    val senses: RaceSenses = RaceSenses(),
-    val resistances: Map<Identifier, Int> = emptyMap(),
-    val proficiencies: List<Identifier> = emptyList(),
-    val itemProficiencies: List<Identifier> = emptyList(),
     val features: List<Identifier> = emptyList(),
     val subraces: List<Identifier> = emptyList()
 ) {
