@@ -39,16 +39,18 @@ public class LightmapMixin {
         
         if (!hasDarkvision || image == null) return;
 
-        // Modify lightmap - boost brightness for low light levels
-        // Sample a few pixels to see what we're working with
-        int sample00 = image.getColor(0, 0);
-        int sample77 = image.getColor(7, 7);
-        int sample1515 = image.getColor(15, 15);
-        
-        LOGGER.info("[BBF Lightmap] MODIFYING at TAIL - samples: [0,0]={}, [7,7]={}, [15,15]={}", 
-            Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
+        // Sample a few pixels to see what we're working with (only log once per second)
+        if (System.currentTimeMillis() % 1000 < 20) {
+            int sample00 = image.getColor(0, 0);
+            int sample77 = image.getColor(7, 7);
+            int sample1515 = image.getColor(15, 15);
+            
+            LOGGER.info("[BBF Lightmap] Samples BEFORE: [0,0]={}, [7,7]={}, [15,15]={}", 
+                Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
+        }
 
         // Modify lightmap - boost brightness for low light levels
+        // We need to make DARK cells (0-7) look like BRIGHT cells (7-14 or 15)
         for (int skyLight = 0; skyLight < 16; skyLight++) {
             for (int blockLight = 0; blockLight < 16; blockLight++) {
                 int effectiveLight = Math.max(blockLight, skyLight);
@@ -65,15 +67,23 @@ public class LightmapMixin {
                         boostedLight = 15;
                     }
                     
-                    // Sample the color from the boosted light level
-                    int sampleX = Math.min(boostedLight, 15);
-                    int sampleY = Math.min(boostedLight, 15);
-                    int boostedColor = image.getColor(sampleX, sampleY);
+                    // Sample the color from the BRIGHT cell
+                    // Use boostedLight for BOTH coordinates to get the right brightness
+                    int boostedColor = image.getColor(boostedLight, boostedLight);
                     
-                    // Set the boosted color
+                    // Set the boosted color to the DARK cell
                     image.setColor(blockLight, skyLight, boostedColor);
                 }
             }
+        }
+        
+        // Log after modification
+        if (System.currentTimeMillis() % 1000 < 20) {
+            int sample00 = image.getColor(0, 0);
+            int sample77 = image.getColor(7, 7);
+            
+            LOGGER.info("[BBF Lightmap] Samples AFTER: [0,0]={}, [7,7]={}", 
+                Integer.toHexString(sample00), Integer.toHexString(sample77));
         }
     }
 }

@@ -22,6 +22,15 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
+    // DEBUG: Visualize PlayerLightLevel as color
+    // Red = low light, Green = high light
+    // TEMPORARY - remove this after debugging
+    if (PlayerLightLevel < 0.1) {
+        // Uniform not set or 0 - show as MAGENTA
+        fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+        return;
+    }
+    
     // DESATURATION based on PERCEIVED light level (after darkvision boost)
     // PlayerLightLevel is the light level AFTER darkvision boost:
     // - Real darkness (0-7) → perceived as dim (7-14)
