@@ -36,6 +36,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	modImplementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+
+	// Satin API for custom post-process shaders with mod namespace support
+	modImplementation("org.ladysnake:satin:1.14.0")
 }
 
 tasks.processResources {

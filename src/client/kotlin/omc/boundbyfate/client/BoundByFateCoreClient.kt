@@ -70,8 +70,8 @@ object BoundByFateCoreClient : ClientModInitializer {
             // Feature slot activation
             FeatureSlotManager.tick(client)
 
-            // Darkvision visual effect (handled by DarkvisionMixin shader)
-            // DarkvisionRenderer.tick(client) — removed, shader handles brightness
+            // Darkvision visual effect
+            omc.boundbyfate.client.render.DarkvisionRenderer.tick(client)
 
             // Open feature screen
             if (FeatureKeyBindings.openFeatureScreen.wasPressed()) {

@@ -5,9 +5,7 @@
 	"client": [
 		"ExampleClientMixin",
 		"ItemStackTooltipMixin",
-		"PlayerSkinMixin",
-		"DarkvisionMixin",
-		"PostEffectProcessorAccessor"
+		"PlayerSkinMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
