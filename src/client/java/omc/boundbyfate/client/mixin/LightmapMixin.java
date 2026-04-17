@@ -2,9 +2,9 @@ package omc.boundbyfate.client.mixin;
 
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -13,26 +13,40 @@ import omc.boundbyfate.client.state.DarkvisionState;
 /**
  * Boosts lightmap brightness for darkvision.
  *
- * Uses an @Accessor interface pattern to safely access the NativeImage field
- * without relying on field name strings (which break with remapping).
- *
  * Darkvision brightness rules:
  *   Light 0-7 (darkness): appears as light 7-14 (dim light range)
  *   Light 8-14 (dim):     appears as light 15 (full bright)
  *   Light 15:             unchanged
  */
 @Mixin(LightmapTextureManager.class)
-public abstract class LightmapMixin {
+public class LightmapMixin {
 
-    @Accessor("image")
-    protected abstract NativeImage bbf_getImage();
+    private static final Logger LOGGER = LoggerFactory.getLogger("bbf-lightmap");
+    private static int bbf_logCounter = 0;
 
     @Inject(method = "update", at = @At("RETURN"))
     private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
-        if (!DarkvisionState.INSTANCE.getHasDarkvision()) return;
+        boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
 
-        NativeImage image = bbf_getImage();
-        if (image == null) return;
+        // Log every 200 calls to confirm the mixin is firing
+        bbf_logCounter++;
+        if (bbf_logCounter % 200 == 0) {
+            LOGGER.info("[BBF Lightmap] update() called, hasDarkvision={}", hasDarkvision);
+        }
+
+        if (!hasDarkvision) return;
+
+        NativeImage image = ((LightmapTextureManagerAccessor)(Object)this).bbf_getImage();
+
+        if (image == null) {
+            LOGGER.warn("[BBF Lightmap] image is null!");
+            return;
+        }
+
+        // Log image dimensions once
+        if (bbf_logCounter % 200 == 1) {
+            LOGGER.info("[BBF Lightmap] image size: {}x{}", image.getWidth(), image.getHeight());
+        }
 
         for (int blockLight = 0; blockLight < 16; blockLight++) {
             for (int skyLight = 0; skyLight < 16; skyLight++) {
@@ -52,14 +66,12 @@ public abstract class LightmapMixin {
                 float fg = g / 255.0f;
                 float fb = b / 255.0f;
 
-                // Target brightness based on darkvision rules:
-                //   light 0 → target light 7  (0.467)
-                //   light 7 → target light 14 (0.933)
-                //   light 8 → target light 15 (1.0)
                 float targetBrightness;
                 if (effectiveLight < 8) {
+                    // Darkness: shift up by 7 levels
                     targetBrightness = (effectiveLight + 7.0f) / 15.0f;
                 } else {
+                    // Dim light: boost to full bright
                     targetBrightness = 1.0f;
                 }
 
@@ -67,7 +79,6 @@ public abstract class LightmapMixin {
 
                 if (lum < targetBrightness) {
                     if (lum < 0.001f) {
-                        // Pitch black: set to neutral gray at target brightness
                         fr = targetBrightness;
                         fg = targetBrightness;
                         fb = targetBrightness;

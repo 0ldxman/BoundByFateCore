@@ -6,7 +6,8 @@
 		"ExampleClientMixin",
 		"ItemStackTooltipMixin",
 		"PlayerSkinMixin",
-		"LightmapMixin"
+		"LightmapMixin",
+		"LightmapTextureManagerAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -65,7 +65,10 @@ object DarkvisionRenderer {
         // (shader handles range fade and desaturation)
         shouldRender = true
 
-        // Force lightmap to refresh every tick so our mixin boost is always applied
-        client.gameRenderer.lightmapTextureManager.update(0f)
+        // Force lightmap to refresh every tick so our mixin boost is always applied.
+        // We must set dirty=true first, otherwise update() returns early without doing anything.
+        val ltm = client.gameRenderer.lightmapTextureManager
+        (ltm as omc.boundbyfate.client.mixin.LightmapTextureManagerAccessor).bbf_setDirty(true)
+        ltm.update(0f)
     }
 }

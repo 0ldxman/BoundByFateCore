@@ -10,11 +10,7 @@ uniform float DarkvisionRange;
 uniform float NearPlane;
 uniform float FarPlane;
 
-// Block light level at the player's position (0-15).
-// We use BLOCK light (not sky light) because sky light raw value is always 15
-// even at night — Minecraft applies the time-of-day factor inside the lightmap.
-// Block light = 0 at night on surface or in unlit cave → fully gray
-// Block light = 15 near torches/lava → full color
+// Not used for desaturation anymore, kept for potential future use.
 uniform float PlayerLightLevel;
 
 in vec2 texCoord;
@@ -31,11 +27,18 @@ void main() {
     // Perceptual luminance (ITU-R BT.709)
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
 
-    // Desaturation based on block light level at player position:
-    //   block light 0-2  → fully gray (deep darkness / night surface)
-    //   block light 3-11 → smooth gradient
-    //   block light 12+  → full color (near torches/lava)
-    float colorAmount = smoothstep(2.0, 12.0, PlayerLightLevel);
+    // Desaturation based on pixel brightness (luminance):
+    // - Dark pixels = dark areas in the world = fully gray
+    // - Bright pixels = lit areas in the world = full color
+    //
+    // This is correct because the lightmap mixin already boosted dark areas
+    // to appear brighter, so luminance now reflects actual world lighting.
+    //
+    // Thresholds (after lightmap boost):
+    //   luminance < 0.30 → fully gray  (corresponds to ~light level 2-3)
+    //   luminance > 0.80 → full color  (corresponds to ~light level 12-13)
+    //   smooth gradient between them
+    float colorAmount = smoothstep(0.30, 0.80, luminance);
     vec3 grayscale = vec3(luminance);
     vec3 desaturated = mix(grayscale, color.rgb, colorAmount);
 
