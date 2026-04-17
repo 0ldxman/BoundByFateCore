@@ -47,26 +47,46 @@ public class LightmapMixin {
                     float newG = g / 255.0f;
                     float newB = b / 255.0f;
 
+                    // Darkvision brightness rules:
+                    // - Darkness (0-7): appears as dim light (target brightness = light 7-14 range)
+                    // - Dim light (8-14): appears as bright light (target brightness = 1.0)
+                    //
+                    // We set a minimum floor brightness so even pitch-black pixels get lit up.
+                    // The shader handles grayscale desaturation separately.
+
                     if (effectiveLight < 8) {
-                        // DARKNESS (0-7): boost brightness to dim-light level
-                        float targetBrightness = 0.65f + (effectiveLight / 7.0f) * 0.15f;
+                        // Map light 0→7, light 7→14 (shift up by 7)
+                        // targetBrightness: light 0 = 7/15 ≈ 0.47, light 7 = 14/15 ≈ 0.93
+                        float targetBrightness = (effectiveLight + 7.0f) / 15.0f;
                         float lum = newR * 0.2126f + newG * 0.7152f + newB * 0.0722f;
                         if (lum < targetBrightness) {
-                            float boost = (lum > 0.001f) ? Math.min(targetBrightness / lum, 8.0f) : 8.0f;
-                            newR = Math.min(newR * boost, 1.0f);
-                            newG = Math.min(newG * boost, 1.0f);
-                            newB = Math.min(newB * boost, 1.0f);
+                            if (lum < 0.001f) {
+                                // Pitch black: set to a neutral gray at target brightness
+                                newR = targetBrightness;
+                                newG = targetBrightness;
+                                newB = targetBrightness;
+                            } else {
+                                float boost = Math.min(targetBrightness / lum, 30.0f);
+                                newR = Math.min(newR * boost, 1.0f);
+                                newG = Math.min(newG * boost, 1.0f);
+                                newB = Math.min(newB * boost, 1.0f);
+                            }
                         }
                     } else if (effectiveLight < 15) {
-                        // DIM LIGHT (8-14): boost brightness to bright-light level
-                        float t = (effectiveLight - 8) / 6.0f;
-                        float targetBrightness = 0.80f + t * 0.20f;
+                        // Dim light (8-14): boost to full brightness
+                        float targetBrightness = 1.0f;
                         float lum = newR * 0.2126f + newG * 0.7152f + newB * 0.0722f;
-                        if (lum < targetBrightness && lum > 0.001f) {
-                            float boost = Math.min(targetBrightness / lum, 4.0f);
-                            newR = Math.min(newR * boost, 1.0f);
-                            newG = Math.min(newG * boost, 1.0f);
-                            newB = Math.min(newB * boost, 1.0f);
+                        if (lum < targetBrightness) {
+                            if (lum < 0.001f) {
+                                newR = targetBrightness;
+                                newG = targetBrightness;
+                                newB = targetBrightness;
+                            } else {
+                                float boost = Math.min(targetBrightness / lum, 10.0f);
+                                newR = Math.min(newR * boost, 1.0f);
+                                newG = Math.min(newG * boost, 1.0f);
+                                newB = Math.min(newB * boost, 1.0f);
+                            }
                         }
                     }
 

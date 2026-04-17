@@ -28,10 +28,11 @@ void main() {
     // - Dark pixels (low luminance) = dark in the world = fully gray
     // - Bright pixels (high luminance) = lit in the world = full color
     //
-    // Threshold: pixels below 0.35 luminance are fully gray
-    //            pixels above 0.65 luminance are fully colored
-    //            smooth transition between them
-    float colorAmount = smoothstep(0.20, 0.65, luminance);
+    // Wide smooth transition:
+    //   luminance < 0.05  → fully gray (light level ~0-2)
+    //   luminance > 0.85  → full color (light level ~12-15)
+    //   smooth gradient between them
+    float colorAmount = smoothstep(0.05, 0.85, luminance);
     vec3 grayscale = vec3(luminance);
     vec3 desaturated = mix(grayscale, color.rgb, colorAmount);
 
