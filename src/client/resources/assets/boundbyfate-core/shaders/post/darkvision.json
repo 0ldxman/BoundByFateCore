@@ -8,8 +8,9 @@
             "intarget": "minecraft:main",
             "outtarget": "swap",
             "uniforms": [
-                { "name": "DarkvisionThreshold", "values": [ 0.4 ] },
-                { "name": "DarkvisionStrength",  "values": [ 1.0 ] }
+                { "name": "DarkvisionThreshold",  "values": [ 0.4 ] },
+                { "name": "DarkvisionStrength",   "values": [ 1.0 ] },
+                { "name": "DarkvisionBrightness", "values": [ 4.0 ] }
             ]
         },
         {

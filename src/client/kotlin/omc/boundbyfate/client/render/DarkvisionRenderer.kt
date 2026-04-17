@@ -32,6 +32,7 @@ object DarkvisionRenderer {
     // Current shader parameters — updated each tick, used during render
     private var currentStrength = 0f
     private var currentThreshold = 0f
+    private var currentBrightness = 1f
     private var shouldRender = false
 
     fun register() {
@@ -40,6 +41,7 @@ object DarkvisionRenderer {
                 try {
                     shader.findUniform1f("DarkvisionThreshold")?.set(currentThreshold)
                     shader.findUniform1f("DarkvisionStrength")?.set(currentStrength)
+                    shader.findUniform1f("DarkvisionBrightness")?.set(currentBrightness)
                 } catch (e: Exception) { /* shader not yet loaded */ }
                 shader.render(tickDelta)
             }
@@ -68,12 +70,16 @@ object DarkvisionRenderer {
         shouldRender = true
 
         if (lightLevel <= 7) {
+            // Darkness: full grayscale + strong brightness boost
             currentStrength = 1.0f
-            currentThreshold = 0.4f
+            currentThreshold = 0.5f
+            currentBrightness = 4.0f
         } else {
-            val t = (lightLevel - 7) / 7.0f
+            // Dim light (8-14): partial effect, moderate brightness boost
+            val t = (lightLevel - 7) / 7.0f  // 0.0 at light=7, 1.0 at light=14
             currentStrength = 1.0f - t
-            currentThreshold = 0.4f * (1.0f - t)
+            currentThreshold = 0.5f * (1.0f - t)
+            currentBrightness = 1.0f + (3.0f * (1.0f - t))  // 4.0 at dark, 1.0 at bright
         }
     }
 }
