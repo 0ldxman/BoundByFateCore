@@ -6,44 +6,31 @@ import ladysnake.satin.api.managed.ShaderEffectManager
 import net.minecraft.client.MinecraftClient
 import net.minecraft.util.Identifier
 import omc.boundbyfate.client.state.DarkvisionState
-import org.slf4j.LoggerFactory
 
 /**
- * Darkvision post-process shader renderer.
+ * Darkvision renderer using gamma boost + desaturation shader.
  *
- * Uses exposure boost (like HDR/night vision camera) to pull detail out of shadows,
- * then applies grayscale desaturation to dark areas.
- *
- * This approach works because Minecraft DOES render geometry in dark areas,
- * it's just very dim. Exposure boost amplifies that dim signal.
+ * Gamma boost brightens dark areas (like vanilla night vision).
+ * Shader applies grayscale desaturation to dark pixels.
  */
 object DarkvisionRenderer {
 
-    private val LOGGER = LoggerFactory.getLogger("bbf-darkvision")
     private val SHADER_ID = Identifier("boundbyfate-core", "shaders/post/darkvision.json")
     private val shader: ManagedShaderEffect = ShaderEffectManager.getInstance().manage(SHADER_ID)
 
     var shouldRender = false
         private set
 
-    private var logCounter = 0
+    private var originalGamma: Double = 1.0
+    private var gammaModified = false
 
     fun register() {
-        LOGGER.info("Registering darkvision shader callback")
         ShaderEffectRenderCallback.EVENT.register { tickDelta ->
             if (shouldRender) {
                 try {
                     val rangeBlocks = DarkvisionState.rangeFt / 5.0f * 1.5f
                     shader.findUniform1f("DarkvisionRange")?.set(rangeBlocks)
-                    
-                    // Log every 100 renders
-                    logCounter++
-                    if (logCounter % 100 == 0) {
-                        LOGGER.info("Rendering darkvision shader (range: {} blocks)", rangeBlocks)
-                    }
-                } catch (e: Exception) {
-                    LOGGER.error("Error setting shader uniforms", e)
-                }
+                } catch (e: Exception) { /* shader not loaded */ }
                 shader.render(tickDelta)
             }
         }
@@ -53,20 +40,24 @@ object DarkvisionRenderer {
         val world = client.world
         val player = client.player
 
-        val hadDarkvision = shouldRender
-        
         if (world == null || player == null || !DarkvisionState.hasDarkvision) {
             shouldRender = false
-            if (hadDarkvision) {
-                LOGGER.info("Darkvision disabled (hasDarkvision={})", DarkvisionState.hasDarkvision)
+            // Restore original gamma
+            if (gammaModified) {
+                client.options.gamma.value = originalGamma
+                gammaModified = false
             }
             return
         }
 
-        // Always render shader when darkvision is active
-        if (!shouldRender) {
-            LOGGER.info("Darkvision enabled (rangeFt={})", DarkvisionState.rangeFt)
+        // Save original gamma and boost it
+        if (!gammaModified) {
+            originalGamma = client.options.gamma.value
+            client.options.gamma.value = 5.0 // Bright enough to see in darkness
+            gammaModified = true
         }
+
+        // Render desaturation shader
         shouldRender = true
     }
 }

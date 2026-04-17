@@ -21,35 +21,17 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // GAMMA ADJUSTMENT instead of exposure boost
-    // Gamma < 1.0 brightens dark areas while preserving contrast and detail
-    // This is how real night vision and low-light cameras work
+    // DESATURATION based on luminance
+    // Gamma boost (done via Minecraft gamma setting) brightens everything
+    // We just need to desaturate dark areas
     //
-    // Apply gamma only to dark/dim areas (luminance < 0.6)
-    // Bright areas (luminance >= 0.6) are left unchanged
+    // Dark pixels (low luminance even after gamma) = grayscale
+    // Bright pixels (high luminance) = full color
+    // Smooth transition between them
     
-    vec3 result;
-    
-    if (luminance < 0.6) {
-        // Apply gamma correction: output = input^(1/gamma)
-        // gamma = 0.4 gives strong brightening for dark areas
-        float gamma = 0.4;
-        vec3 brightened = pow(color.rgb, vec3(1.0 / gamma));
-        
-        // Recalculate luminance after gamma
-        float newLuminance = dot(brightened, vec3(0.2126, 0.7152, 0.0722));
-        
-        // DESATURATION based on original luminance (before gamma)
-        // Very dark (< 0.2): fully grayscale
-        // Dark-to-dim (0.2-0.6): smooth transition to color
-        float colorAmount = smoothstep(0.1, 0.6, luminance);
-        vec3 grayscale = vec3(newLuminance);
-        result = mix(grayscale, brightened, colorAmount);
-        
-    } else {
-        // Bright areas: no change
-        result = color.rgb;
-    }
+    float colorAmount = smoothstep(0.3, 0.8, luminance);
+    vec3 grayscale = vec3(luminance);
+    vec3 result = mix(grayscale, color.rgb, colorAmount);
     
     // Range fade based on depth
     float depth = texture(DiffuseDepthSampler, texCoord).r;
@@ -59,7 +41,7 @@ void main() {
         rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
     }
     
-    // Beyond range: fade back to original dark image
+    // Beyond range: fade back to original image
     result = mix(color.rgb, result, rangeFade);
     
     fragColor = vec4(result, color.a);
