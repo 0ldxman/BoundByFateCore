@@ -4,7 +4,6 @@ uniform sampler2D DiffuseSampler;
 uniform sampler2D DiffuseDepthSampler;
 
 // Maximum darkvision range in blocks (60ft ≈ 18 blocks).
-// Beyond this distance the darkvision effect fades out — darkness returns.
 uniform float DarkvisionRange;
 
 // Near and far clip planes for depth reconstruction.
@@ -14,7 +13,6 @@ uniform float FarPlane;
 in vec2 texCoord;
 out vec4 fragColor;
 
-// Reconstruct linear depth (distance from camera in blocks) from depth buffer.
 float linearDepth(float depth) {
     float z = depth * 2.0 - 1.0;
     return (2.0 * NearPlane * FarPlane) / (FarPlane + NearPlane - z * (FarPlane - NearPlane));
@@ -23,27 +21,30 @@ float linearDepth(float depth) {
 void main() {
     vec4 color = texture(DiffuseSampler, texCoord);
 
-    // Get distance from camera
-    float depth = texture(DiffuseDepthSampler, texCoord).r;
+    // Perceptual luminance (ITU-R BT.709)
+    float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
 
-    // depth == 1.0 means sky/infinity — don't fade sky
-    if (depth >= 0.9999) {
-        fragColor = color;
-        return;
+    // Desaturation based on pixel brightness:
+    // - Dark pixels (low luminance) = dark in the world = fully gray
+    // - Bright pixels (high luminance) = lit in the world = full color
+    //
+    // Threshold: pixels below 0.35 luminance are fully gray
+    //            pixels above 0.65 luminance are fully colored
+    //            smooth transition between them
+    float colorAmount = smoothstep(0.20, 0.65, luminance);
+    vec3 grayscale = vec3(luminance);
+    vec3 desaturated = mix(grayscale, color.rgb, colorAmount);
+
+    // Range fade: beyond darkvision range, darken back to normal darkness
+    float depth = texture(DiffuseDepthSampler, texCoord).r;
+    float rangeFade = 1.0;
+    if (depth < 0.9999) {
+        float dist = linearDepth(depth);
+        rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
     }
 
-    float dist = linearDepth(depth);
-
-    // Beyond darkvision range: fade back to normal darkness (no lightmap boost).
-    // The lightmap mixin already brightened everything — we need to darken it back
-    // for pixels beyond the range.
-    float rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
-
-    // Mix between the darkvision-boosted image and a darkened version
-    // rangeFade=1.0 → full darkvision (keep as-is from lightmap)
-    // rangeFade=0.0 → beyond range, darken back toward normal
-    vec3 darkened = color.rgb * 0.15; // approximate normal darkness
-    vec3 result = mix(darkened, color.rgb, rangeFade);
+    // Beyond range: fade back to original dark image
+    vec3 result = mix(color.rgb, desaturated, rangeFade);
 
     fragColor = vec4(result, color.a);
 }
