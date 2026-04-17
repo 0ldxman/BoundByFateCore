@@ -9,8 +9,7 @@
             "outtarget": "swap",
             "uniforms": [
                 { "name": "DarkvisionThreshold", "values": [ 0.5 ] },
-                { "name": "DarkvisionStrength",  "values": [ 1.0 ] },
-                { "name": "DarkvisionGamma",     "values": [ 0.3 ] }
+                { "name": "DarkvisionStrength",  "values": [ 1.0 ] }
             ]
         },
         {

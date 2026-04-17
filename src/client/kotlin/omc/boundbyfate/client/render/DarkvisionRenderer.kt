@@ -4,35 +4,35 @@ import ladysnake.satin.api.event.ShaderEffectRenderCallback
 import ladysnake.satin.api.managed.ManagedShaderEffect
 import ladysnake.satin.api.managed.ShaderEffectManager
 import net.minecraft.client.MinecraftClient
+import net.minecraft.entity.effect.StatusEffectInstance
+import net.minecraft.entity.effect.StatusEffects
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.LightType
 import omc.boundbyfate.client.state.DarkvisionState
 
 /**
- * Manages the darkvision post-process shader using Satin API.
+ * Manages the darkvision visual effect.
  *
- * Satin allows loading shaders from any mod namespace, fixing the
- * "Non [a-z0-9_.-] character in namespace" error from vanilla PostEffectProcessor.
- *
- * The shader is rendered via ShaderEffectRenderCallback — it fires after the world
- * is drawn but before the HUD. We only call render() when darkvision is active.
+ * Two-layer approach:
+ * 1. Night Vision status effect — applied client-side to make Minecraft render
+ *    the world brightly (this is how vanilla handles mob vision effects).
+ *    Refreshed every tick so it never expires.
+ * 2. Darkvision post-process shader — desaturates dark pixels to grayscale
+ *    while leaving bright pixels colorful.
  *
  * Light levels:
- *   0-7   = darkness  → full grayscale effect
- *   8-14  = dim light → partial effect (fades out)
+ *   0-7   = darkness  → Night Vision + full grayscale shader
+ *   8-14  = dim light → Night Vision + partial grayscale shader
  *   15    = bright    → no effect
  */
 object DarkvisionRenderer {
 
     private val SHADER_ID = Identifier("boundbyfate-core", "shaders/post/darkvision.json")
-
     private val shader: ManagedShaderEffect = ShaderEffectManager.getInstance().manage(SHADER_ID)
 
-    // Current shader parameters — updated each tick, used during render
     private var currentStrength = 0f
     private var currentThreshold = 0f
-    private var currentGamma = 1f
     private var shouldRender = false
 
     fun register() {
@@ -41,7 +41,6 @@ object DarkvisionRenderer {
                 try {
                     shader.findUniform1f("DarkvisionThreshold")?.set(currentThreshold)
                     shader.findUniform1f("DarkvisionStrength")?.set(currentStrength)
-                    shader.findUniform1f("DarkvisionGamma")?.set(currentGamma)
                 } catch (e: Exception) { /* shader not yet loaded */ }
                 shader.render(tickDelta)
             }
@@ -67,19 +66,27 @@ object DarkvisionRenderer {
             return
         }
 
+        // Apply Night Vision client-side to make Minecraft render the world brightly.
+        // Duration 30 ticks, refreshed every tick — effectively permanent while active.
+        // ambient=true, showParticles=false, showIcon=false — invisible to player.
+        val currentNV = player.getStatusEffect(StatusEffects.NIGHT_VISION)
+        if (currentNV == null || currentNV.duration < 10) {
+            player.addStatusEffect(
+                StatusEffectInstance(StatusEffects.NIGHT_VISION, 30, 0, true, false, false)
+            )
+        }
+
         shouldRender = true
 
         if (lightLevel <= 7) {
-            // Darkness: strong gamma boost + full grayscale
+            // Darkness: full grayscale — Night Vision shows the world, shader makes it gray
             currentStrength = 1.0f
             currentThreshold = 0.5f
-            currentGamma = 0.3f
         } else {
-            // Dim light (8-14): fade effect out as light increases
-            val t = (lightLevel - 7) / 7.0f  // 0.0 at light=7, 1.0 at light=14
+            // Dim light (8-14): partial grayscale, fade out as light increases
+            val t = (lightLevel - 7) / 7.0f
             currentStrength = 1.0f - t
             currentThreshold = 0.5f * (1.0f - t)
-            currentGamma = 0.3f + 0.7f * t  // 0.3 (dark) → 1.0 (bright, no boost)
         }
     }
 }
