@@ -10,13 +10,14 @@ import net.minecraft.util.Identifier
  * @property id Unique identifier (e.g. "boundbyfate-core:dwarf")
  * @property displayName Human-readable name
  * @property size Physical size category (affects scale and future mechanics)
+ * @property scaleOverride Explicit Pehkui scale override (overrides size.scaleMultiplier)
  * @property speedFt Walking speed in D&D feet (30 = normal human speed)
  * @property statBonuses Flat bonuses added to base stats
  * @property senses Sensory capabilities
- * @property resistances Damage type resistance levels (sourceId = race id)
+ * @property resistances Damage type resistance levels
  * @property proficiencies Skill/save proficiency IDs granted
  * @property itemProficiencies Weapon/armor/tool proficiency IDs granted
- * @property abilities Ability IDs granted (stubs for future ability system)
+ * @property features Feature IDs granted (passive properties, triggered reactions)
  * @property subraces IDs of available subraces (empty = no subraces)
  */
 data class RaceDefinition(
@@ -30,7 +31,7 @@ data class RaceDefinition(
     val resistances: Map<Identifier, Int> = emptyMap(),
     val proficiencies: List<Identifier> = emptyList(),
     val itemProficiencies: List<Identifier> = emptyList(),
-    val abilities: List<Identifier> = emptyList(),
+    val features: List<Identifier> = emptyList(),
     val subraces: List<Identifier> = emptyList()
 ) {
     init {

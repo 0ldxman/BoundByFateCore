@@ -22,18 +22,13 @@
         "boundbyfate-core:action_surge"
       ]
     },
-    "2": {
-      "abilities": [
-        "boundbyfate-core:action_surge"
-      ]
-    },
-    "5": {
-      "abilities": [
-        "boundbyfate-core:extra_attack"
-      ]
-    },
     "4": {
       "upgrade": true
+    },
+    "5": {
+      "features": [
+        "boundbyfate-core:extra_attack"
+      ]
     },
     "6": {
       "upgrade": true
@@ -47,12 +42,12 @@
       }
     },
     "11": {
-      "abilities": [
+      "features": [
         "boundbyfate-core:extra_attack_2"
       ]
     },
     "20": {
-      "abilities": [
+      "features": [
         "boundbyfate-core:extra_attack_3"
       ]
     }

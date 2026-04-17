@@ -74,6 +74,12 @@ object BbfClassParser {
             val hpPerLevel = json.get("hpPerLevel")?.asInt ?: (hitDie / 2 + 1)
             val subclassLevel = json.get("subclassLevel")?.asInt ?: 3
 
+            val mechanics = mutableListOf<Identifier>()
+            json.getAsJsonArray("mechanics")?.forEach { el ->
+                try { mechanics.add(Identifier(el.asString)) }
+                catch (e: Exception) { logger.warn("Class $id: invalid mechanic '${el.asString}'") }
+            }
+
             val progression = parseProgression(id, json.getAsJsonObject("progression"))
 
             ClassDefinition(
@@ -82,6 +88,7 @@ object BbfClassParser {
                 hitDie = hitDie,
                 hpPerLevel = hpPerLevel,
                 subclassLevel = subclassLevel,
+                mechanics = mechanics,
                 progression = progression
             )
         } catch (e: Exception) {
@@ -171,7 +178,17 @@ object BbfClassParser {
             }
         }
 
-        // Abilities: ["boundbyfate-core:second_wind"]
+        // Features: ["boundbyfate-core:extra_attack"] — passive properties
+        val features = mutableListOf<Identifier>()
+        obj.getAsJsonArray("features")?.forEach { element ->
+            try {
+                features.add(Identifier(element.asString))
+            } catch (e: Exception) {
+                logger.warn("$id level $level: invalid feature '${element.asString}'")
+            }
+        }
+
+        // Abilities: ["boundbyfate-core:second_wind"] — active actions
         val abilities = mutableListOf<Identifier>()
         obj.getAsJsonArray("abilities")?.forEach { element ->
             try {
@@ -194,6 +211,7 @@ object BbfClassParser {
         return LevelGrant(
             resources = resources,
             proficiencies = proficiencies,
+            features = features,
             abilities = abilities,
             itemProficiencies = itemProficiencies,
             upgrade = obj.get("upgrade")?.asBoolean ?: false

@@ -66,20 +66,33 @@ object RaceSystem {
         // Save race data
         player.setAttached(BbfAttachments.PLAYER_RACE, PlayerRaceData(raceId, subraceId))
 
-        // Apply race bonuses
-        applyRaceBonuses(player, raceDef, raceSourceId(raceId))
-
-        // Apply subrace bonuses
-        if (subraceDef != null) {
-            applyRaceBonuses(player, subraceDef, raceSourceId(subraceDef.id))
+        // Resolve effective race data — subrace overrides race fields
+        val resolved = if (subraceDef != null) {
+            subraceDef.resolve(raceDef)
+        } else {
+            omc.boundbyfate.api.race.ResolvedRaceData(
+                displayName = raceDef.displayName,
+                size = raceDef.size,
+                scaleOverride = raceDef.scaleOverride,
+                speedFt = raceDef.speedFt,
+                statBonuses = raceDef.statBonuses,
+                senses = raceDef.senses,
+                resistances = raceDef.resistances,
+                proficiencies = raceDef.proficiencies,
+                itemProficiencies = raceDef.itemProficiencies,
+                features = raceDef.features
+            )
         }
 
-        // Apply scale via Pehkui (if available) — scaleOverride takes priority over size
-        val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
+        // Apply resolved bonuses
+        applyResolvedBonuses(player, resolved, raceSourceId(raceId))
+
+        // Apply scale
+        val scale = resolved.scaleOverride ?: resolved.size.scaleMultiplier
         applyScale(player, scale)
 
-        // Apply speed: set base value directly in Minecraft units (30ft = 0.1)
-        applySpeedFt(player, raceDef.speedFt)
+        // Apply speed
+        applySpeedFt(player, resolved.speedFt)
 
         // Recalculate HP (CON may have changed)
         val classData = ClassSystem.getClassData(player)
@@ -95,19 +108,32 @@ object RaceSystem {
     fun reapplyOnJoin(player: ServerPlayerEntity) {
         val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null) ?: return
         val raceDef = RaceRegistry.getRace(raceData.raceId) ?: return
+        val subraceDef = raceData.subraceId?.let { RaceRegistry.getSubrace(it) }
 
-        val scale = raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
-        // Only apply scale on first join — Pehkui saves and restores it automatically on subsequent logins
+        val resolved = if (subraceDef != null) subraceDef.resolve(raceDef) else
+            omc.boundbyfate.api.race.ResolvedRaceData(
+                displayName = raceDef.displayName,
+                size = raceDef.size,
+                scaleOverride = raceDef.scaleOverride,
+                speedFt = raceDef.speedFt,
+                statBonuses = raceDef.statBonuses,
+                senses = raceDef.senses,
+                resistances = raceDef.resistances,
+                proficiencies = raceDef.proficiencies,
+                itemProficiencies = raceDef.itemProficiencies,
+                features = raceDef.features
+            )
+
+        val scale = resolved.scaleOverride ?: resolved.size.scaleMultiplier
         val scaleApplied = player.getAttachedOrElse(BbfAttachments.SCALE_APPLIED, false)
         if (!scaleApplied) {
             player.setAttached(BbfAttachments.SCALE_APPLIED, true)
             pendingScaleTasks[player.uuid] = Pair(player.server.ticks + 20, {
                 applyScale(player, scale)
-                applySpeedFt(player, raceDef.speedFt)
+                applySpeedFt(player, resolved.speedFt)
             })
         } else {
-            // Speed modifier still needs reapplication (not saved by Pehkui)
-            applySpeedFt(player, raceDef.speedFt)
+            applySpeedFt(player, resolved.speedFt)
         }
     }
 
@@ -144,41 +170,17 @@ object RaceSystem {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private fun applyRaceBonuses(
+    private fun applyResolvedBonuses(
         player: ServerPlayerEntity,
-        def: Any, // RaceDefinition or SubraceDefinition
+        resolved: omc.boundbyfate.api.race.ResolvedRaceData,
         sourceId: Identifier
     ) {
-        val statBonuses: Map<Identifier, Int>
-        val resistances: Map<Identifier, Int>
-        val proficiencies: List<Identifier>
-        val itemProficiencies: List<Identifier>
-        val abilities: List<Identifier>
-
-        when (def) {
-            is RaceDefinition -> {
-                statBonuses = def.statBonuses
-                resistances = def.resistances
-                proficiencies = def.proficiencies
-                itemProficiencies = def.itemProficiencies
-                abilities = def.abilities
-            }
-            is SubraceDefinition -> {
-                statBonuses = def.statBonuses
-                resistances = def.resistances
-                proficiencies = def.proficiencies
-                itemProficiencies = def.itemProficiencies
-                abilities = def.abilities
-            }
-            else -> return
-        }
-
         // Stat bonuses
-        if (statBonuses.isNotEmpty()) {
+        if (resolved.statBonuses.isNotEmpty()) {
             val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             if (statsData != null) {
                 var updated = statsData
-                for ((statId, bonus) in statBonuses) {
+                for ((statId, bonus) in resolved.statBonuses) {
                     val current = updated.getStatValue(statId).base
                     updated = updated.withBase(statId, current + bonus)
                 }
@@ -188,28 +190,28 @@ object RaceSystem {
         }
 
         // Resistances
-        for ((damageTypeId, level) in resistances) {
+        for ((damageTypeId, level) in resolved.resistances) {
             DamageResistanceSystem.addResistance(player, sourceId, damageTypeId, level)
         }
 
         // Skill proficiencies
-        if (proficiencies.isNotEmpty()) {
+        if (resolved.proficiencies.isNotEmpty()) {
             val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, EntitySkillData())
             var updated = skillData
-            for (profId in proficiencies) {
+            for (profId in resolved.proficiencies) {
                 updated = updated.withProficiency(profId, ProficiencyLevel.PROFICIENT)
             }
             player.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
         }
 
         // Item proficiencies
-        for (profId in itemProficiencies) {
+        for (profId in resolved.itemProficiencies) {
             ProficiencySystem.addProficiency(player, profId)
         }
 
-        // Abilities (stubs)
-        for (abilityId in abilities) {
-            logger.debug("TODO: Apply racial ability $abilityId")
+        // Features (passive properties)
+        for (featureId in resolved.features) {
+            omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
         }
     }
 
@@ -272,12 +274,14 @@ object RaceSystem {
      * Reads from RaceDefinition directly (most reliable) rather than Pehkui API.
      */
     fun getScaleDirect(player: ServerPlayerEntity): Float {
-        // Primary: read from race definition (this is what was applied)
         val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
         if (raceData != null) {
             val raceDef = RaceRegistry.getRace(raceData.raceId)
             if (raceDef != null) {
-                return raceDef.scaleOverride ?: raceDef.size.scaleMultiplier
+                val subraceDef = raceData.subraceId?.let { RaceRegistry.getSubrace(it) }
+                val scaleOverride = subraceDef?.scaleOverride ?: raceDef.scaleOverride
+                val size = subraceDef?.size ?: raceDef.size
+                return scaleOverride ?: size.scaleMultiplier
             }
         }
         // Fallback: try Pehkui API

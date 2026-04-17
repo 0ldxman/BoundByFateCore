@@ -13,29 +13,30 @@ import java.io.InputStream
 /**
  * Parses race and subrace definitions from JSON.
  *
- * Race format (data/<ns>/bbf_race/<name>.json):
+ * Race format:
  * ```json
  * {
  *   "displayName": "Дварф",
  *   "size": "MEDIUM",
+ *   "scaleOverride": 0.5,
  *   "speedFt": 25,
  *   "statBonuses": { "boundbyfate-core:constitution": 2 },
  *   "senses": { "darkvision": 60 },
  *   "resistances": { "boundbyfate-core:poison": -1 },
  *   "proficiencies": ["boundbyfate-core:save_constitution"],
  *   "itemProficiencies": ["boundbyfate-core:axes_weapon"],
- *   "abilities": ["boundbyfate-core:stonecunning"],
+ *   "features": ["boundbyfate-core:stonecunning", "boundbyfate-core:dwarven_resilience"],
  *   "subraces": ["boundbyfate-core:hill_dwarf"]
  * }
  * ```
  *
- * Subrace format (data/<ns>/bbf_subrace/<name>.json):
+ * Subrace format — only specify fields that OVERRIDE the parent race:
  * ```json
  * {
- *   "displayName": "Холмовой дварф",
+ *   "displayName": "Горный дварф",
  *   "parentRace": "boundbyfate-core:dwarf",
- *   "statBonuses": { "boundbyfate-core:wisdom": 1 },
- *   "abilities": ["boundbyfate-core:dwarven_toughness"]
+ *   "statBonuses": { "boundbyfate-core:strength": 2, "boundbyfate-core:constitution": 2 },
+ *   "features": ["boundbyfate-core:dwarven_armor_training"]
  * }
  * ```
  */
@@ -60,15 +61,11 @@ object RaceParser {
 
             val scaleOverride = json.get("scaleOverride")?.asFloat
 
-            // Support both new "speedFt" (preferred) and old "speedMultiplier" (legacy)
             val speedFt: Int = when {
                 json.has("speedFt") -> json.get("speedFt").asInt
                 json.has("speedMultiplier") -> (json.get("speedMultiplier").asFloat * 30).toInt()
                 else -> 30
             }
-
-            val statBonuses = parseIdentifierIntMap(json, "statBonuses", id)
-            val resistances = parseIdentifierIntMap(json, "resistances", id)
 
             val sensesObj = json.getAsJsonObject("senses")
             val senses = RaceSenses(
@@ -84,12 +81,14 @@ object RaceParser {
                 size = size,
                 scaleOverride = scaleOverride,
                 speedFt = speedFt,
-                statBonuses = statBonuses,
+                statBonuses = parseIdentifierIntMap(json, "statBonuses", id),
                 senses = senses,
-                resistances = resistances,
+                resistances = parseIdentifierIntMap(json, "resistances", id),
                 proficiencies = parseIdentifierList(json, "proficiencies", id),
                 itemProficiencies = parseIdentifierList(json, "itemProficiencies", id),
-                abilities = parseIdentifierList(json, "abilities", id),
+                // Support both "features" (new) and "abilities" (legacy)
+                features = parseIdentifierList(json, "features", id)
+                    .ifEmpty { parseIdentifierList(json, "abilities", id) },
                 subraces = parseIdentifierList(json, "subraces", id)
             )
         } catch (e: Exception) {
@@ -115,15 +114,46 @@ object RaceParser {
                 return null
             }
 
+            // All fields are optional — only specified fields override the parent race
+            val size = json.get("size")?.asString?.let {
+                runCatching { RaceSize.valueOf(it.uppercase()) }.getOrNull()
+            }
+            val scaleOverride = json.get("scaleOverride")?.asFloat
+            val speedFt = json.get("speedFt")?.asInt
+                ?: json.get("speedMultiplier")?.asFloat?.let { (it * 30).toInt() }
+
+            val senses = json.getAsJsonObject("senses")?.let { sensesObj ->
+                RaceSenses(
+                    darkvision  = sensesObj.get("darkvision")?.asInt  ?: 0,
+                    blindsight  = sensesObj.get("blindsight")?.asInt  ?: 0,
+                    tremorsense = sensesObj.get("tremorsense")?.asInt ?: 0,
+                    truesight   = sensesObj.get("truesight")?.asInt   ?: 0
+                )
+            }
+
+            val statBonuses = if (json.has("statBonuses")) parseIdentifierIntMap(json, "statBonuses", id) else null
+            val resistances = if (json.has("resistances")) parseIdentifierIntMap(json, "resistances", id) else null
+            val proficiencies = if (json.has("proficiencies")) parseIdentifierList(json, "proficiencies", id) else null
+            val itemProficiencies = if (json.has("itemProficiencies")) parseIdentifierList(json, "itemProficiencies", id) else null
+            val features = when {
+                json.has("features") -> parseIdentifierList(json, "features", id)
+                json.has("abilities") -> parseIdentifierList(json, "abilities", id) // legacy
+                else -> null
+            }
+
             SubraceDefinition(
                 id = id,
                 displayName = displayName,
                 parentRace = Identifier(parentRaceStr),
-                statBonuses = parseIdentifierIntMap(json, "statBonuses", id),
-                resistances = parseIdentifierIntMap(json, "resistances", id),
-                proficiencies = parseIdentifierList(json, "proficiencies", id),
-                itemProficiencies = parseIdentifierList(json, "itemProficiencies", id),
-                abilities = parseIdentifierList(json, "abilities", id)
+                size = size,
+                scaleOverride = scaleOverride,
+                speedFt = speedFt,
+                statBonuses = statBonuses,
+                senses = senses,
+                resistances = resistances,
+                proficiencies = proficiencies,
+                itemProficiencies = itemProficiencies,
+                features = features
             )
         } catch (e: Exception) {
             logger.error("Failed to parse subrace $id", e)

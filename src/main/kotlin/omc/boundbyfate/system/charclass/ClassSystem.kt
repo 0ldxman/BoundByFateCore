@@ -122,9 +122,14 @@ object ClassSystem {
             omc.boundbyfate.system.proficiency.ProficiencySystem.addProficiency(player, profId)
         }
 
-        // Abilities are stubs for now - just log them
+        // Features (passive properties) — grant via FeatureSystem
+        for (featureId in grant.features) {
+            omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
+        }
+
+        // Abilities (active actions) — TODO: add to player's ability hotbar
         for (abilityId in grant.abilities) {
-            logger.debug("TODO: Apply ability $abilityId")
+            logger.debug("Granting ability $abilityId (hotbar TODO)")
         }
     }
 

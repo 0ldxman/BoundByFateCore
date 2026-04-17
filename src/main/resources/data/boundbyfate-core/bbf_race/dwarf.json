@@ -15,7 +15,7 @@
   "proficiencies": [
     "boundbyfate-core:save_constitution"
   ],
-  "abilities": [
+  "features": [
     "boundbyfate-core:stonecunning",
     "boundbyfate-core:dwarven_resilience"
   ],

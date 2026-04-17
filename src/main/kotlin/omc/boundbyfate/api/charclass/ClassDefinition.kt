@@ -10,7 +10,10 @@ import net.minecraft.util.Identifier
  * @property id Unique identifier (e.g. "boundbyfate-core:fighter")
  * @property displayName Display name (e.g. "Воин")
  * @property hitDie Hit die sides (6, 8, 10, or 12)
+ * @property hpPerLevel HP gained per level after 1st
  * @property subclassLevel Level at which subclass is chosen (usually 3)
+ * @property mechanics IDs of class-specific game mechanics (e.g. spellcasting style, metamagic).
+ *                     These are identifiers for future subsystems — registered separately.
  * @property progression Map of class level (1-20) to what is granted at that level
  */
 data class ClassDefinition(
@@ -19,6 +22,7 @@ data class ClassDefinition(
     val hitDie: Int,
     val hpPerLevel: Int = hitDie / 2 + 1,
     val subclassLevel: Int = 3,
+    val mechanics: List<Identifier> = emptyList(),
     val progression: Map<Int, LevelGrant> = emptyMap()
 ) {
     init {
@@ -28,16 +32,8 @@ data class ClassDefinition(
         require(subclassLevel in 1..20) { "ClassDefinition $id: subclassLevel must be 1-20" }
     }
 
-    /**
-     * Returns all grants accumulated from level 1 up to [level].
-     * Used when initializing a character at a given level.
-     */
-    fun getGrantsUpTo(level: Int): List<LevelGrant> {
-        return (1..level.coerceIn(1, 20)).mapNotNull { progression[it] }
-    }
+    fun getGrantsUpTo(level: Int): List<LevelGrant> =
+        (1..level.coerceIn(1, 20)).mapNotNull { progression[it] }
 
-    /**
-     * Returns the grant for a specific level, or null if nothing is granted.
-     */
     fun getGrantAt(level: Int): LevelGrant? = progression[level]
 }
