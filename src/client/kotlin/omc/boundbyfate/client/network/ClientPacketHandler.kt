@@ -244,6 +244,12 @@ object ClientPacketHandler {
             }
         }
 
+        // Server → Client: sync darkvision range
+        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_DARKVISION) { client, _, buf, _ ->
+            val rangeFt = buf.readInt()
+            client.execute { omc.boundbyfate.client.state.DarkvisionState.rangeFt = rangeFt }
+        }
+
         // Server → Client: sync available skin names + base64 for GM picker
         ClientPlayNetworking.registerGlobalReceiver(BbfPackets.SYNC_SKIN_LIST) { client, _, buf, _ ->
             val count = buf.readInt()

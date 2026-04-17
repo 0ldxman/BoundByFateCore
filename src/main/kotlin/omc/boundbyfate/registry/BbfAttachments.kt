@@ -160,6 +160,13 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_scale_override"))
 
+    @JvmField
+    val DARKVISION: AttachmentType<omc.boundbyfate.component.DarkvisionData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.DarkvisionData>()
+            .persistent(omc.boundbyfate.component.DarkvisionData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "darkvision"))
+
     fun register() {
         // Attachments are registered on creation via buildAndRegister
     }

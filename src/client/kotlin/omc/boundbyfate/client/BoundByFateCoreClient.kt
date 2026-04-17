@@ -70,6 +70,9 @@ object BoundByFateCoreClient : ClientModInitializer {
             // Feature slot activation
             FeatureSlotManager.tick(client)
 
+            // Darkvision visual effect
+            omc.boundbyfate.client.render.DarkvisionRenderer.tick(client)
+
             // Open feature screen
             if (FeatureKeyBindings.openFeatureScreen.wasPressed()) {
                 client.setScreen(FeatureScreen())

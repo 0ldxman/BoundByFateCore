@@ -381,6 +381,14 @@ object ServerPacketHandler {
 
         // Sync character data (stats, skills, class, race, level)
         syncPlayerData(player)
+
+        // Sync darkvision if player has it
+        val darkvision = player.getAttachedOrElse(BbfAttachments.DARKVISION, null)
+        if (darkvision != null) {
+            val dvBuf = PacketByteBufs.create()
+            dvBuf.writeInt(darkvision.rangeFt)
+            ServerPlayNetworking.send(player, BbfPackets.SYNC_DARKVISION, dvBuf)
+        }
     }
 
     /**

@@ -219,6 +219,12 @@ object BoundByFateCore : ModInitializer {
 			)
 		}
 
+		reg.register(id("darkvision")) { params ->
+			omc.boundbyfate.system.effect.DarkvisionEffect(
+				rangeFt = params.get("rangeFt")?.asInt ?: 60
+			)
+		}
+
 		logger.info("Registered built-in effects")
 	}
 

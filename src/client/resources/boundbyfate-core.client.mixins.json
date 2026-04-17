@@ -5,7 +5,8 @@
 	"client": [
 		"ExampleClientMixin",
 		"ItemStackTooltipMixin",
-		"PlayerSkinMixin"
+		"PlayerSkinMixin",
+		"DarkvisionMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

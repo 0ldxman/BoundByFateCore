@@ -89,6 +89,9 @@ object BbfPackets {
     /** Client → Server: GM sets skin for a player (by skin name) */
     val GM_SET_PLAYER_SKIN = Identifier("boundbyfate-core", "gm_set_player_skin")
 
+    /** Server → Client: sync darkvision range to client */
+    val SYNC_DARKVISION = Identifier("boundbyfate-core", "sync_darkvision")
+
     /** Server → Client: sync available skin names for GM picker */
     val SYNC_SKIN_LIST = Identifier("boundbyfate-core", "sync_skin_list")
 
