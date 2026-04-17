@@ -1,0 +1,15 @@
+{
+  "displayName": "Тёмное зрение (60 фт.)",
+  "description": "На расстоянии в 60 футов вы при тусклом освещении можете видеть так, как будто это яркое освещение, и в темноте так, как будто это тусклое освещение. В темноте вы не можете различать цвета, только оттенки серого.",
+  "effects": [
+    {
+      "type": "boundbyfate-core:apply_minecraft_effect",
+      "effect": "minecraft:night_vision",
+      "duration": -1,
+      "amplifier": 0,
+      "ambient": true,
+      "showParticles": false,
+      "showIcon": false
+    }
+  ]
+}

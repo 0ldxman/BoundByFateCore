@@ -9,6 +9,8 @@
   "features": [
     "boundbyfate-core:darkvision_60",
     "boundbyfate-core:dwarven_resilience",
+    "boundbyfate-core:dwarven_combat_training",
+    "boundbyfate-core:dwarven_tool_proficiency",
     "boundbyfate-core:stonecunning",
     "boundbyfate-core:save_proficiency_constitution"
   ],

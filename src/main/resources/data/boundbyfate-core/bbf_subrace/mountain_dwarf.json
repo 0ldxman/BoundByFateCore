@@ -1,9 +1,9 @@
 {
-  "displayName": "Холмовой дварф",
+  "displayName": "Горный дварф",
   "parentRace": "boundbyfate-core:dwarf",
   "statBonuses": {
-    "boundbyfate-core:constitution": 2,
-    "boundbyfate-core:wisdom": 1
+    "boundbyfate-core:strength": 2,
+    "boundbyfate-core:constitution": 2
   },
   "features": [
     "boundbyfate-core:darkvision_60",
@@ -12,6 +12,6 @@
     "boundbyfate-core:dwarven_tool_proficiency",
     "boundbyfate-core:stonecunning",
     "boundbyfate-core:save_proficiency_constitution",
-    "boundbyfate-core:dwarven_toughness"
+    "boundbyfate-core:medium_armor_proficiency"
   ]
 }

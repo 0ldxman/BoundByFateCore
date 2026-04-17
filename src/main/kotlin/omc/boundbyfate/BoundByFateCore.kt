@@ -198,6 +198,27 @@ object BoundByFateCore : ModInitializer {
 			)
 		}
 
+		reg.register(id("grant_skill_proficiency")) { params ->
+			omc.boundbyfate.system.effect.GrantSkillProficiencyEffect(
+				proficiencyId = net.minecraft.util.Identifier(params.get("proficiency")?.asString ?: ""),
+				level = omc.boundbyfate.api.skill.ProficiencyLevel.valueOf(
+					params.get("level")?.asString?.uppercase() ?: "PROFICIENT"
+				)
+			)
+		}
+
+		reg.register(id("grant_item_proficiency")) { params ->
+			omc.boundbyfate.system.effect.GrantItemProficiencyEffect(
+				proficiencyId = net.minecraft.util.Identifier(params.get("proficiency")?.asString ?: "")
+			)
+		}
+
+		reg.register(id("modify_hp_per_level")) { params ->
+			omc.boundbyfate.system.effect.ModifyHpPerLevelEffect(
+				bonusPerLevel = params.get("bonusPerLevel")?.asInt ?: 1
+			)
+		}
+
 		logger.info("Registered built-in effects")
 	}
 

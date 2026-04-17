@@ -1,0 +1,10 @@
+{
+  "displayName": "Дварфийская боевая тренировка",
+  "description": "Вы владеете боевым топором, ручным топором, лёгким и боевым молотом.",
+  "effects": [
+    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:battleaxe" },
+    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:handaxe" },
+    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:light_hammer" },
+    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:warhammer" }
+  ]
+}
