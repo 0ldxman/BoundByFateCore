@@ -358,8 +358,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private fun drawGmTooltip(context: DrawContext, lines: List<String>, mouseX: Int, mouseY: Int) {
         if (lines.isEmpty()) return
         val pad = 4
-        val lineH = textRenderer.fontHeight + 1
-        val maxW = lines.maxOf { textRenderer.getWidth(it) }
+        val lineH = (textRenderer.fontHeight * 0.8f).toInt() + 1  // Уменьшенная высота строки
+        val maxW = lines.maxOf { (textRenderer.getWidth(it) * 0.8f).toInt() }  // Уменьшенная ширина
         val totalH = lines.size * lineH + pad * 2
         val totalW = maxW + pad * 2
 
@@ -379,14 +379,20 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         context.fill(tx, ty + totalH - 1, tx + totalW, ty + totalH, brdColor)
         context.fill(tx, ty, tx + 1, ty + totalH, brdColor)
         context.fill(tx + totalW - 1, ty, tx + totalW, ty + totalH, brdColor)
+        
+        context.matrices.push()
+        context.matrices.scale(0.8f, 0.8f, 1f)  // Уменьшаем текст
         lines.forEachIndexed { i, line ->
             val color = when {
                 i == 0 -> 0xFFFFAA  // header — yellow
                 line.startsWith("  ") -> 0xAAAAAA  // indented — gray
                 else -> 0xCCCCCC
             }
-            context.drawTextWithShadow(textRenderer, line, tx + pad, ty + pad + i * lineH, color)
+            val scaledX = ((tx + pad) / 0.8f).toInt()
+            val scaledY = ((ty + pad + i * lineH) / 0.8f).toInt()
+            context.drawTextWithShadow(textRenderer, line, scaledX, scaledY, color)
         }
+        context.matrices.pop()
         context.matrices.pop()
     }
 
@@ -413,12 +419,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         m.translate((x + w / 2).toFloat(), (y + 3).toFloat(), 0f); m.scale(0.6f, 0.6f, 1f)
         val nw = textRenderer.getWidth(shortName)
         context.drawTextWithShadow(textRenderer, shortName, -(nw / 2), 0, 0xCCCCCC); m.pop()
-        // Value center: show "13 +2" if there's a race/class bonus
-        m.push(); m.translate((x + w / 2).toFloat(), (y + h / 2 - 4).toFloat(), 0f); m.scale(1.1f, 1.1f, 1f)
+        // Value center: show "13+2" if there's a race/class bonus (без пробела)
+        m.push(); m.translate((x + w / 2).toFloat(), (y + h / 2 - 4).toFloat(), 0f); m.scale(0.95f, 0.95f, 1f)  // Уменьшен размер
         if (bonus != 0) {
             val bonusStr = if (bonus > 0) "+$bonus" else "$bonus"
-            val combined = "$v §a$bonusStr"
-            val vw = textRenderer.getWidth("$v $bonusStr")
+            val combined = "$v§a$bonusStr"  // Убран пробел
+            val vw = textRenderer.getWidth("$v$bonusStr")
             context.drawTextWithShadow(textRenderer, combined, -(vw / 2), 0, 0xFFFFFF)
         } else {
             val vw = textRenderer.getWidth("$v")
@@ -507,7 +513,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             if (mouseX in x..(x + w) && mouseY in rowY..(rowY + 10)) {
                 val lines = mutableListOf<String>()
                 lines.add(save.displayName)
-                lines.add("  Бонус: $bonusStr")
+                // Убрана строка "Бонус: ..."
                 val sources = snapshot.skillSources[save.id]
                 if (!sources.isNullOrEmpty()) {
                     lines.add("  Владение от:")
@@ -543,7 +549,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             if (mouseX in x..(x + w) && mouseY in rowY..(rowY + 9)) {
                 val lines = mutableListOf<String>()
                 lines.add(skill.displayName)
-                lines.add("  Бонус: $bonusStr")
+                // Убрана строка "Бонус: ..."
                 val sources = snapshot.skillSources[skill.id]
                 if (!sources.isNullOrEmpty()) {
                     lines.add("  Владение от:")
