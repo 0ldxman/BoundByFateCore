@@ -313,8 +313,10 @@ object ClientPacketHandler {
                     val tasks = (0 until taskCount).map {
                         val tid = buf.readString()
                         val tdesc = buf.readString()
+                        val tgoalDesc = buf.readString()
                         val tstatus = buf.readString()
-                        omc.boundbyfate.client.state.ClientGoalTask(tid, tdesc, tstatus)
+                        val torder = buf.readInt()
+                        omc.boundbyfate.client.state.ClientGoalTask(tid, tdesc, tgoalDesc, tstatus, torder)
                     }
                     omc.boundbyfate.client.state.ClientGoal(id, title, description, motivationId, status, currentTaskIndex, tasks)
                 }

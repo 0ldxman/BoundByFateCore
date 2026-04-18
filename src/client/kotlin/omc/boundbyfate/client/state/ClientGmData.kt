@@ -42,7 +42,9 @@ data class ClientProposal(
 data class ClientGoalTask(
     val id: String,
     val description: String,
-    val status: String  // TaskStatus name
+    val goalDescriptionOverride: String,  // Description shown for goal when this task is active
+    val status: String,  // TaskStatus name
+    val order: Int  // Task order in the list
 )
 
 data class ClientGoal(

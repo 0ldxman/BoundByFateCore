@@ -9,16 +9,20 @@ enum class TaskStatus { CURRENT, COMPLETED, FAILED, CANCELLED }
 data class GoalTask(
     val id: String,
     val description: String,
-    val status: TaskStatus = TaskStatus.CURRENT
+    val goalDescriptionOverride: String = "",  // Description shown for goal when this task is active
+    val status: TaskStatus = TaskStatus.CURRENT,
+    val order: Int = 0  // Task order in the list
 ) {
     companion object {
         val CODEC: Codec<GoalTask> = RecordCodecBuilder.create { instance ->
             instance.group(
                 Codec.STRING.fieldOf("id").forGetter(GoalTask::id),
                 Codec.STRING.fieldOf("description").forGetter(GoalTask::description),
+                Codec.STRING.optionalFieldOf("goalDescriptionOverride", "").forGetter(GoalTask::goalDescriptionOverride),
                 Codec.STRING.fieldOf("status").xmap(
                     { TaskStatus.valueOf(it) }, { it.name }
-                ).forGetter(GoalTask::status)
+                ).forGetter(GoalTask::status),
+                Codec.INT.optionalFieldOf("order", 0).forGetter(GoalTask::order)
             ).apply(instance, ::GoalTask)
         }
     }

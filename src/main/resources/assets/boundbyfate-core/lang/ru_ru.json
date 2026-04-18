@@ -170,5 +170,18 @@
   "bbf.gm.identity.add_goal": "Добавить цель",
   "bbf.gm.identity.goal.title": "Название",
   "bbf.gm.identity.goal.description": "Описание",
-  "bbf.gm.identity.goal.all_done": "Все задачи выполнены"
+  "bbf.gm.identity.goal.all_done": "Все задачи выполнены",
+  "bbf.gm.identity.goal.motivation": "Мотивация",
+  "bbf.gm.identity.tasks": "ЗАДАЧИ",
+  "bbf.gm.identity.add_task": "Добавить задачу",
+  "bbf.gm.identity.edit_goal": "Редактировать цель",
+  "bbf.gm.identity.edit_task": "Редактировать задачу",
+  "bbf.gm.identity.task.goal_desc": "Описание цели при активной задаче",
+  "bbf.gm.identity.status.active": "Активно",
+  "bbf.gm.identity.status.completed": "Выполнено",
+  "bbf.gm.identity.status.failed": "Провалено",
+  "bbf.gm.identity.status.cancelled": "Отменено",
+  "bbf.gm.button.delete": "Удалить",
+  "bbf.alignment.axis.neutral_ge.short": "Н(Д-З)",
+  "bbf.alignment.axis.neutral_lc.short": "Н(З-Х)"
 }

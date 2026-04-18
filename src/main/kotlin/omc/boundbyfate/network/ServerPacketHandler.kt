@@ -481,19 +481,21 @@ object ServerPacketHandler {
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_GOAL) { server, gmPlayer, _, buf, _ ->
             if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
             val targetName = buf.readString()
-            val action = buf.readString() // "add", "remove", "complete", "fail", "task"
+            val action = buf.readString() // "add", "remove", "complete", "fail", "task", "update", "add_task", "edit_task", "delete_task", "reorder_task"
             val goalId = buf.readString()
             val title = buf.readString()
             val description = buf.readString()
             val motivationId = buf.readString().ifEmpty { null }
-            val taskStatus = buf.readString() // for "task" action
+            val taskStatus = buf.readString() // for "task" action or task status
             val taskCount = buf.readInt()
-            val tasks = (0 until taskCount).map { buf.readString() }
 
             server.execute {
                 val target = server.playerManager.getPlayer(targetName) ?: return@execute
                 when (action) {
-                    "add" -> omc.boundbyfate.system.identity.MotivationSystem.addGoal(target, title, description, motivationId, tasks)
+                    "add" -> {
+                        val tasks = (0 until taskCount).map { buf.readString() }
+                        omc.boundbyfate.system.identity.MotivationSystem.addGoal(target, title, description, motivationId, tasks)
+                    }
                     "remove" -> omc.boundbyfate.system.identity.MotivationSystem.removeGoal(target, goalId)
                     "complete" -> omc.boundbyfate.system.identity.MotivationSystem.completeGoal(target, goalId, description.ifEmpty { null })
                     "fail" -> omc.boundbyfate.system.identity.MotivationSystem.failGoal(target, goalId, description.ifEmpty { null })
@@ -501,6 +503,34 @@ object ServerPacketHandler {
                         val ts = try { omc.boundbyfate.component.TaskStatus.valueOf(taskStatus) }
                                  catch (e: Exception) { omc.boundbyfate.component.TaskStatus.COMPLETED }
                         omc.boundbyfate.system.identity.MotivationSystem.advanceTask(target, goalId, ts, description.ifEmpty { null })
+                    }
+                    "update" -> {
+                        val status = try { omc.boundbyfate.component.GoalStatus.valueOf(taskStatus) }
+                                     catch (e: Exception) { null }
+                        omc.boundbyfate.system.identity.MotivationSystem.updateGoal(target, goalId, 
+                            title.ifEmpty { null }, description.ifEmpty { null }, status, motivationId)
+                    }
+                    "add_task" -> {
+                        // title = task description, description = goal desc override
+                        omc.boundbyfate.system.identity.MotivationSystem.addTask(target, goalId, title, description)
+                    }
+                    "edit_task" -> {
+                        // goalId = goalId, title = taskId, description = task description, motivationId = goal desc override, taskStatus = status
+                        val taskId = title
+                        val taskDesc = description
+                        val goalDescOverride = motivationId
+                        val status = try { omc.boundbyfate.component.TaskStatus.valueOf(taskStatus) }
+                                     catch (e: Exception) { null }
+                        omc.boundbyfate.system.identity.MotivationSystem.updateTask(target, goalId, taskId, 
+                            taskDesc.ifEmpty { null }, goalDescOverride, status)
+                    }
+                    "delete_task" -> {
+                        // title = taskId
+                        omc.boundbyfate.system.identity.MotivationSystem.deleteTask(target, goalId, title)
+                    }
+                    "reorder_task" -> {
+                        // title = taskId, taskCount = new order
+                        omc.boundbyfate.system.identity.MotivationSystem.reorderTask(target, goalId, title, taskCount)
                     }
                 }
                 logger.info("GM ${gmPlayer.name.string} $action goal for $targetName")
@@ -1033,10 +1063,12 @@ object ServerPacketHandler {
                 buf.writeString(goal.status.name)
                 buf.writeInt(goal.currentTaskIndex)
                 buf.writeInt(goal.tasks.size)
-                goal.tasks.forEach { task ->
+                goal.tasks.sortedBy { it.order }.forEach { task ->
                     buf.writeString(task.id)
                     buf.writeString(task.description)
+                    buf.writeString(task.goalDescriptionOverride)
                     buf.writeString(task.status.name)
+                    buf.writeInt(task.order)
                 }
             }
         }

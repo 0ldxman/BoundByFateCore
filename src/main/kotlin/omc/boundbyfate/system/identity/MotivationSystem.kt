@@ -91,7 +91,13 @@ object MotivationSystem {
         val md = identity(player).motivationData
         val id = UUID.randomUUID().toString()
         val goalTasks = tasks.mapIndexed { i, desc ->
-            GoalTask(UUID.randomUUID().toString(), desc, if (i == 0) TaskStatus.CURRENT else TaskStatus.CURRENT)
+            GoalTask(
+                id = UUID.randomUUID().toString(),
+                description = desc,
+                goalDescriptionOverride = "",
+                status = if (i == 0) TaskStatus.CURRENT else TaskStatus.CURRENT,
+                order = i
+            )
         }
         val goal = PersonalGoal(id, title, description, motivationId, goalTasks)
         setMotivationData(player, md.copy(goals = md.goals + goal))
@@ -160,6 +166,105 @@ object MotivationSystem {
         val new = md.goals.map { if (it.id == goalId) it.copy(description = description) else it }
         if (new == md.goals) return false
         setMotivationData(player, md.copy(goals = new))
+        return true
+    }
+
+    // ── Tasks ─────────────────────────────────────────────────────────────────
+
+    /** Adds a new task to a goal. */
+    fun addTask(player: ServerPlayerEntity, goalId: String, description: String, goalDescOverride: String = ""): String? {
+        val md = identity(player).motivationData
+        val goal = md.goals.find { it.id == goalId } ?: return null
+        
+        val taskId = UUID.randomUUID().toString()
+        val newOrder = (goal.tasks.maxOfOrNull { it.order } ?: -1) + 1
+        val newTask = GoalTask(taskId, description, goalDescOverride, TaskStatus.CURRENT, newOrder)
+        
+        val updatedGoal = goal.copy(tasks = goal.tasks + newTask)
+        val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
+        setMotivationData(player, md.copy(goals = newGoals))
+        return taskId
+    }
+
+    /** Updates an existing task. */
+    fun updateTask(player: ServerPlayerEntity, goalId: String, taskId: String, description: String?, goalDescOverride: String?, status: TaskStatus?): Boolean {
+        val md = identity(player).motivationData
+        val goal = md.goals.find { it.id == goalId } ?: return false
+        
+        val updatedTasks = goal.tasks.map { task ->
+            if (task.id == taskId) {
+                task.copy(
+                    description = description ?: task.description,
+                    goalDescriptionOverride = goalDescOverride ?: task.goalDescriptionOverride,
+                    status = status ?: task.status
+                )
+            } else task
+        }
+        
+        if (updatedTasks == goal.tasks) return false
+        
+        val updatedGoal = goal.copy(tasks = updatedTasks)
+        val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
+        setMotivationData(player, md.copy(goals = newGoals))
+        return true
+    }
+
+    /** Deletes a task from a goal. */
+    fun deleteTask(player: ServerPlayerEntity, goalId: String, taskId: String): Boolean {
+        val md = identity(player).motivationData
+        val goal = md.goals.find { it.id == goalId } ?: return false
+        
+        val newTasks = goal.tasks.filter { it.id != taskId }
+        if (newTasks.size == goal.tasks.size) return false
+        
+        // Reorder remaining tasks
+        val reorderedTasks = newTasks.mapIndexed { index, task -> task.copy(order = index) }
+        
+        val updatedGoal = goal.copy(tasks = reorderedTasks)
+        val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
+        setMotivationData(player, md.copy(goals = newGoals))
+        return true
+    }
+
+    /** Reorders a task within a goal. */
+    fun reorderTask(player: ServerPlayerEntity, goalId: String, taskId: String, newOrder: Int): Boolean {
+        val md = identity(player).motivationData
+        val goal = md.goals.find { it.id == goalId } ?: return false
+        
+        val task = goal.tasks.find { it.id == taskId } ?: return false
+        val oldOrder = task.order
+        
+        if (oldOrder == newOrder || newOrder < 0 || newOrder >= goal.tasks.size) return false
+        
+        // Reorder tasks
+        val reorderedTasks = goal.tasks.sortedBy { it.order }.toMutableList()
+        reorderedTasks.removeAt(oldOrder)
+        reorderedTasks.add(newOrder, task)
+        
+        // Update order values
+        val finalTasks = reorderedTasks.mapIndexed { index, t -> t.copy(order = index) }
+        
+        val updatedGoal = goal.copy(tasks = finalTasks)
+        val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
+        setMotivationData(player, md.copy(goals = newGoals))
+        return true
+    }
+
+    /** Updates goal title and description. */
+    fun updateGoal(player: ServerPlayerEntity, goalId: String, title: String?, description: String?, status: GoalStatus?, motivationId: String?): Boolean {
+        val md = identity(player).motivationData
+        val goal = md.goals.find { it.id == goalId } ?: return false
+        
+        val updatedGoal = goal.copy(
+            title = title ?: goal.title,
+            description = description ?: goal.description,
+            status = status ?: goal.status,
+            motivationId = motivationId ?: goal.motivationId,
+            closedAt = if (status != null && status != GoalStatus.ACTIVE) System.currentTimeMillis() else goal.closedAt
+        )
+        
+        val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
+        setMotivationData(player, md.copy(goals = newGoals))
         return true
     }
 }

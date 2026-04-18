@@ -169,5 +169,18 @@
   "bbf.gm.identity.add_goal": "Add Goal",
   "bbf.gm.identity.goal.title": "Title",
   "bbf.gm.identity.goal.description": "Description",
-  "bbf.gm.identity.goal.all_done": "All tasks done"
+  "bbf.gm.identity.goal.all_done": "All tasks done",
+  "bbf.gm.identity.goal.motivation": "Motivation",
+  "bbf.gm.identity.tasks": "TASKS",
+  "bbf.gm.identity.add_task": "Add Task",
+  "bbf.gm.identity.edit_goal": "Edit Goal",
+  "bbf.gm.identity.edit_task": "Edit Task",
+  "bbf.gm.identity.task.goal_desc": "Goal description when task is active",
+  "bbf.gm.identity.status.active": "Active",
+  "bbf.gm.identity.status.completed": "Completed",
+  "bbf.gm.identity.status.failed": "Failed",
+  "bbf.gm.identity.status.cancelled": "Cancelled",
+  "bbf.gm.button.delete": "Delete",
+  "bbf.alignment.axis.neutral_ge.short": "N(G-E)",
+  "bbf.alignment.axis.neutral_lc.short": "N(L-C)"
 }
