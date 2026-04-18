@@ -546,34 +546,6 @@ object ServerPacketHandler {
                 syncGmData(gmPlayer)
             }
         }
-                    }
-                    "add_task" -> {
-                        // title = task description, description = goal desc override
-                        omc.boundbyfate.system.identity.MotivationSystem.addTask(target, goalId, title, description)
-                    }
-                    "edit_task" -> {
-                        // goalId = goalId, title = taskId, description = task description, motivationId = goal desc override, taskStatus = status
-                        val taskId = title
-                        val taskDesc = description
-                        val goalDescOverride = motivationId
-                        val status = try { omc.boundbyfate.component.TaskStatus.valueOf(taskStatus) }
-                                     catch (e: Exception) { null }
-                        omc.boundbyfate.system.identity.MotivationSystem.updateTask(target, goalId, taskId, 
-                            taskDesc.ifEmpty { null }, goalDescOverride, status)
-                    }
-                    "delete_task" -> {
-                        // title = taskId
-                        omc.boundbyfate.system.identity.MotivationSystem.deleteTask(target, goalId, title)
-                    }
-                    "reorder_task" -> {
-                        // title = taskId, taskCount = new order
-                        omc.boundbyfate.system.identity.MotivationSystem.reorderTask(target, goalId, title, taskCount)
-                    }
-                }
-                logger.info("GM ${gmPlayer.name.string} $action goal for $targetName")
-                syncGmData(gmPlayer)
-            }
-        }
 
         // Client → Server: player proposes a motivation to GM
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.PLAYER_PROPOSE_MOTIVATION) { server, player, _, buf, _ ->
