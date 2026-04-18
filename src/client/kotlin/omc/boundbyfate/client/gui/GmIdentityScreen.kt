@@ -58,6 +58,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var inputBuffer = ""
     private var inputBuffer2 = ""
     private var inputFocusField = 0  // 0 = field1, 1 = field2
+    private var inputBuffer2Scroll = 0  // Scroll position for description field
+    private var inputBuffer2Lines = mutableListOf<String>()  // Lines for description field
     private var pendingAxis: IdealAlignment = IdealAlignment.ANY
     private var editingGoalId: String? = null
     private var editingTaskId: String? = null
@@ -380,8 +382,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val overlayH = when (inputMode) {
             InputMode.ADD_IDEAL -> 78
             InputMode.ADD_GOAL -> 160
-            InputMode.EDIT_GOAL -> minOf(H - 40, 240)  // Adaptive height, max 240
-            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 100
+            InputMode.EDIT_GOAL -> minOf(H - 40, 280)  // Increased for textarea
+            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 130  // Increased for textarea
             else -> 62
         }
         val ox = (W - overlayW) / 2
@@ -439,11 +441,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 0 })
                 curY += 20
 
-                // Description field
+                // Description field (textarea)
                 lbl(context, "§7${tr("bbf.gm.identity.goal.description")}", ox + 5, curY - 6, 0.5f, 0x888888)
-                renderField(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, inputBuffer2, inputFocusField == 1, "")
-                btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 1 })
-                curY += 20
+                val descHeight = 50
+                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, descHeight, inputBuffer2, inputFocusField == 1, inputBuffer2Scroll, "")
+                btns.add(Btn(ox + 4, curY, overlayW - 8, descHeight) { inputFocusField = 1 })
+                curY += descHeight + 6
 
                 // Motivation selector
                 lbl(context, "§7${tr("bbf.gm.identity.goal.motivation")}", ox + 5, curY - 6, 0.5f, 0x888888)
@@ -551,11 +554,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 0 })
                 curY += 20
 
-                // Goal description when this task is active
+                // Goal description when this task is active (textarea)
                 lbl(context, "§7${tr("bbf.gm.identity.task.goal_desc")}", ox + 5, curY - 6, 0.5f, 0x888888)
-                renderField(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, inputBuffer2, inputFocusField == 1, "")
-                btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 1 })
-                curY += 20
+                val goalDescHeight = 40
+                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, goalDescHeight, inputBuffer2, inputFocusField == 1, inputBuffer2Scroll, "")
+                btns.add(Btn(ox + 4, curY, overlayW - 8, goalDescHeight) { inputFocusField = 1 })
+                curY += goalDescHeight + 6
 
                 // Status (edit only)
                 if (inputMode == InputMode.EDIT_TASK) {
@@ -627,27 +631,115 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, display, x + 2, y + 2, 0.7f, if (focused) 0xFFFFFF else 0xAAAAAA)
     }
 
+    private fun renderTextArea(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, text: String, focused: Boolean, scroll: Int, placeholder: String): Int {
+        val bd = if (focused) 0xFF8a6a3a.toInt() else 0xFF444444.toInt()
+        box(context, x, y, w, h, 0xFF111111.toInt(), bd)
+        
+        // Split text into lines that fit the width
+        val maxCharsPerLine = ((w - 20) / (textRenderer.getWidth("W") * 0.6f)).toInt().coerceAtLeast(10)
+        val lines = mutableListOf<String>()
+        
+        if (text.isEmpty() && !focused) {
+            lines.add("§8$placeholder")
+        } else {
+            // Split by newlines first, then wrap long lines
+            text.split("\n").forEach { paragraph ->
+                if (paragraph.isEmpty()) {
+                    lines.add("")
+                } else {
+                    val words = paragraph.split(" ")
+                    var currentLine = ""
+                    
+                    for (word in words) {
+                        val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
+                        if (testLine.length <= maxCharsPerLine) {
+                            currentLine = testLine
+                        } else {
+                            if (currentLine.isNotEmpty()) lines.add(currentLine)
+                            currentLine = word
+                            // If single word is too long, split it
+                            while (currentLine.length > maxCharsPerLine) {
+                                lines.add(currentLine.substring(0, maxCharsPerLine))
+                                currentLine = currentLine.substring(maxCharsPerLine)
+                            }
+                        }
+                    }
+                    if (currentLine.isNotEmpty()) lines.add(currentLine)
+                }
+            }
+        }
+        
+        // Calculate visible lines
+        val lineHeight = 9
+        val visibleLines = ((h - 6) / lineHeight).coerceAtLeast(1)
+        val maxScroll = (lines.size - visibleLines).coerceAtLeast(0)
+        val actualScroll = scroll.coerceIn(0, maxScroll)
+        
+        // Render visible lines
+        val m = context.matrices
+        m.push()
+        m.translate((x + 3).toFloat(), (y + 3).toFloat(), 0f)
+        m.scale(0.6f, 0.6f, 1f)
+        
+        lines.drop(actualScroll).take(visibleLines).forEachIndexed { i, line ->
+            val lineY = (i * lineHeight * 1.67f).toInt()
+            val color = if (text.isEmpty() && !focused) 0x666666 else 0xCCCCCC
+            context.drawTextWithShadow(textRenderer, line, 0, lineY, color)
+        }
+        
+        // Cursor
+        if (focused && (System.currentTimeMillis() / 500) % 2 == 0L && lines.isNotEmpty()) {
+            val cursorLine = lines.size - 1
+            if (cursorLine >= actualScroll && cursorLine < actualScroll + visibleLines) {
+                val cursorY = ((cursorLine - actualScroll) * lineHeight * 1.67f).toInt()
+                val cursorX = textRenderer.getWidth(lines[cursorLine])
+                context.drawTextWithShadow(textRenderer, "_", cursorX, cursorY, 0xFFFFFF)
+            }
+        }
+        
+        m.pop()
+        
+        // Scrollbar if needed
+        if (lines.size > visibleLines) {
+            val scrollbarX = x + w - 8
+            val scrollbarH = h - 4
+            val scrollbarThumbH = ((visibleLines.toFloat() / lines.size) * scrollbarH).toInt().coerceAtLeast(10)
+            val scrollbarThumbY = y + 2 + ((actualScroll.toFloat() / maxScroll) * (scrollbarH - scrollbarThumbH)).toInt()
+            
+            // Scrollbar track
+            context.fill(scrollbarX, y + 2, scrollbarX + 6, y + h - 2, 0xFF222222.toInt())
+            // Scrollbar thumb
+            context.fill(scrollbarX + 1, scrollbarThumbY, scrollbarX + 5, scrollbarThumbY + scrollbarThumbH, 0xFF666666.toInt())
+            
+            // Scroll buttons
+            btns.add(Btn(scrollbarX, y + 2, 6, 8) { if (actualScroll > 0) inputBuffer2Scroll-- })
+            btns.add(Btn(scrollbarX, y + h - 10, 6, 8) { if (actualScroll < maxScroll) inputBuffer2Scroll++ })
+        }
+        
+        return actualScroll
+    }
+
     private fun confirmInput() {
         val text = inputBuffer.trim()
         when (inputMode) {
             InputMode.ADD_IDEAL -> {
-                if (text.isEmpty()) { inputMode = InputMode.NONE; return }
+                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddIdeal(text, pendingAxis)
             }
             InputMode.ADD_FLAW -> {
-                if (text.isEmpty()) { inputMode = InputMode.NONE; return }
+                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddFlaw(text)
             }
             InputMode.ADD_MOTIVATION -> {
-                if (text.isEmpty()) { inputMode = InputMode.NONE; return }
+                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddMotivation(text)
             }
             InputMode.ADD_GOAL -> {
-                if (text.isEmpty()) { inputMode = InputMode.NONE; return }
+                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddGoal(text, inputBuffer2.trim(), pendingMotivationId)
             }
             InputMode.EDIT_GOAL -> {
-                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; return }
+                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 // Update goal in local state
                 val idx = goals.indexOfFirst { it.id == goalId }
                 if (idx >= 0) {
@@ -660,11 +752,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 }
             }
             InputMode.ADD_TASK -> {
-                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; return }
-                if (text.isEmpty()) { inputMode = InputMode.NONE; return }
+                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddTask(goalId, text, inputBuffer2.trim())
                 // Return to edit goal mode
                 inputMode = InputMode.EDIT_GOAL
+                inputBuffer2Scroll = 0
                 val goal = goals.find { it.id == goalId }
                 if (goal != null) {
                     inputBuffer = goal.title
@@ -675,13 +768,14 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 return
             }
             InputMode.EDIT_TASK -> {
-                val taskId = editingTaskId ?: run { inputMode = InputMode.NONE; return }
-                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; return }
+                val taskId = editingTaskId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 if (text.isNotEmpty()) {
                     sendEditTask(goalId, taskId, text, inputBuffer2.trim(), pendingGoalStatus)
                 }
                 // Return to edit goal mode
                 inputMode = InputMode.EDIT_GOAL
+                inputBuffer2Scroll = 0
                 val goal = goals.find { it.id == goalId }
                 if (goal != null) {
                     inputBuffer = goal.title
@@ -693,7 +787,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
             else -> {}
         }
-        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0
+        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0; inputBuffer2Scroll = 0
     }
     }
 
@@ -1084,10 +1178,23 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         return super.mouseReleased(mouseX, mouseY, button)
     }
 
+    override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+        // Scroll textarea if focused on description field
+        if (inputMode != InputMode.NONE && inputFocusField == 1) {
+            if (verticalAmount > 0) {
+                inputBuffer2Scroll = (inputBuffer2Scroll - 1).coerceAtLeast(0)
+            } else if (verticalAmount < 0) {
+                inputBuffer2Scroll++
+            }
+            return true
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
+    }
+
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         if (inputMode != InputMode.NONE) {
             when (keyCode) {
-                256 -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0; return true } // ESC
+                256 -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0; inputBuffer2Scroll = 0; return true } // ESC
                 257, 335 -> { confirmInput(); return true } // Enter
                 258 -> { // Tab — switch fields
                     inputFocusField = if (inputFocusField == 0) 1 else 0
