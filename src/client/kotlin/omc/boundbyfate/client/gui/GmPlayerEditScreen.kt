@@ -643,7 +643,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, "§7Spd", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
         
-        // Calculate speed text and width
+        // Calculate speed text
         val baseSpeed = snapshot.baseSpeed
         val modifier = speedFt - baseSpeed
         val speedText = if (modifier != 0) {
@@ -654,25 +654,29 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             "${speedFt}ft"
         }
         
-        // Calculate text width (approximate: 1 char ≈ 6 pixels at scale 0.75)
-        val textWidth = (speedText.replace("§.", "").length * 6 * 0.75).toInt()
-        val halfTextWidth = textWidth / 2
+        // Measure actual text width using textRenderer
+        val scale = 0.75f
+        val textWidth = (textRenderer.getWidth(speedText) * scale).toInt()
         
         // Position buttons with proper spacing
         val btnWidth = 7
-        val spacing = 2
-        btn(context, mouseX, mouseY, cx - halfTextWidth - btnWidth - spacing, row1Y, btnWidth, 9, "§c-") { 
+        val spacing = 3
+        val leftBtnX = cx - textWidth / 2 - btnWidth - spacing
+        val rightBtnX = cx + textWidth / 2 + spacing
+        val textX = cx - textWidth / 2
+        
+        btn(context, mouseX, mouseY, leftBtnX, row1Y, btnWidth, 9, "§c-") { 
             speedFt = (speedFt - 1).coerceAtLeast(0) 
         }
-        lbl(context, speedText, cx - halfTextWidth, row1Y + 1, 0.75f, 0xFFFFFF)
-        btn(context, mouseX, mouseY, cx + halfTextWidth + spacing, row1Y, btnWidth, 9, "§a+") { 
+        lbl(context, speedText, textX, row1Y + 1, scale, 0xFFFFFF)
+        btn(context, mouseX, mouseY, rightBtnX, row1Y, btnWidth, 9, "§a+") { 
             speedFt += 1 
         }
         
         // Size row
         val row2Y = by + 32
         
-        // Calculate scale text and width
+        // Calculate scale text
         val baseScale = snapshot.baseScale
         val scaleModifier = sizeFactor - baseScale
         val scaleText = if (scaleModifier.let { kotlin.math.abs(it) } > 0.01f) {
@@ -683,14 +687,17 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             "%.2f".format(sizeFactor)
         }
         
-        val scaleTextWidth = (scaleText.replace("§.", "").length * 6 * 0.75).toInt()
-        val halfScaleTextWidth = scaleTextWidth / 2
+        // Measure actual text width
+        val scaleTextWidth = (textRenderer.getWidth(scaleText) * scale).toInt()
+        val scaleLeftBtnX = cx - scaleTextWidth / 2 - btnWidth - spacing
+        val scaleRightBtnX = cx + scaleTextWidth / 2 + spacing
+        val scaleTextX = cx - scaleTextWidth / 2
         
-        btn(context, mouseX, mouseY, cx - halfScaleTextWidth - btnWidth - spacing, row2Y, btnWidth, 9, "§c-") { 
+        btn(context, mouseX, mouseY, scaleLeftBtnX, row2Y, btnWidth, 9, "§c-") { 
             sizeFactor = (sizeFactor - 0.05f).coerceAtLeast(0.1f) 
         }
-        lbl(context, scaleText, cx - halfScaleTextWidth, row2Y + 1, 0.75f, 0xCCCCCC)
-        btn(context, mouseX, mouseY, cx + halfScaleTextWidth + spacing, row2Y, btnWidth, 9, "§a+") { 
+        lbl(context, scaleText, scaleTextX, row2Y + 1, scale, 0xCCCCCC)
+        btn(context, mouseX, mouseY, scaleRightBtnX, row2Y, btnWidth, 9, "§a+") { 
             sizeFactor += 0.05f 
         }
         
