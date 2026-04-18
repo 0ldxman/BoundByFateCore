@@ -119,5 +119,24 @@
   "bbf.gm.tooltip.base": "Base: %s",
   "bbf.gm.tooltip.from": "from %s",
   "bbf.gm.status.applied": "Applied!",
-  "bbf.gm.status.subclass_level": "Subclass available from level %s"
+  "bbf.gm.status.subclass_level": "Subclass available from level %s",
+
+  "bbf.alignment.lawful_good": "Lawful Good",
+  "bbf.alignment.lawful_good.short": "LG",
+  "bbf.alignment.neutral_good": "Neutral Good",
+  "bbf.alignment.neutral_good.short": "NG",
+  "bbf.alignment.chaotic_good": "Chaotic Good",
+  "bbf.alignment.chaotic_good.short": "CG",
+  "bbf.alignment.lawful_neutral": "Lawful Neutral",
+  "bbf.alignment.lawful_neutral.short": "LN",
+  "bbf.alignment.true_neutral": "True Neutral",
+  "bbf.alignment.true_neutral.short": "TN",
+  "bbf.alignment.chaotic_neutral": "Chaotic Neutral",
+  "bbf.alignment.chaotic_neutral.short": "CN",
+  "bbf.alignment.lawful_evil": "Lawful Evil",
+  "bbf.alignment.lawful_evil.short": "LE",
+  "bbf.alignment.neutral_evil": "Neutral Evil",
+  "bbf.alignment.neutral_evil.short": "NE",
+  "bbf.alignment.chaotic_evil": "Chaotic Evil",
+  "bbf.alignment.chaotic_evil.short": "CE"
 }

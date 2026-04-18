@@ -120,5 +120,24 @@
   "bbf.gm.tooltip.base": "Базовое: %s",
   "bbf.gm.tooltip.from": "от %s",
   "bbf.gm.status.applied": "Применено!",
-  "bbf.gm.status.subclass_level": "Подкласс доступен с %s уровня"
+  "bbf.gm.status.subclass_level": "Подкласс доступен с %s уровня",
+
+  "bbf.alignment.lawful_good": "Законно-Добрый",
+  "bbf.alignment.lawful_good.short": "ЗД",
+  "bbf.alignment.neutral_good": "Нейтрально-Добрый",
+  "bbf.alignment.neutral_good.short": "НД",
+  "bbf.alignment.chaotic_good": "Хаотично-Добрый",
+  "bbf.alignment.chaotic_good.short": "ХД",
+  "bbf.alignment.lawful_neutral": "Законно-Нейтральный",
+  "bbf.alignment.lawful_neutral.short": "ЗН",
+  "bbf.alignment.true_neutral": "Истинно-Нейтральный",
+  "bbf.alignment.true_neutral.short": "ИН",
+  "bbf.alignment.chaotic_neutral": "Хаотично-Нейтральный",
+  "bbf.alignment.chaotic_neutral.short": "ХН",
+  "bbf.alignment.lawful_evil": "Законно-Злой",
+  "bbf.alignment.lawful_evil.short": "ЗЗ",
+  "bbf.alignment.neutral_evil": "Нейтрально-Злой",
+  "bbf.alignment.neutral_evil.short": "НЗ",
+  "bbf.alignment.chaotic_evil": "Хаотично-Злой",
+  "bbf.alignment.chaotic_evil.short": "ХЗ"
 }
