@@ -50,6 +50,6 @@ object DarkvisionRenderer {
         }
 
         DarkvisionState.isUnderwater = player.isSubmergedInWater
-        shouldRender = true
+        shouldRender = false // Shader disabled - causes black horizon and dark water issues
     }
 }
