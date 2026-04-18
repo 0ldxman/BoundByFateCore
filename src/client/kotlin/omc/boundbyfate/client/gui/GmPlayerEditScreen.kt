@@ -335,7 +335,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun openSubracePicker() {
-        val items = emptyList<Pair<Identifier, String>>()
+        val selectedRace = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id } }
+        val items = selectedRace?.subraces?.map { it.id to it.displayName } ?: emptyList()
         client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
             subraceId = picked
         })

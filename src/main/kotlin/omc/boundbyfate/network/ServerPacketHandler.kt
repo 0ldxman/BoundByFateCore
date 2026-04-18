@@ -628,10 +628,20 @@ object ServerPacketHandler {
             subs.forEach { sub -> buf.writeIdentifier(sub.id); buf.writeString(sub.displayName) }
         }
 
-        // Races
+        // Races + subraces
         val races = omc.boundbyfate.registry.RaceRegistry.getAllRaces().toList()
         buf.writeInt(races.size)
-        races.forEach { race -> buf.writeIdentifier(race.id); buf.writeString(race.displayName) }
+        races.forEach { race -> 
+            buf.writeIdentifier(race.id)
+            buf.writeString(race.displayName)
+            // Get subraces for this race
+            val subraces = omc.boundbyfate.registry.RaceRegistry.getSubracesFor(race.id).toList()
+            buf.writeInt(subraces.size)
+            subraces.forEach { subrace ->
+                buf.writeIdentifier(subrace.id)
+                buf.writeString(subrace.displayName)
+            }
+        }
 
         // Skills + saving throws
         val skills = omc.boundbyfate.registry.SkillRegistry.getAll().toList()

@@ -305,7 +305,13 @@ object ClientPacketHandler {
             }
             val raceCount = buf.readInt()
             val races = (0 until raceCount).map {
-                omc.boundbyfate.client.state.GmRaceInfo(buf.readIdentifier(), buf.readString())
+                val raceId = buf.readIdentifier()
+                val raceName = buf.readString()
+                val subraceCount = buf.readInt()
+                val subraces = (0 until subraceCount).map {
+                    omc.boundbyfate.client.state.GmSubraceInfo(buf.readIdentifier(), buf.readString())
+                }
+                omc.boundbyfate.client.state.GmRaceInfo(raceId, raceName, subraces)
             }
             val skillCount = buf.readInt()
             val skills = (0 until skillCount).map {
