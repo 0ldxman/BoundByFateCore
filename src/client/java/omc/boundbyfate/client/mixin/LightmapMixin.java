@@ -73,7 +73,7 @@ public class LightmapMixin {
             boost = 2.0f;
         } else {
             // Already bright (128+) → minimal boost (1.5x)
-            boost = 1.5f;
+            boost = 1.0f;
         }
         
         // Apply boost

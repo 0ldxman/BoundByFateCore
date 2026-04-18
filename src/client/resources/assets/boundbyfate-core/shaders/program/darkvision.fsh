@@ -32,23 +32,22 @@ void main() {
         return;
     }
     
-    // DESATURATION based on PERCEIVED light level AND pixel brightness
+    // DESATURATION based on REAL light level (not perceived)
     // 
-    // Rules:
-    // 1. Very bright pixels (luminance > 0.5) = always full color (sky, torches, lava, emissives)
-    // 2. Perceived light 13-15 = full color
-    // 3. Perceived light 8-12 = partial color
-    // 4. Perceived light 0-7 = grayscale
+    // D&D Rules: In darkness you cannot distinguish colors
+    // - Light 0-6 (darkness/dim) = grayscale
+    // - Light 7+ (bright) = full color
+    // - Very bright pixels (luminance > 0.5) = always full color (sky, torches, lava)
     
     float colorAmount;
     
     if (luminance > 0.5) {
         // Very bright pixels (sky, torches, lava, emissives) - always colorful
-        // Lowered threshold from 0.7 to 0.5 to catch more bright areas
         colorAmount = 1.0;
     } else {
-        // Normal desaturation based on perceived light level
-        colorAmount = smoothstep(8.0, 13.0, PlayerLightLevel);
+        // Desaturation based on real light level
+        // smoothstep creates smooth transition from grayscale to color
+        colorAmount = smoothstep(3.0, 8.0, PlayerLightLevel);
     }
     
     vec3 grayscale = vec3(luminance);

@@ -42,28 +42,16 @@ object DarkvisionRenderer {
                         // Calculate effective light (max of block and sky)
                         val effectiveLight = maxOf(blockLight, skyLight)
                         
-                        // IMPORTANT: Apply darkvision boost to the light level we pass to shader
-                        // This way the shader knows the "perceived" light level, not the real one
-                        val perceivedLight = if (effectiveLight < 8) {
-                            // Darkness (0-7) → appears as dim light (7-14)
-                            effectiveLight + 7
-                        } else if (effectiveLight < 15) {
-                            // Dim (8-14) → appears as bright (15)
-                            15
-                        } else {
-                            // Already bright
-                            15
-                        }
-                        
-                        // Pass PERCEIVED light level to shader for desaturation
-                        // Low perceived light = grayscale, high perceived light = color
-                        shader.findUniform1f("PlayerLightLevel")?.set(perceivedLight.toFloat())
+                        // Pass REAL light level to shader (not perceived)
+                        // Shader needs to know actual darkness to apply grayscale
+                        // In darkness (0-7) = grayscale, in light (8+) = color
+                        shader.findUniform1f("PlayerLightLevel")?.set(effectiveLight.toFloat())
                         
                         // Log occasionally (every ~2 seconds)
                         if (System.currentTimeMillis() % 2000 < 50) {
                             org.slf4j.LoggerFactory.getLogger("bbf-darkvision")
-                                .info("Light: real={}(block)+{}(sky)={}, perceived={}", 
-                                    blockLight, skyLight, effectiveLight, perceivedLight)
+                                .info("Light: real={}(block)+{}(sky)={}", 
+                                    blockLight, skyLight, effectiveLight)
                         }
                     }
                 } catch (e: Exception) { /* shader not loaded */ }
