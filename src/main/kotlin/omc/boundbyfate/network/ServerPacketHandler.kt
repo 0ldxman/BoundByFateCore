@@ -197,6 +197,8 @@ object ServerPacketHandler {
             val level = buf.readInt()
             val hasRace = buf.readBoolean()
             val raceId = if (hasRace) buf.readIdentifier() else null
+            val hasSubrace = buf.readBoolean()
+            val subraceId = if (hasSubrace) buf.readIdentifier() else null
             val hasGender = buf.readBoolean()
             val gender = if (hasGender) buf.readString() else null
 
@@ -209,8 +211,6 @@ object ServerPacketHandler {
                 // Apply race change — always reapply to update speed/scale
                 if (raceId != null) {
                     val currentRace = target.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
-                    val hasSubrace = buf.readBoolean()
-                    val subraceId = if (hasSubrace) buf.readIdentifier() else null
                     if (currentRace?.raceId != raceId || currentRace?.subraceId != subraceId) {
                         omc.boundbyfate.system.race.RaceSystem.applyRace(target, raceId, subraceId)
                     } else {
