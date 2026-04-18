@@ -1,632 +1,607 @@
-un ./gradlew build
-Downloading https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
-.............10%.............20%.............30%.............40%.............50%.............60%..............70%.............80%.............90%.............100%
-Welcome to Gradle 9.4.1!
-Here are the highlights of this release:
- - Java 26 support
- - Non-class-based JVM tests
- - Enhanced console progress bar
-For more details see https://docs.gradle.org/9.4.1/release-notes.html
-Starting a Gradle Daemon (subsequent builds will be faster)
-> Configure project :
-Fabric Loom: 1.16.1
-> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :processResources
-> Task :processClientResources
-> Task :processIncludeJars
-> Task :sourcesJar
-> Task :processTestResources NO-SOURCE
-> Task :validateAccessWidener NO-SOURCE
-> Task :remapSourcesJar
-> Task :compileKotlin
-w: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/main/kotlin/omc/boundbyfate/network/ServerPacketHandler.kt:566:42 Unnecessary non-null assertion (!!) on a non-null receiver of type 'PlayerClassData'.
-w: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/main/kotlin/omc/boundbyfate/network/ServerPacketHandler.kt:571:70 Unnecessary non-null assertion (!!) on a non-null receiver of type 'Identifier'.
-w: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/main/kotlin/omc/boundbyfate/network/ServerPacketHandler.kt:578:41 Unnecessary non-null assertion (!!) on a non-null receiver of type 'PlayerRaceData'.
-w: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/main/kotlin/omc/boundbyfate/network/ServerPacketHandler.kt:717:91 Unnecessary non-null assertion (!!) on a non-null receiver of type 'Identifier'.
-w: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/main/kotlin/omc/boundbyfate/system/feature/effect/AddResistanceEffect.kt:25:17 Check for instance is always 'true'.
-> Task :compileJava
-> Task :classes
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:182:12 Unresolved reference 'renderStatBox'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:397:22 Unresolved reference 'stat'.
-> Task :compileClientKotlin
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:398:41 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:403:35 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:403:56 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:405:63 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:11 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:12 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:21 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:22 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:24 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:25 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:27 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:28 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:30 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:31 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:33 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:43 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:44 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:51 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:53 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:57 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:64 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:66 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:76 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:77 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:82 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:83 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:85 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:90 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:100 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:101 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:106 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:107 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:407:108 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:16 Function invocation 'context(...)' expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:24 Unresolved reference 'matrices'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:34 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:36 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:40 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:409:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:9 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:10 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:20 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:21 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:23 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:25 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:27 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:29 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:30 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:31 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:32 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:39 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:40 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:43 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:44 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:46 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:48 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:51 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:59 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:60 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:64 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:67 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:68 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:69 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:74 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:75 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:79 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:81 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:85 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:87 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:410:89 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:15 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:16 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:34 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:47 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:60 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:61 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:65 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:67 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:68 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:69 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:71 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:72 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:74 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:82 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:85 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:86 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:87 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:90 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:412:91 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:9 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:10 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:14 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:15 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:18 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:20 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:29 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:30 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:31 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:33 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:37 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:39 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:40 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:42 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:51 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:53 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:54 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:60 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:64 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:66 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:67 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:68 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:69 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:76 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:77 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:78 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:80 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:82 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:85 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:86 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:87 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:92 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:93 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:97 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:99 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:103 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:105 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:414:107 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:11 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:12 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:18 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:21 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:22 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:24 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:415:24 Function declaration must have a name.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:419:12 Function invocation 'context(...)' expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:419:20 Unresolved reference 'drawTextWithShadow'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:420:10 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:420:15 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:420:15 Function declaration must have a name.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:422:12 Function invocation 'context(...)' expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:422:20 Unresolved reference 'drawTextWithShadow'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:424:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:424:9 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:424:10 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:424:13 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:424:14 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:9 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:10 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:14 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:15 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:18 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:20 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:29 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:30 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:31 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:33 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:37 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:39 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:40 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:42 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:51 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:53 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:54 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:60 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:63 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:64 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:65 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:72 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:73 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:74 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:76 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:78 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:81 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:82 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:83 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:88 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:89 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:93 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:95 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:99 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:101 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:426:103 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:15 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:16 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:34 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:47 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:55 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:57 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:59 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:64 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:65 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:66 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:68 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:69 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:71 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:79 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:82 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:83 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:84 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:87 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:428:88 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:11 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:12 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:21 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:27 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:29 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:37 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:39 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:43 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:45 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:46 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:48 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:52 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:53 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:55 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:59 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:60 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:62 Function declaration must have a name.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:430:70 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:11 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:12 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:19 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:21 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:27 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:29 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:35 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:37 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:39 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:41 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:43 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:45 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:46 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:48 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:51 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:53 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:55 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:59 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:62 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:63 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:65 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:65 Function declaration must have a name.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:431:73 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:8 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:11 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:12 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:22 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:23 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:25 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:26 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:28 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:30 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:31 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:33 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:36 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:46 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:47 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:49 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:50 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:52 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:54 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:55 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:56 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:58 Syntax error: Expecting member declaration.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:434:58 Function declaration must have a name.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:436:39 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:436:60 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:440:56 Unresolved reference 'stat'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:452:30 Unresolved reference 'mouseX'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:452:38 Unresolved reference 'mouseY'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:461:8 Unresolved reference 'profBonus'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:461:27 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:461:45 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:461:63 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:461:80 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:482:21 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:483:38 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:488:16 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:490:26 Unresolved reference 'stats'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:490:26 Cannot infer type for type parameter 'V'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:490:50 Cannot infer type for type parameter 'T'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:490:56 Cannot infer type for type parameter 'T'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:491:28 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:494:39 Unresolved reference 'profBonus'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:495:37 'operator' modifier is required on 'fun <T> Comparable<T>.compareTo(other: T): Int'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:508:30 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:508:30 Cannot infer type for type parameter 'V'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:509:20 Unresolved reference 'not' for operator '!'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:511:54 Expression expected, but package name found.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:513:16 Unresolved reference 'setTooltip'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:520:37 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:522:21 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:523:39 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:527:16 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:529:26 Unresolved reference 'stats'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:529:26 Cannot infer type for type parameter 'V'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:529:51 Cannot infer type for type parameter 'T'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:529:57 Cannot infer type for type parameter 'T'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:530:28 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:533:39 Unresolved reference 'profBonus'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:534:37 'operator' modifier is required on 'fun <T> Comparable<T>.compareTo(other: T): Int'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:544:30 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:544:30 Cannot infer type for type parameter 'V'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:545:20 Unresolved reference 'not' for operator '!'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:547:54 Expression expected, but package name found.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:549:16 Unresolved reference 'setTooltip'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:552:12 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:552:89 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:552:100 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:553:12 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:553:32 'operator' modifier is required on 'fun <T> Comparable<T>.compareTo(other: T): Int'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:553:119 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:553:130 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:569:29 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:571:26 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:572:26 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:583:16 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:583:31 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:588:23 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:589:23 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:596:28 Unresolved reference 'scarCount'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:596:54 Unresolved reference 'scarCount'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:605:24 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:605:36 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:607:68 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:607:81 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:608:20 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:608:45 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:609:24 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:610:67 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:613:68 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:613:77 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:614:20 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:614:45 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:615:24 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:616:67 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:619:8 Unresolved reference 'tempHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:619:33 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:619:45 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:628:68 Unresolved reference 'speedFt'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:628:79 Unresolved reference 'speedFt'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:629:24 Unresolved reference 'speedFt'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:630:68 Unresolved reference 'speedFt'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:633:68 Unresolved reference 'sizeFactor'.
-> Task :compileClientKotlin FAILED
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:633:82 Unresolved reference 'sizeFactor'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:634:35 Unresolved reference 'sizeFactor'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:635:68 Unresolved reference 'sizeFactor'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:641:8 Unresolved reference 'features'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:641:34 Cannot infer type for value parameter 'i'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:641:37 Cannot infer type for value parameter 'featId'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:642:101 Unresolved reference 'path'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:644:24 'operator' modifier is required on 'fun <T> Comparable<T>.compareTo(other: T): Int'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:644:33 Return type mismatch: expected '??? (Unknown type for value parameter it)', actual 'Unit'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:645:37 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:646:26 Unresolved reference 'not' for operator '!'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:646:68 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:652:77 Unresolved reference 'features'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:652:86 'fun <T> MutableList<T>.remove(index: Int): T' is deprecated. Use removeAt(index) instead.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:656:40 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:659:29 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:663:16 Unresolved reference 'setTooltip'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:670:28 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:671:25 Unresolved reference 'stats'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:672:8 Unresolved reference 'stats'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:672:24 Cannot infer type for implicit value parameter 'it'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:672:24 Operator call 'component1()' is ambiguous for destructuring of type '??? (Unknown type for value parameter <destruct>)'. Applicable candidates:
-fun <T> Array<out T>.component1(): T
-fun ByteArray.component1(): Byte
-fun ShortArray.component1(): Short
-fun IntArray.component1(): Int
-fun LongArray.component1(): Long
-fun FloatArray.component1(): Float
-fun DoubleArray.component1(): Double
-fun BooleanArray.component1(): Boolean
-fun CharArray.component1(): Char
-fun <T> List<T>.component1(): T
-fun <K, V> Map.Entry<K, V>.component1(): K
-fun UIntArray.component1(): UInt
-fun ULongArray.component1(): ULong
-fun UByteArray.component1(): UByte
-fun UShortArray.component1(): UShort
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:672:24 Operator call 'component2()' is ambiguous for destructuring of type '??? (Unknown type for value parameter <destruct>)'. Applicable candidates:
-fun <T> Array<out T>.component2(): T
-fun ByteArray.component2(): Byte
-fun ShortArray.component2(): Short
-fun IntArray.component2(): Int
-fun LongArray.component2(): Long
-fun FloatArray.component2(): Float
-fun DoubleArray.component2(): Double
-fun BooleanArray.component2(): Boolean
-fun CharArray.component2(): Char
-fun <T> List<T>.component2(): T
-fun <K, V> Map.Entry<K, V>.component2(): V
-fun UIntArray.component2(): UInt
-fun ULongArray.component2(): ULong
-fun UByteArray.component2(): UByte
-fun UShortArray.component2(): UShort
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:676:26 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:677:27 Unresolved reference 'classId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:677:49 Unresolved reference 'classId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:677:88 Unresolved reference 'classId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:678:27 Unresolved reference 'subclassId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:678:52 Unresolved reference 'subclassId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:678:94 Unresolved reference 'subclassId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:679:23 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:680:27 Unresolved reference 'raceId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:680:48 Unresolved reference 'raceId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:680:86 Unresolved reference 'raceId'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:681:52 Unresolved reference 'gender'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:685:29 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:686:26 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:687:8 Unresolved reference 'skills'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:687:25 Cannot infer type for implicit value parameter 'it'. Specify it explicitly.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:687:25 Operator call 'component1()' is ambiguous for destructuring of type '??? (Unknown type for value parameter <destruct>)'. Applicable candidates:
-fun <T> Array<out T>.component1(): T
-fun ByteArray.component1(): Byte
-fun ShortArray.component1(): Short
-fun IntArray.component1(): Int
-fun LongArray.component1(): Long
-fun FloatArray.component1(): Float
-fun DoubleArray.component1(): Double
-fun BooleanArray.component1(): Boolean
-fun CharArray.component1(): Char
-fun <T> List<T>.component1(): T
-fun <K, V> Map.Entry<K, V>.component1(): K
-fun UIntArray.component1(): UInt
-fun ULongArray.component1(): ULong
-fun UByteArray.component1(): UByte
-fun UShortArray.component1(): UShort
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:687:25 Operator call 'component2()' is ambiguous for destructuring of type '??? (Unknown type for value parameter <destruct>)'. Applicable candidates:
-fun <T> Array<out T>.component2(): T
-fun ByteArray.component2(): Byte
-fun ShortArray.component2(): Short
-fun IntArray.component2(): Int
-fun LongArray.component2(): Long
-fun FloatArray.component2(): Float
-fun DoubleArray.component2(): Double
-fun BooleanArray.component2(): Boolean
-fun CharArray.component2(): Char
-fun <T> List<T>.component2(): T
-fun <K, V> Map.Entry<K, V>.component2(): V
-fun UIntArray.component2(): UInt
-fun ULongArray.component2(): ULong
-fun UByteArray.component2(): UByte
-fun UShortArray.component2(): UShort
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:691:32 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:692:29 Unresolved reference 'vitality'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:693:29 Unresolved reference 'scarCount'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:697:31 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:698:30 Unresolved reference 'features'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:701:23 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
-fun <T> Enumeration<T>.iterator(): Iterator<T>
-fun <T> Iterator<T>.iterator(): Iterator<T>
-fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
-fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
-fun CharSequence.iterator(): CharIterator
-fun BufferedInputStream.iterator(): ByteIterator
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:703:32 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:708:23 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
-fun <T> Enumeration<T>.iterator(): Iterator<T>
-fun <T> Iterator<T>.iterator(): Iterator<T>
-fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
-fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
-fun CharSequence.iterator(): CharIterator
-fun BufferedInputStream.iterator(): ByteIterator
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:710:32 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:718:26 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:719:25 Unresolved reference 'currentHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:720:25 Unresolved reference 'maxHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:721:23 Unresolved reference 'tempHp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:726:29 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:727:26 Unresolved reference 'speedFt'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:728:28 Unresolved reference 'sizeFactor'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:732:12 Unresolved reference 'pendingSkinName'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:734:32 Unresolved reference 'snapshot'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:735:32 Unresolved reference 'pendingSkinName'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:740:8 Unresolved reference 'statusMsg'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:740:34 Unresolved reference 'statusTimer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:745:8 Unresolved reference 'btns'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:745:17 Unresolved reference 'Btn'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:755:17 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:756:35 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:763:35 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:772:4 Modifier 'override' is not applicable to 'top level function'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:776:26 Unresolved reference 'width'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:777:24 Unresolved reference 'experience'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:777:54 Unresolved reference 'level'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:778:26 Unresolved reference 'textRenderer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:779:12 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:780:12 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:780:26 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:781:16 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:781:28 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:781:47 Unresolved reference 'experience'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:784:12 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:784:26 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:785:18 Unresolved reference 'btns'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:785:23 Method 'iterator()' is ambiguous for this expression. Applicable candidates:
-fun <T> Enumeration<T>.iterator(): Iterator<T>
-fun <T> Iterator<T>.iterator(): Iterator<T>
-fun <K, V> Map<out K, V>.iterator(): Iterator<Map.Entry<K, V>>
-fun <K, V> MutableMap<K, V>.iterator(): MutableIterator<MutableMap.MutableEntry<K, V>>
-fun CharSequence.iterator(): CharIterator
-fun BufferedInputStream.iterator(): ByteIterator
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:786:16 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:786:42 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:788:15 No supertypes are accessible in this context.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:791:4 Modifier 'override' is not applicable to 'top level function'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:792:12 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:794:25 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:796:20 Unresolved reference 'experience'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:796:33 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:796:83 Unresolved reference 'experience'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:797:20 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:800:24 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:800:53 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:800:70 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:806:15 No supertypes are accessible in this context.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:809:4 Modifier 'override' is not applicable to 'top level function'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:810:12 Unresolved reference 'editingExp'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:811:12 Unresolved reference 'expInputBuffer'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:814:15 No supertypes are accessible in this context.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:817:4 Modifier 'override' is not applicable to 'top level function'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:12 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:18 Unresolved reference 'skillsBoxX'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:31 Unresolved reference 'skillsBoxX'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:44 Unresolved reference 'skillsBoxW'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:59 Argument type mismatch: actual type is 'Int', but 'Double' was expected.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:65 Unresolved reference 'skillsBoxY'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:78 Unresolved reference 'skillsBoxY'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:819:91 Unresolved reference 'skillsBoxH2'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:821:32 Unresolved reference 'skillsBoxH2'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:823:12 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:823:27 Unresolved reference 'skillScroll'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:826:15 No supertypes are accessible in this context.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:829:4 Modifier 'override' is not applicable to 'top level function'.
-e: file:///home/runner/work/BoundByFateCore/BoundByFateCore/src/client/kotlin/omc/boundbyfate/client/gui/GmPlayerEditScreen.kt:829:39 Syntax error: Expecting a top level declaration.
-8 actionable tasks: 8 executed
-FAILURE: Build failed with an exception.
-* What went wrong:
-Execution failed for task ':compileClientKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > Compilation error. See log for more details
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights from a Build Scan (powered by Develocity).
-> Get more help at https://help.gradle.org.
+Prism Launcher version: 11.0.0 (official)
+
+
+Launched instance in online mode
+
+login.microsoftonline.com resolves to:
+    [2603:1027:1:108::8, 2603:1027:1:108::10, 2603:1027:1:108::e, 2603:1026:3000:110::2, 2603:1027:1:108::5, 2603:1026:3000:108::6, 2603:1027:1:108::a, 2603:1027:1:108::d, 20.190.147.12, 20.190.147.2, 20.190.177.23, 20.190.177.83, 20.190.147.7, 20.190.177.148, 20.190.147.5, 20.190.177.146]
+
+
+session.minecraft.net resolves to:
+    [2603:1061:14:63::1, 150.171.109.100]
+
+
+textures.minecraft.net resolves to:
+    [2620:1ec:48:1::45, 2620:1ec:29:1::45, 13.107.226.45, 13.107.253.45]
+
+
+api.mojang.com resolves to:
+    [2603:1061:14:63::1, 13.107.226.45, 13.107.253.45]
+
+
+Minecraft folder is:
+C:/Users/********/AppData/Roaming/PrismLauncher/instances/1.20.1/minecraft
+
+
+Java path is:
+C:/Users/********/AppData/Roaming/PrismLauncher/java/java-runtime-gamma/bin/javaw.exe
+
+
+Java is version 17.0.15, using 64 (amd64) architecture, from Microsoft.
+
+
+Main Class:
+  net.fabricmc.loader.impl.launch.knot.KnotClient
+
+Native path:
+  C:/Users/********/AppData/Roaming/PrismLauncher/instances/1.20.1/natives
+
+Traits:
+  XR:Initial
+  feature:is_quick_play_singleplayer
+  feature:is_quick_play_multiplayer
+  FirstThreadOnMacOS
+
+Libraries:
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-glfw-natives-windows-arm64/3.3.1/lwjgl-glfw-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-glfw-natives-windows-x86/3.3.1/lwjgl-glfw-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-glfw-natives-windows/3.3.1/lwjgl-glfw-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-jemalloc-natives-windows-arm64/3.3.1/lwjgl-jemalloc-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-jemalloc-natives-windows-x86/3.3.1/lwjgl-jemalloc-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-jemalloc-natives-windows/3.3.1/lwjgl-jemalloc-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-jemalloc/3.3.1/lwjgl-jemalloc-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-natives-windows-arm64/3.3.1/lwjgl-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-natives-windows-x86/3.3.1/lwjgl-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-natives-windows/3.3.1/lwjgl-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-openal-natives-windows-arm64/3.3.1/lwjgl-openal-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-openal-natives-windows-x86/3.3.1/lwjgl-openal-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-openal-natives-windows/3.3.1/lwjgl-openal-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-openal/3.3.1/lwjgl-openal-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-opengl-natives-windows-arm64/3.3.1/lwjgl-opengl-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-opengl-natives-windows-x86/3.3.1/lwjgl-opengl-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-opengl-natives-windows/3.3.1/lwjgl-opengl-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-opengl/3.3.1/lwjgl-opengl-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-stb-natives-windows-arm64/3.3.1/lwjgl-stb-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-stb-natives-windows-x86/3.3.1/lwjgl-stb-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-stb-natives-windows/3.3.1/lwjgl-stb-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-stb/3.3.1/lwjgl-stb-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-tinyfd-natives-windows-arm64/3.3.1/lwjgl-tinyfd-natives-windows-arm64-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-tinyfd-natives-windows-x86/3.3.1/lwjgl-tinyfd-natives-windows-x86-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-tinyfd-natives-windows/3.3.1/lwjgl-tinyfd-natives-windows-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl-tinyfd/3.3.1/lwjgl-tinyfd-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/github/oshi/oshi-core/6.2.2/oshi-core-6.2.2.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/google/code/gson/gson/2.10/gson-2.10.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/ibm/icu/icu4j/71.1/icu4j-71.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/authlib/4.0.43/authlib-4.0.43.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/blocklist/1.0.10/blocklist-1.0.10.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/brigadier/1.1.8/brigadier-1.1.8.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/datafixerupper/6.0.8/datafixerupper-6.0.8.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/logging/1.1.1/logging-1.1.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/patchy/2.2.10/patchy-2.2.10.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/text2speech/1.17.9/text2speech-1.17.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/commons-codec/commons-codec/1.15/commons-codec-1.15.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/commons-io/commons-io/2.11.0/commons-io-2.11.0.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/commons-logging/commons-logging/1.2/commons-logging-1.2.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-buffer/4.1.82.Final/netty-buffer-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-codec/4.1.82.Final/netty-codec-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-common/4.1.82.Final/netty-common-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-handler/4.1.82.Final/netty-handler-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-resolver/4.1.82.Final/netty-resolver-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-transport-classes-epoll/4.1.82.Final/netty-transport-classes-epoll-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-transport-native-unix-common/4.1.82.Final/netty-transport-native-unix-common-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/io/netty/netty-transport/4.1.82.Final/netty-transport-4.1.82.Final.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/it/unimi/dsi/fastutil/8.5.9/fastutil-8.5.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/java/dev/jna/jna-platform/5.12.1/jna-platform-5.12.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/httpcomponents/httpclient/4.5.13/httpclient-4.5.13.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/httpcomponents/httpcore/4.4.15/httpcore-4.4.15.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/logging/log4j/log4j-api/2.19.0/log4j-api-2.19.0.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/logging/log4j/log4j-core/2.19.0/log4j-core-2.19.0.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.19.0/log4j-slf4j2-impl-2.19.0.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/joml/joml/1.10.5/joml-1.10.5.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/slf4j/slf4j-api/2.0.1/slf4j-api-2.0.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/fabricmc/intermediary/1.20.1/intermediary-1.20.1.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/ow2/asm/asm/9.9/asm-9.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/org/ow2/asm/asm-util/9.9/asm-util-9.9.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/fabricmc/sponge-mixin/0.17.0+mixin.0.8.7/sponge-mixin-0.17.0+mixin.0.8.7.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/fabricmc/fabric-loader/0.18.6/fabric-loader-0.18.6.jar
+  C:/Users/********/AppData/Roaming/PrismLauncher/libraries/com/mojang/minecraft/1.20.1/minecraft-1.20.1-client.jar
+
+Native libraries:
+
+Mods:
+  [✔] Better Gamemode V1.4.0
+  [✔] boundbyfate-core-1.0.0
+  [✔] cloth-config-11.1.136-fabric
+  [✔] entity_model_features_1.20.1-fabric-3.0.17
+  [✔] entity_texture_features_1.20.1-fabric-7.0.13
+  [✔] entityculling-fabric-1.10.0-mc1.20.1
+  [✔] fabric-api-0.92.7+1.20.1
+  [✔] fabric-language-kotlin-1.13.10+kotlin.2.3.20
+  [✔] ferritecore-6.0.1-fabric
+  [✔] gamemodeunrestrictor-1.0.2
+  [✔] ImmediatelyFast-Fabric-1.5.4+1.20.4
+  [✔] indium-1.0.36+mc1.20.1
+  [✔] iris-1.7.6+mc1.20.1
+  [✔] lithium-fabric-mc1.20.1-0.11.4
+  [✔] modmenu-7.2.2
+  [✔] Pehkui-3.8.3+1.14.4-1.21
+  [✘] PersistentGamemodeSwitcher-1.0.3.7.jar (disabled)
+  [✘] polytone-1.20-3.5.23-fabric.jar (disabled)
+  [✔] satin-1.14.0
+  [✔] sodium-fabric-0.5.13+mc1.20.1
+  [✘] voxy-0.1.6-alpha.jar (disabled)
+
+Params:
+  --username  --version 1.20.1 --gameDir C:/Users/********/AppData/Roaming/PrismLauncher/instances/1.20.1/minecraft --assetsDir C:/Users/********/AppData/Roaming/PrismLauncher/assets --assetIndex 5 --uuid  --accessToken  --userType  --versionType release
+
+Window size: 854 x 480
+
+Launcher: standard
+
+Java Arguments:
+[-Duser.language=en, -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump, -Xms512m, -Xmx4096m]
+
+
+Minecraft process ID: 9384
+
+
+[23:32:29] [main/INFO]: Loading Minecraft 1.20.1 with Fabric Loader 0.18.6
+[23:32:29] [main/INFO]: Loading 95 mods:
+	- bettergamemode 1.4.0
+	- boundbyfate-core 1.0.0
+	- cloth-config 11.1.136
+	   \-- cloth-basic-math 0.6.1
+	- entity_model_features 3.0.17
+	- entity_texture_features 7.0.13
+	- entityculling 1.10.0
+	   |-- transition 1.0.14
+	   \-- trender 1.0.11
+	- fabric-api 0.92.7+1.20.1
+	   |-- fabric-api-base 0.4.32+1802ada577
+	   |-- fabric-api-lookup-api-v1 1.6.37+1802ada577
+	   |-- fabric-biome-api-v1 13.0.15+93aa238b77
+	   |-- fabric-block-api-v1 1.0.12+1802ada577
+	   |-- fabric-block-view-api-v2 1.0.3+924f046a77
+	   |-- fabric-blockrenderlayer-v1 1.1.42+1802ada577
+	   |-- fabric-client-tags-api-v1 1.1.3+1802ada577
+	   |-- fabric-command-api-v1 1.2.35+f71b366f77
+	   |-- fabric-command-api-v2 2.2.14+1802ada577
+	   |-- fabric-commands-v0 0.2.52+df3654b377
+	   |-- fabric-containers-v0 0.1.67+df3654b377
+	   |-- fabric-content-registries-v0 4.0.13+1802ada577
+	   |-- fabric-convention-tags-v1 1.5.6+1802ada577
+	   |-- fabric-crash-report-info-v1 0.2.20+1802ada577
+	   |-- fabric-data-attachment-api-v1 1.0.2+de0fd6d177
+	   |-- fabric-data-generation-api-v1 12.3.7+1802ada577
+	   |-- fabric-dimensions-v1 2.1.55+1802ada577
+	   |-- fabric-entity-events-v1 1.6.1+1c78457f77
+	   |-- fabric-events-interaction-v0 0.6.5+13a40c6677
+	   |-- fabric-events-lifecycle-v0 0.2.64+df3654b377
+	   |-- fabric-game-rule-api-v1 1.0.41+1802ada577
+	   |-- fabric-item-api-v1 2.1.29+1802ada577
+	   |-- fabric-item-group-api-v1 4.0.14+1802ada577
+	   |-- fabric-key-binding-api-v1 1.0.38+1802ada577
+	   |-- fabric-keybindings-v0 0.2.36+df3654b377
+	   |-- fabric-lifecycle-events-v1 2.2.23+1802ada577
+	   |-- fabric-loot-api-v2 1.2.3+1802ada577
+	   |-- fabric-loot-tables-v1 1.1.47+9e7660c677
+	   |-- fabric-message-api-v1 5.1.10+1802ada577
+	   |-- fabric-mining-level-api-v1 2.1.52+1802ada577
+	   |-- fabric-model-loading-api-v1 1.0.4+1802ada577
+	   |-- fabric-models-v0 0.4.3+9386d8a777
+	   |-- fabric-networking-api-v1 1.3.14+a158aa0477
+	   |-- fabric-networking-v0 0.3.54+df3654b377
+	   |-- fabric-object-builder-api-v1 11.1.5+e35120df77
+	   |-- fabric-particles-v1 1.1.3+1802ada577
+	   |-- fabric-recipe-api-v1 1.0.24+1802ada577
+	   |-- fabric-registry-sync-v0 2.3.6+1802ada577
+	   |-- fabric-renderer-api-v1 3.2.2+1802ada577
+	   |-- fabric-renderer-indigo 1.5.3+85287f9f77
+	   |-- fabric-renderer-registries-v1 3.2.47+df3654b377
+	   |-- fabric-rendering-data-attachment-v1 0.3.39+92a0d36777
+	   |-- fabric-rendering-fluids-v1 3.0.29+1802ada577
+	   |-- fabric-rendering-v0 1.1.50+df3654b377
+	   |-- fabric-rendering-v1 3.0.9+1802ada577
+	   |-- fabric-resource-conditions-api-v1 2.3.9+1802ada577
+	   |-- fabric-resource-loader-v0 0.11.12+fb82e9d777
+	   |-- fabric-screen-api-v1 2.0.9+1802ada577
+	   |-- fabric-screen-handler-api-v1 1.3.33+1802ada577
+	   |-- fabric-sound-api-v1 1.0.14+1802ada577
+	   |-- fabric-transfer-api-v1 3.3.6+8dd72ea377
+	   \-- fabric-transitive-access-wideners-v1 4.3.2+1802ada577
+	- fabric-language-kotlin 1.13.10+kotlin.2.3.20
+	   |-- org_jetbrains_kotlin_kotlin-reflect 2.3.20
+	   |-- org_jetbrains_kotlin_kotlin-stdlib 2.3.20
+	   |-- org_jetbrains_kotlin_kotlin-stdlib-jdk7 2.3.20
+	   |-- org_jetbrains_kotlin_kotlin-stdlib-jdk8 2.3.20
+	   |-- org_jetbrains_kotlinx_atomicfu-jvm 0.32.1
+	   |-- org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm 1.10.2
+	   |-- org_jetbrains_kotlinx_kotlinx-coroutines-jdk8 1.10.2
+	   |-- org_jetbrains_kotlinx_kotlinx-datetime-jvm 0.7.1
+	   |-- org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm 0.9.0
+	   |-- org_jetbrains_kotlinx_kotlinx-io-core-jvm 0.9.0
+	   |-- org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm 1.10.0
+	   |-- org_jetbrains_kotlinx_kotlinx-serialization-core-jvm 1.10.0
+	   \-- org_jetbrains_kotlinx_kotlinx-serialization-json-jvm 1.10.0
+	- fabricloader 0.18.6
+	   \-- mixinextras 0.5.3
+	- ferritecore 6.0.1
+	- gamemodeunrestrictor 1.0.2
+	- immediatelyfast 1.5.4+1.20.4
+	   \-- net_lenni0451_reflect 1.6.1+curseforge
+	- indium 1.0.36+mc1.20.1
+	- iris 1.7.6+mc1.20.1
+	   |-- io_github_douira_glsl-transformer 2.0.1
+	   |-- org_anarres_jcpp 1.4.14
+	   \-- org_antlr_antlr4-runtime 4.13.1
+	- java 17
+	- lithium 0.11.4
+	- minecraft 1.20.1
+	- modmenu 7.2.2
+	- pehkui 3.8.3+1.14.4-1.21
+	   \-- kanos_config 0.4.1+1.14.4-1.19.4
+	- satin 1.14.0
+	- sodium 0.5.13+mc1.20.1
+[23:32:30] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/C:/Users/********/AppData/Roaming/PrismLauncher/libraries/net/fabricmc/sponge-mixin/0.17.0+mixin.0.8.7/sponge-mixin-0.17.0+mixin.0.8.7.jar Service=Knot/Fabric Env=CLIENT
+[23:32:30] [main/INFO]: Compatibility level set to JAVA_17
+[23:32:31] [main/INFO]: Loaded configuration file for Lithium: 131 options available, 1 override(s) found
+[23:32:31] [main/WARN]: [Satin] Iris is present, custom block renders will not work
+[23:32:31] [main/INFO]: Loaded configuration file for Sodium: 42 options available, 3 override(s) found
+[23:32:31] [main/WARN]: Error loading class: dev/tr7zw/skinlayers/render/CustomizableModelPart (java.lang.ClassNotFoundException: dev/tr7zw/skinlayers/render/CustomizableModelPart)
+[23:32:32] [main/WARN]: Force-disabling mixin 'alloc.blockstate.StateMixin' as rule 'mixin.alloc.blockstate' (added by mods [ferritecore]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.entity.CuboidMixin' as rule 'mixin.features.render.entity' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.entity.ModelPartMixin' as rule 'mixin.features.render.entity' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.entity.cull.EntityRendererMixin' as rule 'mixin.features.render.entity' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.entity.shadows.EntityRenderDispatcherMixin' as rule 'mixin.features.render.entity' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.gui.font.GlyphRendererMixin' as rule 'mixin.features.render.gui.font' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.world.sky.BackgroundRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.world.sky.ClientWorldMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[23:32:32] [main/WARN]: Force-disabling mixin 'features.render.world.sky.WorldRendererMixin' as rule 'mixin.features.render.world.sky' (added by mods [iris]) disables it and children
+[23:32:32] [main/INFO]: Searching for graphics cards...
+[23:32:32] [main/INFO]: Found graphics adapter: AdapterInfo{vendor=NVIDIA, description='NVIDIA GeForce RTX 4050 Laptop GPU', adapterType=0x00002313, openglIcdFilePath='C:\WINDOWS\System32\DriverStore\FileRepository\nvmii.inf_amd64_8e2b7f872a9cdacc\nvoglv64.dll', openglIcdVersion=32.0.15.7652}
+[23:32:32] [main/INFO]: Found graphics adapter: AdapterInfo{vendor=AMD, description='AMD Radeon(TM) Graphics', adapterType=0x0000232B, openglIcdFilePath='C:\WINDOWS\System32\DriverStore\FileRepository\u0198974.inf_amd64_dcac9659486b668a\B025819\atig6pxx.dll', openglIcdVersion=32.0.21043.5001}
+[23:32:32] [main/WARN]: Sodium has applied one or more workarounds to prevent crashes or other issues on your system: [NVIDIA_THREADED_OPTIMIZATIONS_BROKEN]
+[23:32:32] [main/WARN]: This is not necessarily an issue, but it may result in certain features or optimizations being disabled. You can sometimes fix these issues by upgrading your graphics driver.
+[23:32:33] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.3).
+[23:32:36] [main/WARN]: Invalid registry value type detected for PerfOS counters. Should be REG_DWORD. Ignoring: HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PerfOS\Performance\Disable Performance Counters.
+[23:32:43] [Datafixer Bootstrap/INFO]: 188 Datafixer optimizations took 315 milliseconds
+[23:32:45] [main/WARN]: Unrecognized user type: offline
+[23:32:46] [Render thread/INFO]: Environment: authHost='https://authserver.mojang.com', accountsHost='https://api.mojang.com', sessionHost='https://sessionserver.mojang.com', servicesHost='https://api.minecraftservices.com', name='PROD'
+[23:32:47] [Render thread/ERROR]: Failed to verify authentication
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+	at com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:56) ~[authlib-4.0.43.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:156) ~[authlib-4.0.43.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.<init>(YggdrasilUserApiService.java:55) ~[authlib-4.0.43.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService.createUserApiService(YggdrasilAuthenticationService.java:124) ~[authlib-4.0.43.jar:?]
+	at net.minecraft.class_310.method_31382(class_310.java:733) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.<init>(class_310.java:442) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:211) ~[minecraft-1.20.1-client.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:514) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.18.6.jar:?]
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) ~[NewLaunch.jar:?]
+Caused by: com.mojang.authlib.exceptions.MinecraftClientHttpException: Status: 401
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:85) ~[authlib-4.0.43.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:48) ~[authlib-4.0.43.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:129) ~[authlib-4.0.43.jar:?]
+	... 11 more
+[23:32:47] [Render thread/INFO]: Setting user: Pisechnitsa
+[23:32:47] [Render thread/INFO]: BoundByFate Core initializing...
+[23:32:47] [Render thread/INFO]: Registered 6 stats
+[23:32:47] [Render thread/INFO]: Registered 24 skills/saves
+[23:32:47] [Render thread/INFO]: Registered 21 resource types
+[23:32:48] [Render thread/INFO]: Registered built-in penalty effect types
+[23:32:48] [Render thread/INFO]: Registered built-in damage conditions
+[23:32:48] [Render thread/INFO]: Registered built-in effects
+[23:32:48] [Render thread/INFO]: Registered built-in feature conditions
+[23:32:48] [Render thread/INFO]: Registered ability-specific effects
+[23:32:48] [Render thread/INFO]: Registered event handlers
+[23:32:48] [Render thread/INFO]: BoundByFate Core initialized!
+[23:32:48] [Render thread/INFO]: [ETF]: Modifying ETF Render State constructor because: for EMF
+[23:32:48] [Render thread/INFO]: Loading Entity Model Features, allegedly compatible with the OptiFine format.
+[23:32:48] [Render thread/INFO]: [ETF]: 6 new ETF Random Properties registered by entity_model_features
+[23:32:48] [Render thread/INFO]: Loading Entity Texture Features, Has Anyone Really Been Far Even as Decided to Use Even Go Want to do Look More Like?
+[23:32:48] [Render thread/INFO]: [Indigo] Different rendering plugin detected; not applying Indigo.
+[23:32:49] [Worker-Main-1/INFO]: Checking mod updates...
+[23:32:49] [Render thread/INFO]: [STDOUT]: [LibGui] Initializing Client...
+[23:32:49] [ForkJoinPool.commonPool-worker-1/WARN]: [Iris Update Check] Cached update file detected, using that!
+[23:32:49] [Render thread/INFO]: Backend library: LWJGL version 3.3.1 SNAPSHOT
+[23:32:49] [Render thread/INFO]: Modifying process environment to apply workarounds for the NVIDIA graphics driver...
+[23:32:50] [Worker-Main-1/INFO]: Update available for 'fabric-api@0.92.7+1.20.1', (-> 0.92.8+1.20.1)
+[23:32:50] [Worker-Main-1/INFO]: Update available for 'entity_model_features@3.0.17', (-> 3.1.1-fabric-1.20.1)
+[23:32:50] [Worker-Main-1/INFO]: Update available for 'entityculling@1.10.0', (-> 1.10.1)
+[23:32:50] [Worker-Main-1/INFO]: Update available for 'entity_texture_features@7.0.13', (-> 7.1-fabric-1.20.1)
+[23:32:51] [Render thread/INFO]: OpenGL Vendor: NVIDIA Corporation
+[23:32:51] [Render thread/INFO]: OpenGL Renderer: NVIDIA GeForce RTX 4050 Laptop GPU/PCIe/SSE2
+[23:32:51] [Render thread/INFO]: OpenGL Version: 3.2.0 NVIDIA 576.52
+[23:32:51] [Render thread/INFO]: Modifying OpenGL context to apply workarounds for the NVIDIA graphics driver...
+[23:32:51] [Render thread/INFO]: Enabling GL_DEBUG_OUTPUT_SYNCHRONOUS to force the NVIDIA driver to disable threadedcommand submission
+[23:32:51] [Render thread/INFO]: Initializing ImmediatelyFast 1.5.4+1.20.4 on NVIDIA GeForce RTX 4050 Laptop GPU/PCIe/SSE2 (NVIDIA Corporation) with OpenGL 3.2.0 NVIDIA 576.52
+[23:32:51] [Render thread/INFO]: Found Iris/Oculus 1.7.6+mc1.20.1. Enabling compatibility.
+[23:32:51] [Render thread/INFO]: Debug functionality is disabled.
+[23:32:51] [Render thread/INFO]: ARB_direct_state_access detected, enabling DSA.
+[23:32:51] [Render thread/INFO]: Shaders are disabled because enableShaders is set to false in iris.properties
+[23:32:51] [Render thread/INFO]: Found non-pack entry 'C:\Users\********\AppData\Roaming\PrismLauncher\instances\1.20.1\minecraft\resourcepacks\.index', ignoring
+[23:32:51] [Render thread/ERROR]: Couldn't load pack metadata
+com.google.gson.JsonParseException: com.google.gson.stream.MalformedJsonException: Expected name at line 20 column 6 path $.pack.supported_formats.max_inclusive
+	at net.minecraft.class_3518.method_47993(class_3518.java:526) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3518.method_15267(class_3518.java:531) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3518.method_15274(class_3518.java:593) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3518.method_15255(class_3518.java:601) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3255.method_14392(class_3255.java:43) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3255.method_14407(class_3255.java:35) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3288.method_45274(class_3288.java:71) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3288.method_45275(class_3288.java:47) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_45272(class_3279.java:51) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_45271(class_3279.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_14453(class_3279.java:47) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3283.method_29212(class_3283.java:39) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3283.method_14445(class_3283.java:32) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.<init>(class_310.java:513) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:211) ~[minecraft-1.20.1-client.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:514) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.18.6.jar:?]
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) ~[NewLaunch.jar:?]
+Caused by: com.google.gson.stream.MalformedJsonException: Expected name at line 20 column 6 path $.pack.supported_formats.max_inclusive
+	at com.google.gson.stream.JsonReader.syntaxError(JsonReader.java:1657) ~[gson-2.10.jar:?]
+	at com.google.gson.stream.JsonReader.doPeek(JsonReader.java:514) ~[gson-2.10.jar:?]
+	at com.google.gson.stream.JsonReader.hasNext(JsonReader.java:422) ~[gson-2.10.jar:?]
+	at com.google.gson.internal.bind.TypeAdapters$28.read(TypeAdapters.java:779) ~[gson-2.10.jar:?]
+	at com.google.gson.internal.bind.TypeAdapters$28.read(TypeAdapters.java:725) ~[gson-2.10.jar:?]
+	at com.google.gson.internal.bind.TypeAdapters$34$1.read(TypeAdapters.java:1007) ~[gson-2.10.jar:?]
+	at net.minecraft.class_3518.method_47993(class_3518.java:524) ~[client-intermediary.jar:?]
+	... 20 more
+[23:32:51] [Render thread/WARN]: Missing metadata in pack file/Better Bushy Leaves 5.0.zip
+[23:32:51] [Render thread/INFO]: Found non-pack entry 'C:\Users\********\AppData\Roaming\PrismLauncher\instances\1.20.1\minecraft\resourcepacks\Cubic Leaves 2.3 (performance).zip.disabled', ignoring
+[23:32:51] [Render thread/ERROR]: Couldn't load pack metadata
+com.google.gson.JsonSyntaxException: Missing pack_format, expected to find a Int
+	at net.minecraft.class_3518.method_15260(class_3518.java:277) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3274.method_14426(class_3274.java:17) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3274.method_14421(class_3274.java:10) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3255.method_14392(class_3255.java:53) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3255.method_14407(class_3255.java:35) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3288.method_45274(class_3288.java:71) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3288.method_45275(class_3288.java:47) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_45272(class_3279.java:51) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_45271(class_3279.java:66) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3279.method_14453(class_3279.java:47) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3283.method_29212(class_3283.java:39) ~[client-intermediary.jar:?]
+	at net.minecraft.class_3283.method_14445(class_3283.java:32) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.<init>(class_310.java:513) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:211) ~[minecraft-1.20.1-client.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:514) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.18.6.jar:?]
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) ~[NewLaunch.jar:?]
+[23:32:51] [Render thread/WARN]: Missing metadata in pack file/FreshAnimations_v1.10.5.zip
+[23:32:51] [Render thread/INFO]: Found non-pack entry 'C:\Users\********\AppData\Roaming\PrismLauncher\instances\1.20.1\minecraft\resourcepacks\Visual Effects+.zip.disabled', ignoring
+[23:32:52] [Render thread/INFO]: Hardware information:
+[23:32:52] [Render thread/INFO]: CPU: 12x AMD Ryzen 5 7535HS with Radeon Graphics 
+[23:32:52] [Render thread/INFO]: GPU: NVIDIA GeForce RTX 4050 Laptop GPU/PCIe/SSE2 (Supports OpenGL 3.2.0 NVIDIA 576.52)
+[23:32:52] [Render thread/INFO]: OS: Windows 11 (10.0)
+[23:32:52] [Render thread/INFO]: Reloading ResourceManager: vanilla, fabric (boundbyfate-core, cloth-config, entity_model_features, entity_texture_features, entityculling, fabric-api, fabric-api-base, fabric-api-lookup-api-v1, fabric-biome-api-v1, fabric-block-api-v1, fabric-block-view-api-v2, fabric-blockrenderlayer-v1, fabric-client-tags-api-v1, fabric-command-api-v1, fabric-command-api-v2, fabric-commands-v0, fabric-containers-v0, fabric-content-registries-v0, fabric-convention-tags-v1, fabric-crash-report-info-v1, fabric-data-attachment-api-v1, fabric-data-generation-api-v1, fabric-dimensions-v1, fabric-entity-events-v1, fabric-events-interaction-v0, fabric-events-lifecycle-v0, fabric-game-rule-api-v1, fabric-item-api-v1, fabric-item-group-api-v1, fabric-key-binding-api-v1, fabric-keybindings-v0, fabric-language-kotlin, fabric-lifecycle-events-v1, fabric-loot-api-v2, fabric-loot-tables-v1, fabric-message-api-v1, fabric-mining-level-api-v1, fabric-model-loading-api-v1, fabric-models-v0, fabric-networking-api-v1, fabric-networking-v0, fabric-object-builder-api-v1, fabric-particles-v1, fabric-recipe-api-v1, fabric-registry-sync-v0, fabric-renderer-api-v1, fabric-renderer-indigo, fabric-renderer-registries-v1, fabric-rendering-data-attachment-v1, fabric-rendering-fluids-v1, fabric-rendering-v0, fabric-rendering-v1, fabric-resource-conditions-api-v1, fabric-resource-loader-v0, fabric-screen-api-v1, fabric-screen-handler-api-v1, fabric-sound-api-v1, fabric-transfer-api-v1, fabric-transitive-access-wideners-v1, fabricloader, immediatelyfast, indium, iris, kanos_config, lithium, modmenu, pehkui, satin, sodium, trender), file/FA+Player-v1.0.zip, file/cubic-sun-moon-v1.8.5.zip, file/Better-Leaves-9.5.zip
+[23:32:53] [Worker-Main-2/INFO]: Found unifont_all_no_pua-15.0.06.hex, loading
+[23:32:53] [Render thread/INFO]: Creating pipeline for dimension minecraft:overworld
+[23:32:53] [Realms Notification Availability checker #1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: 0
+[23:32:56] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[23:32:56] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[23:32:57] [Render thread/INFO]: OpenAL initialized on device OpenAL Soft on Наушники (Realtek(R) Audio)
+[23:32:57] [Render thread/INFO]: Sound engine started
+[23:32:57] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[23:32:57] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[23:32:59] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}
+[23:32:59] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[23:32:59] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/particles.png-atlas
+[23:32:59] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[23:32:59] [Render thread/INFO]: Created: 128x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[23:32:59] [Render thread/INFO]: [ETF]: reloading ETF data.
+[23:32:59] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}
+[23:33:05] [Render thread/INFO]: Loaded 7 recipes
+[23:33:05] [Render thread/INFO]: Loaded 1271 advancements
+[23:33:05] [Render thread/INFO]: Loaded class: boundbyfate-core:fighter (Воин)
+[23:33:05] [Render thread/INFO]: Loaded subclass: boundbyfate-core:battle_master (Мастер боя)
+[23:33:05] [Render thread/INFO]: Loaded 1 classes and 1 subclasses
+[23:33:05] [Render thread/INFO]: Loaded 5 weapon definitions
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:artisan_tools (Ремесленные инструменты)
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:axes_weapon (Топоры (оружие))
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:bows (Луки)
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:martial_weapons (Воинское оружие)
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:smithing_tools (Кузнечные инструменты)
+[23:33:05] [Render thread/INFO]: Loaded proficiency: boundbyfate-core:swords (Мечи)
+[23:33:05] [Render thread/INFO]: Loaded 6 proficiency definitions
+[23:33:05] [Render thread/INFO]: Loaded feat: boundbyfate-core:alert (Бдительность)
+[23:33:05] [Render thread/INFO]: Loaded feat: boundbyfate-core:athlete (Атлет)
+[23:33:05] [Render thread/INFO]: Loaded feat: boundbyfate-core:tough (Живучий)
+[23:33:05] [Render thread/INFO]: Loaded 3 feat definitions
+[23:33:05] [Render thread/INFO]: Loaded race: boundbyfate-core:dwarf (Дварф)
+[23:33:05] [Render thread/INFO]: Loaded race: boundbyfate-core:elf (Эльф)
+[23:33:05] [Render thread/INFO]: Loaded race: boundbyfate-core:human (Человек)
+[23:33:05] [Render thread/INFO]: Loaded subrace: boundbyfate-core:hill_dwarf (Холмовой дварф)
+[23:33:05] [Render thread/INFO]: Loaded subrace: boundbyfate-core:mountain_dwarf (Горный дварф)
+[23:33:05] [Render thread/INFO]: Loaded 3 races and 2 subraces
+[23:33:05] [Render thread/INFO]: Loaded 9 features and 1 status effects
+[23:33:05] [Render thread/INFO]: Cleared ability registry
+[23:33:05] [Render thread/ERROR]: Failed to parse ability boundbyfate-core:second_wind
+java.lang.IllegalArgumentException: Ability boundbyfate-core:second_wind must have at least one effect
+	at omc.boundbyfate.api.ability.AbilityDefinition.<init>(AbilityDefinition.kt:68) ~[boundbyfate-core-1.0.0.jar:?]
+	at omc.boundbyfate.config.AbilityParser.parse(AbilityParser.kt:95) ~[boundbyfate-core-1.0.0.jar:?]
+	at omc.boundbyfate.config.AbilityDatapackLoader.method_14491(AbilityDatapackLoader.kt:41) ~[boundbyfate-core-1.0.0.jar:?]
+	at net.minecraft.class_4013.method_29490(class_4013.java:15) ~[client-intermediary.jar:?]
+	at java.util.concurrent.CompletableFuture$UniRun.tryFire(CompletableFuture.java:787) ~[?:?]
+	at java.util.concurrent.CompletableFuture$Completion.run(CompletableFuture.java:482) ~[?:?]
+	at net.minecraft.class_4014.method_18365(class_4014.java:69) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_18859(class_1255.java:156) ~[client-intermediary.jar:?]
+	at net.minecraft.class_4093.method_18859(class_4093.java:23) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_16075(class_1255.java:130) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.method_18857(class_1255.java:139) ~[client-intermediary.jar:?]
+	at net.minecraft.class_7196.method_45694(class_7196.java:188) ~[client-intermediary.jar:?]
+	at net.minecraft.class_7196.method_41891(class_7196.java:123) ~[client-intermediary.jar:?]
+	at net.minecraft.class_7196.method_41899(class_7196.java:202) ~[client-intermediary.jar:?]
+	at net.minecraft.class_7196.method_41894(class_7196.java:64) ~[client-intermediary.jar:?]
+	at net.minecraft.class_528$class_4272.method_20174(class_528.java:590) ~[client-intermediary.jar:?]
+	at net.minecraft.class_528$class_4272.method_20164(class_528.java:480) ~[client-intermediary.jar:?]
+	at net.minecraft.class_528$class_4272.method_25402(class_528.java:402) ~[client-intermediary.jar:?]
+	at net.minecraft.class_350.method_25402(class_350.java:327) ~[client-intermediary.jar:?]
+	at net.minecraft.class_4069.method_25402(class_4069.java:38) ~[client-intermediary.jar:?]
+	at net.minecraft.class_312.method_1611(class_312.java:98) ~[client-intermediary.jar:?]
+	at net.minecraft.class_437.method_25412(class_437.java:409) ~[client-intermediary.jar:?]
+	at net.minecraft.class_312.method_1601(class_312.java:98) ~[client-intermediary.jar:?]
+	at net.minecraft.class_312.method_22686(class_312.java:169) ~[client-intermediary.jar:?]
+	at net.minecraft.class_1255.execute(class_1255.java:102) ~[client-intermediary.jar:?]
+	at net.minecraft.class_312.method_22684(class_312.java:169) ~[client-intermediary.jar:?]
+	at org.lwjgl.glfw.GLFWMouseButtonCallbackI.callback(GLFWMouseButtonCallbackI.java:43) ~[lwjgl-glfw-3.3.1.jar:?]
+	at org.lwjgl.system.JNI.invokeV(Native Method) ~[lwjgl-3.3.1.jar:?]
+	at org.lwjgl.glfw.GLFW.glfwWaitEventsTimeout(GLFW.java:3474) ~[lwjgl-glfw-3.3.1.jar:?]
+	at com.mojang.blaze3d.systems.RenderSystem.limitDisplayFPS(RenderSystem.java:237) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1523(class_310.java:1244) ~[client-intermediary.jar:?]
+	at net.minecraft.class_310.method_1514(class_310.java:802) ~[client-intermediary.jar:?]
+	at net.minecraft.client.main.Main.main(Main.java:250) ~[minecraft-1.20.1-client.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:514) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:72) ~[fabric-loader-0.18.6.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.18.6.jar:?]
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) ~[NewLaunch.jar:?]
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) ~[NewLaunch.jar:?]
+[23:33:05] [Render thread/INFO]: Loaded 0 ability definitions
+[23:33:06] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}
+[23:33:06] [Render thread/INFO]: Applied 0 biome modifications to 0 of 64 new biomes in 4.051 ms
+[23:33:06] [Server thread/INFO]: Starting integrated minecraft server version 1.20.1
+[23:33:06] [Server thread/INFO]: Generating keypair
+[23:33:09] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:16] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:17] [Render thread/INFO]: Подготовка области возрождения: 0%
+[23:33:17] [Render thread/INFO]: Подготовка области возрождения: 3%
+[23:33:18] [Render thread/INFO]: Подготовка области возрождения: 22%
+[23:33:18] [Render thread/INFO]: Подготовка области возрождения: 64%
+[23:33:18] [Render thread/INFO]: Time elapsed: 9358 ms
+[23:33:19] [Server thread/INFO]: Changing view distance to 18, from 10
+[23:33:19] [Server thread/INFO]: Changing simulation distance to 5, from 0
+[23:33:20] [Server thread/INFO]: Pisechnitsa[local:E:2d98d0e7] logged in with entity id 94 at (-192.62525162185716, 84.0, 433.15440787644616)
+[23:33:20] [Server thread/INFO]: Player 'Pisechnitsa' has existing stats data - reapplying effects
+[23:33:20] [Render thread/INFO]: Reloading pipeline on dimension change: minecraft:overworld => minecraft:overworld
+[23:33:20] [Render thread/INFO]: Destroying pipeline minecraft:overworld
+[23:33:20] [Render thread/INFO]: Creating pipeline for dimension minecraft:overworld
+[23:33:20] [Server thread/INFO]: Pisechnitsa присоединился к игре
+[23:33:21] [Render thread/INFO]: Started 12 worker threads
+[23:33:21] [Render thread/INFO]: Loaded 163 advancements
+[23:33:23] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=25, boost=3.5, old=ff191919, new=ff575757
+[23:33:23] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=252, boost=1.0, old=fff3fcfc, new=fff3fcfc
+[23:33:24] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=204, boost=1.0, old=ffcccccc, new=ffcccccc
+[23:33:24] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=221, boost=1.0, old=ffc4d2dd, new=ffc4d2dd
+[23:33:24] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=151, boost=1.0, old=ff979797, new=ff979797
+[23:33:24] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=195, boost=1.0, old=ffa2b5c3, new=ffa2b5c3
+[23:33:24] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=105, boost=2.0, old=ff696969, new=ffd2d2d2
+[23:33:25] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=175, boost=1.0, old=ff859eaf, new=ff859eaf
+[23:33:25] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=66, boost=2.5, old=ff424242, new=ffa5a5a5
+[23:33:25] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=160, boost=1.0, old=ff6e8ca0, new=ff6e8ca0
+[23:33:25] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=34, boost=3.0, old=ff222222, new=ff666666
+[23:33:25] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=252, boost=1.0, old=fffcfcfc, new=fffcfcfc
+[23:33:26] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=224, boost=1.0, old=ffe0e0e0, new=ffe0e0e0
+[23:33:26] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=232, boost=1.0, old=ffd1dee8, new=ffd1dee8
+[23:33:26] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=167, boost=1.0, old=ffa7a7a7, new=ffa7a7a7
+[23:33:26] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=202, boost=1.0, old=ffacbeca, new=ffacbeca
+[23:33:26] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=119, boost=2.0, old=ff777777, new=ffeeeeee
+[23:33:27] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=182, boost=1.0, old=ff8ea6b6, new=ff8ea6b6
+[23:33:27] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=78, boost=2.5, old=ff4e4e4e, new=ffc3c3c3
+[23:33:27] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=164, boost=1.0, old=ff7591a4, new=ff7591a4
+[23:33:27] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=44, boost=3.0, old=ff2c2c2c, new=ff848484
+[23:33:27] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=152, boost=1.0, old=ff628398, new=ff628398
+[23:33:28] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=251, boost=1.0, old=fffbfbfb, new=fffbfbfb
+[23:33:28] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=247, boost=1.0, old=ffe1edf7, new=ffe1edf7
+[23:33:28] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=185, boost=1.0, old=ffb9b9b9, new=ffb9b9b9
+[23:33:28] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=211, boost=1.0, old=ffb8c8d3, new=ffb8c8d3
+[23:33:28] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=134, boost=1.0, old=ff868686, new=ff868686
+[23:33:29] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=187, boost=1.0, old=ff97adbb, new=ff97adbb
+[23:33:29] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=91, boost=2.5, old=ff5b5b5b, new=ffe3e3e3
+[23:33:29] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=169, boost=1.0, old=ff7d98a9, new=ff7d98a9
+[23:33:29] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=55, boost=3.0, old=ff373737, new=ffa5a5a5
+[23:33:29] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=155, boost=1.0, old=ff66869b, new=ff66869b
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=25, boost=3.5, old=ff191919, new=ff575757
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=252, boost=1.0, old=fff3fcfc, new=fff3fcfc
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=204, boost=1.0, old=ffcccccc, new=ffcccccc
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=219, boost=1.0, old=ffc3d1db, new=ffc3d1db
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=151, boost=1.0, old=ff979797, new=ff979797
+[23:33:30] [Render thread/INFO]: [System] [CHAT] При выполнении команды произошла непредвиденная ошибка
+[23:33:30] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=193, boost=1.0, old=ffa0b4c1, new=ffa0b4c1
+[23:33:31] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=105, boost=2.0, old=ff696969, new=ffd2d2d2
+[23:33:31] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=173, boost=1.0, old=ff849dad, new=ff849dad
+[23:33:31] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=66, boost=2.5, old=ff424242, new=ffa5a5a5
+[23:33:31] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=159, boost=1.0, old=ff6d8b9f, new=ff6d8b9f
+[23:33:31] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=34, boost=3.0, old=ff222222, new=ff666666
+[23:33:32] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=252, boost=1.0, old=fffcfcfc, new=fffcfcfc
+[23:33:32] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=224, boost=1.0, old=ffe0e0e0, new=ffe0e0e0
+[23:33:32] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=229, boost=1.0, old=ffcfdce5, new=ffcfdce5
+[23:33:32] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=167, boost=1.0, old=ffa7a7a7, new=ffa7a7a7
+[23:33:32] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=201, boost=1.0, old=ffabbdc9, new=ffabbdc9
+[23:33:33] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=119, boost=2.0, old=ff777777, new=ffeeeeee
+[23:33:33] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=181, boost=1.0, old=ff8ea5b5, new=ff8ea5b5
+[23:33:33] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=78, boost=2.5, old=ff4e4e4e, new=ffc3c3c3
+[23:33:33] [Render thread/INFO]: [System] [CHAT] При выполнении команды произошла непредвиденная ошибка
+[23:33:33] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=164, boost=1.0, old=ff7491a4, new=ff7491a4
+[23:33:33] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=44, boost=3.0, old=ff2c2c2c, new=ff848484
+[23:33:34] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=149, boost=1.0, old=ff5e7f95, new=ff5e7f95
+[23:33:34] [Render thread/INFO]: [BBF Lightmap] ModifyArg - brightness=251, boost=1.0, old=fffbfbfb, new=fffbfbfb
+[23:33:34] [Server thread/INFO]: Saving and pausing game...
+[23:33:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:overworld
+[23:33:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:the_nether
+[23:33:34] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:the_end
+[23:34:08] [Render thread/INFO]: Stopping!
+[23:34:08] [CullThread/INFO]: [STDOUT]: Shutting down culling task!
+[23:34:08] [Server thread/INFO]: Pisechnitsa lost connection: Отключение
+[23:34:08] [Server thread/INFO]: Pisechnitsa покинул игру
+[23:34:08] [Server thread/INFO]: Stopping singleplayer server as player logged out
+[23:34:08] [Server thread/INFO]: Stopping server
+[23:34:08] [Server thread/INFO]: Saving players
+[23:34:08] [Server thread/INFO]: Saving worlds
+[23:34:09] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:overworld
+[23:34:10] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:the_nether
+[23:34:10] [Server thread/INFO]: Saving chunks for level 'ServerLevel[BlaBlaBla]'/minecraft:the_end
+[23:34:10] [Server thread/INFO]: ThreadedAnvilChunkStorage (BlaBlaBla): All chunks are saved
+[23:34:10] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[23:34:10] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[23:34:10] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[23:34:10] [Render thread/INFO]: Stopping worker threads
+[23:34:10] [Render thread/INFO]: [ETF]: emissive suffixes loaded: {_e}
+Clipboard copy at: 18 Apr 2026 23:34:10 +0300
+Процесс завершился с кодом 0.
+Clipboard copy at: 18 Apr 2026 23:34:12 +0300
+Clipboard copy at: 18 Apr 2026 23:34:13 +0300

@@ -187,6 +187,7 @@ object BbfAttachments {
     val PLAYER_IDENTITY: AttachmentType<omc.boundbyfate.component.PlayerIdentityData> =
         AttachmentRegistry.builder<omc.boundbyfate.component.PlayerIdentityData>()
             .persistent(omc.boundbyfate.component.PlayerIdentityData.CODEC)
+            .initializer { omc.boundbyfate.component.PlayerIdentityData() }
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_identity"))
 
