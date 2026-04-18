@@ -22,9 +22,8 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // Get depth to detect sky
+    // Get depth
     float depth = texture(DiffuseDepthSampler, texCoord).r;
-    bool isSky = (depth >= 0.9999); // Sky has depth = 1.0
     
     // DEBUG: Remove this after confirming it works
     if (PlayerLightLevel < 0.1) {
@@ -36,19 +35,16 @@ void main() {
     // DESATURATION based on PERCEIVED light level AND pixel brightness
     // 
     // Rules:
-    // 1. Sky = always full color (no desaturation)
-    // 2. Very bright pixels (luminance > 0.7) = always full color (torches, lava, emissives)
-    // 3. Perceived light 13-15 = full color
-    // 4. Perceived light 8-12 = partial color
-    // 5. Perceived light 0-7 = grayscale
+    // 1. Very bright pixels (luminance > 0.5) = always full color (sky, torches, lava, emissives)
+    // 2. Perceived light 13-15 = full color
+    // 3. Perceived light 8-12 = partial color
+    // 4. Perceived light 0-7 = grayscale
     
     float colorAmount;
     
-    if (isSky) {
-        // Sky always keeps color
-        colorAmount = 1.0;
-    } else if (luminance > 0.7) {
-        // Very bright pixels (torches, lava, emissives) - always colorful
+    if (luminance > 0.5) {
+        // Very bright pixels (sky, torches, lava, emissives) - always colorful
+        // Lowered threshold from 0.7 to 0.5 to catch more bright areas
         colorAmount = 1.0;
     } else {
         // Normal desaturation based on perceived light level
@@ -58,15 +54,13 @@ void main() {
     vec3 grayscale = vec3(luminance);
     vec3 result = mix(grayscale, color.rgb, colorAmount);
     
-    // Range fade based on depth
-    float rangeFade = 1.0;
-    if (!isSky && depth < 0.9999) {
-        float dist = linearDepth(depth);
-        rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
-    }
-    
-    // Beyond range: fade back to original image
-    result = mix(color.rgb, result, rangeFade);
+    // Range fade based on depth (disabled for now - testing)
+    // float rangeFade = 1.0;
+    // if (depth < 0.9999) {
+    //     float dist = linearDepth(depth);
+    //     rangeFade = 1.0 - smoothstep(DarkvisionRange - 4.0, DarkvisionRange, dist);
+    // }
+    // result = mix(color.rgb, result, rangeFade);
     
     fragColor = vec4(result, color.a);
 }

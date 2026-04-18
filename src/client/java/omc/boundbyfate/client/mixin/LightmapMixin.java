@@ -4,85 +4,81 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import omc.boundbyfate.client.state.DarkvisionState;
 
 /**
- * Modifies lightmap brightness calculation for darkvision.
+ * Modifies lightmap to implement D&D 5e darkvision rules.
  * 
- * Instead of modifying the texture AFTER it's generated, we modify
- * the brightness values DURING generation using @ModifyArg.
+ * D&D Rules:
+ * - Bright light (8-15) → stays bright (15)
+ * - Dim light (1-7) → becomes bright (15)
+ * - Darkness (0) → becomes dim (7)
  */
 @Mixin(LightmapTextureManager.class)
 public class LightmapMixin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("bbf-lightmap");
     private static int logCounter = 0;
-    
-    // Track current coordinates being processed
-    private static int currentBlockLight = 0;
-    private static int currentSkyLight = 0;
 
     @Shadow
     private NativeImage image;
 
     /**
-     * Intercept the setColor call and modify the color value to brighten dark areas.
-     * This is called for EVERY cell in the lightmap, including caves.
+     * Modify the lightmap texture AFTER it's generated to apply darkvision.
+     * We copy colors from brighter cells to darker cells based on D&D rules.
      */
-    @ModifyArg(
-        method = "update",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/texture/NativeImage;setColor(III)V"
-        ),
-        index = 2
-    )
-    private int bbf_modifyLightmapColor(int color) {
+    @Inject(method = "update", at = @At("RETURN"))
+    private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
-        if (!hasDarkvision) {
-            return color;
+        if (!hasDarkvision || image == null) {
+            return;
         }
 
-        // Extract x and y from the setColor call context
-        // We need to track which cell is being set
-        // For now, let's just brighten ALL dark colors
+        // D&D 5e Darkvision rules:
+        // - Darkness (0) → Dim light (7)
+        // - Dim light (1-7) → Bright light (15)
+        // - Bright light (8-15) → stays Bright (15)
         
-        // Extract RGB components
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        int a = (color >> 24) & 0xFF;
-        
-        // Calculate brightness
-        int brightness = Math.max(Math.max(r, g), b);
-        
-        // If this is a dark color, brighten it
-        if (brightness < 128) {
-            // Boost brightness for darkvision
-            // Увеличил с 2.0 до 2.5 для большей яркости
-            // Под водой ещё больше (3.5x) потому что вода затемняет
-            float boost = DarkvisionState.INSTANCE.isUnderwater() ? 3.5f : 2.5f;
-            r = Math.min(255, (int)(r * boost));
-            g = Math.min(255, (int)(g * boost));
-            b = Math.min(255, (int)(b * boost));
-            
-            int newColor = (a << 24) | (r << 16) | (g << 8) | b;
-            
-            // Log occasionally
-            if (logCounter++ % 1000 == 0) {
-                LOGGER.info("[BBF Lightmap] ModifyArg - underwater={}, brightness={}, old={}, new={}", 
-                    DarkvisionState.INSTANCE.isUnderwater(), brightness, 
-                    Integer.toHexString(color), Integer.toHexString(newColor));
+        // Process each cell in the 16x16 lightmap
+        // X = block light (0-15), Y = sky light (0-15)
+        for (int skyLight = 0; skyLight < 16; skyLight++) {
+            for (int blockLight = 0; blockLight < 16; blockLight++) {
+                // Effective light = max of block and sky
+                int effectiveLight = Math.max(blockLight, skyLight);
+                
+                int sourceLight;
+                if (effectiveLight == 0) {
+                    // Darkness (0) → Dim (7)
+                    sourceLight = 7;
+                } else if (effectiveLight < 8) {
+                    // Dim (1-7) → Bright (15)
+                    sourceLight = 15;
+                } else {
+                    // Already bright (8-15) → stay bright (15)
+                    sourceLight = 15;
+                }
+                
+                // Copy color from the source light level
+                // Use sourceLight for BOTH coordinates to get consistent brightness
+                int boostedColor = image.getColor(sourceLight, sourceLight);
+                image.setColor(blockLight, skyLight, boostedColor);
             }
-            
-            return newColor;
         }
         
-        return color;
+        // Log occasionally
+        if (logCounter++ % 100 == 0) {
+            int sample00 = image.getColor(0, 0);
+            int sample77 = image.getColor(7, 7);
+            int sample1515 = image.getColor(15, 15);
+            LOGGER.info("[BBF Lightmap] Applied darkvision - [0,0]={}, [7,7]={}, [15,15]={}", 
+                Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
+        }
     }
 }
