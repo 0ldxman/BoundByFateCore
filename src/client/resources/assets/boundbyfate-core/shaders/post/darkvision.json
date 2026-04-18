@@ -7,8 +7,16 @@
             "name": "boundbyfate-core:darkvision",
             "intarget": "minecraft:main",
             "outtarget": "swap",
+            "auxtargets": [
+                {
+                    "name": "DiffuseDepth",
+                    "id": "minecraft:main",
+                    "useDepth": true
+                }
+            ],
             "uniforms": [
-                { "name": "PlayerLightLevel", "values": [ 15.0 ] }
+                { "name": "PlayerLightLevel", "values": [ 15.0 ] },
+                { "name": "IsUnderwater",     "values": [ 0.0 ] }
             ]
         },
         {
