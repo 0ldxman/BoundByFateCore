@@ -13,14 +13,31 @@ void main() {
     vec4 color = texture(DiffuseSampler, texCoord);
     float depth = texture(DiffuseDepthSampler, texCoord).r;
     
-    // Sky (depth == 1.0) and underwater: always pass through unchanged
-    if (depth >= 0.9999 || IsUnderwater > 0.5) {
+    // Sky: always pass through unchanged
+    if (depth >= 0.9999) {
+        fragColor = color;
+        return;
+    }
+    
+    // Underwater: always pass through unchanged
+    if (IsUnderwater > 0.5) {
         fragColor = color;
         return;
     }
     
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    
+    // Calculate saturation to detect fog/horizon (fog is nearly achromatic)
+    float maxC = max(max(color.r, color.g), color.b);
+    float minC = min(min(color.r, color.g), color.b);
+    float saturation = (maxC > 0.0) ? (maxC - minC) / maxC : 0.0;
+    
+    // If pixel is already nearly achromatic (fog, horizon haze) - pass through
+    if (saturation < 0.05) {
+        fragColor = color;
+        return;
+    }
     
     // Very bright pixels (torches, lava, emissives) - always colorful
     if (luminance > 0.7) {
