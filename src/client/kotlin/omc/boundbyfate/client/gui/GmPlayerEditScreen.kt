@@ -95,8 +95,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val W = width; val H = height; val pad = 5
 
         // ── HEADER ────────────────────────────────────────────────────────────
-        btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7← Back") { MinecraftClient.getInstance().setScreen(GmScreen()) }
-        btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§aApply") { applyAll() }
+        btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7${tr("bbf.gm.button.back")}") { MinecraftClient.getInstance().setScreen(GmScreen()) }
+        btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§a${tr("bbf.gm.button.apply")}") { applyAll() }
 
         val headerY = pad + 13
         // Name+Level boxes width = same as each other, ending where infoBox starts
@@ -209,7 +209,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // Store skills box bounds for scroll detection
         skillsBoxX = midX; skillsBoxY = skillsY; skillsBoxW = midW; skillsBoxH2 = skillsH
         box(context, midX, skillsY, midW, skillsH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SKILLS", midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
+        lbl(context, tr("bbf.gm.skills"), midX + 4, skillsY + 3, 0.65f, 0xD4AF37)
         renderSkills(context, mouseX, mouseY, midX + 4, skillsY + 13, midW - 8, skillsH - 16)
 
         // Center column: 3 param boxes stacked
@@ -240,11 +240,11 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val modelY = changeBtnY - 6
             InventoryScreen.drawEntity(context, modelCx, modelY, 45, modelCx - mouseX.toFloat(), modelY - mouseY.toFloat(), player)
         }
-        val btnLabel = if (pendingSkinName != null) "§e${pendingSkinName}" else "§7Change Skin"
+        val btnLabel = if (pendingSkinName != null) "§e${pendingSkinName}" else "§7${tr("bbf.gm.button.change_skin")}"
         btn(context, mouseX, mouseY, rightX + rightW / 2 - changeBtnW / 2, changeBtnY, changeBtnW, changeBtnH, btnLabel) { openSkinPicker() }
 
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
+        lbl(context, tr("bbf.gm.features_traits"), rightX + 4, featY + 3, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { openFeaturePicker() }
         // Store features box bounds for scroll detection
         featBoxX = rightX + 4; featBoxY = featY + 14; featBoxW = rightW - 8; featBoxH = featH - 18
@@ -272,45 +272,45 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val row0 = startY; val row1 = startY + 13; val row2 = startY + 26
 
         // Col 1: Class + Subclass
-        lbl(context, "Class:", col1, row0 + 1, 0.6f, 0x888888)
-        val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: "—"
+        lbl(context, tr("bbf.gm.class"), col1, row0 + 1, 0.6f, 0x888888)
+        val clsName = classId?.let { id -> ClientGmRegistry.classes.find { it.id == id }?.displayName ?: id.path } ?: tr("bbf.gm.none")
         btn(context, mouseX, mouseY, col1 + 24, row0, w / 2 - 28, 9, "§f$clsName §e▼") {
             openClassPicker()
         }
-        lbl(context, "Sub:", col1, row1 + 1, 0.6f, 0x888888)
+        lbl(context, tr("bbf.gm.subclass"), col1, row1 + 1, 0.6f, 0x888888)
         val subName = subclassId?.let { id ->
             classId?.let { cid -> ClientGmRegistry.classes.find { it.id == cid }?.subclasses?.find { it.id == id }?.displayName }
             ?: id.path
-        } ?: "—"
+        } ?: tr("bbf.gm.none")
         btn(context, mouseX, mouseY, col1 + 20, row1, w / 2 - 24, 9, "§f$subName §e▼") {
             openSubclassPicker()
         }
 
         // Col 2: Race + Subrace
-        lbl(context, "Race:", col2, row0 + 1, 0.6f, 0x888888)
-        val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: "—"
+        lbl(context, tr("bbf.gm.race"), col2, row0 + 1, 0.6f, 0x888888)
+        val raceName = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id }?.displayName ?: id.path } ?: tr("bbf.gm.none")
         btn(context, mouseX, mouseY, col2 + 22, row0, w / 2 - 26, 9, "§f$raceName §e▼") {
             openRacePicker()
         }
-        lbl(context, "Sub:", col2, row1 + 1, 0.6f, 0x888888)
+        lbl(context, tr("bbf.gm.subrace"), col2, row1 + 1, 0.6f, 0x888888)
         val subraceName = subraceId?.path?.replace("_", " ")
-            ?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: "—"
+            ?.split(" ")?.joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } } ?: tr("bbf.gm.none")
         btn(context, mouseX, mouseY, col2 + 20, row1, w / 2 - 24, 9, "§f$subraceName §e▼") {
             openSubracePicker()
         }
 
         // Nav buttons (bottom row)
         val navBtnW = (w - 8) / 3
-        btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§eЛичность") { /* TODO */ }
-        btn(context, mouseX, mouseY, x + navBtnW + 4, row2, navBtnW, 9, "§eСпособности") { /* TODO */ }
-        btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, row2, navBtnW, 9, "§eМагия") { /* TODO */ }
+        btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§e${tr("bbf.gm.button.identity")}") { /* TODO */ }
+        btn(context, mouseX, mouseY, x + navBtnW + 4, row2, navBtnW, 9, "§e${tr("bbf.gm.button.abilities")}") { /* TODO */ }
+        btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, row2, navBtnW, 9, "§e${tr("bbf.gm.button.magic")}") { /* TODO */ }
     }
 
     // ── Picker helpers ────────────────────────────────────────────────────────
 
     private fun openClassPicker() {
         val items = ClientGmRegistry.classes.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор класса", items, classId, this) { picked ->
+        client?.setScreen(GmPickerScreen(tr("bbf.gm.picker.class"), items, classId, this) { picked ->
             classId = picked
             subclassId = null
         })
@@ -321,19 +321,19 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val clsInfo = ClientGmRegistry.classes.find { it.id == cls } ?: return
         if (clsInfo.subclasses.isEmpty()) return
         if (level < clsInfo.subclassLevel) {
-            statusMsg = "§cПодкласс доступен с ${clsInfo.subclassLevel} уровня"
+            statusMsg = "§c${tr("bbf.gm.status.subclass_level", clsInfo.subclassLevel)}"
             statusTimer = 2f
             return
         }
         val items = clsInfo.subclasses.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор подкласса", items, subclassId, this) { picked ->
+        client?.setScreen(GmPickerScreen(tr("bbf.gm.picker.subclass"), items, subclassId, this) { picked ->
             subclassId = picked
         })
     }
 
     private fun openRacePicker() {
         val items = ClientGmRegistry.races.map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Выбор расы", items, raceId, this) { picked ->
+        client?.setScreen(GmPickerScreen(tr("bbf.gm.picker.race"), items, raceId, this) { picked ->
             raceId = picked
             subraceId = null
         })
@@ -342,7 +342,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private fun openSubracePicker() {
         val selectedRace = raceId?.let { id -> ClientGmRegistry.races.find { it.id == id } }
         val items = selectedRace?.subraces?.map { it.id to it.displayName } ?: emptyList()
-        client?.setScreen(GmPickerScreen("Выбор подрасы", items, subraceId, this) { picked ->
+        client?.setScreen(GmPickerScreen(tr("bbf.gm.picker.subrace"), items, subraceId, this) { picked ->
             subraceId = picked
         })
     }
@@ -358,7 +358,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val items = ClientGmRegistry.features
             .filter { it.id !in alreadyHas }
             .map { it.id to it.displayName }
-        client?.setScreen(GmPickerScreen("Добавить особенность", items, null, this) { picked ->
+        client?.setScreen(GmPickerScreen(tr("bbf.gm.picker.feature"), items, null, this) { picked ->
             if (!features.contains(picked)) features.add(picked)
         })
     }
@@ -458,7 +458,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
             val shortName = Text.translatable(shortKey).string
             lines.add("$shortName: $total")
-            lines.add("  Базовое: $v")
+            lines.add("  ${tr("bbf.gm.tooltip.base", v)}")
             val breakdown = snapshot.statBonusBreakdown[stat.id]
             if (!breakdown.isNullOrEmpty()) {
                 for (entry in breakdown) {
@@ -467,7 +467,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                         val src = parts[0]
                         val bVal = parts[1].toIntOrNull() ?: 0
                         val sign = if (bVal >= 0) "+" else ""
-                        lines.add("  $sign$bVal от $src")
+                        lines.add("  $sign$bVal ${tr("bbf.gm.tooltip.from", src)}")
                     }
                 }
             }
@@ -529,7 +529,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 // Убрана строка "Бонус: ..."
                 val sources = snapshot.skillSources[save.id]
                 if (!sources.isNullOrEmpty()) {
-                    lines.add("  Владение от:")
+                    lines.add("  ${tr("bbf.gm.tooltip.proficiency_from")}")
                     sources.forEach { lines.add("    $it") }
                 }
                 setTooltip(lines, mouseX, mouseY)
@@ -565,7 +565,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 // Убрана строка "Бонус: ..."
                 val sources = snapshot.skillSources[skill.id]
                 if (!sources.isNullOrEmpty()) {
-                    lines.add("  Владение от:")
+                    lines.add("  ${tr("bbf.gm.tooltip.proficiency_from")}")
                     sources.forEach { lines.add("    $it") }
                 }
                 setTooltip(lines, mouseX, mouseY)
@@ -577,7 +577,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderDeathSaves(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
-        lbl(context, "VITALITY", cx - 16, by + 3, 0.55f, 0xD4AF37)
+        lbl(context, tr("bbf.gm.vitality"), cx - 16, by + 3, 0.55f, 0xD4AF37)
 
         // 5 pip slots — filled = vitality remaining, empty = lost
         val maxVit = 5
@@ -615,14 +615,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val scarY = by + 36
         val scarBtnW = bw - 8
         val scarBtnX = bx + 4
-        val scarLabel = if (scarCount > 0) "§cШрамы ($scarCount)" else "§7Шрамы"
+        val scarLabel = if (scarCount > 0) "§c${tr("bbf.gm.scars_count", scarCount)}" else "§7${tr("bbf.gm.scars")}"
         btn(context, mouseX, mouseY, scarBtnX, scarY, scarBtnW, 10, scarLabel) { /* TODO: open scars screen */ }
     }
 
     private fun renderHpBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
-        lbl(context, "HIT POINTS", cx - 18, by + 3, 0.55f, 0xD4AF37)
-        lbl(context, "§7Cur", cx - 4, by + 13, 0.5f, 0x888888)
+        lbl(context, tr("bbf.gm.hit_points"), cx - 18, by + 3, 0.55f, 0xD4AF37)
+        lbl(context, "§7${tr("bbf.gm.current")}", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
         val hasTempHp = currentHp > maxHp
         val curColor = if (hasTempHp) 0xFFFF55 else 0xFF5555  // yellow if temp HP, red otherwise
@@ -636,17 +636,17 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val maxW = (textRenderer.getWidth("${maxHp.toInt()}") * 0.8f).toInt()
         lbl(context, "${maxHp.toInt()}", cx - maxW / 2, row2Y + 1, 0.8f, 0xFFFFFF)
         btn(context, mouseX, mouseY, cx + 8, row2Y, 8, 9, "§a+") { maxHp += 1f }
-        lbl(context, "§7Max", cx - 4, by + 43, 0.5f, 0x888888)
+        lbl(context, "§7${tr("bbf.gm.max")}", cx - 4, by + 43, 0.5f, 0x888888)
         // Calculate tempHp for apply
         tempHp = if (hasTempHp) (currentHp - maxHp).toInt() else 0
     }
 
     private fun renderSpeedBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
-        lbl(context, "MOVEMENT", cx - 16, by + 3, 0.55f, 0xD4AF37)
+        lbl(context, tr("bbf.gm.movement"), cx - 16, by + 3, 0.55f, 0xD4AF37)
         
         // Speed row
-        lbl(context, "§7Spd", cx - 4, by + 13, 0.5f, 0x888888)
+        lbl(context, "§7${tr("bbf.gm.speed")}", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
         
         // Calculate speed text
@@ -707,7 +707,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             sizeFactor += 0.05f 
         }
         
-        lbl(context, "§7Size", cx - 5, by + 43, 0.5f, 0x888888)
+        lbl(context, "§7${tr("bbf.gm.size")}", cx - 5, by + 43, 0.5f, 0x888888)
     }
 
     private fun renderFeatures(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
@@ -732,7 +732,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 val lines = mutableListOf<String>()
                 lines.add(featName)
                 val source = snapshot.featureSources[featId]
-                if (source != null) lines.add("  Добавлено: $source")
+                if (source != null) lines.add("  ${tr("bbf.gm.tooltip.added_by", source)}")
                 setTooltip(lines, mouseX, mouseY)
             }
         }
@@ -813,7 +813,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             ClientPlayNetworking.send(BbfPackets.GM_SET_PLAYER_SKIN, skinBuf)
         }
 
-        statusMsg = "§aApplied!"; statusTimer = 1f
+        statusMsg = "§a${tr("bbf.gm.status.applied")}"; statusTimer = 1f
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────────

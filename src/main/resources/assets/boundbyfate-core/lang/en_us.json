@@ -105,6 +105,19 @@
   "bbf.gm.picker.subclass": "Select Subclass",
   "bbf.gm.picker.race": "Select Race",
   "bbf.gm.picker.subrace": "Select Subrace",
-  "bbf.gm.picker.feature": "Select Feature",
-  "bbf.gm.button.apply": "Apply"
+  "bbf.gm.picker.feature": "Add Feature",
+  "bbf.gm.button.apply": "Apply",
+  "bbf.gm.button.back": "← Back",
+  "bbf.gm.button.change_skin": "Change Skin",
+  "bbf.gm.button.identity": "Identity",
+  "bbf.gm.button.abilities": "Abilities",
+  "bbf.gm.button.magic": "Magic",
+  "bbf.gm.scars": "Scars",
+  "bbf.gm.scars_count": "Scars (%s)",
+  "bbf.gm.tooltip.proficiency_from": "Proficiency from:",
+  "bbf.gm.tooltip.added_by": "Added by: %s",
+  "bbf.gm.tooltip.base": "Base: %s",
+  "bbf.gm.tooltip.from": "from %s",
+  "bbf.gm.status.applied": "Applied!",
+  "bbf.gm.status.subclass_level": "Subclass available from level %s"
 }

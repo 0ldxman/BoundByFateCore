@@ -106,6 +106,19 @@
   "bbf.gm.picker.subclass": "Выбор подкласса",
   "bbf.gm.picker.race": "Выбор расы",
   "bbf.gm.picker.subrace": "Выбор подрасы",
-  "bbf.gm.picker.feature": "Выбор особенности",
-  "bbf.gm.button.apply": "Применить"
+  "bbf.gm.picker.feature": "Добавить особенность",
+  "bbf.gm.button.apply": "Применить",
+  "bbf.gm.button.back": "← Назад",
+  "bbf.gm.button.change_skin": "Сменить скин",
+  "bbf.gm.button.identity": "Личность",
+  "bbf.gm.button.abilities": "Способности",
+  "bbf.gm.button.magic": "Магия",
+  "bbf.gm.scars": "Шрамы",
+  "bbf.gm.scars_count": "Шрамы (%s)",
+  "bbf.gm.tooltip.proficiency_from": "Владение от:",
+  "bbf.gm.tooltip.added_by": "Добавлено: %s",
+  "bbf.gm.tooltip.base": "Базовое: %s",
+  "bbf.gm.tooltip.from": "от %s",
+  "bbf.gm.status.applied": "Применено!",
+  "bbf.gm.status.subclass_level": "Подкласс доступен с %s уровня"
 }
