@@ -161,6 +161,12 @@ object ServerPacketHandler {
                 server.execute { syncGmData(player) }
             }
         }
+        
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.REQUEST_GM_DATA) { server, player, _, _, _ ->
+            if (player.hasPermissionLevel(2)) {
+                server.execute { syncGmData(player) }
+            }
+        }
 
         // Client → Server: GM edits a player's stats
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_STATS) { server, gmPlayer, _, buf, _ ->
