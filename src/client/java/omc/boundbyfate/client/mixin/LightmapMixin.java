@@ -65,7 +65,8 @@ public class LightmapMixin {
         if (brightness < 128) {
             // Boost brightness for darkvision
             // Увеличил с 2.0 до 2.5 для большей яркости
-            float boost = 2.5f;
+            // Под водой ещё больше (3.5x) потому что вода затемняет
+            float boost = DarkvisionState.INSTANCE.isUnderwater() ? 3.5f : 2.5f;
             r = Math.min(255, (int)(r * boost));
             g = Math.min(255, (int)(g * boost));
             b = Math.min(255, (int)(b * boost));
@@ -74,8 +75,9 @@ public class LightmapMixin {
             
             // Log occasionally
             if (logCounter++ % 1000 == 0) {
-                LOGGER.info("[BBF Lightmap] ModifyArg - brightness={}, old={}, new={}", 
-                    brightness, Integer.toHexString(color), Integer.toHexString(newColor));
+                LOGGER.info("[BBF Lightmap] ModifyArg - underwater={}, brightness={}, old={}, new={}", 
+                    DarkvisionState.INSTANCE.isUnderwater(), brightness, 
+                    Integer.toHexString(color), Integer.toHexString(newColor));
             }
             
             return newColor;

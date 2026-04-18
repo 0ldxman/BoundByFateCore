@@ -78,8 +78,12 @@ object DarkvisionRenderer {
 
         if (world == null || player == null || !DarkvisionState.hasDarkvision) {
             shouldRender = false
+            DarkvisionState.isUnderwater = false
             return
         }
+
+        // Update underwater status
+        DarkvisionState.isUnderwater = player.isSubmergedInWater
 
         // Always render shader when darkvision is active
         // Desaturation is based on player's current light level
