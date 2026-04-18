@@ -205,8 +205,30 @@ object RaceSystem {
             player.setAttached(BbfAttachments.ENTITY_STATS, updated)
             StatEffectProcessor.applyAll(player, updated)
         }
-        // Note: features are not removed on race change to avoid breaking other sources
-        // TODO: track and remove race-granted features when race changes
+        
+        // Remove features from old race
+        val oldRaceDef = RaceRegistry.getRace(raceId)
+        if (oldRaceDef != null) {
+            val oldSubraceDef = subraceId?.let { RaceRegistry.getSubrace(it) }
+            val oldResolved = if (oldSubraceDef != null) {
+                oldSubraceDef.resolve(oldRaceDef)
+            } else {
+                omc.boundbyfate.api.race.ResolvedRaceData(
+                    displayName = oldRaceDef.displayName,
+                    size = oldRaceDef.size,
+                    scaleOverride = oldRaceDef.scaleOverride,
+                    speedFt = oldRaceDef.speedFt,
+                    statBonuses = oldRaceDef.statBonuses,
+                    features = oldRaceDef.features
+                )
+            }
+            
+            // Remove each feature from old race
+            for (featureId in oldResolved.features) {
+                omc.boundbyfate.system.feature.FeatureSystem.removeFeature(player, featureId)
+            }
+            logger.info("Removed ${oldResolved.features.size} features from old race ${oldRaceDef.displayName}")
+        }
     }
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
