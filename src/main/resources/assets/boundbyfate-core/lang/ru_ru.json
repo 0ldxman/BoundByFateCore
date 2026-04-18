@@ -160,5 +160,15 @@
   "bbf.gm.identity.history": "История изменений",
   "bbf.gm.identity.add_ideal": "Добавить убеждение",
   "bbf.gm.identity.add_flaw": "Добавить слабость",
-  "bbf.gm.identity.axis": "Ось"
+  "bbf.gm.identity.axis": "Ось",
+  "bbf.gm.identity.tab.alignment": "Мировоззрение",
+  "bbf.gm.identity.tab.motivations": "Мотивации и Цели",
+  "bbf.gm.identity.motivations": "МОТИВАЦИИ",
+  "bbf.gm.identity.goals": "ЦЕЛИ",
+  "bbf.gm.identity.proposals": "Предложения",
+  "bbf.gm.identity.add_motivation": "Добавить мотивацию",
+  "bbf.gm.identity.add_goal": "Добавить цель",
+  "bbf.gm.identity.goal.title": "Название",
+  "bbf.gm.identity.goal.description": "Описание",
+  "bbf.gm.identity.goal.all_done": "Все задачи выполнены"
 }

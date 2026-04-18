@@ -159,5 +159,15 @@
   "bbf.gm.identity.history": "Change History",
   "bbf.gm.identity.add_ideal": "Add Ideal",
   "bbf.gm.identity.add_flaw": "Add Flaw",
-  "bbf.gm.identity.axis": "Axis"
+  "bbf.gm.identity.axis": "Axis",
+  "bbf.gm.identity.tab.alignment": "Alignment",
+  "bbf.gm.identity.tab.motivations": "Motivations & Goals",
+  "bbf.gm.identity.motivations": "MOTIVATIONS",
+  "bbf.gm.identity.goals": "GOALS",
+  "bbf.gm.identity.proposals": "Proposals",
+  "bbf.gm.identity.add_motivation": "Add Motivation",
+  "bbf.gm.identity.add_goal": "Add Goal",
+  "bbf.gm.identity.goal.title": "Title",
+  "bbf.gm.identity.goal.description": "Description",
+  "bbf.gm.identity.goal.all_done": "All tasks done"
 }

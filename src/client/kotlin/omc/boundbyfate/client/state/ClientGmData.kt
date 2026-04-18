@@ -26,6 +26,38 @@ data class ClientAlignmentData(
     val goodEvil: Int
 )
 
+data class ClientMotivation(
+    val id: String,
+    val text: String,
+    val addedByGm: Boolean,
+    val isActive: Boolean
+)
+
+data class ClientProposal(
+    val id: String,
+    val text: String,
+    val proposedBy: String
+)
+
+data class ClientGoalTask(
+    val id: String,
+    val description: String,
+    val status: String  // TaskStatus name
+)
+
+data class ClientGoal(
+    val id: String,
+    val title: String,
+    val description: String,
+    val motivationId: String?,
+    val status: String,  // GoalStatus name
+    val currentTaskIndex: Int,
+    val tasks: List<ClientGoalTask>
+) {
+    val isActive: Boolean get() = status == "ACTIVE"
+    val currentTask: ClientGoalTask? get() = tasks.getOrNull(currentTaskIndex)
+}
+
 // ── GM Player Snapshot ────────────────────────────────────────────────────────
 
 data class GmPlayerSnapshot(
@@ -65,7 +97,10 @@ data class GmPlayerSnapshot(
     // Identity data
     val alignmentCoords: ClientAlignmentData = ClientAlignmentData(0, 0),
     val ideals: List<ClientIdeal> = emptyList(),
-    val flaws: List<ClientFlaw> = emptyList()
+    val flaws: List<ClientFlaw> = emptyList(),
+    val motivations: List<ClientMotivation> = emptyList(),
+    val proposals: List<ClientProposal> = emptyList(),
+    val goals: List<ClientGoal> = emptyList()
 )
 
 object ClientGmData {

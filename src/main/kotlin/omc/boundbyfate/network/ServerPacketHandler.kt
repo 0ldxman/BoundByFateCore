@@ -438,6 +438,88 @@ object ServerPacketHandler {
                 syncGmDataToAll(server)
             }
         }
+
+        // Client → Server: GM adds/removes/updates a motivation for a player
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_MOTIVATION) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val action = buf.readString() // "add", "remove", "update"
+            val id = buf.readString()
+            val text = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                when (action) {
+                    "add" -> omc.boundbyfate.system.identity.MotivationSystem.addMotivation(target, text, byGm = true)
+                    "remove" -> omc.boundbyfate.system.identity.MotivationSystem.removeMotivation(target, id)
+                    "update" -> omc.boundbyfate.system.identity.MotivationSystem.updateMotivation(target, id, text)
+                }
+                logger.info("GM ${gmPlayer.name.string} $action motivation for $targetName")
+                syncGmDataToAll(server)
+            }
+        }
+
+        // Client → Server: GM accepts/rejects a motivation proposal
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_HANDLE_PROPOSAL) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val action = buf.readString() // "accept" or "reject"
+            val proposalId = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                when (action) {
+                    "accept" -> omc.boundbyfate.system.identity.MotivationSystem.acceptProposal(target, proposalId)
+                    "reject" -> omc.boundbyfate.system.identity.MotivationSystem.rejectProposal(target, proposalId)
+                }
+                logger.info("GM ${gmPlayer.name.string} $action proposal $proposalId for $targetName")
+                syncGmDataToAll(server)
+            }
+        }
+
+        // Client → Server: GM adds/removes/updates a goal for a player
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_GOAL) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val action = buf.readString() // "add", "remove", "complete", "fail", "task"
+            val goalId = buf.readString()
+            val title = buf.readString()
+            val description = buf.readString()
+            val motivationId = buf.readString().ifEmpty { null }
+            val taskStatus = buf.readString() // for "task" action
+            val taskCount = buf.readInt()
+            val tasks = (0 until taskCount).map { buf.readString() }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                when (action) {
+                    "add" -> omc.boundbyfate.system.identity.MotivationSystem.addGoal(target, title, description, motivationId, tasks)
+                    "remove" -> omc.boundbyfate.system.identity.MotivationSystem.removeGoal(target, goalId)
+                    "complete" -> omc.boundbyfate.system.identity.MotivationSystem.completeGoal(target, goalId, description.ifEmpty { null })
+                    "fail" -> omc.boundbyfate.system.identity.MotivationSystem.failGoal(target, goalId, description.ifEmpty { null })
+                    "task" -> {
+                        val ts = try { omc.boundbyfate.component.TaskStatus.valueOf(taskStatus) }
+                                 catch (e: Exception) { omc.boundbyfate.component.TaskStatus.COMPLETED }
+                        omc.boundbyfate.system.identity.MotivationSystem.advanceTask(target, goalId, ts, description.ifEmpty { null })
+                    }
+                }
+                logger.info("GM ${gmPlayer.name.string} $action goal for $targetName")
+                syncGmDataToAll(server)
+            }
+        }
+
+        // Client → Server: player proposes a motivation to GM
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.PLAYER_PROPOSE_MOTIVATION) { server, player, _, buf, _ ->
+            val text = buf.readString()
+            server.execute {
+                omc.boundbyfate.system.identity.MotivationSystem.addProposal(player, text)
+                logger.info("Player ${player.name.string} proposed motivation: $text")
+                // Notify all GMs
+                server.playerManager.playerList
+                    .filter { it.hasPermissionLevel(2) }
+                    .forEach { gm -> syncGmData(gm) }
+            }
+        }
     }
 
     /**
@@ -919,6 +1001,43 @@ object ServerPacketHandler {
             flaws.forEach { flaw ->
                 buf.writeString(flaw.id)
                 buf.writeString(flaw.text)
+            }
+
+            // Identity: motivations
+            val motivations = identityData.motivationData.motivations
+            buf.writeInt(motivations.size)
+            motivations.forEach { m ->
+                buf.writeString(m.id)
+                buf.writeString(m.text)
+                buf.writeBoolean(m.addedByGm)
+                buf.writeBoolean(m.isActive)
+            }
+
+            // Identity: proposals
+            val proposals = identityData.motivationData.proposals
+            buf.writeInt(proposals.size)
+            proposals.forEach { p ->
+                buf.writeString(p.id)
+                buf.writeString(p.text)
+                buf.writeString(p.proposedBy)
+            }
+
+            // Identity: goals
+            val goals = identityData.motivationData.goals
+            buf.writeInt(goals.size)
+            goals.forEach { goal ->
+                buf.writeString(goal.id)
+                buf.writeString(goal.title)
+                buf.writeString(goal.description)
+                buf.writeString(goal.motivationId ?: "")
+                buf.writeString(goal.status.name)
+                buf.writeInt(goal.currentTaskIndex)
+                buf.writeInt(goal.tasks.size)
+                goal.tasks.forEach { task ->
+                    buf.writeString(task.id)
+                    buf.writeString(task.description)
+                    buf.writeString(task.status.name)
+                }
             }
         }
 

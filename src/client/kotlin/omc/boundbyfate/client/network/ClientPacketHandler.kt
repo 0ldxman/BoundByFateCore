@@ -281,6 +281,44 @@ object ClientPacketHandler {
                     omc.boundbyfate.client.state.ClientFlaw(id, text)
                 }
 
+                // Identity: motivations
+                val motivationCount = buf.readInt()
+                val motivations = (0 until motivationCount).map {
+                    val id = buf.readString()
+                    val text = buf.readString()
+                    val byGm = buf.readBoolean()
+                    val active = buf.readBoolean()
+                    omc.boundbyfate.client.state.ClientMotivation(id, text, byGm, active)
+                }
+
+                // Identity: proposals
+                val proposalCount = buf.readInt()
+                val proposals = (0 until proposalCount).map {
+                    val id = buf.readString()
+                    val text = buf.readString()
+                    val proposedBy = buf.readString()
+                    omc.boundbyfate.client.state.ClientProposal(id, text, proposedBy)
+                }
+
+                // Identity: goals
+                val goalCount = buf.readInt()
+                val goals = (0 until goalCount).map {
+                    val id = buf.readString()
+                    val title = buf.readString()
+                    val description = buf.readString()
+                    val motivationId = buf.readString().ifEmpty { null }
+                    val status = buf.readString()
+                    val currentTaskIndex = buf.readInt()
+                    val taskCount = buf.readInt()
+                    val tasks = (0 until taskCount).map {
+                        val tid = buf.readString()
+                        val tdesc = buf.readString()
+                        val tstatus = buf.readString()
+                        omc.boundbyfate.client.state.ClientGoalTask(tid, tdesc, tstatus)
+                    }
+                    omc.boundbyfate.client.state.ClientGoal(id, title, description, motivationId, status, currentTaskIndex, tasks)
+                }
+
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
@@ -302,7 +340,10 @@ object ClientPacketHandler {
                     vitality = vitality, scarCount = scarCount,
                     alignmentCoords = alignCoords,
                     ideals = ideals,
-                    flaws = flaws
+                    flaws = flaws,
+                    motivations = motivations,
+                    proposals = proposals,
+                    goals = goals
                 )
             }
             client.execute {

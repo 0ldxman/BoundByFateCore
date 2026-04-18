@@ -109,4 +109,16 @@ object BbfPackets {
 
     /** Client → Server: GM adds/removes/updates a flaw for a player */
     val GM_EDIT_PLAYER_FLAW = Identifier("boundbyfate-core", "gm_edit_player_flaw")
+
+    /** Client → Server: GM adds/removes/updates a motivation for a player */
+    val GM_EDIT_PLAYER_MOTIVATION = Identifier("boundbyfate-core", "gm_edit_player_motivation")
+
+    /** Client → Server: GM accepts/rejects a motivation proposal */
+    val GM_HANDLE_PROPOSAL = Identifier("boundbyfate-core", "gm_handle_proposal")
+
+    /** Client → Server: GM adds/removes/updates a goal for a player */
+    val GM_EDIT_PLAYER_GOAL = Identifier("boundbyfate-core", "gm_edit_player_goal")
+
+    /** Client → Server: player proposes a motivation to GM */
+    val PLAYER_PROPOSE_MOTIVATION = Identifier("boundbyfate-core", "player_propose_motivation")
 }
