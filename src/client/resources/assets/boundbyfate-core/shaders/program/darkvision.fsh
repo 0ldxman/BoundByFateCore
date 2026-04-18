@@ -35,8 +35,8 @@ void main() {
     // DESATURATION based on REAL light level (not perceived)
     // 
     // D&D Rules: In darkness you cannot distinguish colors
-    // - Light 0-6 (darkness/dim) = grayscale
-    // - Light 7+ (bright) = full color
+    // - Light 0-8 = gradual transition from grayscale to color
+    // - Light 8+ = full color
     // - Very bright pixels (luminance > 0.5) = always full color (sky, torches, lava)
     
     float colorAmount;
@@ -47,7 +47,9 @@ void main() {
     } else {
         // Desaturation based on real light level
         // smoothstep creates smooth transition from grayscale to color
-        colorAmount = smoothstep(3.0, 8.0, PlayerLightLevel);
+        // Light 0 = full grayscale (0.0)
+        // Light 8 = full color (1.0)
+        colorAmount = smoothstep(0.0, 8.0, PlayerLightLevel);
     }
     
     vec3 grayscale = vec3(luminance);
