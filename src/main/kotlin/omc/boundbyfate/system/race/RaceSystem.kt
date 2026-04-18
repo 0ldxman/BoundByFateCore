@@ -232,7 +232,25 @@ object RaceSystem {
     }
 
     private fun applyScale(player: ServerPlayerEntity, scale: Float) {
-        applyScaleDirect(player, scale)
+        // Get existing scale data (preserves GM modifier)
+        val existingData = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_DATA, null)
+        val modifierScale = existingData?.modifierScale ?: 0.0f
+        
+        // Create new scale data with race base + preserved modifier
+        val newData = omc.boundbyfate.component.PlayerScaleData(
+            baseScale = scale,
+            modifierScale = modifierScale
+        )
+        player.setAttached(BbfAttachments.PLAYER_SCALE_DATA, newData)
+        
+        // Apply total scale
+        val totalScale = newData.totalScale()
+        applyScaleDirect(player, totalScale)
+        
+        // Keep old attachment for backwards compatibility
+        player.setAttached(BbfAttachments.PLAYER_SCALE_OVERRIDE, totalScale)
+        
+        logger.debug("Applied scale: base=${scale} modifier=${modifierScale} total=${totalScale}")
     }
 
     /**
@@ -306,16 +324,34 @@ object RaceSystem {
     }
 
     private fun applySpeedFt(player: ServerPlayerEntity, speedFt: Int) {
+        // Get existing speed data (preserves GM modifier)
+        val existingData = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_DATA, null)
+        val modifierFt = existingData?.modifierFt ?: 0
+        
+        // Create new speed data with race base + preserved modifier
+        val newData = omc.boundbyfate.component.PlayerSpeedData(
+            baseSpeedFt = speedFt,
+            modifierFt = modifierFt
+        )
+        player.setAttached(BbfAttachments.PLAYER_SPEED_DATA, newData)
+        
+        // Apply total speed to attribute
         val attribute = player.getAttributeInstance(
             net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED
         ) ?: return
+        
         // Remove any existing BBF race speed modifier
         val uuid = java.util.UUID.fromString("bbf00020-0000-0000-0000-000000000001")
         attribute.getModifier(uuid)?.let { attribute.removeModifier(it) }
+        
         // Set base value directly: 30ft = 0.1, formula: speedFt / 300.0
-        attribute.baseValue = speedFt / 300.0
-        // Store for GM panel readback
-        player.setAttached(BbfAttachments.PLAYER_SPEED_FT, speedFt)
+        val totalSpeed = newData.totalSpeedFt()
+        attribute.baseValue = totalSpeed / 300.0
+        
+        // Keep old attachment for backwards compatibility
+        player.setAttached(BbfAttachments.PLAYER_SPEED_FT, totalSpeed)
+        
+        logger.debug("Applied speed: base=${speedFt}ft modifier=${modifierFt}ft total=${totalSpeed}ft")
     }
 
     /**

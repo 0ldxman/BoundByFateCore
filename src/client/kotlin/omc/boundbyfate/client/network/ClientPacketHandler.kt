@@ -225,8 +225,14 @@ object ClientPacketHandler {
                 val gender = if (hasGender) buf.readString() else null
                 val hp = buf.readFloat()
                 val maxHp = buf.readFloat()
-                val speed = buf.readFloat()
-                val scale = buf.readFloat()
+                // Speed (base + modifier)
+                val baseSpeed = buf.readInt()
+                val speedModifier = buf.readInt()
+                val speed = (baseSpeed + speedModifier).toFloat()
+                // Scale (base + modifier)
+                val baseScale = buf.readFloat()
+                val scaleModifier = buf.readFloat()
+                val scale = baseScale + scaleModifier
                 val experience = buf.readInt()
                 val alignment = buf.readString()
 

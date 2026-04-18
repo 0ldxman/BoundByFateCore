@@ -303,27 +303,49 @@ object ServerPacketHandler {
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_SPEED_SCALE) { server, gmPlayer, _, buf, _ ->
             if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
             val targetName = buf.readString()
-            val speedFt = buf.readInt()
-            val scale = buf.readFloat()
+            val totalSpeedFt = buf.readInt()
+            val totalScale = buf.readFloat()
 
             server.execute {
                 val target = server.playerManager.getPlayer(targetName) ?: return@execute
-                // Speed: convert ft to Minecraft units (30ft = 0.1 base speed)
-                val speedMc = speedFt / 300.0
+                
+                // Speed: calculate modifier based on race base
+                val speedData = target.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_DATA, null)
+                val baseSpeedFt = speedData?.baseSpeedFt ?: 30
+                val modifierFt = totalSpeedFt - baseSpeedFt
+                
+                val newSpeedData = omc.boundbyfate.component.PlayerSpeedData(
+                    baseSpeedFt = baseSpeedFt,
+                    modifierFt = modifierFt
+                )
+                target.setAttached(BbfAttachments.PLAYER_SPEED_DATA, newSpeedData)
+                
+                // Apply to attribute
                 val speedAttr = target.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
                 if (speedAttr != null) {
-                    // Remove any existing BBF modifier, set base directly
                     val raceModUuid = java.util.UUID.fromString("bbf00020-0000-0000-0000-000000000001")
                     speedAttr.getModifier(raceModUuid)?.let { speedAttr.removeModifier(it) }
-                    speedAttr.baseValue = speedMc
+                    speedAttr.baseValue = totalSpeedFt / 300.0
                 }
-                // Store in attachment so we can read it back correctly
-                target.setAttached(BbfAttachments.PLAYER_SPEED_FT, speedFt)
-                // Scale via Pehkui if available
-                omc.boundbyfate.system.race.RaceSystem.applyScaleDirect(target, scale)
-                target.setAttached(BbfAttachments.PLAYER_SCALE_OVERRIDE, scale)
+                target.setAttached(BbfAttachments.PLAYER_SPEED_FT, totalSpeedFt)
+                
+                // Scale: calculate modifier based on race base
+                val scaleData = target.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_DATA, null)
+                val baseScale = scaleData?.baseScale ?: 1.0f
+                val modifierScale = totalScale - baseScale
+                
+                val newScaleData = omc.boundbyfate.component.PlayerScaleData(
+                    baseScale = baseScale,
+                    modifierScale = modifierScale
+                )
+                target.setAttached(BbfAttachments.PLAYER_SCALE_DATA, newScaleData)
+                
+                // Apply scale
+                omc.boundbyfate.system.race.RaceSystem.applyScaleDirect(target, totalScale)
+                target.setAttached(BbfAttachments.PLAYER_SCALE_OVERRIDE, totalScale)
+                
                 syncGmData(gmPlayer)
-                logger.info("GM ${gmPlayer.name.string} set speed=${speedFt}ft scale=$scale for $targetName")
+                logger.info("GM ${gmPlayer.name.string} set speed=${baseSpeedFt}+${modifierFt}ft scale=${baseScale}+${modifierScale} for $targetName")
             }
         }
 
@@ -737,18 +759,34 @@ object ServerPacketHandler {
             buf.writeFloat(player.health + player.absorptionAmount)
             buf.writeFloat(player.maxHealth)
 
-            // Speed
-            val storedSpeedFt = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_FT, 0)
-            val speedFt = if (storedSpeedFt > 0) storedSpeedFt else {
-                val attr = player.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                (attr * 300).toInt().coerceAtLeast(5)
+            // Speed (base + modifier)
+            val speedData = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_DATA, null)
+            if (speedData != null) {
+                buf.writeInt(speedData.baseSpeedFt)
+                buf.writeInt(speedData.modifierFt)
+            } else {
+                // Fallback for old data
+                val storedSpeedFt = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_FT, 0)
+                val speedFt = if (storedSpeedFt > 0) storedSpeedFt else {
+                    val attr = player.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
+                    (attr * 300).toInt().coerceAtLeast(5)
+                }
+                buf.writeInt(speedFt)
+                buf.writeInt(0) // no modifier
             }
-            buf.writeFloat(speedFt.toFloat())
 
-            // Scale
-            val storedScale = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_OVERRIDE, 0f)
-            val scale = if (storedScale > 0f) storedScale else omc.boundbyfate.system.race.RaceSystem.getScaleDirect(player)
-            buf.writeFloat(scale)
+            // Scale (base + modifier)
+            val scaleData = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_DATA, null)
+            if (scaleData != null) {
+                buf.writeFloat(scaleData.baseScale)
+                buf.writeFloat(scaleData.modifierScale)
+            } else {
+                // Fallback for old data
+                val storedScale = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_OVERRIDE, 0f)
+                val scale = if (storedScale > 0f) storedScale else omc.boundbyfate.system.race.RaceSystem.getScaleDirect(player)
+                buf.writeFloat(scale)
+                buf.writeFloat(0f) // no modifier
+            }
 
             // Experience
             buf.writeInt(player.totalExperience)

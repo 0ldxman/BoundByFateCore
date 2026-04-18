@@ -160,6 +160,22 @@ object BbfAttachments {
             .copyOnDeath()
             .buildAndRegister(Identifier("boundbyfate-core", "player_scale_override"))
 
+    // New: stores base speed from race + GM modifier separately
+    @JvmField
+    val PLAYER_SPEED_DATA: AttachmentType<omc.boundbyfate.component.PlayerSpeedData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerSpeedData>()
+            .persistent(omc.boundbyfate.component.PlayerSpeedData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_speed_data"))
+
+    // New: stores base scale from race + GM modifier separately
+    @JvmField
+    val PLAYER_SCALE_DATA: AttachmentType<omc.boundbyfate.component.PlayerScaleData> =
+        AttachmentRegistry.builder<omc.boundbyfate.component.PlayerScaleData>()
+            .persistent(omc.boundbyfate.component.PlayerScaleData.CODEC)
+            .copyOnDeath()
+            .buildAndRegister(Identifier("boundbyfate-core", "player_scale_data"))
+
     @JvmField
     val DARKVISION: AttachmentType<omc.boundbyfate.component.DarkvisionData> =
         AttachmentRegistry.builder<omc.boundbyfate.component.DarkvisionData>()
