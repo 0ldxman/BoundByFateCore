@@ -974,7 +974,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         
         // Update snapshot to reflect current state so next Apply works correctly
         val updatedSnapshot = snapshot.copy(
-            alignmentCoords = omc.boundbyfate.api.identity.AlignmentCoordinates(alignLawChaos, alignGoodEvil),
+            alignmentCoords = omc.boundbyfate.client.state.ClientAlignmentData(alignLawChaos, alignGoodEvil),
             ideals = ideals.toList(),
             flaws = flaws.toList(),
             motivations = motivations.toList(),
