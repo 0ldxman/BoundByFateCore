@@ -324,7 +324,6 @@ object PlayerStatsHandler {
         }
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(wrapper)
     }
-}
 
     /**
      * Syncs speed and scale data with current race.
@@ -423,3 +422,5 @@ object PlayerStatsHandler {
             }
         }
     }
+
+}
