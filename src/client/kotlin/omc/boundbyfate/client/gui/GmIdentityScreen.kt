@@ -789,7 +789,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         }
         inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0; inputBuffer2Scroll = 0
     }
-    }
 
     // ═════════════════════════════════════════════════════════════════════════
     // NETWORK
