@@ -4,21 +4,17 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import omc.boundbyfate.client.state.DarkvisionState;
 
 /**
- * Modifies lightmap to implement D&D 5e darkvision rules.
+ * Modifies lightmap brightness calculation for darkvision.
  * 
- * D&D Rules:
- * - Bright light (8-15) → stays bright (15)
- * - Dim light (1-7) → becomes bright (15)
- * - Darkness (0) → becomes dim (7)
+ * Uses @ModifyArg to intercept setColor calls and brighten dark colors
+ * based on D&D 5e darkvision rules with gradation.
  */
 @Mixin(LightmapTextureManager.class)
 public class LightmapMixin {
@@ -30,53 +26,69 @@ public class LightmapMixin {
     private NativeImage image;
 
     /**
-     * Modify the lightmap texture AFTER it's generated to apply darkvision.
-     * We copy colors from brighter cells to darker cells based on D&D rules.
+     * Intercept the setColor call and modify the color value to brighten dark areas.
+     * 
+     * D&D Darkvision gradation:
+     * - effectiveLight 0-6 → boost with gradation (darker areas get more boost)
+     * - effectiveLight 7+ → moderate boost (already somewhat lit)
      */
-    @Inject(method = "update", at = @At("RETURN"))
-    private void bbf_applyDarkvision(float delta, CallbackInfo ci) {
+    @ModifyArg(
+        method = "update",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/texture/NativeImage;setColor(III)V"
+        ),
+        index = 2
+    )
+    private int bbf_modifyLightmapColor(int color) {
         boolean hasDarkvision = DarkvisionState.INSTANCE.getHasDarkvision();
         
-        if (!hasDarkvision || image == null) {
-            return;
+        if (!hasDarkvision) {
+            return color;
         }
 
-        // D&D 5e Darkvision rules with gradation:
-        // - Darkness/Dim (0-6) → Gradual boost from 5 to 14
-        // - Dim/Bright (7+) → Full bright (15)
+        // Extract RGB components
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        int a = (color >> 24) & 0xFF;
         
-        // Process each cell in the 16x16 lightmap
-        // X = block light (0-15), Y = sky light (0-15)
-        for (int skyLight = 0; skyLight < 16; skyLight++) {
-            for (int blockLight = 0; blockLight < 16; blockLight++) {
-                // Effective light = max of block and sky
-                int effectiveLight = Math.max(blockLight, skyLight);
-                
-                int sourceLight;
-                if (effectiveLight < 7) {
-                    // Darkness/Dim (0-6) → Gradual boost
-                    // Linear interpolation: 0→5, 1→6.5, 2→8, 3→9.5, 4→11, 5→12.5, 6→14
-                    // Formula: sourceLight = 5 + (effectiveLight * 9 / 6)
-                    sourceLight = 5 + (effectiveLight * 9 / 6);
-                } else {
-                    // Dim/Bright (7+) → Full bright
-                    sourceLight = 15;
-                }
-                
-                // Copy color from the source light level
-                // Use sourceLight for BOTH coordinates to get consistent brightness
-                int boostedColor = image.getColor(sourceLight, sourceLight);
-                image.setColor(blockLight, skyLight, boostedColor);
-            }
+        // Calculate brightness (0-255)
+        int brightness = Math.max(Math.max(r, g), b);
+        
+        // Apply darkvision boost based on brightness
+        // Lower brightness = more boost needed
+        float boost;
+        if (brightness < 32) {
+            // Very dark (0-31) → strong boost (3.5x)
+            boost = 3.5f;
+        } else if (brightness < 64) {
+            // Dark (32-63) → good boost (3.0x)
+            boost = 3.0f;
+        } else if (brightness < 96) {
+            // Dim (64-95) → moderate boost (2.5x)
+            boost = 2.5f;
+        } else if (brightness < 128) {
+            // Somewhat dim (96-127) → light boost (2.0x)
+            boost = 2.0f;
+        } else {
+            // Already bright (128+) → minimal boost (1.5x)
+            boost = 1.5f;
         }
+        
+        // Apply boost
+        r = Math.min(255, (int)(r * boost));
+        g = Math.min(255, (int)(g * boost));
+        b = Math.min(255, (int)(b * boost));
+        
+        int newColor = (a << 24) | (r << 16) | (g << 8) | b;
         
         // Log occasionally
-        if (logCounter++ % 100 == 0) {
-            int sample00 = image.getColor(0, 0);
-            int sample77 = image.getColor(7, 7);
-            int sample1515 = image.getColor(15, 15);
-            LOGGER.info("[BBF Lightmap] Applied darkvision - [0,0]={}, [7,7]={}, [15,15]={}", 
-                Integer.toHexString(sample00), Integer.toHexString(sample77), Integer.toHexString(sample1515));
+        if (logCounter++ % 1000 == 0) {
+            LOGGER.info("[BBF Lightmap] ModifyArg - brightness={}, boost={}, old={}, new={}", 
+                brightness, boost, Integer.toHexString(color), Integer.toHexString(newColor));
         }
+        
+        return newColor;
     }
 }
