@@ -37,7 +37,7 @@ public class LightmapMixin {
         method = "update",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/texture/NativeImage;setColor(IIL)V"
+            target = "Lnet/minecraft/client/texture/NativeImage;setColor(III)V"
         ),
         index = 2
     )
