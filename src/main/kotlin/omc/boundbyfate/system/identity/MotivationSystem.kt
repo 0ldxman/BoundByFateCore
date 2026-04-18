@@ -12,7 +12,9 @@ object MotivationSystem {
 
     private fun setMotivationData(player: ServerPlayerEntity, data: PlayerMotivationData) {
         val id = identity(player)
-        player.setAttached(BbfAttachments.PLAYER_IDENTITY, id.copy(motivationData = data))
+        val updated = id.copy(motivationData = data)
+        player.setAttached(BbfAttachments.PLAYER_IDENTITY, updated)
+        println("[MotivationSystem] Saved motivation data for ${player.name.string}: ${data.motivations.size} motivations, ${data.goals.size} goals")
     }
 
     // ── Motivations ───────────────────────────────────────────────────────────

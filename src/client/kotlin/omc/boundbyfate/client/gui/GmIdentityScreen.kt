@@ -11,11 +11,13 @@ import omc.boundbyfate.api.identity.AlignmentCoordinates
 import omc.boundbyfate.api.identity.IdealAlignment
 import omc.boundbyfate.client.state.ClientFlaw
 import omc.boundbyfate.client.state.ClientGoal
+import omc.boundbyfate.client.state.ClientGoalTask
 import omc.boundbyfate.client.state.ClientIdeal
 import omc.boundbyfate.client.state.ClientMotivation
 import omc.boundbyfate.client.state.ClientProposal
 import omc.boundbyfate.client.state.GmPlayerSnapshot
 import omc.boundbyfate.network.BbfPackets
+import java.util.UUID
 
 /**
  * GM Identity screen.
@@ -631,37 +633,31 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             InputMode.ADD_IDEAL -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; return }
                 sendAddIdeal(text, pendingAxis)
-                ideals.add(omc.boundbyfate.client.state.ClientIdeal("pending_${System.currentTimeMillis()}", text, pendingAxis, pendingAxis.isCompatibleWith(currentAlignment())))
             }
             InputMode.ADD_FLAW -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; return }
                 sendAddFlaw(text)
-                flaws.add(omc.boundbyfate.client.state.ClientFlaw("pending_${System.currentTimeMillis()}", text))
             }
             InputMode.ADD_MOTIVATION -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; return }
                 sendAddMotivation(text)
-                motivations.add(omc.boundbyfate.client.state.ClientMotivation("pending_${System.currentTimeMillis()}", text, true, true))
             }
             InputMode.ADD_GOAL -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; return }
                 sendAddGoal(text, inputBuffer2.trim(), pendingMotivationId)
-                goals.add(omc.boundbyfate.client.state.ClientGoal("pending_${System.currentTimeMillis()}", text, inputBuffer2.trim(), pendingMotivationId, "ACTIVE", 0, emptyList()))
             }
             InputMode.EDIT_GOAL -> {
                 val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; return }
-                // Send status change if needed
-                val goal = goals.find { it.id == goalId }
-                if (goal != null && goal.status != pendingGoalStatus) {
-                    val action = when (pendingGoalStatus) { "COMPLETED" -> "complete"; "FAILED" -> "fail"; else -> "task" }
-                    sendGoalAction(goalId, action, inputBuffer2.trim(), pendingGoalStatus)
-                }
-                // Update title/description
-                if (text.isNotEmpty()) {
-                    sendGoalAction(goalId, "update", inputBuffer2.trim(), "")
-                }
+                // Update goal in local state
                 val idx = goals.indexOfFirst { it.id == goalId }
-                if (idx >= 0) goals[idx] = goals[idx].copy(title = text.ifEmpty { goals[idx].title }, description = inputBuffer2.trim(), status = pendingGoalStatus)
+                if (idx >= 0) {
+                    goals[idx] = goals[idx].copy(
+                        title = text.ifEmpty { goals[idx].title }, 
+                        description = inputBuffer2.trim(), 
+                        status = pendingGoalStatus,
+                        motivationId = pendingMotivationId
+                    )
+                }
             }
             InputMode.ADD_TASK -> {
                 val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; return }
@@ -699,89 +695,269 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         }
         inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0
     }
+    }
 
     // ═════════════════════════════════════════════════════════════════════════
     // NETWORK
     // ═════════════════════════════════════════════════════════════════════════
     private fun applyAll() {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("set")
-        buf.writeInt(alignLawChaos); buf.writeInt(alignGoodEvil); buf.writeString("GM edit")
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_ALIGNMENT, buf)
+        // Send alignment
+        val alignBuf = PacketByteBufs.create()
+        alignBuf.writeString(snapshot.playerName); alignBuf.writeString("set")
+        alignBuf.writeInt(alignLawChaos); alignBuf.writeInt(alignGoodEvil); alignBuf.writeString("GM edit")
+        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_ALIGNMENT, alignBuf)
+        
+        // Send ideals diff
+        val originalIdeals = snapshot.ideals.map { it.id to it }.toMap()
+        val currentIdeals = ideals.map { it.id to it }.toMap()
+        
+        // Removed ideals
+        (originalIdeals.keys - currentIdeals.keys).forEach { id ->
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString(""); buf.writeString("")
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        }
+        
+        // Added ideals
+        (currentIdeals.keys - originalIdeals.keys).forEach { id ->
+            val ideal = currentIdeals[id]!!
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(ideal.text); buf.writeString(ideal.alignmentAxis.name)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        }
+        
+        // Send flaws diff
+        val originalFlaws = snapshot.flaws.map { it.id to it }.toMap()
+        val currentFlaws = flaws.map { it.id to it }.toMap()
+        
+        // Removed flaws
+        (originalFlaws.keys - currentFlaws.keys).forEach { id ->
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        }
+        
+        // Added flaws
+        (currentFlaws.keys - originalFlaws.keys).forEach { id ->
+            val flaw = currentFlaws[id]!!
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(flaw.text)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        }
+        
+        // Send motivations diff
+        val originalMotivations = snapshot.motivations.map { it.id to it }.toMap()
+        val currentMotivations = motivations.map { it.id to it }.toMap()
+        
+        // Removed motivations
+        (originalMotivations.keys - currentMotivations.keys).forEach { id ->
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        }
+        
+        // Added motivations
+        (currentMotivations.keys - originalMotivations.keys).forEach { id ->
+            val motivation = currentMotivations[id]!!
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(motivation.text)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        }
+        
+        // Send proposals diff (only rejections, accepts are handled separately)
+        val originalProposals = snapshot.proposals.map { it.id }.toSet()
+        val currentProposals = proposals.map { it.id }.toSet()
+        
+        // Rejected proposals
+        (originalProposals - currentProposals).forEach { id ->
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("reject"); buf.writeString(id)
+            ClientPlayNetworking.send(BbfPackets.GM_HANDLE_PROPOSAL, buf)
+        }
+        
+        // Send goals diff
+        val originalGoals = snapshot.goals.map { it.id to it }.toMap()
+        val currentGoals = goals.map { it.id to it }.toMap()
+        
+        // Removed goals
+        (originalGoals.keys - currentGoals.keys).forEach { id ->
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id)
+            buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(0)
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        }
+        
+        // Added goals
+        (currentGoals.keys - originalGoals.keys).forEach { id ->
+            val goal = currentGoals[id]!!
+            val buf = PacketByteBufs.create()
+            buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString("")
+            buf.writeString(goal.title); buf.writeString(goal.description); buf.writeString(goal.motivationId ?: "")
+            buf.writeString(""); buf.writeInt(goal.tasks.size)
+            goal.tasks.sortedBy { it.order }.forEach { task ->
+                buf.writeString(task.description)
+            }
+            ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        }
+        
+        // Updated goals (check for changes in existing goals)
+        (originalGoals.keys intersect currentGoals.keys).forEach { id ->
+            val original = originalGoals[id]!!
+            val current = currentGoals[id]!!
+            
+            // Check if goal itself changed
+            if (original.title != current.title || original.description != current.description || 
+                original.status != current.status || original.motivationId != current.motivationId) {
+                val buf = PacketByteBufs.create()
+                buf.writeString(snapshot.playerName); buf.writeString("update"); buf.writeString(id)
+                buf.writeString(current.title); buf.writeString(current.description); buf.writeString(current.motivationId ?: "")
+                buf.writeString(current.status); buf.writeInt(0)
+                ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+            }
+            
+            // Check tasks diff
+            val originalTasks = original.tasks.map { it.id to it }.toMap()
+            val currentTasks = current.tasks.map { it.id to it }.toMap()
+            
+            // Removed tasks
+            (originalTasks.keys - currentTasks.keys).forEach { taskId ->
+                val buf = PacketByteBufs.create()
+                buf.writeString(snapshot.playerName); buf.writeString("delete_task"); buf.writeString(id)
+                buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(0)
+                ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+            }
+            
+            // Added tasks
+            (currentTasks.keys - originalTasks.keys).forEach { taskId ->
+                val task = currentTasks[taskId]!!
+                val buf = PacketByteBufs.create()
+                buf.writeString(snapshot.playerName); buf.writeString("add_task"); buf.writeString(id)
+                buf.writeString(task.description); buf.writeString(task.goalDescriptionOverride); buf.writeString(""); buf.writeString("PENDING"); buf.writeInt(0)
+                ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+            }
+            
+            // Updated tasks
+            (originalTasks.keys intersect currentTasks.keys).forEach { taskId ->
+                val originalTask = originalTasks[taskId]!!
+                val currentTask = currentTasks[taskId]!!
+                
+                if (originalTask.description != currentTask.description || 
+                    originalTask.goalDescriptionOverride != currentTask.goalDescriptionOverride ||
+                    originalTask.status != currentTask.status ||
+                    originalTask.order != currentTask.order) {
+                    
+                    // If only order changed, use reorder
+                    if (originalTask.order != currentTask.order && 
+                        originalTask.description == currentTask.description &&
+                        originalTask.goalDescriptionOverride == currentTask.goalDescriptionOverride &&
+                        originalTask.status == currentTask.status) {
+                        val buf = PacketByteBufs.create()
+                        buf.writeString(snapshot.playerName); buf.writeString("reorder_task"); buf.writeString(id)
+                        buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(currentTask.order)
+                        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+                    } else {
+                        // Otherwise use edit_task
+                        val buf = PacketByteBufs.create()
+                        buf.writeString(snapshot.playerName); buf.writeString("edit_task"); buf.writeString(id)
+                        buf.writeString(taskId); buf.writeString(currentTask.description); buf.writeString(currentTask.goalDescriptionOverride)
+                        buf.writeString(currentTask.status); buf.writeInt(0)
+                        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+                    }
+                }
+            }
+        }
+        
         statusMsg = "§a${tr("bbf.gm.status.applied")}"; statusTimer = 1f
     }
 
+    // These methods now only modify local state, not send to server
     private fun sendAddIdeal(text: String, axis: IdealAlignment) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text); buf.writeString(axis.name)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        val id = java.util.UUID.randomUUID().toString()
+        ideals.add(ClientIdeal(id, text, axis, axis.isCompatibleWith(currentAlignment())))
     }
     private fun sendRemoveIdeal(id: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString(""); buf.writeString("")
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        ideals.removeIf { it.id == id }
     }
     private fun sendAddFlaw(text: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        val id = java.util.UUID.randomUUID().toString()
+        flaws.add(ClientFlaw(id, text))
     }
     private fun sendRemoveFlaw(id: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        flaws.removeIf { it.id == id }
     }
     private fun sendAddMotivation(text: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        val id = java.util.UUID.randomUUID().toString()
+        motivations.add(ClientMotivation(id, text, true, true))
     }
     private fun sendRemoveMotivation(id: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        motivations.removeIf { it.id == id }
     }
     private fun sendHandleProposal(proposalId: String, action: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString(action); buf.writeString(proposalId)
-        ClientPlayNetworking.send(BbfPackets.GM_HANDLE_PROPOSAL, buf)
+        if (action == "accept") {
+            val proposal = proposals.find { it.id == proposalId }
+            if (proposal != null) {
+                val id = java.util.UUID.randomUUID().toString()
+                motivations.add(ClientMotivation(id, proposal.text, false, true))
+            }
+        }
+        proposals.removeIf { it.id == proposalId }
     }
     private fun sendAddGoal(title: String, description: String, motivationId: String?) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString("")
-        buf.writeString(title); buf.writeString(description); buf.writeString(motivationId ?: "")
-        buf.writeString(""); buf.writeInt(0)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val id = java.util.UUID.randomUUID().toString()
+        goals.add(ClientGoal(id, title, description, motivationId, "ACTIVE", 0, emptyList()))
     }
     private fun sendGoalAction(goalId: String, action: String, description: String, taskStatus: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString(action); buf.writeString(goalId)
-        buf.writeString(""); buf.writeString(description); buf.writeString(""); buf.writeString(taskStatus); buf.writeInt(0)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val goalIndex = goals.indexOfFirst { it.id == goalId }
+        if (goalIndex >= 0) {
+            val goal = goals[goalIndex]
+            when (action) {
+                "remove" -> goals.removeAt(goalIndex)
+                "complete" -> goals[goalIndex] = goal.copy(status = "COMPLETED")
+                "fail" -> goals[goalIndex] = goal.copy(status = "FAILED")
+            }
+        }
     }
     private fun sendAddTask(goalId: String, description: String, goalDescOverride: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("add_task"); buf.writeString(goalId)
-        buf.writeString(description); buf.writeString(goalDescOverride); buf.writeString(""); buf.writeString("CURRENT"); buf.writeInt(0)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val goalIndex = goals.indexOfFirst { it.id == goalId }
+        if (goalIndex >= 0) {
+            val goal = goals[goalIndex]
+            val taskId = java.util.UUID.randomUUID().toString()
+            val newOrder = (goal.tasks.maxOfOrNull { it.order } ?: -1) + 1
+            val newTask = ClientGoalTask(taskId, description, goalDescOverride, "PENDING", newOrder)
+            goals[goalIndex] = goal.copy(tasks = goal.tasks + newTask)
+        }
     }
     private fun sendEditTask(goalId: String, taskId: String, description: String, goalDescOverride: String, status: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("edit_task"); buf.writeString(goalId)
-        buf.writeString(taskId); buf.writeString(description); buf.writeString(goalDescOverride); buf.writeString(status); buf.writeInt(0)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val goalIndex = goals.indexOfFirst { it.id == goalId }
+        if (goalIndex >= 0) {
+            val goal = goals[goalIndex]
+            val updatedTasks = goal.tasks.map { task ->
+                if (task.id == taskId) task.copy(description = description, goalDescriptionOverride = goalDescOverride, status = status)
+                else task
+            }
+            goals[goalIndex] = goal.copy(tasks = updatedTasks)
+        }
     }
     private fun sendDeleteTask(goalId: String, taskId: String) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("delete_task"); buf.writeString(goalId)
-        buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(0)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val goalIndex = goals.indexOfFirst { it.id == goalId }
+        if (goalIndex >= 0) {
+            val goal = goals[goalIndex]
+            val newTasks = goal.tasks.filter { it.id != taskId }
+            val reorderedTasks = newTasks.sortedBy { it.order }.mapIndexed { index, task -> task.copy(order = index) }
+            goals[goalIndex] = goal.copy(tasks = reorderedTasks)
+        }
     }
     private fun sendReorderTask(goalId: String, taskId: String, newOrder: Int) {
-        val buf = PacketByteBufs.create()
-        buf.writeString(snapshot.playerName); buf.writeString("reorder_task"); buf.writeString(goalId)
-        buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(newOrder)
-        ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        val goalIndex = goals.indexOfFirst { it.id == goalId }
+        if (goalIndex >= 0) {
+            val goal = goals[goalIndex]
+            val task = goal.tasks.find { it.id == taskId } ?: return
+            val sortedTasks = goal.tasks.sortedBy { it.order }.toMutableList()
+            sortedTasks.removeIf { it.id == taskId }
+            sortedTasks.add(newOrder.coerceIn(0, sortedTasks.size), task)
+            val reorderedTasks = sortedTasks.mapIndexed { index, t -> t.copy(order = index) }
+            goals[goalIndex] = goal.copy(tasks = reorderedTasks)
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════
