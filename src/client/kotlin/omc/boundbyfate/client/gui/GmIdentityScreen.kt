@@ -490,10 +490,11 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     curY += 12
 
                     val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
-                    val taskListH = overlayH - curY + oy - 30  // Dynamic height based on available space
+                    val taskListH = overlayH - (curY - oy) - 30  // Dynamic height based on available space
                     val taskRowH = 14
                     val sortedTasks = goal?.tasks?.sortedBy { it.order } ?: emptyList()
-                    val visibleTasks = sortedTasks.drop(taskListScroll).take((taskListH / taskRowH).coerceAtLeast(1))
+                    val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
+                    val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
 
                     visibleTasks.forEachIndexed { i, task ->
                         val taskIndex = sortedTasks.indexOf(task)
@@ -540,6 +541,17 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             lbl(context, "§7$taskNum.", ox + 6, draggedTaskY + 2, 0.55f, 0x888888)
                             lbl(context, statusIcon, ox + 16, draggedTaskY + 2, 0.55f, 0xFFFFFF)
                             lbl(context, truncate(draggedTask.description, overlayW - 50, 0.55f), ox + 24, draggedTaskY + 2, 0.55f, 0xFFFFFF)
+                        }
+                    }
+                    
+                    // Scroll buttons for tasks
+                    if (sortedTasks.size > maxVisibleTasks) {
+                        val scrollX = ox + overlayW - 14
+                        if (taskListScroll > 0) {
+                            btn(context, mouseX, mouseY, scrollX, curY, 10, 9, "§7▲") { taskListScroll-- }
+                        }
+                        if (taskListScroll < sortedTasks.size - maxVisibleTasks) {
+                            btn(context, mouseX, mouseY, scrollX, curY + taskListH - 9, 10, 9, "§7▼") { taskListScroll++ }
                         }
                     }
 
@@ -960,6 +972,19 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
         
+        // Update snapshot to reflect current state so next Apply works correctly
+        val updatedSnapshot = snapshot.copy(
+            alignmentCoords = omc.boundbyfate.api.identity.AlignmentCoordinates(alignLawChaos, alignGoodEvil),
+            ideals = ideals.toList(),
+            flaws = flaws.toList(),
+            motivations = motivations.toList(),
+            proposals = proposals.toList(),
+            goals = goals.toList()
+        )
+        // Replace the snapshot reference (this is a bit hacky but works for our use case)
+        // Ideally we'd reload from server, but this is faster and avoids race conditions
+        client?.setScreen(GmIdentityScreen(updatedSnapshot))
+        
         statusMsg = "§a${tr("bbf.gm.status.applied")}"; statusTimer = 1f
     }
 
@@ -1069,25 +1094,31 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 val ox = (W - overlayW) / 2
                 val oy = (H - overlayH) / 2
                 
-                // Calculate task list position - must match renderInputOverlay exactly
-                // Start from oy + 17 (title)
-                var curY = oy + 17  // Title
-                curY += 20  // Title field + spacing
-                curY += 6   // Description label spacing
-                curY += 50  // Description textarea height
-                curY += 6   // Spacing after description
-                curY += 6   // Motivation label spacing
-                curY += 10  // Motivation selector height
-                curY += 16  // Spacing after motivation
-                curY += 12  // Status selector height
-                curY += 16  // Spacing after status
-                curY += 12  // Tasks label + add button
-                // Now curY points to the start of task list
+                // Calculate task list position - MUST match renderInputOverlay EXACTLY
+                // We need to replicate the EXACT same curY calculation from renderInputOverlay
+                var curY = oy + 17  // Title label
+                // Title field
+                curY += 20  // field height (12) + spacing
+                // Description label + textarea
+                curY += 6   // label spacing
+                curY += 50  // textarea height
+                curY += 6   // spacing after textarea
+                // Motivation label + selector
+                curY += 6   // label spacing  
+                curY += 10  // selector height
+                curY += 16  // spacing after selector
+                // Status selector (only in EDIT_GOAL mode)
+                curY += 12  // selector height
+                curY += 16  // spacing after selector
+                // Tasks label + add button
+                curY += 12  // label + button height + spacing
+                // Now curY is at the start of task list - this MUST match renderInputOverlay
                 
                 val taskListH = overlayH - (curY - oy) - 30
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
-                val visibleTasks = sortedTasks.drop(taskListScroll).take((taskListH / taskRowH).coerceAtLeast(1))
+                val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
+                val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
                 
                 visibleTasks.forEachIndexed { i, task ->
                     val taskIndex = sortedTasks.indexOf(task)
@@ -1155,8 +1186,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 val ox = (W - overlayW) / 2
                 val oy = (H - overlayH) / 2
                 
-                // Calculate task list position - must match mouseClicked
-                var curY = oy + 17  // Title
+                // Calculate task list position - MUST match mouseClicked and renderInputOverlay
+                var curY = oy + 17  // Title label
                 curY += 20  // Title field + spacing
                 curY += 6   // Description label spacing
                 curY += 50  // Description textarea height
