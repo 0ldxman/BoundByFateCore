@@ -146,7 +146,9 @@
   "bbf.alignment.axis.evil": "Зло",
   "bbf.alignment.axis.lawful": "Закон",
   "bbf.alignment.axis.chaotic": "Хаос",
-  "bbf.alignment.axis.neutral": "Нейтральность",
+  "bbf.alignment.axis.neutral_ge": "Нейтр. (Д-З)",
+  "bbf.alignment.axis.neutral_lc": "Нейтр. (З-Х)",
+  "bbf.alignment.axis.true_neutral": "Истинно-Нейтр.",
   "bbf.alignment.axis.any": "Любое",
 
   "bbf.gm.identity.alignment": "МИРОВОЗЗРЕНИЕ",

@@ -427,8 +427,10 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         IdealAlignment.EVIL -> 0xFF5555
         IdealAlignment.LAWFUL -> 0x5555FF
         IdealAlignment.CHAOTIC -> 0xFFAA00
-        IdealAlignment.NEUTRAL -> 0xAAAAAA
-        IdealAlignment.ANY -> 0x888888
+        IdealAlignment.NEUTRAL_GE -> 0xAAAAAA
+        IdealAlignment.NEUTRAL_LC -> 0xCCCCCC
+        IdealAlignment.TRUE_NEUTRAL -> 0x888888
+        IdealAlignment.ANY -> 0x666666
     }
 
     private fun truncateText(text: String, maxPixelW: Int, scale: Float): String {
