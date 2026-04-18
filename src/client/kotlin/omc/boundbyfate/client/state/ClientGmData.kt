@@ -28,6 +28,10 @@ data class GmPlayerSnapshot(
     val maxHp: Float,
     val speed: Float = 0.1f,
     val scale: Float = 1.0f,
+    val baseSpeed: Int = 30,
+    val speedModifier: Int = 0,
+    val baseScale: Float = 1.0f,
+    val scaleModifier: Float = 0.0f,
     val isOnline: Boolean,
     val grantedFeatures: List<Identifier> = emptyList(),
     /** Feature IDs locked by race/class — GM cannot remove these. */

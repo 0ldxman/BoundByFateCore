@@ -96,6 +96,9 @@ object PlayerStatsHandler {
                 val isCommoner = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null) == null
                 val worldDir = omc.boundbyfate.util.WorldDirUtil.getWorldDir(player.server)
 
+                // Sync speed/scale data with current race
+                syncSpeedScaleWithRace(player)
+
                 if (isCommoner) {
                     // Invalidate cache so we re-read from disk
                     CharacterConfigLoader.clearCache()
@@ -322,3 +325,101 @@ object PlayerStatsHandler {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(wrapper)
     }
 }
+
+    /**
+     * Syncs speed and scale data with current race.
+     * If player has old data format (PLAYER_SPEED_FT/PLAYER_SCALE_OVERRIDE only),
+     * converts it to new format (base + modifier).
+     */
+    private fun syncSpeedScaleWithRace(player: ServerPlayerEntity) {
+        val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+        
+        // Get race base values
+        val raceSpeedFt = if (raceData != null) {
+            val raceDef = omc.boundbyfate.registry.RaceRegistry.getRace(raceData.raceId)
+            val subraceDef = raceData.subraceId?.let { omc.boundbyfate.registry.RaceRegistry.getSubrace(it) }
+            if (raceDef != null) {
+                val resolved = if (subraceDef != null) {
+                    subraceDef.resolve(raceDef)
+                } else {
+                    omc.boundbyfate.api.race.ResolvedRaceData(
+                        displayName = raceDef.displayName,
+                        size = raceDef.size,
+                        scaleOverride = raceDef.scaleOverride,
+                        speedFt = raceDef.speedFt,
+                        statBonuses = raceDef.statBonuses,
+                        features = raceDef.features
+                    )
+                }
+                resolved.speedFt
+            } else 30
+        } else 30
+        
+        val raceScale = if (raceData != null) {
+            val raceDef = omc.boundbyfate.registry.RaceRegistry.getRace(raceData.raceId)
+            val subraceDef = raceData.subraceId?.let { omc.boundbyfate.registry.RaceRegistry.getSubrace(it) }
+            if (raceDef != null) {
+                val resolved = if (subraceDef != null) {
+                    subraceDef.resolve(raceDef)
+                } else {
+                    omc.boundbyfate.api.race.ResolvedRaceData(
+                        displayName = raceDef.displayName,
+                        size = raceDef.size,
+                        scaleOverride = raceDef.scaleOverride,
+                        speedFt = raceDef.speedFt,
+                        statBonuses = raceDef.statBonuses,
+                        features = raceDef.features
+                    )
+                }
+                resolved.scaleOverride ?: resolved.size.scaleMultiplier
+            } else 1.0f
+        } else 1.0f
+        
+        // Check if new format data exists
+        val speedData = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_DATA, null)
+        val scaleData = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_DATA, null)
+        
+        if (speedData == null) {
+            // No new format data - check for old format
+            val oldSpeedFt = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_FT, 0)
+            if (oldSpeedFt > 0) {
+                // Convert old format: assume current value is total, calculate modifier
+                val modifierFt = oldSpeedFt - raceSpeedFt
+                val newSpeedData = omc.boundbyfate.component.PlayerSpeedData(
+                    baseSpeedFt = raceSpeedFt,
+                    modifierFt = modifierFt
+                )
+                player.setAttached(BbfAttachments.PLAYER_SPEED_DATA, newSpeedData)
+                logger.info("Synced speed for ${player.name.string}: base=${raceSpeedFt}ft modifier=${modifierFt}ft")
+            } else {
+                // No old data either - initialize with race base
+                val newSpeedData = omc.boundbyfate.component.PlayerSpeedData(
+                    baseSpeedFt = raceSpeedFt,
+                    modifierFt = 0
+                )
+                player.setAttached(BbfAttachments.PLAYER_SPEED_DATA, newSpeedData)
+            }
+        }
+        
+        if (scaleData == null) {
+            // No new format data - check for old format
+            val oldScale = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_OVERRIDE, 0f)
+            if (oldScale > 0f) {
+                // Convert old format: assume current value is total, calculate modifier
+                val modifierScale = oldScale - raceScale
+                val newScaleData = omc.boundbyfate.component.PlayerScaleData(
+                    baseScale = raceScale,
+                    modifierScale = modifierScale
+                )
+                player.setAttached(BbfAttachments.PLAYER_SCALE_DATA, newScaleData)
+                logger.info("Synced scale for ${player.name.string}: base=${raceScale} modifier=${modifierScale}")
+            } else {
+                // No old data either - initialize with race base
+                val newScaleData = omc.boundbyfate.component.PlayerScaleData(
+                    baseScale = raceScale,
+                    modifierScale = 0f
+                )
+                player.setAttached(BbfAttachments.PLAYER_SCALE_DATA, newScaleData)
+            }
+        }
+    }

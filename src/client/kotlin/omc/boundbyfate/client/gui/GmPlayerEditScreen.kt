@@ -642,12 +642,34 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         lbl(context, "§7Spd", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
         btn(context, mouseX, mouseY, cx - 18, row1Y, 8, 9, "§c-") { speedFt = (speedFt - 1).coerceAtLeast(0) }
-        lbl(context, "${speedFt}ft", cx - 8, row1Y + 1, 0.75f, 0xFFFFFF)
+        
+        // Show speed with base + modifier format
+        val baseSpeed = snapshot.baseSpeed
+        val modifier = speedFt - baseSpeed
+        val speedText = if (modifier != 0) {
+            val sign = if (modifier > 0) "+" else ""
+            "§7${baseSpeed}§f${sign}${modifier}ft"
+        } else {
+            "${speedFt}ft"
+        }
+        lbl(context, speedText, cx - 8, row1Y + 1, 0.75f, 0xFFFFFF)
+        
         btn(context, mouseX, mouseY, cx + 12, row1Y, 8, 9, "§a+") { speedFt += 1 }
         // Size
         val row2Y = by + 32
         btn(context, mouseX, mouseY, cx - 18, row2Y, 8, 9, "§c-") { sizeFactor = (sizeFactor - 0.05f).coerceAtLeast(0.1f) }
-        lbl(context, "%.2f".format(sizeFactor), cx - 8, row2Y + 1, 0.75f, 0xCCCCCC)
+        
+        // Show scale with base + modifier format
+        val baseScale = snapshot.baseScale
+        val scaleModifier = sizeFactor - baseScale
+        val scaleText = if (scaleModifier.let { kotlin.math.abs(it) } > 0.01f) {
+            val sign = if (scaleModifier > 0) "+" else ""
+            "§7%.2f§f${sign}%.2f".format(baseScale, scaleModifier)
+        } else {
+            "%.2f".format(sizeFactor)
+        }
+        lbl(context, scaleText, cx - 8, row2Y + 1, 0.75f, 0xCCCCCC)
+        
         btn(context, mouseX, mouseY, cx + 12, row2Y, 8, 9, "§a+") { sizeFactor += 0.05f }
         // "Size" label below size
         lbl(context, "§7Size", cx - 5, by + 43, 0.5f, 0x888888)
