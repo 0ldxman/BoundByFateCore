@@ -16,6 +16,7 @@
             ],
             "uniforms": [
                 { "name": "DarkvisionRange",  "values": [ 18.0 ] },
+                { "name": "PlayerLightLevel", "values": [ 15.0 ] },
                 { "name": "NearPlane",        "values": [ 0.05 ] },
                 { "name": "FarPlane",         "values": [ 512.0 ] }
             ]
