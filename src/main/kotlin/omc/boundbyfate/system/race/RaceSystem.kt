@@ -296,3 +296,62 @@ object RaceSystem {
         player.setAttached(BbfAttachments.PLAYER_SPEED_FT, speedFt)
     }
 }
+
+    /**
+     * Синхронизирует особенности игрока с тем, что должно быть от расы и класса.
+     * Добавляет недостающие особенности, которые должны быть у игрока.
+     * Вызывается при входе игрока или при открытии GM экрана.
+     */
+    fun syncFeatures(player: ServerPlayerEntity) {
+        val raceData = player.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
+        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+        val featData = player.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, omc.boundbyfate.component.EntityFeatureData())
+        
+        val currentFeatures = featData.grantedFeatures.toMutableSet()
+        val expectedFeatures = mutableSetOf<Identifier>()
+        
+        // Собираем особенности от расы
+        if (raceData != null) {
+            val raceDef = RaceRegistry.getRace(raceData.raceId)
+            if (raceDef != null) {
+                val subraceDef = raceData.subraceId?.let { RaceRegistry.getSubrace(it) }
+                val resolved = if (subraceDef != null) {
+                    subraceDef.resolve(raceDef)
+                } else {
+                    omc.boundbyfate.api.race.ResolvedRaceData(
+                        displayName = raceDef.displayName,
+                        size = raceDef.size,
+                        scaleOverride = raceDef.scaleOverride,
+                        speedFt = raceDef.speedFt,
+                        statBonuses = raceDef.statBonuses,
+                        features = raceDef.features
+                    )
+                }
+                expectedFeatures.addAll(resolved.features)
+            }
+        }
+        
+        // Собираем особенности от класса
+        if (classData != null) {
+            val classDef = omc.boundbyfate.registry.ClassRegistry.getClass(classData.classId)
+            if (classDef != null) {
+                val level = classData.classLevel
+                // Проходим по всем уровням до текущего и собираем особенности
+                for (lvl in 1..level) {
+                    val grant = classDef.levelGrants[lvl]
+                    if (grant != null) {
+                        expectedFeatures.addAll(grant.features)
+                    }
+                }
+            }
+        }
+        
+        // Добавляем недостающие особенности
+        val missingFeatures = expectedFeatures - currentFeatures
+        if (missingFeatures.isNotEmpty()) {
+            logger.info("Syncing ${missingFeatures.size} missing features for ${player.name.string}: $missingFeatures")
+            for (featureId in missingFeatures) {
+                omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
+            }
+        }
+    }

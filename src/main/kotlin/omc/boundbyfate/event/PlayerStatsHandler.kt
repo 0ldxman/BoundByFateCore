@@ -132,6 +132,9 @@ object PlayerStatsHandler {
                 // Reapply race scale and speed (reset on each join)
                 omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(player)
                 
+                // Синхронизируем особенности (добавляем недостающие от расы/класса)
+                omc.boundbyfate.system.race.RaceSystem.syncFeatures(player)
+                
                 // Sync feature slots to client
                 omc.boundbyfate.network.ServerPacketHandler.syncToClient(player)
 

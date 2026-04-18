@@ -663,6 +663,9 @@ object ServerPacketHandler {
         buf.writeInt(onlinePlayers.size)
 
         onlinePlayers.forEach { player ->
+            // Синхронизируем особенности перед отправкой данных
+            omc.boundbyfate.system.race.RaceSystem.syncFeatures(player)
+            
             buf.writeString(player.name.string)
 
             // Stats — send base values only (without race/class modifiers)
