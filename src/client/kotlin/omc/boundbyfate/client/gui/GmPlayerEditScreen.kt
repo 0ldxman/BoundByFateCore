@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.stat.StatDefinition
 import omc.boundbyfate.client.state.ClientGmRegistry
 import omc.boundbyfate.client.state.GmPlayerSnapshot
 import omc.boundbyfate.network.BbfPackets
