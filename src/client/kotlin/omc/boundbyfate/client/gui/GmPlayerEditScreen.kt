@@ -394,6 +394,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         tooltipX = mouseX
         tooltipY = mouseY
     }
+
+    private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: StatDefinition) {
         val v = stats[stat.id] ?: 10
         val bonus = snapshot.statBonuses[stat.id] ?: 0
         val total = v + bonus
