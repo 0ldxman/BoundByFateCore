@@ -41,10 +41,9 @@ public class LightmapMixin {
             return;
         }
 
-        // D&D 5e Darkvision rules:
-        // - Darkness (0) → Dim light (7)
-        // - Dim light (1-7) → Bright light (15)
-        // - Bright light (8-15) → stays Bright (15)
+        // D&D 5e Darkvision rules with gradation:
+        // - Darkness/Dim (0-6) → Gradual boost from 5 to 14
+        // - Dim/Bright (7+) → Full bright (15)
         
         // Process each cell in the 16x16 lightmap
         // X = block light (0-15), Y = sky light (0-15)
@@ -54,14 +53,13 @@ public class LightmapMixin {
                 int effectiveLight = Math.max(blockLight, skyLight);
                 
                 int sourceLight;
-                if (effectiveLight == 0) {
-                    // Darkness (0) → Dim (7)
-                    sourceLight = 7;
-                } else if (effectiveLight < 8) {
-                    // Dim (1-7) → Bright (15)
-                    sourceLight = 15;
+                if (effectiveLight < 7) {
+                    // Darkness/Dim (0-6) → Gradual boost
+                    // Linear interpolation: 0→5, 1→6.5, 2→8, 3→9.5, 4→11, 5→12.5, 6→14
+                    // Formula: sourceLight = 5 + (effectiveLight * 9 / 6)
+                    sourceLight = 5 + (effectiveLight * 9 / 6);
                 } else {
-                    // Already bright (8-15) → stay bright (15)
+                    // Dim/Bright (7+) → Full bright
                     sourceLight = 15;
                 }
                 
