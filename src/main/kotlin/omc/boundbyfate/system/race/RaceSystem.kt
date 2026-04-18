@@ -295,7 +295,6 @@ object RaceSystem {
         // Store for GM panel readback
         player.setAttached(BbfAttachments.PLAYER_SPEED_FT, speedFt)
     }
-}
 
     /**
      * Синхронизирует особенности игрока с тем, что должно быть от расы, класса и подкласса.
@@ -359,3 +358,4 @@ object RaceSystem {
             }
         }
     }
+}
