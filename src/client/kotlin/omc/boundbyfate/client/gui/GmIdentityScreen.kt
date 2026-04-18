@@ -1087,7 +1087,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             editingTaskId = task.id
                             inputBuffer = task.description
                             inputBuffer2 = task.goalDescriptionOverride
-                            pendingGoalStatus = task.status.name
+                            pendingGoalStatus = task.status
                             inputFocusField = 0
                             inputMode = InputMode.EDIT_TASK
                             lastClickedTaskIndex = null
@@ -1177,17 +1177,17 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         return super.mouseReleased(mouseX, mouseY, button)
     }
 
-    override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
+    override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
         // Scroll textarea if focused on description field
         if (inputMode != InputMode.NONE && inputFocusField == 1) {
-            if (verticalAmount > 0) {
+            if (amount > 0) {
                 inputBuffer2Scroll = (inputBuffer2Scroll - 1).coerceAtLeast(0)
-            } else if (verticalAmount < 0) {
+            } else if (amount < 0) {
                 inputBuffer2Scroll++
             }
             return true
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
+        return super.mouseScrolled(mouseX, mouseY, amount)
     }
 
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
