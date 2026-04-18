@@ -13,13 +13,6 @@ void main() {
     // Perceptual luminance
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     
-    // DEBUG: Remove this after confirming it works
-    if (PlayerLightLevel < 0.1) {
-        // Uniform not set - show as MAGENTA for debugging
-        fragColor = vec4(1.0, 0.0, 1.0, 1.0);
-        return;
-    }
-    
     // DESATURATION based on REAL light level
     // - Light 0-8 = gradual transition from grayscale to color
     // - Light 8+ = full color
