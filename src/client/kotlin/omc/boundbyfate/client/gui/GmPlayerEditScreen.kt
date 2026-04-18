@@ -19,6 +19,11 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     val editingPlayerName: String get() = snapshot.playerName
 
+    // Helper function for translations
+    private fun tr(key: String, vararg args: Any): String {
+        return net.minecraft.client.resource.language.I18n.translate(key, *args)
+    }
+
     // ── Editable state ────────────────────────────────────────────────────────
     private val stats = mutableMapOf<Identifier, Int>().also { m ->
         listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
@@ -132,7 +137,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val lvCx = pad + leftHeaderW / 2
         // Level centered with wider spacing between buttons
         btn(context, mouseX, mouseY, lvCx - 24, lvY + 1, 8, 9, "§c-") { level = (level - 1).coerceAtLeast(1); recalcProfBonus() }
-        lbl(context, "Lv $level", lvCx - 8, lvY + 2, 0.65f, 0xFFFFFF)
+        lbl(context, tr("bbf.gm.level", level), lvCx - 8, lvY + 2, 0.65f, 0xFFFFFF)
         btn(context, mouseX, mouseY, lvCx + 16, lvY + 1, 8, 9, "§a+") { level = (level + 1).coerceAtMost(20); recalcProfBonus() }
         // XP progress bar — narrower, thinner, buttons on sides of bar
         val barMargin = 14  // space for buttons
@@ -197,7 +202,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val midX = statColEnd + 4
         val savesH = 80
         box(context, midX, bodyY, midW, savesH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        lbl(context, "SAVING THROWS", midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
+        lbl(context, tr("bbf.gm.saving_throws"), midX + 4, bodyY + 3, 0.65f, 0xD4AF37)
         renderSaves(context, mouseX, mouseY, midX + 4, bodyY + 13, midW - 8)
 
         val skillsY = bodyY + savesH + 4; val skillsH = H - skillsY - pad
