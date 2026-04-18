@@ -357,5 +357,22 @@ object RaceSystem {
                 omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
             }
         }
+
+        // Удаляем features которые были от расы/класса, но больше не должны быть
+        // (например, при смене расы — убираем особенности старой расы)
+        // Определяем "locked" features — те что должны быть от расы/класса
+        val lockedBySource = expectedFeatures
+        // Из текущих features убираем те, которые были locked (от расы/класса), но больше не ожидаются
+        val staleLockedFeatures = currentFeatures.filter { featId ->
+            // Особенность была locked (от расы/класса) если она есть в CharacterSourceResolver
+            val wasLocked = omc.boundbyfate.system.CharacterSourceResolver.resolve(player).lockedFeatures.contains(featId)
+            wasLocked && featId !in expectedFeatures
+        }
+        if (staleLockedFeatures.isNotEmpty()) {
+            logger.info("Removing ${staleLockedFeatures.size} stale race/class features for ${player.name.string}: $staleLockedFeatures")
+            for (featureId in staleLockedFeatures) {
+                omc.boundbyfate.system.feature.FeatureSystem.removeFeature(player, featureId)
+            }
+        }
     }
 }

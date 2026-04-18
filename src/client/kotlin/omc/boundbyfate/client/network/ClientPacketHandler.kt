@@ -267,7 +267,18 @@ object ClientPacketHandler {
                     vitality = vitality, scarCount = scarCount
                 )
             }
-            client.execute { ClientGmData.update(snapshots) }
+            client.execute {
+                ClientGmData.update(snapshots)
+                // Если открыт экран редактирования игрока — обновляем его с новым snapshot
+                val currentScreen = client.currentScreen
+                if (currentScreen is omc.boundbyfate.client.gui.GmPlayerEditScreen) {
+                    val playerName = currentScreen.editingPlayerName
+                    val newSnapshot = snapshots.find { it.playerName == playerName }
+                    if (newSnapshot != null) {
+                        client.setScreen(omc.boundbyfate.client.gui.GmPlayerEditScreen(newSnapshot))
+                    }
+                }
+            }
         }
 
         // Server → Client: sync GM registry (classes, races, skills, features)

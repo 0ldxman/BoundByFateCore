@@ -206,11 +206,16 @@ object ServerPacketHandler {
                 if (classId != null) {
                     omc.boundbyfate.system.charclass.ClassSystem.applyClass(target, classId, subclassId, level)
                 }
-                // Apply race change
+                // Apply race change — always reapply to update speed/scale
                 if (raceId != null) {
                     val currentRace = target.getAttachedOrElse(BbfAttachments.PLAYER_RACE, null)
-                    if (currentRace?.raceId != raceId) {
-                        omc.boundbyfate.system.race.RaceSystem.applyRace(target, raceId)
+                    val hasSubrace = buf.readBoolean()
+                    val subraceId = if (hasSubrace) buf.readIdentifier() else null
+                    if (currentRace?.raceId != raceId || currentRace?.subraceId != subraceId) {
+                        omc.boundbyfate.system.race.RaceSystem.applyRace(target, raceId, subraceId)
+                    } else {
+                        // Раса не изменилась, но обновляем скорость/размер на случай сброса
+                        omc.boundbyfate.system.race.RaceSystem.reapplyOnJoin(target)
                     }
                 }
                 // Apply gender

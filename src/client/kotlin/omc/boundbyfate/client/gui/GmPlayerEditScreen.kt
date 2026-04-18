@@ -17,6 +17,8 @@ import omc.boundbyfate.registry.BbfStats
 class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     Screen(Text.literal("GM: ${snapshot.playerName}")) {
 
+    val editingPlayerName: String get() = snapshot.playerName
+
     // ── Editable state ────────────────────────────────────────────────────────
     private val stats = mutableMapOf<Identifier, Int>().also { m ->
         listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
@@ -51,6 +53,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     // ── UI state ──────────────────────────────────────────────────────────────
     private var statusMsg = ""; private var statusTimer = 0f
     private var skillScroll = 0
+    private var featScroll = 0
     private var selectedFeat: Identifier? = null
     private var subraceId: Identifier? = snapshot.raceData?.subraceId
     private var editingExp = false
@@ -58,6 +61,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private var lastExpTextX = 0; private var lastExpTextY = 0; private var lastExpTextW = 0
     // Skills box bounds for scroll detection
     private var skillsBoxX = 0; private var skillsBoxY = 0; private var skillsBoxW = 0; private var skillsBoxH2 = 0
+    // Features box bounds for scroll detection
+    private var featBoxX = 0; private var featBoxY = 0; private var featBoxW = 0; private var featBoxH = 0
 
     // Tooltip state
     private var pendingTooltipLines: List<String> = emptyList()
@@ -236,7 +241,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         box(context, rightX, featY, rightW, featH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         lbl(context, "FEATURES & TRAITS", rightX + 4, featY + 3, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, rightX + rightW - 14, featY + 2, 12, 9, "§a+") { openFeaturePicker() }
-        renderFeatures(context, mouseX, mouseY, rightX + 4, featY + 14, rightW - 8, featH - 18)
+        // Store features box bounds for scroll detection
+        featBoxX = rightX + 4; featBoxY = featY + 14; featBoxW = rightW - 8; featBoxH = featH - 18
+        renderFeatures(context, mouseX, mouseY, featBoxX, featBoxY, featBoxW, featBoxH)
 
         // ── DROPDOWNS (on top, high Z) ────────────────────────────────────────
         // Dropdowns replaced by GmPickerScreen modal overlay
@@ -647,10 +654,11 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderFeatures(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
-        features.forEachIndexed { i, featId ->
+        val rowH = 11
+        val visible = features.drop(featScroll).take(h / rowH)
+        visible.forEachIndexed { i, featId ->
             val featName = ClientGmRegistry.features.find { it.id == featId }?.displayName ?: featId.path
-            val fy = y + i * 11
-            if (fy + 10 > y + h) return@forEachIndexed
+            val fy = y + i * rowH
             val isLocked = featId in snapshot.lockedFeatures
             val hovered = !isLocked && mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
             val nameColor = if (isLocked) 0x888888 else if (hovered) 0xFFD700 else 0xCCCCCC
@@ -666,12 +674,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
                 val lines = mutableListOf<String>()
                 lines.add(featName)
                 val source = snapshot.featureSources[featId]
-                if (source != null) {
-                    lines.add("  Добавлено: $source")
-                }
+                if (source != null) lines.add("  Добавлено: $source")
                 setTooltip(lines, mouseX, mouseY)
             }
         }
+        if (featScroll > 0) btn(context, mouseX, mouseY, x + w - 10, y, 10, rowH - 2, "§7▲") { featScroll-- }
+        if (featScroll + h / rowH < features.size) btn(context, mouseX, mouseY, x + w - 10, y + h - rowH + 2, 10, rowH - 2, "§7▼") { featScroll++ }
     }
 
     private fun applyAll() {
@@ -687,6 +695,7 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         idBuf.writeBoolean(subclassId != null); if (subclassId != null) idBuf.writeIdentifier(subclassId!!)
         idBuf.writeInt(level)
         idBuf.writeBoolean(raceId != null); if (raceId != null) idBuf.writeIdentifier(raceId!!)
+        idBuf.writeBoolean(subraceId != null); if (subraceId != null) idBuf.writeIdentifier(subraceId!!)
         idBuf.writeBoolean(true); idBuf.writeString(gender)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDENTITY, idBuf)
 
@@ -830,6 +839,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val visibleCount = (skillsBoxH2 - 16) / 9
             val maxScroll = (skillList.size - visibleCount).coerceAtLeast(0)
             skillScroll = (skillScroll - amount.toInt()).coerceIn(0, maxScroll)
+            return true
+        }
+        if (mx in featBoxX..(featBoxX + featBoxW) && my in featBoxY..(featBoxY + featBoxH)) {
+            val visibleCount = featBoxH / 11
+            val maxScroll = (features.size - visibleCount).coerceAtLeast(0)
+            featScroll = (featScroll - amount.toInt()).coerceIn(0, maxScroll)
             return true
         }
         return super.mouseScrolled(mouseX, mouseY, amount)
