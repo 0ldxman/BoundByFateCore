@@ -64,7 +64,8 @@ public class LightmapMixin {
         // If this is a dark color, brighten it
         if (brightness < 128) {
             // Boost brightness for darkvision
-            float boost = 2.0f; // Multiply brightness by 2
+            // Увеличил с 2.0 до 2.5 для большей яркости
+            float boost = 2.5f;
             r = Math.min(255, (int)(r * boost));
             g = Math.min(255, (int)(g * boost));
             b = Math.min(255, (int)(b * boost));
