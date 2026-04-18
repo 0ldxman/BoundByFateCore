@@ -7,18 +7,8 @@
             "name": "boundbyfate-core:darkvision",
             "intarget": "minecraft:main",
             "outtarget": "swap",
-            "auxtargets": [
-                {
-                    "name": "DiffuseDepth",
-                    "id": "minecraft:main",
-                    "useDepth": true
-                }
-            ],
             "uniforms": [
-                { "name": "DarkvisionRange",  "values": [ 18.0 ] },
-                { "name": "PlayerLightLevel", "values": [ 15.0 ] },
-                { "name": "NearPlane",        "values": [ 0.05 ] },
-                { "name": "FarPlane",         "values": [ 512.0 ] }
+                { "name": "PlayerLightLevel", "values": [ 15.0 ] }
             ]
         },
         {
