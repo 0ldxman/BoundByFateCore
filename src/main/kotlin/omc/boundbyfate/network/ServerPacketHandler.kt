@@ -678,15 +678,34 @@ object ServerPacketHandler {
             buf.writeInt(locked.statBonuses.size)
             locked.statBonuses.forEach { (id, bonus) -> buf.writeIdentifier(id); buf.writeInt(bonus) }
 
+            // Stat bonus breakdown: statId -> list of "sourceName|value"
+            buf.writeInt(locked.statBonusBreakdown.size)
+            locked.statBonusBreakdown.forEach { (statId, entries) ->
+                buf.writeIdentifier(statId)
+                buf.writeInt(entries.size)
+                entries.forEach { entry ->
+                    buf.writeString(entry.sourceName)
+                    buf.writeInt(entry.value)
+                }
+            }
+
             // Skills
             val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, null)
             val skills = skillData?.proficiencies ?: emptyMap()
             buf.writeInt(skills.size)
             skills.forEach { (id, level) -> buf.writeIdentifier(id); buf.writeInt(level) }
 
-            // Locked skills (from class/race — cannot be removed by GM)
+            // Locked skills (from class/race)
             buf.writeInt(locked.lockedSkills.size)
             locked.lockedSkills.forEach { buf.writeIdentifier(it) }
+
+            // Skill sources: skillId -> list of source names
+            buf.writeInt(locked.skillSources.size)
+            locked.skillSources.forEach { (skillId, entries) ->
+                buf.writeIdentifier(skillId)
+                buf.writeInt(entries.size)
+                entries.forEach { buf.writeString(it.sourceName) }
+            }
 
             // Class
             val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
@@ -742,9 +761,16 @@ object ServerPacketHandler {
             buf.writeInt(features.size)
             features.forEach { buf.writeIdentifier(it) }
 
-            // Locked features (from race/class — cannot be removed by GM)
+            // Locked features (from race/class)
             buf.writeInt(locked.lockedFeatures.size)
             locked.lockedFeatures.forEach { buf.writeIdentifier(it) }
+
+            // Feature sources: featureId -> source name
+            buf.writeInt(locked.featureSources.size)
+            locked.featureSources.forEach { (featId, sourceName) ->
+                buf.writeIdentifier(featId)
+                buf.writeString(sourceName)
+            }
 
             // Vitality
             val vitalityData = player.getAttachedOrElse(BbfAttachments.PLAYER_VITALITY, omc.boundbyfate.component.PlayerVitalityData())

@@ -11,9 +11,13 @@ data class GmPlayerSnapshot(
     val statsData: EntityStatData?,
     /** Stat bonuses from race/class (e.g. Dwarf +2 CON). Displayed as "13 +2" in GM screen. */
     val statBonuses: Map<Identifier, Int> = emptyMap(),
+    /** Detailed breakdown: statId -> list of "sourceName|value" */
+    val statBonusBreakdown: Map<Identifier, List<String>> = emptyMap(),
     val skillData: EntitySkillData?,
     /** Skill/save proficiency IDs locked by race/class — GM cannot remove these. */
     val lockedSkills: Set<Identifier> = emptySet(),
+    /** Skill source names: skillId -> list of source names */
+    val skillSources: Map<Identifier, List<String>> = emptyMap(),
     val classData: PlayerClassData?,
     val raceData: PlayerRaceData?,
     val level: Int,
@@ -28,6 +32,8 @@ data class GmPlayerSnapshot(
     val grantedFeatures: List<Identifier> = emptyList(),
     /** Feature IDs locked by race/class — GM cannot remove these. */
     val lockedFeatures: Set<Identifier> = emptySet(),
+    /** Feature source names: featureId -> source name */
+    val featureSources: Map<Identifier, String> = emptyMap(),
     val vitality: Int = 5,
     val scarCount: Int = 0
 )

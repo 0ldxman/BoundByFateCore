@@ -58,6 +58,10 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     // Skills box bounds for scroll detection
     private var skillsBoxX = 0; private var skillsBoxY = 0; private var skillsBoxW = 0; private var skillsBoxH2 = 0
 
+    // Tooltip state
+    private var pendingTooltipLines: List<String> = emptyList()
+    private var tooltipX = 0; private var tooltipY = 0
+
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val label: String, val action: () -> Unit)
     private val btns = mutableListOf<Btn>()
 
@@ -241,6 +245,11 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             context.drawCenteredTextWithShadow(textRenderer, statusMsg, W / 2, H - 10, (a shl 24) or 0x55FF55)
         }
         super.render(context, mouseX, mouseY, delta)
+        // Draw tooltip on top of everything
+        if (pendingTooltipLines.isNotEmpty()) {
+            drawGmTooltip(context, pendingTooltipLines, tooltipX, tooltipY)
+        }
+        pendingTooltipLines = emptyList()
     }
 
     private fun renderInfoBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
@@ -345,7 +354,46 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         client?.player?.networkHandler?.sendChatCommand(command.removePrefix("/"))
     }
 
-    private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
+    private fun drawGmTooltip(context: DrawContext, lines: List<String>, mouseX: Int, mouseY: Int) {
+        if (lines.isEmpty()) return
+        val pad = 4
+        val lineH = textRenderer.fontHeight + 1
+        val maxW = lines.maxOf { textRenderer.getWidth(it) }
+        val totalH = lines.size * lineH + pad * 2
+        val totalW = maxW + pad * 2
+
+        var tx = mouseX + 8
+        var ty = mouseY - 4
+        // Keep on screen
+        if (tx + totalW > width) tx = mouseX - totalW - 4
+        if (ty + totalH > height) ty = height - totalH - 2
+
+        val bgColor = 0xF02b2321.toInt()
+        val brdColor = 0xFFb08a66.toInt()
+
+        context.matrices.push()
+        context.matrices.translate(0f, 0f, 400f)
+        context.fill(tx, ty, tx + totalW, ty + totalH, bgColor)
+        context.fill(tx, ty, tx + totalW, ty + 1, brdColor)
+        context.fill(tx, ty + totalH - 1, tx + totalW, ty + totalH, brdColor)
+        context.fill(tx, ty, tx + 1, ty + totalH, brdColor)
+        context.fill(tx + totalW - 1, ty, tx + totalW, ty + totalH, brdColor)
+        lines.forEachIndexed { i, line ->
+            val color = when {
+                i == 0 -> 0xFFFFAA  // header — yellow
+                line.startsWith("  ") -> 0xAAAAAA  // indented — gray
+                else -> 0xCCCCCC
+            }
+            context.drawTextWithShadow(textRenderer, line, tx + pad, ty + pad + i * lineH, color)
+        }
+        context.matrices.pop()
+    }
+
+    private fun setTooltip(lines: List<String>, mouseX: Int, mouseY: Int) {
+        pendingTooltipLines = lines
+        tooltipX = mouseX
+        tooltipY = mouseY
+    }
         val v = stats[stat.id] ?: 10
         val bonus = snapshot.statBonuses[stat.id] ?: 0
         val total = v + bonus
@@ -381,6 +429,28 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         // Buttons outside box — full height of box
         btn(context, mouseX, mouseY, x - 12, y, 11, h, "§c-") { stats[stat.id] = (v - 1).coerceAtLeast(1) }
         btn(context, mouseX, mouseY, x + w + 1, y, 11, h, "§a+") { stats[stat.id] = (v + 1).coerceAtMost(30) }
+
+        // Tooltip on hover
+        if (mouseX in x..(x + w) && mouseY in y..(y + h)) {
+            val lines = mutableListOf<String>()
+            val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
+            val shortName = Text.translatable(shortKey).string
+            lines.add("$shortName: $total")
+            lines.add("  Базовое: $v")
+            val breakdown = snapshot.statBonusBreakdown[stat.id]
+            if (!breakdown.isNullOrEmpty()) {
+                for (entry in breakdown) {
+                    val parts = entry.split("|")
+                    if (parts.size == 2) {
+                        val src = parts[0]
+                        val bVal = parts[1].toIntOrNull() ?: 0
+                        val sign = if (bVal >= 0) "+" else ""
+                        lines.add("  $sign$bVal от $src")
+                    }
+                }
+            }
+            setTooltip(lines, mouseX, mouseY)
+        }
     }
 
     private fun expClickHovered(mouseX: Int, mouseY: Int, cx: Int, lvY: Int, w: Int): Boolean {
@@ -428,6 +498,20 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             lbl(context, save.displayName, x + 26, y + i * 10 + 1, 0.65f, nameColor)
             // Show lock icon for class-granted saves
             if (isLocked) lbl(context, "§8🔒", x + w - 8, y + i * 10 + 1, 0.55f, 0x555555)
+
+            // Tooltip on hover
+            val rowY = y + i * 10
+            if (mouseX in x..(x + w) && mouseY in rowY..(rowY + 10)) {
+                val lines = mutableListOf<String>()
+                lines.add(save.displayName)
+                lines.add("  Бонус: $bonusStr")
+                val sources = snapshot.skillSources[save.id]
+                if (!sources.isNullOrEmpty()) {
+                    lines.add("  Владение от:")
+                    sources.forEach { lines.add("    $it") }
+                }
+                setTooltip(lines, mouseX, mouseY)
+            }
         }
     }
 
@@ -450,6 +534,20 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
             lbl(context, "§7$bonusStr", x + 10, y + i * 9 + 1, 0.6f, if (lv > 0) 0x55FF55 else 0xAAAAAA)
             lbl(context, skill.displayName, x + 26, y + i * 9 + 1, 0.6f, if (lv > 0) 0x55FF55 else 0xCCCCCC)
+
+            // Tooltip on hover
+            val rowY = y + i * 9
+            if (mouseX in x..(x + w) && mouseY in rowY..(rowY + 9)) {
+                val lines = mutableListOf<String>()
+                lines.add(skill.displayName)
+                lines.add("  Бонус: $bonusStr")
+                val sources = snapshot.skillSources[skill.id]
+                if (!sources.isNullOrEmpty()) {
+                    lines.add("  Владение от:")
+                    sources.forEach { lines.add("    $it") }
+                }
+                setTooltip(lines, mouseX, mouseY)
+            }
         }
         if (skillScroll > 0) btn(context, mouseX, mouseY, x + w - 10, y, 10, 9, "§7▲") { skillScroll-- }
         if (skillScroll + h / 9 < skillList.size) btn(context, mouseX, mouseY, x + w - 10, y + h - 10, 10, 9, "§7▼") { skillScroll++ }
@@ -546,13 +644,23 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             if (fy + 10 > y + h) return@forEachIndexed
             val isLocked = featId in snapshot.lockedFeatures
             val hovered = !isLocked && mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
-            // Locked features shown in muted color with lock icon, cannot be removed
             val nameColor = if (isLocked) 0x888888 else if (hovered) 0xFFD700 else 0xCCCCCC
             lbl(context, featName, x, fy + 1, 0.65f, nameColor)
             if (isLocked) {
                 lbl(context, "§7🔒", x + w - 12, fy + 1, 0.65f, 0x666666)
             } else {
                 btn(context, mouseX, mouseY, x + w - 12, fy, 10, 9, "§cX") { features.remove(featId) }
+            }
+
+            // Tooltip on hover
+            if (mouseX in x..(x + w) && mouseY in fy..(fy + 10)) {
+                val lines = mutableListOf<String>()
+                lines.add(featName)
+                val source = snapshot.featureSources[featId]
+                if (source != null) {
+                    lines.add("  Добавлено: $source")
+                }
+                setTooltip(lines, mouseX, mouseY)
             }
         }
     }

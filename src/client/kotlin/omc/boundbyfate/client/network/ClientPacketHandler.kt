@@ -180,6 +180,16 @@ object ClientPacketHandler {
                 val statBonuses = mutableMapOf<net.minecraft.util.Identifier, Int>()
                 repeat(bonusCount) { statBonuses[buf.readIdentifier()] = buf.readInt() }
 
+                // Stat bonus breakdown
+                val breakdownCount = buf.readInt()
+                val statBonusBreakdown = mutableMapOf<net.minecraft.util.Identifier, List<String>>()
+                repeat(breakdownCount) {
+                    val statId = buf.readIdentifier()
+                    val entryCount = buf.readInt()
+                    val entries = (0 until entryCount).map { "${buf.readString()}|${buf.readInt()}" }
+                    statBonusBreakdown[statId] = entries
+                }
+
                 // Skills
                 val skillCount = buf.readInt()
                 val proficiencies = mutableMapOf<net.minecraft.util.Identifier, Int>()
@@ -189,6 +199,16 @@ object ClientPacketHandler {
                 val lockedSkillCount = buf.readInt()
                 val lockedSkills = mutableSetOf<net.minecraft.util.Identifier>()
                 repeat(lockedSkillCount) { lockedSkills.add(buf.readIdentifier()) }
+
+                // Skill sources
+                val skillSourceCount = buf.readInt()
+                val skillSources = mutableMapOf<net.minecraft.util.Identifier, List<String>>()
+                repeat(skillSourceCount) {
+                    val skillId = buf.readIdentifier()
+                    val entryCount = buf.readInt()
+                    val entries = (0 until entryCount).map { buf.readString() }
+                    skillSources[skillId] = entries
+                }
 
                 val hasClass = buf.readBoolean()
                 val classData = if (hasClass) {
@@ -219,20 +239,31 @@ object ClientPacketHandler {
                 val lockedFeatures = mutableSetOf<net.minecraft.util.Identifier>()
                 repeat(lockedFeatureCount) { lockedFeatures.add(buf.readIdentifier()) }
 
+                // Feature sources
+                val featSourceCount = buf.readInt()
+                val featureSources = mutableMapOf<net.minecraft.util.Identifier, String>()
+                repeat(featSourceCount) {
+                    val featId = buf.readIdentifier()
+                    featureSources[featId] = buf.readString()
+                }
+
                 val vitality = buf.readInt()
                 val scarCount = buf.readInt()
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
                     statBonuses = statBonuses,
+                    statBonusBreakdown = statBonusBreakdown,
                     skillData = EntitySkillData(proficiencies = proficiencies),
                     lockedSkills = lockedSkills,
+                    skillSources = skillSources,
                     classData = classData, raceData = raceData,
                     level = level, experience = experience,
                     gender = gender, alignment = alignment,
                     currentHp = hp, maxHp = maxHp, speed = speed, scale = scale,
                     isOnline = true, grantedFeatures = features,
                     lockedFeatures = lockedFeatures,
+                    featureSources = featureSources,
                     vitality = vitality, scarCount = scarCount
                 )
             }
