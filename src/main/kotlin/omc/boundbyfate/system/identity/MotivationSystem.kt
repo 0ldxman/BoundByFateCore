@@ -183,6 +183,8 @@ object MotivationSystem {
         val updatedGoal = goal.copy(tasks = goal.tasks + newTask)
         val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
         setMotivationData(player, md.copy(goals = newGoals))
+        
+        println("[MotivationSystem] Added task '$description' to goal '$goalId' for ${player.name.string}. Total tasks: ${updatedGoal.tasks.size}")
         return taskId
     }
 

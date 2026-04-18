@@ -164,7 +164,10 @@ object ServerPacketHandler {
         
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.REQUEST_GM_DATA) { server, player, _, _, _ ->
             if (player.hasPermissionLevel(2)) {
-                server.execute { syncGmData(player) }
+                server.execute {
+                    logger.info("GM ${player.name.string} requested data refresh")
+                    syncGmData(player)
+                }
             }
         }
 
@@ -392,7 +395,7 @@ object ServerPacketHandler {
                     omc.boundbyfate.system.identity.AlignmentSystem.addAlignment(target, lawChaos, goodEvil, reason)
                 }
                 logger.info("GM ${gmPlayer.name.string} ${mode} alignment of $targetName to ($lawChaos, $goodEvil)")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -421,7 +424,7 @@ object ServerPacketHandler {
                     }
                 }
                 logger.info("GM ${gmPlayer.name.string} $action ideal for $targetName")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -441,7 +444,7 @@ object ServerPacketHandler {
                     "update" -> omc.boundbyfate.system.identity.IdealsSystem.updateFlaw(target, id, text)
                 }
                 logger.info("GM ${gmPlayer.name.string} $action flaw for $targetName")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -461,7 +464,7 @@ object ServerPacketHandler {
                     "update" -> omc.boundbyfate.system.identity.MotivationSystem.updateMotivation(target, id, text)
                 }
                 logger.info("GM ${gmPlayer.name.string} $action motivation for $targetName")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -479,7 +482,7 @@ object ServerPacketHandler {
                     "reject" -> omc.boundbyfate.system.identity.MotivationSystem.rejectProposal(target, proposalId)
                 }
                 logger.info("GM ${gmPlayer.name.string} $action proposal $proposalId for $targetName")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -540,7 +543,7 @@ object ServerPacketHandler {
                     }
                 }
                 logger.info("GM ${gmPlayer.name.string} $action goal for $targetName")
-                syncGmDataToAll(server)
+                syncGmData(gmPlayer)
             }
         }
 
@@ -1061,6 +1064,7 @@ object ServerPacketHandler {
             // Identity: goals
             val goals = identityData.motivationData.goals
             buf.writeInt(goals.size)
+            logger.debug("Syncing ${goals.size} goals for ${player.name.string}")
             goals.forEach { goal ->
                 buf.writeString(goal.id)
                 buf.writeString(goal.title)
@@ -1069,6 +1073,7 @@ object ServerPacketHandler {
                 buf.writeString(goal.status.name)
                 buf.writeInt(goal.currentTaskIndex)
                 buf.writeInt(goal.tasks.size)
+                logger.debug("  Goal '${goal.title}' has ${goal.tasks.size} tasks")
                 goal.tasks.sortedBy { it.order }.forEach { task ->
                     buf.writeString(task.id)
                     buf.writeString(task.description)

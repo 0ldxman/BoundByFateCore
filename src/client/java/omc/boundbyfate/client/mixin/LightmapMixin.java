@@ -83,11 +83,11 @@ public class LightmapMixin {
         
         int newColor = (a << 24) | (r << 16) | (g << 8) | b;
         
-        // Log occasionally
-        if (logCounter++ % 1000 == 0) {
-            LOGGER.info("[BBF Lightmap] ModifyArg - brightness={}, boost={}, old={}, new={}", 
-                brightness, boost, Integer.toHexString(color), Integer.toHexString(newColor));
-        }
+        // Logging disabled to reduce log spam
+        // if (logCounter++ % 1000 == 0) {
+        //     LOGGER.info("[BBF Lightmap] ModifyArg - brightness={}, boost={}, old={}, new={}", 
+        //         brightness, boost, Integer.toHexString(color), Integer.toHexString(newColor));
+        // }
         
         return newColor;
     }

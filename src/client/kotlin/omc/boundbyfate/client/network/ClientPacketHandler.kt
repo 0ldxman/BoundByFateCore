@@ -318,6 +318,7 @@ object ClientPacketHandler {
                         val torder = buf.readInt()
                         omc.boundbyfate.client.state.ClientGoalTask(tid, tdesc, tgoalDesc, tstatus, torder)
                     }
+                    println("[ClientPacketHandler] Received goal '$title' with ${tasks.size} tasks for $name")
                     omc.boundbyfate.client.state.ClientGoal(id, title, description, motivationId, status, currentTaskIndex, tasks)
                 }
 
@@ -357,6 +358,12 @@ object ClientPacketHandler {
                     val newSnapshot = snapshots.find { it.playerName == playerName }
                     if (newSnapshot != null) {
                         client.setScreen(omc.boundbyfate.client.gui.GmPlayerEditScreen(newSnapshot))
+                    }
+                } else if (currentScreen is omc.boundbyfate.client.gui.GmIdentityScreen) {
+                    val playerName = currentScreen.playerName
+                    val newSnapshot = snapshots.find { it.playerName == playerName }
+                    if (newSnapshot != null) {
+                        client.setScreen(omc.boundbyfate.client.gui.GmIdentityScreen(newSnapshot))
                     }
                 }
             }
