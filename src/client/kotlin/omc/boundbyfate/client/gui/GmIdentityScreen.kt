@@ -374,7 +374,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val overlayH = when (inputMode) {
             InputMode.ADD_IDEAL -> 78
             InputMode.ADD_GOAL -> 160
-            InputMode.EDIT_GOAL -> 280  // Increased for task list
+            InputMode.EDIT_GOAL -> minOf(H - 40, 240)  // Adaptive height, max 240
             InputMode.ADD_TASK, InputMode.EDIT_TASK -> 100
             else -> 62
         }
@@ -481,10 +481,10 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     curY += 12
 
                     val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
-                    val taskListH = 80
+                    val taskListH = overlayH - curY + oy - 30  // Dynamic height based on available space
                     val taskRowH = 14
                     val sortedTasks = goal?.tasks?.sortedBy { it.order } ?: emptyList()
-                    val visibleTasks = sortedTasks.drop(taskListScroll).take(taskListH / taskRowH)
+                    val visibleTasks = sortedTasks.drop(taskListScroll).take((taskListH / taskRowH).coerceAtLeast(1))
 
                     visibleTasks.forEachIndexed { i, task ->
                         val taskIndex = sortedTasks.indexOf(task)
@@ -705,42 +705,50 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         buf.writeInt(alignLawChaos); buf.writeInt(alignGoodEvil); buf.writeString("GM edit")
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_ALIGNMENT, buf)
         statusMsg = "§a${tr("bbf.gm.status.applied")}"; statusTimer = 1f
+        requestDataRefresh()
     }
 
     private fun sendAddIdeal(text: String, axis: IdealAlignment) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text); buf.writeString(axis.name)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        requestDataRefresh()
     }
     private fun sendRemoveIdeal(id: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString(""); buf.writeString("")
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_IDEAL, buf)
+        requestDataRefresh()
     }
     private fun sendAddFlaw(text: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        requestDataRefresh()
     }
     private fun sendRemoveFlaw(id: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_FLAW, buf)
+        requestDataRefresh()
     }
     private fun sendAddMotivation(text: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("add"); buf.writeString(""); buf.writeString(text)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        requestDataRefresh()
     }
     private fun sendRemoveMotivation(id: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("remove"); buf.writeString(id); buf.writeString("")
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_MOTIVATION, buf)
+        requestDataRefresh()
     }
     private fun sendHandleProposal(proposalId: String, action: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString(action); buf.writeString(proposalId)
         ClientPlayNetworking.send(BbfPackets.GM_HANDLE_PROPOSAL, buf)
+        requestDataRefresh()
     }
     private fun sendAddGoal(title: String, description: String, motivationId: String?) {
         val buf = PacketByteBufs.create()
@@ -748,36 +756,53 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         buf.writeString(title); buf.writeString(description); buf.writeString(motivationId ?: "")
         buf.writeString(""); buf.writeInt(0)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
     }
     private fun sendGoalAction(goalId: String, action: String, description: String, taskStatus: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString(action); buf.writeString(goalId)
         buf.writeString(""); buf.writeString(description); buf.writeString(""); buf.writeString(taskStatus); buf.writeInt(0)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
     }
     private fun sendAddTask(goalId: String, description: String, goalDescOverride: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("add_task"); buf.writeString(goalId)
         buf.writeString(description); buf.writeString(goalDescOverride); buf.writeString(""); buf.writeString("CURRENT"); buf.writeInt(0)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
     }
     private fun sendEditTask(goalId: String, taskId: String, description: String, goalDescOverride: String, status: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("edit_task"); buf.writeString(goalId)
         buf.writeString(taskId); buf.writeString(description); buf.writeString(goalDescOverride); buf.writeString(status); buf.writeInt(0)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
     }
     private fun sendDeleteTask(goalId: String, taskId: String) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("delete_task"); buf.writeString(goalId)
         buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(0)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
     }
     private fun sendReorderTask(goalId: String, taskId: String, newOrder: Int) {
         val buf = PacketByteBufs.create()
         buf.writeString(snapshot.playerName); buf.writeString("reorder_task"); buf.writeString(goalId)
         buf.writeString(taskId); buf.writeString(""); buf.writeString(""); buf.writeString(""); buf.writeInt(newOrder)
         ClientPlayNetworking.send(BbfPackets.GM_EDIT_PLAYER_GOAL, buf)
+        requestDataRefresh()
+    }
+
+    private fun requestDataRefresh() {
+        // Request fresh data from server after 100ms delay
+        Thread {
+            Thread.sleep(100)
+            client?.execute {
+                val buf = PacketByteBufs.create()
+                ClientPlayNetworking.send(BbfPackets.REQUEST_GM_DATA, buf)
+            }
+        }.start()
     }
 
     // ═════════════════════════════════════════════════════════════════════════
