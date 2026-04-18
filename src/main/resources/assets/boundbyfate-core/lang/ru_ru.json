@@ -109,6 +109,7 @@
   "bbf.gm.picker.feature": "Добавить особенность",
   "bbf.gm.button.apply": "Применить",
   "bbf.gm.button.back": "← Назад",
+  "bbf.gm.button.cancel": "Отмена",
   "bbf.gm.button.change_skin": "Сменить скин",
   "bbf.gm.button.identity": "Личность",
   "bbf.gm.button.abilities": "Способности",
@@ -139,5 +140,23 @@
   "bbf.alignment.neutral_evil": "Нейтрально-Злой",
   "bbf.alignment.neutral_evil.short": "НЗ",
   "bbf.alignment.chaotic_evil": "Хаотично-Злой",
-  "bbf.alignment.chaotic_evil.short": "ХЗ"
+  "bbf.alignment.chaotic_evil.short": "ХЗ",
+
+  "bbf.alignment.axis.good": "Добро",
+  "bbf.alignment.axis.evil": "Зло",
+  "bbf.alignment.axis.lawful": "Закон",
+  "bbf.alignment.axis.chaotic": "Хаос",
+  "bbf.alignment.axis.neutral": "Нейтральность",
+  "bbf.alignment.axis.any": "Любое",
+
+  "bbf.gm.identity.alignment": "МИРОВОЗЗРЕНИЕ",
+  "bbf.gm.identity.ideals": "УБЕЖДЕНИЯ",
+  "bbf.gm.identity.flaws": "СЛАБОСТИ",
+  "bbf.gm.identity.law_chaos": "Закон-Хаос",
+  "bbf.gm.identity.good_evil": "Добро-Зло",
+  "bbf.gm.identity.wavering": "Убеждения пошатнулись",
+  "bbf.gm.identity.history": "История изменений",
+  "bbf.gm.identity.add_ideal": "Добавить убеждение",
+  "bbf.gm.identity.add_flaw": "Добавить слабость",
+  "bbf.gm.identity.axis": "Ось"
 }

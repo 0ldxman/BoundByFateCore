@@ -1,10 +1,32 @@
 package omc.boundbyfate.client.state
 
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.identity.IdealAlignment
 import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.PlayerClassData
 import omc.boundbyfate.component.PlayerRaceData
+
+// ── Client-side identity data structures ─────────────────────────────────────
+
+data class ClientIdeal(
+    val id: String,
+    val text: String,
+    val alignmentAxis: IdealAlignment,
+    val isCompatible: Boolean  // pre-computed on server side
+)
+
+data class ClientFlaw(
+    val id: String,
+    val text: String
+)
+
+data class ClientAlignmentData(
+    val lawChaos: Int,
+    val goodEvil: Int
+)
+
+// ── GM Player Snapshot ────────────────────────────────────────────────────────
 
 data class GmPlayerSnapshot(
     val playerName: String,
@@ -39,7 +61,11 @@ data class GmPlayerSnapshot(
     /** Feature source names: featureId -> source name */
     val featureSources: Map<Identifier, String> = emptyMap(),
     val vitality: Int = 5,
-    val scarCount: Int = 0
+    val scarCount: Int = 0,
+    // Identity data
+    val alignmentCoords: ClientAlignmentData = ClientAlignmentData(0, 0),
+    val ideals: List<ClientIdeal> = emptyList(),
+    val flaws: List<ClientFlaw> = emptyList()
 )
 
 object ClientGmData {

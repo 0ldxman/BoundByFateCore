@@ -255,6 +255,32 @@ object ClientPacketHandler {
 
                 val vitality = buf.readInt()
                 val scarCount = buf.readInt()
+
+                // Identity: alignment coordinates
+                val alignLawChaos = buf.readInt()
+                val alignGoodEvil = buf.readInt()
+                val alignCoords = omc.boundbyfate.client.state.ClientAlignmentData(alignLawChaos, alignGoodEvil)
+
+                // Identity: ideals
+                val idealCount = buf.readInt()
+                val ideals = (0 until idealCount).map {
+                    val id = buf.readString()
+                    val text = buf.readString()
+                    val axisName = buf.readString()
+                    val isCompatible = buf.readBoolean()
+                    val axis = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(axisName) }
+                               catch (e: Exception) { omc.boundbyfate.api.identity.IdealAlignment.ANY }
+                    omc.boundbyfate.client.state.ClientIdeal(id, text, axis, isCompatible)
+                }
+
+                // Identity: flaws
+                val flawCount = buf.readInt()
+                val flaws = (0 until flawCount).map {
+                    val id = buf.readString()
+                    val text = buf.readString()
+                    omc.boundbyfate.client.state.ClientFlaw(id, text)
+                }
+
                 omc.boundbyfate.client.state.GmPlayerSnapshot(
                     playerName = name,
                     statsData = EntityStatData(baseStats = baseStats),
@@ -266,14 +292,17 @@ object ClientPacketHandler {
                     classData = classData, raceData = raceData,
                     level = level, experience = experience,
                     gender = gender, alignment = alignment,
-                    currentHp = hp, maxHp = maxHp, 
+                    currentHp = hp, maxHp = maxHp,
                     speed = speed, scale = scale,
                     baseSpeed = baseSpeed, speedModifier = speedModifier,
                     baseScale = baseScale, scaleModifier = scaleModifier,
                     isOnline = true, grantedFeatures = features,
                     lockedFeatures = lockedFeatures,
                     featureSources = featureSources,
-                    vitality = vitality, scarCount = scarCount
+                    vitality = vitality, scarCount = scarCount,
+                    alignmentCoords = alignCoords,
+                    ideals = ideals,
+                    flaws = flaws
                 )
             }
             client.execute {

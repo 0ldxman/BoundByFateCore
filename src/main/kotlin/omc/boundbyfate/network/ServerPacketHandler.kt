@@ -368,6 +368,76 @@ object ServerPacketHandler {
                 logger.info("GM ${gmPlayer.name.string} set skin=$skinName for $targetName")
             }
         }
+
+        // Client → Server: GM edits player alignment
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_ALIGNMENT) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val mode = buf.readString() // "set" or "add"
+            val lawChaos = buf.readInt()
+            val goodEvil = buf.readInt()
+            val reason = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                if (mode == "set") {
+                    omc.boundbyfate.system.identity.AlignmentSystem.setAlignment(target, lawChaos, goodEvil, reason)
+                } else {
+                    omc.boundbyfate.system.identity.AlignmentSystem.addAlignment(target, lawChaos, goodEvil, reason)
+                }
+                logger.info("GM ${gmPlayer.name.string} ${mode} alignment of $targetName to ($lawChaos, $goodEvil)")
+                syncGmDataToAll(server)
+            }
+        }
+
+        // Client → Server: GM adds/removes/updates an ideal for a player
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_IDEAL) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val action = buf.readString() // "add", "remove", "update"
+            val id = buf.readString()
+            val text = buf.readString()
+            val axis = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                when (action) {
+                    "add" -> {
+                        val axisEnum = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(axis) }
+                                       catch (e: Exception) { omc.boundbyfate.api.identity.IdealAlignment.ANY }
+                        omc.boundbyfate.system.identity.IdealsSystem.addIdeal(target, text, axisEnum)
+                    }
+                    "remove" -> omc.boundbyfate.system.identity.IdealsSystem.removeIdeal(target, id)
+                    "update" -> {
+                        val axisEnum = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(axis) }
+                                       catch (e: Exception) { null }
+                        omc.boundbyfate.system.identity.IdealsSystem.updateIdeal(target, id, text.ifEmpty { null }, axisEnum)
+                    }
+                }
+                logger.info("GM ${gmPlayer.name.string} $action ideal for $targetName")
+                syncGmDataToAll(server)
+            }
+        }
+
+        // Client → Server: GM adds/removes/updates a flaw for a player
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_FLAW) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            val targetName = buf.readString()
+            val action = buf.readString() // "add", "remove", "update"
+            val id = buf.readString()
+            val text = buf.readString()
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                when (action) {
+                    "add" -> omc.boundbyfate.system.identity.IdealsSystem.addFlaw(target, text)
+                    "remove" -> omc.boundbyfate.system.identity.IdealsSystem.removeFlaw(target, id)
+                    "update" -> omc.boundbyfate.system.identity.IdealsSystem.updateFlaw(target, id, text)
+                }
+                logger.info("GM ${gmPlayer.name.string} $action flaw for $targetName")
+                syncGmDataToAll(server)
+            }
+        }
     }
 
     /**
@@ -826,6 +896,30 @@ object ServerPacketHandler {
             val vitalityData = player.getAttachedOrElse(BbfAttachments.PLAYER_VITALITY, omc.boundbyfate.component.PlayerVitalityData())
             buf.writeInt(vitalityData.vitality)
             buf.writeInt(vitalityData.scarCount)
+
+            // Identity: alignment coordinates
+            val identityData = player.getAttachedOrCreate(BbfAttachments.PLAYER_IDENTITY)
+            buf.writeInt(identityData.alignment.coordinates.lawChaos)
+            buf.writeInt(identityData.alignment.coordinates.goodEvil)
+
+            // Identity: ideals
+            val currentAlignment = identityData.alignment.currentAlignment
+            val ideals = identityData.idealsData.ideals
+            buf.writeInt(ideals.size)
+            ideals.forEach { ideal ->
+                buf.writeString(ideal.id)
+                buf.writeString(ideal.text)
+                buf.writeString(ideal.alignmentAxis.name)
+                buf.writeBoolean(ideal.isCompatibleWith(currentAlignment))
+            }
+
+            // Identity: flaws
+            val flaws = identityData.idealsData.flaws
+            buf.writeInt(flaws.size)
+            flaws.forEach { flaw ->
+                buf.writeString(flaw.id)
+                buf.writeString(flaw.text)
+            }
         }
 
         ServerPlayNetworking.send(gmPlayer, BbfPackets.SYNC_GM_PLAYERS, buf)

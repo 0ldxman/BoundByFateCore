@@ -97,4 +97,16 @@ object BbfPackets {
 
     /** Server → Client: sync available classes/races/skills for GM dropdowns */
     val SYNC_GM_REGISTRY = Identifier("boundbyfate-core", "sync_gm_registry")
+
+    /** Server → Client: sync player identity data (alignment, ideals, flaws) to GM */
+    val SYNC_PLAYER_IDENTITY = Identifier("boundbyfate-core", "sync_player_identity")
+
+    /** Client → Server: GM edits player alignment */
+    val GM_EDIT_PLAYER_ALIGNMENT = Identifier("boundbyfate-core", "gm_edit_player_alignment")
+
+    /** Client → Server: GM adds/removes/updates an ideal for a player */
+    val GM_EDIT_PLAYER_IDEAL = Identifier("boundbyfate-core", "gm_edit_player_ideal")
+
+    /** Client → Server: GM adds/removes/updates a flaw for a player */
+    val GM_EDIT_PLAYER_FLAW = Identifier("boundbyfate-core", "gm_edit_player_flaw")
 }

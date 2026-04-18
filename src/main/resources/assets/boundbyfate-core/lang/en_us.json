@@ -108,6 +108,7 @@
   "bbf.gm.picker.feature": "Add Feature",
   "bbf.gm.button.apply": "Apply",
   "bbf.gm.button.back": "← Back",
+  "bbf.gm.button.cancel": "Cancel",
   "bbf.gm.button.change_skin": "Change Skin",
   "bbf.gm.button.identity": "Identity",
   "bbf.gm.button.abilities": "Abilities",
@@ -138,5 +139,23 @@
   "bbf.alignment.neutral_evil": "Neutral Evil",
   "bbf.alignment.neutral_evil.short": "NE",
   "bbf.alignment.chaotic_evil": "Chaotic Evil",
-  "bbf.alignment.chaotic_evil.short": "CE"
+  "bbf.alignment.chaotic_evil.short": "CE",
+
+  "bbf.alignment.axis.good": "Good",
+  "bbf.alignment.axis.evil": "Evil",
+  "bbf.alignment.axis.lawful": "Lawful",
+  "bbf.alignment.axis.chaotic": "Chaotic",
+  "bbf.alignment.axis.neutral": "Neutral",
+  "bbf.alignment.axis.any": "Any",
+
+  "bbf.gm.identity.alignment": "ALIGNMENT",
+  "bbf.gm.identity.ideals": "IDEALS",
+  "bbf.gm.identity.flaws": "FLAWS",
+  "bbf.gm.identity.law_chaos": "Law-Chaos",
+  "bbf.gm.identity.good_evil": "Good-Evil",
+  "bbf.gm.identity.wavering": "Conviction wavering",
+  "bbf.gm.identity.history": "Change History",
+  "bbf.gm.identity.add_ideal": "Add Ideal",
+  "bbf.gm.identity.add_flaw": "Add Flaw",
+  "bbf.gm.identity.axis": "Axis"
 }

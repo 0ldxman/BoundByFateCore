@@ -301,7 +301,9 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
         // Nav buttons (bottom row)
         val navBtnW = (w - 8) / 3
-        btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§e${tr("bbf.gm.button.identity")}") { /* TODO */ }
+        btn(context, mouseX, mouseY, x, row2, navBtnW, 9, "§e${tr("bbf.gm.button.identity")}") {
+            client?.setScreen(GmIdentityScreen(snapshot))
+        }
         btn(context, mouseX, mouseY, x + navBtnW + 4, row2, navBtnW, 9, "§e${tr("bbf.gm.button.abilities")}") { /* TODO */ }
         btn(context, mouseX, mouseY, x + (navBtnW + 4) * 2, row2, navBtnW, 9, "§e${tr("bbf.gm.button.magic")}") { /* TODO */ }
     }
