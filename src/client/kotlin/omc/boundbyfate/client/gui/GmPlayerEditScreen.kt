@@ -638,40 +638,62 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderSpeedBox(context: DrawContext, mouseX: Int, mouseY: Int, bx: Int, by: Int, bw: Int, bh: Int) {
         val cx = bx + bw / 2
         lbl(context, "MOVEMENT", cx - 16, by + 3, 0.55f, 0xD4AF37)
-        // "Spd" label above speed
+        
+        // Speed row
         lbl(context, "§7Spd", cx - 4, by + 13, 0.5f, 0x888888)
         val row1Y = by + 20
-        btn(context, mouseX, mouseY, cx - 18, row1Y, 8, 9, "§c-") { speedFt = (speedFt - 1).coerceAtLeast(0) }
         
-        // Show speed with base + modifier format
+        // Calculate speed text and width
         val baseSpeed = snapshot.baseSpeed
         val modifier = speedFt - baseSpeed
         val speedText = if (modifier != 0) {
             val sign = if (modifier > 0) "+" else ""
-            "§7${baseSpeed}§f${sign}${modifier}ft"
+            val modColor = if (modifier > 0) "§a" else "§c"
+            "§7${baseSpeed}${modColor}${sign}${modifier}§fft"
         } else {
             "${speedFt}ft"
         }
-        lbl(context, speedText, cx - 8, row1Y + 1, 0.75f, 0xFFFFFF)
         
-        btn(context, mouseX, mouseY, cx + 12, row1Y, 8, 9, "§a+") { speedFt += 1 }
-        // Size
+        // Calculate text width (approximate: 1 char ≈ 6 pixels at scale 0.75)
+        val textWidth = (speedText.replace("§.", "").length * 6 * 0.75).toInt()
+        val halfTextWidth = textWidth / 2
+        
+        // Position buttons with proper spacing
+        val btnWidth = 7
+        val spacing = 2
+        btn(context, mouseX, mouseY, cx - halfTextWidth - btnWidth - spacing, row1Y, btnWidth, 9, "§c-") { 
+            speedFt = (speedFt - 1).coerceAtLeast(0) 
+        }
+        lbl(context, speedText, cx - halfTextWidth, row1Y + 1, 0.75f, 0xFFFFFF)
+        btn(context, mouseX, mouseY, cx + halfTextWidth + spacing, row1Y, btnWidth, 9, "§a+") { 
+            speedFt += 1 
+        }
+        
+        // Size row
         val row2Y = by + 32
-        btn(context, mouseX, mouseY, cx - 18, row2Y, 8, 9, "§c-") { sizeFactor = (sizeFactor - 0.05f).coerceAtLeast(0.1f) }
         
-        // Show scale with base + modifier format
+        // Calculate scale text and width
         val baseScale = snapshot.baseScale
         val scaleModifier = sizeFactor - baseScale
         val scaleText = if (scaleModifier.let { kotlin.math.abs(it) } > 0.01f) {
             val sign = if (scaleModifier > 0) "+" else ""
-            "§7%.2f§f${sign}%.2f".format(baseScale, scaleModifier)
+            val modColor = if (scaleModifier > 0) "§a" else "§c"
+            "§7%.2f${modColor}${sign}%.2f".format(baseScale, scaleModifier)
         } else {
             "%.2f".format(sizeFactor)
         }
-        lbl(context, scaleText, cx - 8, row2Y + 1, 0.75f, 0xCCCCCC)
         
-        btn(context, mouseX, mouseY, cx + 12, row2Y, 8, 9, "§a+") { sizeFactor += 0.05f }
-        // "Size" label below size
+        val scaleTextWidth = (scaleText.replace("§.", "").length * 6 * 0.75).toInt()
+        val halfScaleTextWidth = scaleTextWidth / 2
+        
+        btn(context, mouseX, mouseY, cx - halfScaleTextWidth - btnWidth - spacing, row2Y, btnWidth, 9, "§c-") { 
+            sizeFactor = (sizeFactor - 0.05f).coerceAtLeast(0.1f) 
+        }
+        lbl(context, scaleText, cx - halfScaleTextWidth, row2Y + 1, 0.75f, 0xCCCCCC)
+        btn(context, mouseX, mouseY, cx + halfScaleTextWidth + spacing, row2Y, btnWidth, 9, "§a+") { 
+            sizeFactor += 0.05f 
+        }
+        
         lbl(context, "§7Size", cx - 5, by + 43, 0.5f, 0x888888)
     }
 
@@ -682,11 +704,12 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val featName = ClientGmRegistry.features.find { it.id == featId }?.displayName ?: featId.path
             val fy = y + i * rowH
             val isLocked = featId in snapshot.lockedFeatures
-            val hovered = !isLocked && mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
+            val hovered = !isLocked && mouseX in x..(x + w - 20) && mouseY in fy..(fy + 10)
             val nameColor = if (isLocked) 0x888888 else if (hovered) 0xFFD700 else 0xCCCCCC
             lbl(context, featName, x, fy + 1, 0.65f, nameColor)
             if (isLocked) {
-                lbl(context, "§7🔒", x + w - 12, fy + 1, 0.65f, 0x666666)
+                // Move lock icon further left to avoid scroll buttons
+                lbl(context, "§7🔒", x + w - 20, fy + 1, 0.65f, 0x666666)
             } else {
                 btn(context, mouseX, mouseY, x + w - 12, fy, 10, 9, "§cX") { features.remove(featId) }
             }
