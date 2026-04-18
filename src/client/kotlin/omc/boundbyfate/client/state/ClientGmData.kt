@@ -9,7 +9,11 @@ import omc.boundbyfate.component.PlayerRaceData
 data class GmPlayerSnapshot(
     val playerName: String,
     val statsData: EntityStatData?,
+    /** Stat bonuses from race/class (e.g. Dwarf +2 CON). Displayed as "13 +2" in GM screen. */
+    val statBonuses: Map<Identifier, Int> = emptyMap(),
     val skillData: EntitySkillData?,
+    /** Skill/save proficiency IDs locked by race/class — GM cannot remove these. */
+    val lockedSkills: Set<Identifier> = emptySet(),
     val classData: PlayerClassData?,
     val raceData: PlayerRaceData?,
     val level: Int,
@@ -22,6 +26,8 @@ data class GmPlayerSnapshot(
     val scale: Float = 1.0f,
     val isOnline: Boolean,
     val grantedFeatures: List<Identifier> = emptyList(),
+    /** Feature IDs locked by race/class — GM cannot remove these. */
+    val lockedFeatures: Set<Identifier> = emptySet(),
     val vitality: Int = 5,
     val scarCount: Int = 0
 )

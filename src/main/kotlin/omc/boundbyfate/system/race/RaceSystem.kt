@@ -163,14 +163,22 @@ object RaceSystem {
         resolved: omc.boundbyfate.api.race.ResolvedRaceData,
         sourceId: Identifier
     ) {
-        // Stat bonuses
+        // Stat bonuses — stored as FLAT modifiers so base value stays clean
+        // This allows GM to see "13 +2" (base + race bonus) separately
         if (resolved.statBonuses.isNotEmpty()) {
             val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             if (statsData != null) {
-                var updated = statsData
+                // Remove old modifiers from this source first (idempotent)
+                var updated = statsData.withoutModifiersFrom(sourceId)
                 for ((statId, bonus) in resolved.statBonuses) {
-                    val current = updated.getStatValue(statId).base
-                    updated = updated.withBase(statId, current + bonus)
+                    updated = updated.withModifier(
+                        statId,
+                        omc.boundbyfate.api.stat.StatModifier(
+                            sourceId = sourceId,
+                            type = omc.boundbyfate.api.stat.ModifierType.FLAT,
+                            value = bonus
+                        )
+                    )
                 }
                 player.setAttached(BbfAttachments.ENTITY_STATS, updated)
                 StatEffectProcessor.applyAll(player, updated)
@@ -189,8 +197,15 @@ object RaceSystem {
         raceId: Identifier,
         subraceId: Identifier?
     ) {
-        // Resistances and proficiencies are now handled via Features.
-        // Features are not removed on race change to avoid breaking other sources.
+        // Remove stat modifiers from this race source
+        val sourceId = raceSourceId(raceId)
+        val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
+        if (statsData != null) {
+            val updated = statsData.withoutModifiersFrom(sourceId)
+            player.setAttached(BbfAttachments.ENTITY_STATS, updated)
+            StatEffectProcessor.applyAll(player, updated)
+        }
+        // Note: features are not removed on race change to avoid breaking other sources
         // TODO: track and remove race-granted features when race changes
     }
 

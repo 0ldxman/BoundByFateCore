@@ -665,18 +665,28 @@ object ServerPacketHandler {
         onlinePlayers.forEach { player ->
             buf.writeString(player.name.string)
 
-            // Stats
+            // Stats — send base values only (without race/class modifiers)
             val statsData = player.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
             val stats = statsData?.baseStats ?: emptyMap()
             buf.writeInt(stats.size)
             stats.forEach { (id, value) -> buf.writeIdentifier(id); buf.writeInt(value) }
-            buf.writeInt(0) // modifiers placeholder
+
+            // Locked data from race/class (stat bonuses, locked features, locked skills)
+            val locked = omc.boundbyfate.system.CharacterSourceResolver.resolve(player)
+
+            // Stat bonuses from race/class
+            buf.writeInt(locked.statBonuses.size)
+            locked.statBonuses.forEach { (id, bonus) -> buf.writeIdentifier(id); buf.writeInt(bonus) }
 
             // Skills
             val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, null)
             val skills = skillData?.proficiencies ?: emptyMap()
             buf.writeInt(skills.size)
             skills.forEach { (id, level) -> buf.writeIdentifier(id); buf.writeInt(level) }
+
+            // Locked skills (from class/race — cannot be removed by GM)
+            buf.writeInt(locked.lockedSkills.size)
+            locked.lockedSkills.forEach { buf.writeIdentifier(it) }
 
             // Class
             val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
@@ -702,11 +712,11 @@ object ServerPacketHandler {
             buf.writeBoolean(gender != null)
             if (gender != null) buf.writeString(gender)
 
-            // HP (current includes absorption/temp HP, max is the base max)
+            // HP
             buf.writeFloat(player.health + player.absorptionAmount)
             buf.writeFloat(player.maxHealth)
 
-            // Speed: prefer GM-stored ft value, fall back to attribute conversion
+            // Speed
             val storedSpeedFt = player.getAttachedOrElse(BbfAttachments.PLAYER_SPEED_FT, 0)
             val speedFt = if (storedSpeedFt > 0) storedSpeedFt else {
                 val attr = player.getAttributeValue(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MOVEMENT_SPEED)
@@ -714,7 +724,7 @@ object ServerPacketHandler {
             }
             buf.writeFloat(speedFt.toFloat())
 
-            // Scale: prefer GM-stored override, fall back to race definition
+            // Scale
             val storedScale = player.getAttachedOrElse(BbfAttachments.PLAYER_SCALE_OVERRIDE, 0f)
             val scale = if (storedScale > 0f) storedScale else omc.boundbyfate.system.race.RaceSystem.getScaleDirect(player)
             buf.writeFloat(scale)
@@ -722,15 +732,19 @@ object ServerPacketHandler {
             // Experience
             buf.writeInt(player.totalExperience)
 
-            // Alignment (stored as gender-like attachment, default Neutral)
+            // Alignment
             val alignment = player.getAttachedOrElse(BbfAttachments.PLAYER_ALIGNMENT, "Neutral")
             buf.writeString(alignment)
 
-            // Granted features
+            // Granted features (all features the player has)
             val featData = player.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null)
             val features = featData?.grantedFeatures ?: emptySet()
             buf.writeInt(features.size)
             features.forEach { buf.writeIdentifier(it) }
+
+            // Locked features (from race/class — cannot be removed by GM)
+            buf.writeInt(locked.lockedFeatures.size)
+            locked.lockedFeatures.forEach { buf.writeIdentifier(it) }
 
             // Vitality
             val vitalityData = player.getAttachedOrElse(BbfAttachments.PLAYER_VITALITY, omc.boundbyfate.component.PlayerVitalityData())

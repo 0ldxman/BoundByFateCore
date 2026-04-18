@@ -20,7 +20,8 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
     private val stats = mutableMapOf<Identifier, Int>().also { m ->
         listOf(BbfStats.STRENGTH, BbfStats.DEXTERITY, BbfStats.CONSTITUTION,
                BbfStats.INTELLIGENCE, BbfStats.WISDOM, BbfStats.CHARISMA).forEach { s ->
-            m[s.id] = snapshot.statsData?.getStatValue(s.id)?.total ?: 10
+            // Use base value only (without race/class bonuses)
+            m[s.id] = snapshot.statsData?.baseStats?.get(s.id) ?: 10
         }
     }
     private var classId: Identifier? = snapshot.classData?.classId
@@ -346,12 +347,14 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
 
     private fun renderStatBox(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, stat: omc.boundbyfate.api.stat.StatDefinition) {
         val v = stats[stat.id] ?: 10
-        val mod = (v - 10) / 2
+        val bonus = snapshot.statBonuses[stat.id] ?: 0
+        val total = v + bonus
+        val mod = (total - 10) / 2
         val modStr = if (mod >= 0) "+$mod" else "$mod"
         val modColor = if (mod > 0) 0x55FF55 else if (mod < 0) 0xFF5555 else 0x888888
         val shortKey = "bbf.stat.${stat.id.namespace}.${stat.id.path}.short"
         val shortName = Text.translatable(shortKey).string
-        val changed = v != (snapshot.statsData?.getStatValue(stat.id)?.total ?: 10)
+        val changed = v != (snapshot.statsData?.baseStats?.get(stat.id) ?: 10)
 
         box(context, x, y, w, h, 0xCC1a1a1a.toInt(), if (changed) 0xFFFFAA44.toInt() else 0xFF8a6a3a.toInt())
         // Name top center
@@ -359,11 +362,19 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         m.translate((x + w / 2).toFloat(), (y + 3).toFloat(), 0f); m.scale(0.6f, 0.6f, 1f)
         val nw = textRenderer.getWidth(shortName)
         context.drawTextWithShadow(textRenderer, shortName, -(nw / 2), 0, 0xCCCCCC); m.pop()
-        // Value center big
+        // Value center: show "13 +2" if there's a race/class bonus
         m.push(); m.translate((x + w / 2).toFloat(), (y + h / 2 - 4).toFloat(), 0f); m.scale(1.1f, 1.1f, 1f)
-        val vw = textRenderer.getWidth("$v")
-        context.drawTextWithShadow(textRenderer, "$v", -(vw / 2), 0, 0xFFFFFF); m.pop()
-        // Mod bottom center
+        if (bonus != 0) {
+            val bonusStr = if (bonus > 0) "+$bonus" else "$bonus"
+            val combined = "$v §a$bonusStr"
+            val vw = textRenderer.getWidth("$v $bonusStr")
+            context.drawTextWithShadow(textRenderer, combined, -(vw / 2), 0, 0xFFFFFF)
+        } else {
+            val vw = textRenderer.getWidth("$v")
+            context.drawTextWithShadow(textRenderer, "$v", -(vw / 2), 0, 0xFFFFFF)
+        }
+        m.pop()
+        // Mod bottom center (based on total)
         m.push(); m.translate((x + w / 2).toFloat(), (y + h - 9).toFloat(), 0f); m.scale(0.7f, 0.7f, 1f)
         val mw = textRenderer.getWidth(modStr)
         context.drawTextWithShadow(textRenderer, modStr, -(mw / 2), 0, modColor); m.pop()
@@ -399,13 +410,24 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val saves = ClientGmRegistry.skills.filter { it.isSavingThrow }
         saves.forEachIndexed { i, save ->
             val lv = skills[save.id] ?: 0
+            val isLocked = save.id in snapshot.lockedSkills
             val icon = when (lv) { 0 -> "§7○"; 1 -> "§a●"; else -> "§b◆" }
-            btn(context, mouseX, mouseY, x, y + i * 10, 8, 8, icon) { skills[save.id] = (lv + 1) % 3 }
-            val statMod = stats[save.linkedStat]?.let { (it - 10) / 2 } ?: 0
+            btn(context, mouseX, mouseY, x, y + i * 10, 8, 8, icon) {
+                val next = (lv + 1) % 3
+                // Locked skills cannot go below proficient (1)
+                skills[save.id] = if (isLocked && next == 0) 1 else next
+            }
+            val statMod = stats[save.linkedStat]?.let { base ->
+                val bonus = snapshot.statBonuses[save.linkedStat] ?: 0
+                ((base + bonus) - 10) / 2
+            } ?: 0
             val bonus = statMod + lv * profBonus
             val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
+            val nameColor = if (lv > 0) 0x55FF55 else 0xCCCCCC
             lbl(context, "§7$bonusStr", x + 10, y + i * 10 + 1, 0.65f, if (lv > 0) 0x55FF55 else 0xAAAAAA)
-            lbl(context, save.displayName, x + 26, y + i * 10 + 1, 0.65f, if (lv > 0) 0x55FF55 else 0xCCCCCC)
+            lbl(context, save.displayName, x + 26, y + i * 10 + 1, 0.65f, nameColor)
+            // Show lock icon for class-granted saves
+            if (isLocked) lbl(context, "§8🔒", x + w - 8, y + i * 10 + 1, 0.55f, 0x555555)
         }
     }
 
@@ -414,9 +436,16 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
         val visible = skillList.drop(skillScroll).take(h / 9)
         visible.forEachIndexed { i, skill ->
             val lv = skills[skill.id] ?: 0
+            val isLocked = skill.id in snapshot.lockedSkills
             val icon = when (lv) { 0 -> "§7○"; 1 -> "§a●"; else -> "§b◆" }
-            btn(context, mouseX, mouseY, x, y + i * 9, 8, 8, icon) { skills[skill.id] = (lv + 1) % 3 }
-            val statMod = stats[skill.linkedStat]?.let { (it - 10) / 2 } ?: 0
+            btn(context, mouseX, mouseY, x, y + i * 9, 8, 8, icon) {
+                val next = (lv + 1) % 3
+                skills[skill.id] = if (isLocked && next == 0) 1 else next
+            }
+            val statMod = stats[skill.linkedStat]?.let { base ->
+                val bonus = snapshot.statBonuses[skill.linkedStat] ?: 0
+                ((base + bonus) - 10) / 2
+            } ?: 0
             val bonus = statMod + lv * profBonus
             val bonusStr = if (bonus >= 0) "+$bonus" else "$bonus"
             lbl(context, "§7$bonusStr", x + 10, y + i * 9 + 1, 0.6f, if (lv > 0) 0x55FF55 else 0xAAAAAA)
@@ -515,9 +544,16 @@ class GmPlayerEditScreen(private val snapshot: GmPlayerSnapshot) :
             val featName = ClientGmRegistry.features.find { it.id == featId }?.displayName ?: featId.path
             val fy = y + i * 11
             if (fy + 10 > y + h) return@forEachIndexed
-            val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
-            lbl(context, featName, x, fy + 1, 0.65f, if (hovered) 0xFFD700 else 0xCCCCCC)
-            btn(context, mouseX, mouseY, x + w - 12, fy, 10, 9, "§cX") { features.remove(featId) }
+            val isLocked = featId in snapshot.lockedFeatures
+            val hovered = !isLocked && mouseX in x..(x + w - 14) && mouseY in fy..(fy + 10)
+            // Locked features shown in muted color with lock icon, cannot be removed
+            val nameColor = if (isLocked) 0x888888 else if (hovered) 0xFFD700 else 0xCCCCCC
+            lbl(context, featName, x, fy + 1, 0.65f, nameColor)
+            if (isLocked) {
+                lbl(context, "§7🔒", x + w - 12, fy + 1, 0.65f, 0x666666)
+            } else {
+                btn(context, mouseX, mouseY, x + w - 12, fy, 10, 9, "§cX") { features.remove(featId) }
+            }
         }
     }
 
