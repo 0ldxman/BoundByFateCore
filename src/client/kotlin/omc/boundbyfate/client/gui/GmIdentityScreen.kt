@@ -66,6 +66,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var draggedTaskY: Int = 0
     private var dragStartY: Int = 0
     private var isDragging: Boolean = false
+    private var lastClickTime: Long = 0
+    private var lastClickedTaskIndex: Int? = null
 
     private var statusMsg = ""; private var statusTimer = 0f
 
@@ -502,6 +504,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             "COMPLETED" -> "§a✓"
                             "FAILED" -> "§c✗"
                             "CANCELLED" -> "§7○"
+                            "PENDING" -> "§8□"
                             else -> "§e▶"
                         }
                         val hovered = mouseX in (ox + 4)..(ox + overlayW - 16) && mouseY in ty..(ty + taskRowH - 2)
@@ -512,17 +515,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                         lbl(context, statusIcon, ox + 16, ty + 2, 0.55f, 0xFFFFFF)
                         lbl(context, truncate(task.description, overlayW - 50, 0.55f), ox + 24, ty + 2, 0.55f, 0xCCCCCC)
                         
-                        // Click to edit task (only if not dragging)
-                        if (!isDragging) {
-                            btns.add(Btn(ox + 4, ty, overlayW - 20, taskRowH - 2) {
-                                editingTaskId = task.id
-                                inputBuffer = task.description
-                                inputBuffer2 = task.goalDescriptionOverride
-                                pendingGoalStatus = task.status
-                                inputFocusField = 0
-                                inputMode = InputMode.EDIT_TASK
-                            })
-                        }
+                        // Double-click to edit task (handled in mouseClicked)
                     }
 
                     // Render dragged task on top with visual feedback
@@ -534,6 +527,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                                 "COMPLETED" -> "§a✓"
                                 "FAILED" -> "§c✗"
                                 "CANCELLED" -> "§7○"
+                                "PENDING" -> "§8□"
                                 else -> "§e▶"
                             }
                             // Render with transparency and different color
@@ -563,16 +557,24 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
 
                 // Status (edit only)
                 if (inputMode == InputMode.EDIT_TASK) {
-                    val statuses = listOf("CURRENT", "COMPLETED", "FAILED", "CANCELLED")
+                    val statuses = listOf("PENDING", "CURRENT", "COMPLETED", "FAILED", "CANCELLED")
                     val sbw = (overlayW - 8) / statuses.size
                     statuses.forEachIndexed { i, s ->
                         val bx = ox + 4 + i * sbw
                         val sel = s == pendingGoalStatus
                         box(context, bx, curY, sbw - 1, 12, if (sel) 0xFF3a2a1a.toInt() else 0xFF222222.toInt(), if (sel) 0xFFFFD700.toInt() else 0xFF444444.toInt())
                         val m = context.matrices; m.push()
-                        m.translate((bx + (sbw - 1) / 2).toFloat(), (curY + 3).toFloat(), 0f); m.scale(0.5f, 0.5f, 1f)
-                        val tw = textRenderer.getWidth(s.take(4))
-                        context.drawTextWithShadow(textRenderer, s.take(4), -(tw / 2), 0, 0xCCCCCC)
+                        m.translate((bx + (sbw - 1) / 2).toFloat(), (curY + 3).toFloat(), 0f); m.scale(0.45f, 0.45f, 1f)
+                        val label = when(s) {
+                            "PENDING" -> "§8PND"
+                            "CURRENT" -> "§eCUR"
+                            "COMPLETED" -> "§aDON"
+                            "FAILED" -> "§cFAIL"
+                            "CANCELLED" -> "§7CAN"
+                            else -> s.take(3)
+                        }
+                        val tw = textRenderer.getWidth(label)
+                        context.drawTextWithShadow(textRenderer, label, -(tw / 2), 0, 0xFFFFFF)
                         m.pop()
                         btns.add(Btn(bx, curY, sbw - 1, 12) { pendingGoalStatus = s })
                     }
@@ -788,31 +790,47 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val mx = mouseX.toInt(); val my = mouseY.toInt()
         
-        // Check if clicking on a task in EDIT_GOAL mode to start drag
+        // Check if clicking on a task in EDIT_GOAL mode
         if (inputMode == InputMode.EDIT_GOAL && button == 0) {
             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
             if (goal != null) {
                 val W = width; val H = height
                 val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
-                val overlayH = 280
+                val overlayH = minOf(H - 40, 240)
                 val ox = (W - overlayW) / 2
                 val oy = (H - overlayH) / 2
                 
                 // Calculate task list position
-                var curY = oy + 17 + 20 + 20 + 16 + 16 + 12  // Title + Desc + Motivation + Status + "Tasks" label
-                val taskListH = 80
+                var curY = oy + 17 + 20 + 20 + 16 + 16 + 12
+                val taskListH = overlayH - curY + oy - 30
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
-                val visibleTasks = sortedTasks.drop(taskListScroll).take(taskListH / taskRowH)
+                val visibleTasks = sortedTasks.drop(taskListScroll).take((taskListH / taskRowH).coerceAtLeast(1))
                 
                 visibleTasks.forEachIndexed { i, task ->
+                    val taskIndex = sortedTasks.indexOf(task)
                     val ty = curY + i * taskRowH
                     if (mx in (ox + 4)..(ox + overlayW - 16) && my in ty..(ty + taskRowH - 2)) {
-                        // Start dragging this task
-                        draggedTaskIndex = sortedTasks.indexOf(task)
-                        draggedTaskY = ty
-                        dragStartY = my
-                        isDragging = true
+                        val currentTime = System.currentTimeMillis()
+                        // Double click detection (within 300ms)
+                        if (lastClickedTaskIndex == taskIndex && (currentTime - lastClickTime) < 300) {
+                            // Double click - open edit
+                            editingTaskId = task.id
+                            inputBuffer = task.description
+                            inputBuffer2 = task.goalDescriptionOverride
+                            pendingGoalStatus = task.status.name
+                            inputFocusField = 0
+                            inputMode = InputMode.EDIT_TASK
+                            lastClickedTaskIndex = null
+                            lastClickTime = 0
+                        } else {
+                            // Single click - prepare for potential drag
+                            lastClickedTaskIndex = taskIndex
+                            lastClickTime = currentTime
+                            draggedTaskIndex = taskIndex
+                            draggedTaskY = ty
+                            dragStartY = my
+                        }
                         return true
                     }
                 }
@@ -826,6 +844,14 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
+        if (draggedTaskIndex != null && !isDragging) {
+            // Start dragging if mouse moved more than 3 pixels
+            val my = mouseY.toInt()
+            if (Math.abs(my - dragStartY) > 3) {
+                isDragging = true
+            }
+        }
+        
         if (isDragging && draggedTaskIndex != null) {
             val my = mouseY.toInt()
             draggedTaskY += (my - dragStartY)

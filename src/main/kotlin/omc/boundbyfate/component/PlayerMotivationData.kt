@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 
 enum class GoalStatus { ACTIVE, COMPLETED, FAILED, CANCELLED }
-enum class TaskStatus { CURRENT, COMPLETED, FAILED, CANCELLED }
+enum class TaskStatus { PENDING, CURRENT, COMPLETED, FAILED, CANCELLED }
 
 data class GoalTask(
     val id: String,

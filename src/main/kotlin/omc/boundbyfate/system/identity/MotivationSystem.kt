@@ -95,7 +95,7 @@ object MotivationSystem {
                 id = UUID.randomUUID().toString(),
                 description = desc,
                 goalDescriptionOverride = "",
-                status = if (i == 0) TaskStatus.CURRENT else TaskStatus.CURRENT,
+                status = if (i == 0) TaskStatus.CURRENT else TaskStatus.PENDING,
                 order = i
             )
         }
@@ -114,7 +114,7 @@ object MotivationSystem {
 
     /**
      * Advances the current task of a goal to the given status,
-     * then moves to the next task (if any).
+     * then moves to the next task (if any) and sets it to CURRENT.
      */
     fun advanceTask(player: ServerPlayerEntity, goalId: String, taskStatus: TaskStatus, newDescription: String? = null): Boolean {
         val md = identity(player).motivationData
@@ -127,13 +127,15 @@ object MotivationSystem {
             updatedTasks[currentIdx] = updatedTasks[currentIdx].copy(status = taskStatus)
         }
 
-        // Find next CURRENT task
-        val nextIdx = updatedTasks.indexOfFirst { it.status == TaskStatus.CURRENT && updatedTasks.indexOf(it) > currentIdx }
-            .let { if (it == -1) currentIdx + 1 else it }
+        // Find next PENDING task and set it to CURRENT
+        val nextIdx = updatedTasks.indexOfFirst { it.status == TaskStatus.PENDING && updatedTasks.indexOf(it) > currentIdx }
+        if (nextIdx != -1) {
+            updatedTasks[nextIdx] = updatedTasks[nextIdx].copy(status = TaskStatus.CURRENT)
+        }
 
         val updatedGoal = goal.copy(
             tasks = updatedTasks,
-            currentTaskIndex = nextIdx,
+            currentTaskIndex = if (nextIdx != -1) nextIdx else currentIdx + 1,
             description = newDescription ?: goal.description
         )
         val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
@@ -178,7 +180,7 @@ object MotivationSystem {
         
         val taskId = UUID.randomUUID().toString()
         val newOrder = (goal.tasks.maxOfOrNull { it.order } ?: -1) + 1
-        val newTask = GoalTask(taskId, description, goalDescOverride, TaskStatus.CURRENT, newOrder)
+        val newTask = GoalTask(taskId, description, goalDescOverride, TaskStatus.PENDING, newOrder)
         
         val updatedGoal = goal.copy(tasks = goal.tasks + newTask)
         val newGoals = md.goals.map { if (it.id == goalId) updatedGoal else it }
