@@ -1070,32 +1070,35 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 val oy = (H - overlayH) / 2
                 
                 // Calculate task list position - must match renderInputOverlay exactly
-                // Title: oy + 17
-                // Title field: +20
-                // Description label + field: +20 + 50 + 6 = +76
-                // Motivation selector: +16
-                // Status selector: +16
-                // Tasks label: +12
-                var curY = oy + 17 + 20 + 76 + 16 + 16 + 12  // = oy + 157
-                val taskListH = overlayH - curY + oy - 30
+                // Start from oy + 17 (title)
+                var curY = oy + 17  // Title
+                curY += 20  // Title field + spacing
+                curY += 6   // Description label spacing
+                curY += 50  // Description textarea height
+                curY += 6   // Spacing after description
+                curY += 6   // Motivation label spacing
+                curY += 10  // Motivation selector height
+                curY += 16  // Spacing after motivation
+                curY += 12  // Status selector height
+                curY += 16  // Spacing after status
+                curY += 12  // Tasks label + add button
+                // Now curY points to the start of task list
+                
+                val taskListH = overlayH - (curY - oy) - 30
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
                 val visibleTasks = sortedTasks.drop(taskListScroll).take((taskListH / taskRowH).coerceAtLeast(1))
-                
-                println("[GmIdentityScreen] Click at ($mx, $my), curY=$curY, taskListH=$taskListH, visibleTasks=${visibleTasks.size}")
                 
                 visibleTasks.forEachIndexed { i, task ->
                     val taskIndex = sortedTasks.indexOf(task)
                     val ty = curY + i * taskRowH
                     val hitbox = (mx in (ox + 4)..(ox + overlayW - 16) && my in ty..(ty + taskRowH - 2))
-                    println("[GmIdentityScreen] Task $taskIndex at y=$ty, hitbox=$hitbox, bounds: x=${ox + 4}..${ox + overlayW - 16}, y=$ty..${ty + taskRowH - 2}")
                     
                     if (hitbox) {
                         val currentTime = System.currentTimeMillis()
                         // Double click detection (within 300ms)
                         if (lastClickedTaskIndex == taskIndex && (currentTime - lastClickTime) < 300) {
                             // Double click - open edit
-                            println("[GmIdentityScreen] Double click detected on task $taskIndex")
                             editingTaskId = task.id
                             inputBuffer = task.description
                             inputBuffer2 = task.goalDescriptionOverride
@@ -1106,7 +1109,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             lastClickTime = 0
                         } else {
                             // Single click - prepare for potential drag
-                            println("[GmIdentityScreen] Single click on task $taskIndex, preparing for drag")
                             lastClickedTaskIndex = taskIndex
                             lastClickTime = currentTime
                             draggedTaskIndex = taskIndex
@@ -1131,7 +1133,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             val my = mouseY.toInt()
             if (Math.abs(my - dragStartY) > 3) {
                 isDragging = true
-                println("[GmIdentityScreen] Drag started for task $draggedTaskIndex")
             }
         }
         
@@ -1150,12 +1151,23 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             if (goal != null) {
                 val W = width; val H = height
                 val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
-                val overlayH = minOf(H - 40, 280)  // Match renderInputOverlay
+                val overlayH = minOf(H - 40, 280)
                 val ox = (W - overlayW) / 2
                 val oy = (H - overlayH) / 2
                 
-                // Calculate task list position - must match renderInputOverlay exactly
-                var curY = oy + 17 + 20 + 76 + 16 + 16 + 12  // = oy + 157
+                // Calculate task list position - must match mouseClicked
+                var curY = oy + 17  // Title
+                curY += 20  // Title field + spacing
+                curY += 6   // Description label spacing
+                curY += 50  // Description textarea height
+                curY += 6   // Spacing after description
+                curY += 6   // Motivation label spacing
+                curY += 10  // Motivation selector height
+                curY += 16  // Spacing after motivation
+                curY += 12  // Status selector height
+                curY += 16  // Spacing after status
+                curY += 12  // Tasks label + add button
+                
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
                 

@@ -489,6 +489,7 @@ object ServerPacketHandler {
         // Client → Server: GM adds/removes/updates a goal for a player
         ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_EDIT_PLAYER_GOAL) { server, gmPlayer, _, buf, _ ->
             if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            // Read ALL data from buffer BEFORE server.execute to avoid IllegalReferenceCountException
             val targetName = buf.readString()
             val action = buf.readString() // "add", "remove", "complete", "fail", "task", "update", "add_task", "edit_task", "delete_task", "reorder_task"
             val goalId = buf.readString()
@@ -497,12 +498,15 @@ object ServerPacketHandler {
             val motivationId = buf.readString().ifEmpty { null }
             val taskStatus = buf.readString() // for "task" action or task status
             val taskCount = buf.readInt()
+            // Read tasks for "add" action
+            val tasks = if (action == "add") {
+                (0 until taskCount).map { buf.readString() }
+            } else emptyList()
 
             server.execute {
                 val target = server.playerManager.getPlayer(targetName) ?: return@execute
                 when (action) {
                     "add" -> {
-                        val tasks = (0 until taskCount).map { buf.readString() }
                         omc.boundbyfate.system.identity.MotivationSystem.addGoal(target, title, description, motivationId, tasks)
                     }
                     "remove" -> omc.boundbyfate.system.identity.MotivationSystem.removeGoal(target, goalId)
