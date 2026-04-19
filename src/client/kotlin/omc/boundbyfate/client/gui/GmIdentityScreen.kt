@@ -425,19 +425,22 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         context.matrices.translate(0f, 0f, 400f)
 
         if (isSecondLayer) {
-            // Draw the EDIT_GOAL overlay as background (same Z layer, no extra push)
+            // Draw the EDIT_GOAL overlay as background layer (Z+400)
             val savedMode = inputMode
             inputMode = InputMode.EDIT_GOAL
             renderOverlayContent(context, -9999, -9999, W, H, overlayW)
             inputMode = savedMode
-            // Dim between layers
-            context.fill(0, 0, W, H, 0x66000000.toInt())
+            // Dim between layers, then push extra Z for the top overlay
+            context.fill(0, 0, W, H, 0x88000000.toInt())
+            context.matrices.push()
+            context.matrices.translate(0f, 0f, 200f)  // Z+600 total for top overlay
+            renderOverlayContent(context, mouseX, mouseY, W, H, overlayW)
+            context.matrices.pop()
         } else {
             // Full dim for first-level overlays
             context.fill(0, 0, W, H, 0xAA000000.toInt())
+            renderOverlayContent(context, mouseX, mouseY, W, H, overlayW)
         }
-
-        renderOverlayContent(context, mouseX, mouseY, W, H, overlayW)
 
         context.matrices.pop()
     }
