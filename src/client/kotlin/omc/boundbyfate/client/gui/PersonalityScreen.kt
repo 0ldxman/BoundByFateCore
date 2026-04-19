@@ -50,6 +50,7 @@ class PersonalityScreen(private val parent: Screen) :
     private val motivationScales = mutableMapOf<Int, Float>()
     private val motivationAlphas = mutableMapOf<Int, Float>()
     private val motivationFrozenAngles = mutableMapOf<Int, Float>()  // угол в момент начала hover
+    private val motivationResumePhases = mutableMapOf<Int, Float>()  // скорректированный phase после hover
     private var modelAlpha = 1f
     private var motivationsBaseAlpha = 1f
     
@@ -88,6 +89,7 @@ class PersonalityScreen(private val parent: Screen) :
         motivationScales.clear()
         motivationAlphas.clear()
         motivationFrozenAngles.clear()
+        motivationResumePhases.clear()
         modelAlpha = 1f
         motivationsBaseAlpha = 1f
         idealIconRotations.clear()
@@ -164,7 +166,8 @@ class PersonalityScreen(private val parent: Screen) :
             particles.forEachIndexed { idx, p ->
                 // Используем тот же угол что и при рендере
                 val frozenAngle = motivationFrozenAngles[idx]
-                val angle = frozenAngle ?: (time * p.orbitSpeed + p.orbitPhase)
+                val phase = motivationResumePhases.getOrDefault(idx, p.orbitPhase)
+                val angle = frozenAngle ?: (time * p.orbitSpeed + phase)
                 val ox = cos(angle.toDouble()).toFloat() * p.orbitRadius
                 val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
                 val px = cx + ox
@@ -185,9 +188,13 @@ class PersonalityScreen(private val parent: Screen) :
         particles.forEachIndexed { idx, p ->
             if (hoveredMotivationIdx == idx && prevHovered != idx) {
                 // Только что навели — фиксируем текущий угол
-                motivationFrozenAngles[idx] = time * p.orbitSpeed + p.orbitPhase
-            } else if (hoveredMotivationIdx != idx) {
-                // Убрали курсор — размораживаем
+                val currentPhase = motivationResumePhases.getOrDefault(idx, p.orbitPhase)
+                motivationFrozenAngles[idx] = time * p.orbitSpeed + currentPhase
+            } else if (hoveredMotivationIdx != idx && motivationFrozenAngles.containsKey(idx)) {
+                // Убрали курсор — вычисляем phase так чтобы орбита продолжилась с замороженной позиции
+                // angle(t) = t * speed + phase  =>  phase = frozenAngle - time * speed
+                val frozenAngle = motivationFrozenAngles[idx]!!
+                motivationResumePhases[idx] = frozenAngle - time * p.orbitSpeed
                 motivationFrozenAngles.remove(idx)
             }
         }
@@ -214,13 +221,7 @@ class PersonalityScreen(private val parent: Screen) :
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
-            // Мотивации ЗА персонажем (zLayer < 0) — но только если не hover
-            // При hover все мотивации рендерим ПОСЛЕ модели чтобы были видны
-            if (!modelHovered) {
-                renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
-            }
-
-            // Модель с альфой при hover - используем enableBlend для прозрачности
+            // Модель рендерим ПЕРВОЙ, все мотивации всегда поверх неё
             com.mojang.blaze3d.systems.RenderSystem.enableBlend()
             com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc()
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, modelAlpha)
@@ -232,12 +233,9 @@ class PersonalityScreen(private val parent: Screen) :
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
             com.mojang.blaze3d.systems.RenderSystem.disableBlend()
 
-            // Мотивации ПЕРЕД персонажем (zLayer >= 0)
+            // Все мотивации поверх модели (z-layering только для визуального порядка между собой)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
-            // При hover — рендерим "за" мотивации тоже поверх модели
-            if (modelHovered) {
-                renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
-            }
         } else {
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
@@ -281,7 +279,8 @@ class PersonalityScreen(private val parent: Screen) :
             val hoverAlpha = motivationAlphas.getOrDefault(idx, 1f)
 
             // Если наведена — используем замороженный угол, иначе обычная орбита
-            val angle = motivationFrozenAngles[idx] ?: (time * p.orbitSpeed + p.orbitPhase)
+            val phase = motivationResumePhases.getOrDefault(idx, p.orbitPhase)
+            val angle = motivationFrozenAngles[idx] ?: (time * p.orbitSpeed + phase)
             
             val ox = cos(angle.toDouble()).toFloat() * p.orbitRadius
             val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
@@ -401,15 +400,18 @@ class PersonalityScreen(private val parent: Screen) :
         // Обновляем lerp-анимации
         ideals.forEachIndexed { idx, _ ->
             val isHovered = hoveredIdealIdx == idx
-            idealHoverScales[idx] = lerp(idealHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
-            idealIconScales[idx] = lerp(idealIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
+            idealHoverScales[idx] = lerp(idealHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.1f else 1f, 0.15f)
+            idealIconScales[idx] = lerp(idealIconScales.getOrDefault(idx, 1f), if (isHovered) 1.2f else 1f, 0.12f)
             idealTextOffsets[idx] = lerp(idealTextOffsets.getOrDefault(idx, 0f), if (isHovered) 12f else 0f, 0.15f)
-            // Ротация: при hover крутится, при уходе плавно возвращается к 0
+            // Ротация: при hover крутится медленно, при уходе нормализуем и плавно возвращаем к 0
             val currentRot = idealIconRotations.getOrDefault(idx, 0f)
-            idealIconRotations[idx] = if (isHovered) {
-                currentRot + 1.2f  // ~72°/сек при 60fps
+            if (isHovered) {
+                idealIconRotations[idx] = currentRot + 0.7f  // ~42°/сек при 60fps
             } else {
-                lerp(currentRot, 0f, 0.12f)
+                // Нормализуем в (-180, 180] чтобы lerp шёл по короткому пути
+                val normalized = ((currentRot % 360f) + 360f) % 360f
+                val wrapped = if (normalized > 180f) normalized - 360f else normalized
+                idealIconRotations[idx] = lerp(wrapped, 0f, 0.12f)
             }
         }
 
@@ -549,15 +551,17 @@ class PersonalityScreen(private val parent: Screen) :
         // Обновляем lerp-анимации
         flaws.forEachIndexed { idx, _ ->
             val isHovered = hoveredFlawIdx == idx
-            flawHoverScales[idx] = lerp(flawHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
-            flawIconScales[idx] = lerp(flawIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
+            flawHoverScales[idx] = lerp(flawHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.1f else 1f, 0.15f)
+            flawIconScales[idx] = lerp(flawIconScales.getOrDefault(idx, 1f), if (isHovered) 1.2f else 1f, 0.12f)
             flawTextOffsets[idx] = lerp(flawTextOffsets.getOrDefault(idx, 0f), if (isHovered) -12f else 0f, 0.15f)
-            // Ротация: при hover крутится, при уходе плавно возвращается к 0
+            // Ротация: при hover крутится медленно, при уходе нормализуем и плавно возвращаем к 0
             val currentRot = flawIconRotations.getOrDefault(idx, 0f)
-            flawIconRotations[idx] = if (isHovered) {
-                currentRot + 1.2f
+            if (isHovered) {
+                flawIconRotations[idx] = currentRot + 0.7f
             } else {
-                lerp(currentRot, 0f, 0.12f)
+                val normalized = ((currentRot % 360f) + 360f) % 360f
+                val wrapped = if (normalized > 180f) normalized - 360f else normalized
+                flawIconRotations[idx] = lerp(wrapped, 0f, 0.12f)
             }
         }
 
