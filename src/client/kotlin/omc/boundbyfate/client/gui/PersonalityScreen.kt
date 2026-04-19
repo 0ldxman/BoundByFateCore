@@ -532,16 +532,14 @@ class PersonalityScreen(private val parent: Screen) :
             val lines = wrapText(ideal.text, maxChars)
             
             if (expandProg > 0.01f && lines.size > 1) {
-                // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
-                val truncated = truncateTextByWords(ideal.text, maxChars)
-                
-                // Первая строка (обрезанная по словам)
+                // Раскрытие: показываем первую строку полностью + дополнительные строки с альфой
+                // Первая строка (полная, без "...")
                 val tm1 = context.matrices; tm1.push()
                 tm1.translate(textX.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
                 tm1.scale(finalScale, finalScale, 1f)
                 val tc1 = (textAlpha shl 24) or (color and 0xFFFFFF)
-                context.drawTextWithShadow(textRenderer, truncated, 0, 0, tc1)
+                context.drawTextWithShadow(textRenderer, lines[0], 0, 0, tc1)
                 tm1.pop()
                 
                 // Дополнительные строки с fade-in
@@ -556,7 +554,7 @@ class PersonalityScreen(private val parent: Screen) :
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (без раскрытия) - обрезаем по словам
+                // Обрезанный текст (без раскрытия) - обрезаем по словам с "..."
                 val displayText = truncateTextByWords(ideal.text, maxChars)
                 val tm = context.matrices; tm.push()
                 tm.translate(textX.toFloat(), ly.toFloat(), 0f)
@@ -699,17 +697,15 @@ class PersonalityScreen(private val parent: Screen) :
             val lines = wrapText(flaw.text, maxChars)
             
             if (expandProg > 0.01f && lines.size > 1) {
-                // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
-                val truncated = truncateTextByWords(flaw.text, maxChars)
-                
-                // Первая строка (обрезанная по словам)
+                // Раскрытие: показываем первую строку полностью + дополнительные строки с альфой
+                // Первая строка (полная, без "...")
                 val tm1 = context.matrices; tm1.push()
                 tm1.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
                 tm1.scale(finalScale, finalScale, 1f)
-                val tw1 = textRenderer.getWidth(truncated)
+                val tw1 = textRenderer.getWidth(lines[0])
                 val tc1 = (textAlpha shl 24) or 0xCCCCCC
-                context.drawTextWithShadow(textRenderer, truncated, -tw1, 0, tc1)
+                context.drawTextWithShadow(textRenderer, lines[0], -tw1, 0, tc1)
                 tm1.pop()
                 
                 // Дополнительные строки с fade-in
@@ -725,7 +721,7 @@ class PersonalityScreen(private val parent: Screen) :
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (без раскрытия) - обрезаем по словам
+                // Обрезанный текст (без раскрытия) - обрезаем по словам с "..."
                 val displayText = truncateTextByWords(flaw.text, maxChars)
                 val tm = context.matrices; tm.push()
                 tm.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
