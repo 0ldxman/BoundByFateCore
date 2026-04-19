@@ -103,7 +103,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val W = width; val H = height; val pad = 5
 
         // Header
-        btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7← ${tr("bbf.gm.button.back")}") {
+        btn(context, mouseX, mouseY, pad, pad, 38, 11, "§7${tr("bbf.gm.button.back")}") {
             client?.setScreen(GmPlayerEditScreen(snapshot))
         }
         btn(context, mouseX, mouseY, W - 46, pad, 40, 11, "§a${tr("bbf.gm.button.apply")}") { applyAll() }
@@ -117,10 +117,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val centerX = pad + colW + 4
         val rightX  = pad + (colW + 4) * 2
 
-        // Column boxes
-        box(context, leftX,   bodyY, colW, bodyH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        // Column boxes — only center column; left and right use separate sub-boxes
         box(context, centerX, bodyY, colW, bodyH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
-        box(context, rightX,  bodyY, colW, bodyH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
 
         // Left: ideals (top half) + flaws (bottom half) — separate boxes with gap
         val gap = 4
