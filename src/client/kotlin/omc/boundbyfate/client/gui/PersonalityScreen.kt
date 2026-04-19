@@ -76,13 +76,15 @@ class PersonalityScreen(private val parent: Screen) :
         val W = width; val H = height
         val panelW = (W * 0.27f).toInt()
         val pad = 8
+        val sideMargin = 18  // дополнительный отступ от края экрана
 
-        // ── PLAYER MODEL (center, behind text) ───────────────────────────────
+        // ── PLAYER MODEL (та же позиция что в CharacterScreenAtlas) ──────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
+            val cx = W / 2; val cy = H / 2
             InventoryScreen.drawEntity(
-                context, W / 2, H / 2 + 50, 55,
-                (W / 2 - mouseX).toFloat(), (H / 2 - mouseY).toFloat(),
+                context, cx, cy + 85, 70,
+                (cx - mouseX).toFloat(), (cy - mouseY).toFloat(),
                 player
             )
         }
@@ -94,10 +96,10 @@ class PersonalityScreen(private val parent: Screen) :
         renderAlignmentTop(context, W, pad)
 
         // ── LEFT PANEL: Ideals (no box) ───────────────────────────────────────
-        renderIdealsPanel(context, mouseX, mouseY, pad, 40, panelW, H - 50)
+        renderIdealsPanel(context, mouseX, mouseY, pad + sideMargin, 40, panelW, H - 50)
 
         // ── RIGHT PANEL: Flaws (no box, right-aligned) ────────────────────────
-        renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad, 40, panelW, H - 50)
+        renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad - sideMargin, 40, panelW, H - 50)
 
         // ── BACK BUTTON ───────────────────────────────────────────────────────
         val backText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.button.back")
@@ -118,6 +120,34 @@ class PersonalityScreen(private val parent: Screen) :
         super.render(context, mouseX, mouseY, delta)
     }
 
+    /**
+     * Рисует горизонтальный разделитель с fade-out к краям (градиент по альфа-каналу).
+     * Цвет совпадает с цветом заголовков (0xD4AF37).
+     */
+    private fun drawFadeDivider(context: DrawContext, cx: Int, y: Int, totalW: Int) {
+        val halfW = totalW / 2
+        val solidHalf = (halfW * 0.35f).toInt()   // центральная монотонная часть
+        val fadeSteps = halfW - solidHalf           // количество пикселей градиента
+
+        val baseColor = 0xD4AF37
+        val r = (baseColor shr 16) and 0xFF
+        val g = (baseColor shr 8) and 0xFF
+        val b = baseColor and 0xFF
+        val maxAlpha = 0xAA  // максимальная непрозрачность центра
+
+        // Центральная монотонная часть
+        val solidColor = (maxAlpha shl 24) or baseColor
+        context.fill(cx - solidHalf, y, cx + solidHalf, y + 1, solidColor)
+
+        // Градиент влево и вправо
+        for (i in 0 until fadeSteps) {
+            val alpha = (maxAlpha * (1f - i.toFloat() / fadeSteps)).toInt()
+            val c = (alpha shl 24) or (r shl 16) or (g shl 8) or b
+            context.fill(cx - solidHalf - i - 1, y, cx - solidHalf - i, y + 1, c)
+            context.fill(cx + solidHalf + i, y, cx + solidHalf + i + 1, y + 1, c)
+        }
+    }
+
     private fun renderAlignmentTop(context: DrawContext, W: Int, pad: Int) {
         val alignText = ClientPlayerData.alignmentText.ifEmpty {
             net.minecraft.client.resource.language.I18n.translate("bbf.alignment.true_neutral")
@@ -128,9 +158,7 @@ class PersonalityScreen(private val parent: Screen) :
         drawCenteredScaled(context, labelText, cx, pad + 2, 0.55f, 0x888888)
         drawCenteredScaled(context, alignText, cx, pad + 11, 0.9f, 0xD4AF37)
 
-        // Divider line
-        val divW = 120
-        context.fill(cx - divW / 2, pad + 22, cx + divW / 2, pad + 23, 0xFF4a3a2a.toInt())
+        drawFadeDivider(context, cx, pad + 22, 120)
     }
 
     private fun renderMotivations(context: DrawContext) {
@@ -157,8 +185,12 @@ class PersonalityScreen(private val parent: Screen) :
 
         var curY = y + 4
         val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.ideals")
-        drawScaled(context, headerText, x, curY, 0.6f, 0xD4AF37)
-        curY += 11
+        // Центрируем заголовок по ширине панели
+        val headerCx = x + w / 2
+        drawCenteredScaled(context, headerText, headerCx, curY, 0.6f, 0xD4AF37)
+        curY += 9
+        drawFadeDivider(context, headerCx, curY, w)
+        curY += 5
 
         val textScale = 0.65f
         val maxChars = ((w - 12) / (textRenderer.getWidth("W") * textScale)).toInt().coerceAtLeast(10)
@@ -208,13 +240,12 @@ class PersonalityScreen(private val parent: Screen) :
 
         var curY = y + 4
         val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.flaws")
-        // Right-align header
-        val m0 = context.matrices; m0.push()
-        m0.translate((x + w).toFloat(), curY.toFloat(), 0f); m0.scale(0.6f, 0.6f, 1f)
-        val hw = textRenderer.getWidth(headerText)
-        context.drawTextWithShadow(textRenderer, headerText, -hw, 0, 0xD4AF37)
-        m0.pop()
-        curY += 11
+        // Центрируем заголовок по ширине панели
+        val headerCx = x + w / 2
+        drawCenteredScaled(context, headerText, headerCx, curY, 0.6f, 0xD4AF37)
+        curY += 9
+        drawFadeDivider(context, headerCx, curY, w)
+        curY += 5
 
         val textScale = 0.65f
         val maxChars = ((w - 12) / (textRenderer.getWidth("W") * textScale)).toInt().coerceAtLeast(10)
@@ -290,11 +321,11 @@ class PersonalityScreen(private val parent: Screen) :
     private fun easeOut(t: Float) = 1f - (1f - t) * (1f - t)
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        val W = width; val panelW = (W * 0.27f).toInt(); val pad = 8
+        val W = width; val panelW = (W * 0.27f).toInt(); val pad = 8; val sideMargin = 18
         val mx = mouseX.toInt()
         val delta = if (amount > 0) -1 else 1
-        if (mx < pad + panelW) { idealScroll = (idealScroll + delta).coerceAtLeast(0); return true }
-        if (mx > W - panelW - pad) { flawScroll = (flawScroll + delta).coerceAtLeast(0); return true }
+        if (mx < pad + sideMargin + panelW) { idealScroll = (idealScroll + delta).coerceAtLeast(0); return true }
+        if (mx > W - panelW - pad - sideMargin) { flawScroll = (flawScroll + delta).coerceAtLeast(0); return true }
         return super.mouseScrolled(mouseX, mouseY, amount)
     }
 
