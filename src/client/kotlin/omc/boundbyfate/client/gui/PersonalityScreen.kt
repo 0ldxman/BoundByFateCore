@@ -7,6 +7,7 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
+import omc.boundbyfate.api.identity.AlignmentCoordinates
 import omc.boundbyfate.client.state.ClientPlayerData
 import omc.boundbyfate.network.BbfPackets
 import org.lwjgl.glfw.GLFW
@@ -47,6 +48,15 @@ class PersonalityScreen(private val parent: Screen) :
     private var suggestMotivationText = ""
     private var cursorPosition = 0
     private var cursorBlinkTime = 0f
+
+    // ── Оверлей мировоззрения ─────────────────────────────────────────────────
+    private var alignmentOverlayOpen = false
+    private var alignmentOverlayAnimTime = 0f
+    private var alignmentHovered = false
+    private var alignmentScale = 1f
+    private var hoveredAlignmentCell: Int? = null
+    private val alignmentCellScales = mutableMapOf<Int, Float>()
+    private var alignmentCellTooltip: net.minecraft.text.Text? = null
 
     // ── Hover состояния ───────────────────────────────────────────────────────
     private var hoveredIdealIdx: Int? = null
@@ -214,6 +224,17 @@ class PersonalityScreen(private val parent: Screen) :
         val pad = 8
         val sideMargin = 18
         val panelStartY = H / 3
+        val cx = W / 2; val cy = H / 2
+        
+        // Hover для мировоззрения
+        val alignText = ClientPlayerData.alignmentText.ifEmpty { "?" }
+        val alignBaseScale = 0.9f
+        val alignW = (textRenderer.getWidth(alignText) * alignBaseScale * alignmentScale).toInt()
+        val alignH = (textRenderer.fontHeight * alignBaseScale * alignmentScale).toInt()
+        val alignX = cx - alignW / 2
+        val alignY = pad + 11
+        alignmentHovered = alignProgress() > 0.9f && mouseX in alignX..(alignX + alignW) && mouseY in alignY..(alignY + alignH)
+        alignmentScale = lerp(alignmentScale, if (alignmentHovered) 1.15f else 1f, 0.15f)
         
         // Перестраиваем частицы если список мотиваций изменился
         val currentSnapshot = ClientPlayerData.motivations.map { "${it.id}:${it.isActive}" }
@@ -221,7 +242,6 @@ class PersonalityScreen(private val parent: Screen) :
             lastMotivationSnapshot = currentSnapshot
             buildParticles()
         }
-        val cx = W / 2; val cy = H / 2
 
         // ── Обновление hover-анимаций ─────────────────────────────────────────
         // Модель и мотивации - зона по центру, умеренная ширина
@@ -323,7 +343,7 @@ class PersonalityScreen(private val parent: Screen) :
         }
 
         // ── ALIGNMENT (top center, вылет сверху) ─────────────────────────────
-        renderAlignmentTop(context, W, pad)
+        renderAlignmentTop(context, W, pad, mouseX, mouseY)
 
         // ── PANELS ───────────────────────────────────────────────────────────
         renderIdealsPanel(context, mouseX, mouseY, pad + sideMargin, panelStartY, panelW, H - panelStartY - 20)
@@ -481,7 +501,7 @@ class PersonalityScreen(private val parent: Screen) :
     }
 
     // ── МИРОВОЗЗРЕНИЕ: вылет сверху вниз ─────────────────────────────────────
-    private fun renderAlignmentTop(context: DrawContext, W: Int, pad: Int) {
+    private fun renderAlignmentTop(context: DrawContext, W: Int, pad: Int, mouseX: Int, mouseY: Int) {
         val prog = alignProgress()
         if (prog <= 0f) return
 
@@ -500,13 +520,213 @@ class PersonalityScreen(private val parent: Screen) :
         // "Мировоззрение" появляется fade-in после того как основной текст вылетел
         val labelAlpha = (((prog - 0.7f) / 0.3f).coerceIn(0f, 1f) * 255).toInt()
         drawCenteredScaledAlpha(context, labelText, cx, pad + 2, 0.55f, 0x888888, labelAlpha)
-        drawCenteredScaledAlpha(context, alignText, cx, pad + 11, 0.9f, 0xD4AF37, alpha)
+        val alignColor = if (alignmentHovered) 0xFFE844 else 0xD4AF37
+        drawCenteredScaledAlpha(context, alignText, cx, pad + 11, 0.9f * alignmentScale, alignColor, alpha)
         m.pop()
 
-        // Divider под мировоззрением — такая же анимация раскрытия от центра к краям
+        // Divider под мировоззрением
         val divProg = ((prog - 0.7f) / 0.3f).coerceIn(0f, 1f)
         if (divProg > 0f) {
             drawFadeDividerAnimated(context, cx, pad + 22, 120, divProg)
+        }
+        
+        // Оверлей мировоззрения
+        if (alignmentOverlayOpen || alignmentOverlayAnimTime > 0.01f) {
+            renderAlignmentOverlay(context, mouseX, mouseY)
+        }
+        if (alignmentOverlayOpen && alignmentOverlayAnimTime < 1f) {
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime + 0.07f).coerceAtMost(1f)
+        } else if (!alignmentOverlayOpen && alignmentOverlayAnimTime > 0f) {
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime - 0.07f).coerceAtLeast(0f)
+        }
+    }
+
+    // ── ОВЕРЛЕЙ МИРОВОЗЗРЕНИЯ ─────────────────────────────────────────────────
+    private fun renderAlignmentOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
+        val W = width; val H = height
+        val prog = easeOut(alignmentOverlayAnimTime)
+        if (prog < 0.01f) return
+
+        val targetW = 280; val targetH = 260
+        val ocx = W / 2; val ocy = H / 2
+        val animW = (targetW * prog).toInt(); val animH = (targetH * prog).toInt()
+        val x0 = ocx - animW / 2; val y0 = ocy - animH / 2
+        val x1 = x0 + animW; val y1 = y0 + animH
+
+        val m = context.matrices; m.push()
+        m.translate(0f, 0f, 400f)
+
+        context.fill(0, 0, W, H, ((prog * 0x99).toInt() shl 24) or 0x000000)
+        context.fill(x0, y0, x1, y1, 0xEE1a1a1a.toInt())
+        context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y0, x0 + 1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x1 - 1, y0, x1, y1, 0xFF8a6a3a.toInt())
+
+        if (prog > 0.6f) {
+            val contentAlpha = ((prog - 0.6f) / 0.4f).coerceIn(0f, 1f)
+            renderAlignmentOverlayContent(context, x0, y0, animW, animH, contentAlpha, mouseX, mouseY)
+        }
+        m.pop()
+    }
+
+    private fun renderAlignmentOverlayContent(context: DrawContext, x: Int, y: Int, w: Int, h: Int, alpha: Float, mouseX: Int, mouseY: Int) {
+        val pad = 10
+        val iAlpha = (alpha * 255).toInt()
+
+        // Заголовок
+        val titleText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.title")
+        val tm = context.matrices; tm.push()
+        tm.translate((x + w / 2).toFloat(), (y + pad).toFloat(), 0f); tm.scale(0.7f, 0.7f, 1f)
+        val ttw = textRenderer.getWidth(titleText)
+        context.drawTextWithShadow(textRenderer, titleText, -(ttw / 2), 0, (iAlpha shl 24) or 0xD4AF37)
+        tm.pop()
+
+        // Описание
+        val descText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.desc")
+        val descScale = 0.55f
+        val descLines = descText.split("\n")
+        var descY = y + pad + 14
+        descLines.forEach { line ->
+            val dm = context.matrices; dm.push()
+            dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
+            val dlw = textRenderer.getWidth(line)
+            context.drawTextWithShadow(textRenderer, line, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
+            dm.pop()
+            descY += (textRenderer.fontHeight * descScale + 1).toInt()
+        }
+
+        // Диаграмма
+        val diagPad = 8
+        val diagTop = descY + 4
+        val diagSize = minOf(w - diagPad * 2, h - (diagTop - y) - diagPad).coerceAtLeast(60)
+        val diagX = x + (w - diagSize) / 2
+        val diagY = diagTop
+
+        context.fill(diagX, diagY, diagX + diagSize, diagY + diagSize, (iAlpha shl 24) or 0x111111)
+
+        val third = diagSize / 3
+        val lineColor = ((iAlpha / 2) shl 24) or 0x333333
+        context.fill(diagX + third, diagY, diagX + third + 1, diagY + diagSize, lineColor)
+        context.fill(diagX + third * 2, diagY, diagX + third * 2 + 1, diagY + diagSize, lineColor)
+        context.fill(diagX, diagY + third, diagX + diagSize, diagY + third + 1, lineColor)
+        context.fill(diagX, diagY + third * 2, diagX + diagSize, diagY + third * 2 + 1, lineColor)
+
+        val axisColor = ((iAlpha / 3) shl 24) or 0x555555
+        val acx = diagX + diagSize / 2; val acy = diagY + diagSize / 2
+        context.fill(acx, diagY, acx + 1, diagY + diagSize, axisColor)
+        context.fill(diagX, acy, diagX + diagSize, acy + 1, axisColor)
+
+        val borderColor = (iAlpha shl 24) or 0x6b5a3e
+        context.fill(diagX, diagY, diagX + diagSize, diagY + 1, borderColor)
+        context.fill(diagX, diagY + diagSize - 1, diagX + diagSize, diagY + diagSize, borderColor)
+        context.fill(diagX, diagY, diagX + 1, diagY + diagSize, borderColor)
+        context.fill(diagX + diagSize - 1, diagY, diagX + diagSize, diagY + diagSize, borderColor)
+
+        val alignments = listOf(
+            omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD,
+            omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL, omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL,
+            omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_EVIL
+        )
+
+        val lawChaos = ClientPlayerData.alignmentLawChaos
+        val goodEvil = ClientPlayerData.alignmentGoodEvil
+        val currentAlignment = AlignmentCoordinates(lawChaos, goodEvil).getAlignment()
+
+        fun alignmentFillColor(al: omc.boundbyfate.api.identity.Alignment): Int = when {
+            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD -> 0x4488FF
+            al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD -> 0x44CC44
+            al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD -> 0x88FF44
+            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL -> 0x8888CC
+            al == omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL -> 0xAAAAAA
+            al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL -> 0xCC8844
+            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL -> 0x884444
+            al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL -> 0xAA4444
+            else -> 0xFF4444
+        }
+
+        var newHoveredCell: Int? = null
+        alignmentCellTooltip = null
+
+        alignments.forEachIndexed { i, al ->
+            val col = i % 3; val row = i / 3
+            val cellX = diagX + col * third
+            val cellY = diagY + row * third
+            val cellCx = cellX + third / 2
+            val cellCy = cellY + third / 2
+
+            val isCurrent = al == currentAlignment
+            val isHovered = mouseX in cellX..(cellX + third) && mouseY in cellY..(cellY + third)
+            if (isHovered) newHoveredCell = i
+
+            val cellScale = alignmentCellScales.getOrDefault(i, 1f)
+
+            if (isCurrent) {
+                val fillColor = alignmentFillColor(al)
+                val fillAlpha = (iAlpha * 0.35f).toInt()
+                context.fill(cellX + 1, cellY + 1, cellX + third - 1, cellY + third - 1, (fillAlpha shl 24) or fillColor)
+                val rimAlpha = (iAlpha * 0.8f).toInt()
+                context.fill(cellX, cellY, cellX + third, cellY + 1, (rimAlpha shl 24) or fillColor)
+                context.fill(cellX, cellY + third - 1, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
+                context.fill(cellX, cellY, cellX + 1, cellY + third, (rimAlpha shl 24) or fillColor)
+                context.fill(cellX + third - 1, cellY, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
+            }
+
+            val shortName = net.minecraft.client.resource.language.I18n.translate(al.getShortKey())
+            val textColor = if (isCurrent) {
+                val c = alignmentFillColor(al)
+                (iAlpha shl 24) or ((c shr 1) and 0x7F7F7F)
+            } else if (al.name.contains("EVIL")) {
+                (iAlpha shl 24) or 0x884444
+            } else if (al.name.contains("GOOD")) {
+                (iAlpha shl 24) or 0x448844
+            } else {
+                (iAlpha shl 24) or 0x666666
+            }
+
+            val sm = context.matrices; sm.push()
+            sm.translate(cellCx.toFloat(), cellCy.toFloat(), 0f)
+            sm.scale(0.6f * cellScale, 0.6f * cellScale, 1f)
+            val tw = textRenderer.getWidth(shortName)
+            context.drawTextWithShadow(textRenderer, shortName, -(tw / 2), -3, textColor)
+            sm.pop()
+
+            if (isHovered) {
+                alignmentCellTooltip = net.minecraft.text.Text.translatable("${al.translationKey}.tooltip")
+            }
+        }
+
+        hoveredAlignmentCell = newHoveredCell
+        alignments.forEachIndexed { i, _ ->
+            val target = if (hoveredAlignmentCell == i) 1.2f else 1f
+            alignmentCellScales[i] = lerp(alignmentCellScales.getOrDefault(i, 1f), target, 0.15f)
+        }
+
+        // Точка текущего мировоззрения
+        val dotX = diagX + ((lawChaos + 6).toFloat() / 12f * diagSize).toInt()
+        val dotY = diagY + ((6 - goodEvil).toFloat() / 12f * diagSize).toInt()
+        context.fill(dotX - 3, dotY - 3, dotX + 4, dotY + 4, ((iAlpha * 0.5f).toInt() shl 24) or 0xFFD700)
+        context.fill(dotX - 1, dotY - 1, dotX + 2, dotY + 2, (iAlpha shl 24) or 0xFFD700)
+
+        // Tooltip ячейки
+        alignmentCellTooltip?.let { tooltip ->
+            val tooltipStr = tooltip.string
+            if (tooltipStr.isNotEmpty()) {
+                val ttScale = 0.6f
+                val ttW = (textRenderer.getWidth(tooltipStr) * ttScale + 8).toInt()
+                val ttH = (textRenderer.fontHeight * ttScale + 6).toInt()
+                val ttX = (mouseX + 6).coerceAtMost(x + w - ttW - 2)
+                val ttY = (mouseY - ttH - 2).coerceAtLeast(y + 2)
+                context.fill(ttX, ttY, ttX + ttW, ttY + ttH, 0xEE1a1a1a.toInt())
+                context.fill(ttX, ttY, ttX + ttW, ttY + 1, 0xFF8a6a3a.toInt())
+                context.fill(ttX, ttY + ttH - 1, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
+                context.fill(ttX, ttY, ttX + 1, ttY + ttH, 0xFF8a6a3a.toInt())
+                context.fill(ttX + ttW - 1, ttY, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
+                val ttm = context.matrices; ttm.push()
+                ttm.translate((ttX + 4).toFloat(), (ttY + 3).toFloat(), 0f); ttm.scale(ttScale, ttScale, 1f)
+                context.drawTextWithShadow(textRenderer, tooltipStr, 0, 0, 0xFFFFFFFF.toInt())
+                ttm.pop()
+            }
         }
     }
 
@@ -1385,6 +1605,24 @@ class PersonalityScreen(private val parent: Screen) :
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val W = width; val H = height
         
+        // Обработка кликов в оверлее мировоззрения
+        if (alignmentOverlayOpen && button == 0) {
+            val prog = easeOut(alignmentOverlayAnimTime)
+            if (prog > 0.6f) {
+                val targetW = 280; val targetH = 260
+                val ocx = W / 2; val ocy = H / 2
+                val x0 = ocx - (targetW * prog).toInt() / 2
+                val y0 = ocy - (targetH * prog).toInt() / 2
+                val x1 = x0 + (targetW * prog).toInt()
+                val y1 = y0 + (targetH * prog).toInt()
+                if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+                    alignmentOverlayOpen = false
+                    return true
+                }
+            }
+            return true
+        }
+        
         // Обработка кликов в оверлее предложения мотивации
         if (suggestMotivationOverlayOpen && button == 0) {
             // Проверяем что анимация завершена (контент виден)
@@ -1523,6 +1761,20 @@ class PersonalityScreen(private val parent: Screen) :
         val bx = W - bw - 8; val by = 8
         if (mouseX.toInt() in bx..(bx + bw) && mouseY.toInt() in by..(by + bh)) {
             client?.setScreen(parent); return true
+        }
+        
+        // Клик на мировоззрение — открываем/закрываем оверлей
+        if (button == 0 && alignProgress() > 0.9f && !motivationsOverlayOpen && !suggestMotivationOverlayOpen) {
+            val alignText = ClientPlayerData.alignmentText.ifEmpty { "?" }
+            val alignBaseScale = 0.9f * alignmentScale
+            val alignW = (textRenderer.getWidth(alignText) * alignBaseScale).toInt()
+            val alignH = (textRenderer.fontHeight * alignBaseScale).toInt()
+            val alignX = W / 2 - alignW / 2
+            val alignY = 8 + 11
+            if (mouseX.toInt() in alignX..(alignX + alignW) && mouseY.toInt() in alignY..(alignY + alignH)) {
+                alignmentOverlayOpen = !alignmentOverlayOpen
+                return true
+            }
         }
         
         // Suggest motivation button (низ по центру)
