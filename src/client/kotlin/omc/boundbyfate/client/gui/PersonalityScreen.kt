@@ -1248,8 +1248,8 @@ class PersonalityScreen(private val parent: Screen) :
         overlayScroll = overlayScroll.coerceIn(0, maxScroll)
         
         // Рендер мотиваций с typewriter эффектом (начинаем после заголовка)
-        val headerH = (textRenderer.fontHeight * headerScale + 10).toInt()
-        var curY = contentY + headerH
+        val headerTotalH = (textRenderer.fontHeight * headerScale + 10).toInt()
+        var curY = contentY + headerTotalH
         motivations.drop(overlayScroll).take(visibleCount).forEachIndexed { idx, mot ->
             val globalIdx = idx + overlayScroll
             
