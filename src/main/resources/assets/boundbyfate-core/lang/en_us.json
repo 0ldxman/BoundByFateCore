@@ -166,6 +166,7 @@
   "bbf.gm.identity.tab.motivations": "Motivations & Goals",
   "bbf.gm.identity.motivations": "MOTIVATIONS",
   "bbf.gm.identity.goals": "GOALS",
+  "bbf.gm.identity.awaiting": "Awaiting continuation...",
   "bbf.gm.identity.proposals": "Proposals",
   "bbf.gm.identity.add_motivation": "Add Motivation",
   "bbf.gm.identity.edit_motivation": "Edit Motivation",

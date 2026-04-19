@@ -390,8 +390,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             box(context, x, gy, w - 13, rowH - 2, boxBg, boxBd)
             lbl(context, statusIcon, x + 2, gy + 2, 0.65f, statusColor)
             lbl(context, truncate(goal.title, w - 30, 0.65f), x + 12, gy + 2, 0.65f, statusColor)
-            val task = goal.currentTask
-            if (task != null) lbl(context, "§8□ ${truncate(task.description, w - 20, 0.5f)}", x + 4, gy + 12, 0.5f, 0x666666)
+            val task = goal.tasks.firstOrNull { it.status == "CURRENT" }
+            if (task != null) {
+                lbl(context, "§e▶ ${truncate(task.description, w - 20, 0.5f)}", x + 4, gy + 12, 0.5f, 0x888888)
+            } else if (goal.status == "ACTIVE") {
+                lbl(context, "§8~ ${tr("bbf.gm.identity.awaiting")}", x + 4, gy + 12, 0.5f, 0x555555)
+            }
             // Click on box → open edit
             btns.add(Btn(x, gy, w - 13, rowH - 2) {
                 editingGoalId = goal.id
@@ -760,10 +764,21 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
 
         taskListStartY = taskAreaY
 
+        // Calculate drop position for indicator
+        val dropIndicatorPos = if (isDragging && draggedTaskIndex != null) {
+            val relY = draggedTaskY - taskAreaY
+            (relY / taskRowH).coerceIn(0, sortedTasks.size - 1)
+        } else -1
+
         visibleTasks.forEachIndexed { i, task ->
             val taskIndex = sortedTasks.indexOf(task)
             val ty = taskAreaY + i * taskRowH
             if (isDragging && draggedTaskIndex == taskIndex) return@forEachIndexed
+
+            // Drop indicator line — show where dragged task will be inserted
+            if (isDragging && dropIndicatorPos == taskIndex && taskIndex != draggedTaskIndex) {
+                context.fill(rx + 4, ty - 1, rx + panelW - 4, ty + 1, 0xFFFFD700.toInt())
+            }
 
             val statusIcon = when (task.status) {
                 "COMPLETED" -> "§a✓"; "FAILED" -> "§c✗"; "CANCELLED" -> "§7○"; "PENDING" -> "§8□"; else -> "§e▶"
@@ -773,6 +788,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             lbl(context, "§7${taskIndex + 1}.", rx + 6, ty + 2, 0.55f, 0x888888)
             lbl(context, statusIcon, rx + 16, ty + 2, 0.55f, 0xFFFFFF)
             lbl(context, truncate(task.description, panelW - 36, 0.55f), rx + 24, ty + 2, 0.55f, 0xCCCCCC)
+        }
+
+        // Drop indicator at end of list
+        if (isDragging && dropIndicatorPos == sortedTasks.size - 1 && dropIndicatorPos != draggedTaskIndex) {
+            val lastTy = taskAreaY + (visibleTasks.size.coerceAtMost(maxVisibleTasks)) * taskRowH
+            context.fill(rx + 4, lastTy - 1, rx + panelW - 4, lastTy + 1, 0xFFFFD700.toInt())
         }
 
         // Dragged task
