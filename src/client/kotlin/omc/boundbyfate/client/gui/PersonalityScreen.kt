@@ -221,7 +221,10 @@ class PersonalityScreen(private val parent: Screen) :
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
-            // Модель рендерим ПЕРВОЙ, все мотивации всегда поверх неё
+            // Сначала рендерим мотивации "за" персонажем (с depth test — они могут перекрываться моделью)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
+
+            // Модель
             com.mojang.blaze3d.systems.RenderSystem.enableBlend()
             com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc()
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, modelAlpha)
@@ -233,12 +236,15 @@ class PersonalityScreen(private val parent: Screen) :
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
             com.mojang.blaze3d.systems.RenderSystem.disableBlend()
 
-            // Все мотивации поверх модели (z-layering только для визуального порядка между собой)
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
+            // Мотивации "перед" персонажем — всегда поверх модели (disableDepthTest)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = true)
+            // При hover — "за" мотивации тоже рисуем поверх модели
+            if (modelHovered) {
+                renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = true)
+            }
         } else {
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = true)
         }
 
         // ── ALIGNMENT (top center, вылет сверху) ─────────────────────────────
@@ -268,8 +274,13 @@ class PersonalityScreen(private val parent: Screen) :
     }
 
     // ── МОТИВАЦИИ: орбитальное движение ──────────────────────────────────────
-    private fun renderMotivations(context: DrawContext, centerX: Float, centerY: Float, behindOnly: Boolean) {
+    private fun renderMotivations(context: DrawContext, centerX: Float, centerY: Float, behindOnly: Boolean, forceOnTop: Boolean = false) {
         val introAlpha = easeOut(openTime)
+        
+        if (forceOnTop) {
+            com.mojang.blaze3d.systems.RenderSystem.disableDepthTest()
+        }
+        
         particles.forEachIndexed { idx, p ->
             val isBehind = p.zLayer < 0f
             if (isBehind != behindOnly) return@forEachIndexed
@@ -294,18 +305,22 @@ class PersonalityScreen(private val parent: Screen) :
             } else 1f
 
             // Альфа: за персонажем — тусклее, + hover состояние
-            val depthFade = if (isBehind) 0.45f else 1.0f
+            val depthFade = if (isBehind && !forceOnTop) 0.45f else if (isBehind) 0.7f else 1.0f
             val pulseAlpha = p.baseAlpha + sin((time * 0.5f + p.orbitPhase).toDouble()).toFloat() * 0.07f
             val alpha = ((pulseAlpha * introAlpha * depthFade * motivationsBaseAlpha * hoverAlpha).coerceIn(0f, 1f) * 255).toInt()
             val color = (alpha shl 24) or p.color
 
             val m = context.matrices; m.push()
-            m.translate(px, py, 0f)
+            m.translate(px, py, 200f)  // z=200 гарантирует рендер поверх GUI элементов
             val finalScale = p.scale * hoverScale * pulseScale
             m.scale(finalScale, finalScale, 1f)
             val tw = textRenderer.getWidth(p.text)
             context.drawTextWithShadow(textRenderer, p.text, -(tw / 2), 0, color)
             m.pop()
+        }
+        
+        if (forceOnTop) {
+            com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()
         }
     }
 
