@@ -547,7 +547,7 @@ class PersonalityScreen(private val parent: Screen) :
         val prog = easeOut(alignmentOverlayAnimTime)
         if (prog < 0.01f) return
 
-        val targetW = 280; val targetH = 260
+        val targetW = 200; val targetH = 180
         val ocx = W / 2; val ocy = H / 2
         val animW = (targetW * prog).toInt(); val animH = (targetH * prog).toInt()
         val x0 = ocx - animW / 2; val y0 = ocy - animH / 2
@@ -584,22 +584,19 @@ class PersonalityScreen(private val parent: Screen) :
 
         // Описание
         val descText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.desc")
-        val descScale = 0.55f
-        val descLines = descText.split("\n")
+        val descScale = 0.5f
         var descY = y + pad + 14
-        descLines.forEach { line ->
-            val dm = context.matrices; dm.push()
-            dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
-            val dlw = textRenderer.getWidth(line)
-            context.drawTextWithShadow(textRenderer, line, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
-            dm.pop()
-            descY += (textRenderer.fontHeight * descScale + 1).toInt()
-        }
+        val dm = context.matrices; dm.push()
+        dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
+        val dlw = textRenderer.getWidth(descText)
+        context.drawTextWithShadow(textRenderer, descText, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
+        dm.pop()
+        descY += (textRenderer.fontHeight * descScale + 2).toInt()
 
-        // Диаграмма
+        // Диаграмма — фиксированный маленький размер
         val diagPad = 8
         val diagTop = descY + 4
-        val diagSize = minOf(w - diagPad * 2, h - (diagTop - y) - diagPad).coerceAtLeast(60)
+        val diagSize = 72  // фиксированный размер ~1/3 от оверлея
         val diagX = x + (w - diagSize) / 2
         val diagY = diagTop
 
@@ -1603,7 +1600,7 @@ class PersonalityScreen(private val parent: Screen) :
         if (alignmentOverlayOpen && button == 0) {
             val prog = easeOut(alignmentOverlayAnimTime)
             if (prog > 0.6f) {
-                val targetW = 280; val targetH = 260
+                val targetW = 200; val targetH = 180
                 val ocx = W / 2; val ocy = H / 2
                 val x0 = ocx - (targetW * prog).toInt() / 2
                 val y0 = ocy - (targetH * prog).toInt() / 2

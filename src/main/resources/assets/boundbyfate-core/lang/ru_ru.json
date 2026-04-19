@@ -197,5 +197,16 @@
   "bbf.personality.suggest_motivation": "Обдумать мотивацию",
   "bbf.personality.motivation_placeholder": "Введите вашу мотивацию...",
   "bbf.personality.submit": "Отправить",
-  "bbf.personality.back.right": "Назад →"
+  "bbf.personality.back.right": "Назад →",
+  "bbf.personality.alignment.overlay.title": "Мировоззрение",
+  "bbf.personality.alignment.overlay.desc": "Моральные принципы персонажа на двух осях: Закон-Хаос и Добро-Зло.",
+  "bbf.alignment.lawful_good.tooltip": "Законопослушный Добрый — чтит закон и помогает другим.",
+  "bbf.alignment.neutral_good.tooltip": "Нейтральный Добрый — делает добро без фанатизма.",
+  "bbf.alignment.chaotic_good.tooltip": "Хаотичный Добрый — добр, но не признаёт правил.",
+  "bbf.alignment.lawful_neutral.tooltip": "Законопослушный Нейтральный — чтит порядок превыше всего.",
+  "bbf.alignment.true_neutral.tooltip": "Истинный Нейтральный — баланс во всём.",
+  "bbf.alignment.chaotic_neutral.tooltip": "Хаотичный Нейтральный — свобода и непредсказуемость.",
+  "bbf.alignment.lawful_evil.tooltip": "Законопослушный Злой — использует закон в своих целях.",
+  "bbf.alignment.neutral_evil.tooltip": "Нейтральный Злой — зло без лишних принципов.",
+  "bbf.alignment.chaotic_evil.tooltip": "Хаотичный Злой — разрушение и хаос."
 }

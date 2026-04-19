@@ -196,5 +196,16 @@
   "bbf.personality.suggest_motivation": "Reflect on Motivation",
   "bbf.personality.motivation_placeholder": "Enter your motivation...",
   "bbf.personality.submit": "Submit",
-  "bbf.personality.back.right": "Back →"
+  "bbf.personality.back.right": "Back →",
+  "bbf.personality.alignment.overlay.title": "Alignment",
+  "bbf.personality.alignment.overlay.desc": "Character's moral principles on two axes: Law-Chaos and Good-Evil.",
+  "bbf.alignment.lawful_good.tooltip": "Lawful Good — honors law and helps others.",
+  "bbf.alignment.neutral_good.tooltip": "Neutral Good — does good without fanaticism.",
+  "bbf.alignment.chaotic_good.tooltip": "Chaotic Good — good, but rejects rules.",
+  "bbf.alignment.lawful_neutral.tooltip": "Lawful Neutral — honors order above all.",
+  "bbf.alignment.true_neutral.tooltip": "True Neutral — balance in all things.",
+  "bbf.alignment.chaotic_neutral.tooltip": "Chaotic Neutral — freedom and unpredictability.",
+  "bbf.alignment.lawful_evil.tooltip": "Lawful Evil — uses law for personal gain.",
+  "bbf.alignment.neutral_evil.tooltip": "Neutral Evil — evil without principles.",
+  "bbf.alignment.chaotic_evil.tooltip": "Chaotic Evil — destruction and chaos."
 }
