@@ -21,6 +21,8 @@ object ClientPlayerData {
 
     // Identity data
     var alignmentText: String = ""
+    var alignmentLawChaos: Int = 0
+    var alignmentGoodEvil: Int = 0
     var ideals: List<ClientIdeal> = emptyList()
     var flaws: List<ClientFlaw> = emptyList()
     var motivations: List<ClientMotivation> = emptyList()
@@ -34,6 +36,8 @@ object ClientPlayerData {
         gender = null
         statBonuses = emptyMap()
         alignmentText = ""
+        alignmentLawChaos = 0
+        alignmentGoodEvil = 0
         ideals = emptyList()
         flaws = emptyList()
         motivations = emptyList()

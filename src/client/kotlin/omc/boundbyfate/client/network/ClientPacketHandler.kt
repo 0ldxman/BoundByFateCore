@@ -161,6 +161,8 @@ object ClientPacketHandler {
 
             // Identity data
             val alignmentKey = buf.readString()
+            val alignmentLawChaos = buf.readInt()
+            val alignmentGoodEvil = buf.readInt()
             val idealCount = buf.readInt()
             val ideals = (0 until idealCount).map {
                 val id = buf.readString()
@@ -200,6 +202,8 @@ object ClientPacketHandler {
                 ClientPlayerData.gender = gender
                 ClientPlayerData.statBonuses = statBonuses
                 ClientPlayerData.alignmentText = net.minecraft.client.resource.language.I18n.translate(alignmentKey)
+                ClientPlayerData.alignmentLawChaos = alignmentLawChaos
+                ClientPlayerData.alignmentGoodEvil = alignmentGoodEvil
                 ClientPlayerData.ideals = ideals
                 ClientPlayerData.flaws = flaws
                 ClientPlayerData.motivations = motivations + proposals

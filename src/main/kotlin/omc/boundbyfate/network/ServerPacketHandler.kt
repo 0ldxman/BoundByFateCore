@@ -933,6 +933,8 @@ object ServerPacketHandler {
         val identityData = player.getAttachedOrCreate(BbfAttachments.PLAYER_IDENTITY)
         val currentAlignment = identityData.alignment.currentAlignment
         buf.writeString(currentAlignment.translationKey)
+        buf.writeInt(identityData.alignment.lawChaos)
+        buf.writeInt(identityData.alignment.goodEvil)
 
         val ideals = identityData.idealsData.ideals
         buf.writeInt(ideals.size)
