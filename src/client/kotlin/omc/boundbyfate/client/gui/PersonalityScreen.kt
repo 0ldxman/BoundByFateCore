@@ -702,12 +702,6 @@ class PersonalityScreen(private val parent: Screen) :
             alignmentCellScales[i] = lerp(alignmentCellScales.getOrDefault(i, 1f), target, 0.15f)
         }
 
-        // Точка текущего мировоззрения
-        val dotX = diagX + ((lawChaos + 6).toFloat() / 12f * diagSize).toInt()
-        val dotY = diagY + ((6 - goodEvil).toFloat() / 12f * diagSize).toInt()
-        context.fill(dotX - 3, dotY - 3, dotX + 4, dotY + 4, ((iAlpha * 0.5f).toInt() shl 24) or 0xFFD700)
-        context.fill(dotX - 1, dotY - 1, dotX + 2, dotY + 2, (iAlpha shl 24) or 0xFFD700)
-
         // Tooltip ячейки
         alignmentCellTooltip?.let { tooltip ->
             val tooltipStr = tooltip.string
