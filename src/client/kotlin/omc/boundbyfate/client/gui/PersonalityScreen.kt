@@ -457,7 +457,8 @@ class PersonalityScreen(private val parent: Screen) :
 
             val isHovered = line.isFirst && hoveredIdealIdx == line.idealIdx
             val hoverScale = if (line.isFirst) idealHoverScales.getOrDefault(line.idealIdx, 1f) else 1f
-            val textOffset = if (line.isFirst) idealTextOffsets.getOrDefault(line.idealIdx, 0f) else 0f
+            // Применяем textOffset ко всем строкам этого ideal, а не только к первой
+            val textOffset = if (line.idealIdx >= 0) idealTextOffsets.getOrDefault(line.idealIdx, 0f) else 0f
 
             // Текст выезжает слева направо
             val textOffX = ((1f - lp) * -(w + 30)).toInt()
@@ -607,7 +608,8 @@ class PersonalityScreen(private val parent: Screen) :
 
             val isHovered = line.isFirst && hoveredFlawIdx == line.flawIdx
             val hoverScale = if (line.isFirst) flawHoverScales.getOrDefault(line.flawIdx, 1f) else 1f
-            val textOffset = if (line.isFirst) flawTextOffsets.getOrDefault(line.flawIdx, 0f) else 0f
+            // Применяем textOffset ко всем строкам этого flaw, а не только к первой
+            val textOffset = if (line.flawIdx >= 0) flawTextOffsets.getOrDefault(line.flawIdx, 0f) else 0f
 
             // Текст выезжает справа налево
             val textOffX = ((1f - lp) * (W - x + 30)).toInt()

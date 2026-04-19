@@ -675,6 +675,9 @@ object ServerPacketHandler {
                 target.setAttached(BbfAttachments.PLAYER_IDENTITY, updatedIdentity)
                 
                 logger.info("GM ${gmPlayer.name.string} set complete identity data for $targetName: ${newIdeals.size} ideals, ${newFlaws.size} flaws, ${newMotivations.size} motivations, ${newGoals.size} goals")
+                
+                // Sync to target player so they see changes immediately
+                syncPlayerData(target)
                 syncGmData(gmPlayer)
             }
         }
