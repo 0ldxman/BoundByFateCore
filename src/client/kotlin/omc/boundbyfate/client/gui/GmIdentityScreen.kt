@@ -80,6 +80,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
 
     private var statusMsg = ""; private var statusTimer = 0f
     private var scrollAnimTime = 0f  // for marquee text animation
+    private var overlayBtnsStart = 0  // index in btns where overlay buttons start
 
     // ── Button registry ───────────────────────────────────────────────────────
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val action: () -> Unit)
@@ -144,7 +145,10 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         renderGoals(context, mouseX, mouseY, rightX + 3, bodyY + motivBoxH + gap + 3, colW - 6, goalsBoxH - 6)
 
         // Input overlay — rendered last at high Z
-        if (inputMode != InputMode.NONE) renderInputOverlay(context, mouseX, mouseY)
+        if (inputMode != InputMode.NONE) {
+            overlayBtnsStart = btns.size
+            renderInputOverlay(context, mouseX, mouseY)
+        }
 
         // Status
         if (statusTimer > 0f) {
@@ -1178,6 +1182,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val mx = mouseX.toInt(); val my = mouseY.toInt()
         
         // Check if clicking on a task in EDIT_GOAL mode
+        // Only allow when no sub-overlay is active on top
         if (inputMode == InputMode.EDIT_GOAL && button == 0) {
             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
             if (goal != null) {
@@ -1225,21 +1230,26 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
         
-        for (b in btns.reversed()) {
+        // When overlay is active, only process overlay buttons (ignore background screen buttons)
+        val btnsToCheck = if (inputMode != InputMode.NONE) btns.drop(overlayBtnsStart) else btns
+        for (b in btnsToCheck.reversed()) {
             if (mx in b.x..(b.x + b.w) && my in b.y..(b.y + b.h)) { b.action(); return true }
         }
+        // Block clicks through to super when overlay is active
+        if (inputMode != InputMode.NONE) return true
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
     override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, deltaX: Double, deltaY: Double): Boolean {
-        if (draggedTaskIndex != null && !isDragging) {
-            // Start dragging if mouse moved more than 3 pixels
-            val my = mouseY.toInt()
-            if (Math.abs(my - dragStartY) > 3) {
-                isDragging = true
-            }
+        // Only allow drag when EDIT_GOAL is active (no sub-overlay on top)
+        if (inputMode != InputMode.EDIT_GOAL) {
+            isDragging = false; draggedTaskIndex = null
+            return if (inputMode != InputMode.NONE) true else super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)
         }
-        
+        if (draggedTaskIndex != null && !isDragging) {
+            val my = mouseY.toInt()
+            if (Math.abs(my - dragStartY) > 3) isDragging = true
+        }
         if (isDragging && draggedTaskIndex != null) {
             val my = mouseY.toInt()
             draggedTaskY += (my - dragStartY)
@@ -1295,6 +1305,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
             return true
         }
+        // Block scroll through to background when overlay is active
+        if (inputMode != InputMode.NONE) return true
         return super.mouseScrolled(mouseX, mouseY, amount)
     }
 
