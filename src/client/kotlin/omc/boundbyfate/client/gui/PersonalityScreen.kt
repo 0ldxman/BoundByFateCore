@@ -317,14 +317,60 @@ class PersonalityScreen(private val parent: Screen) :
             m.translate(px, py, 200f)  // z=200 гарантирует рендер поверх GUI элементов
             val finalScale = p.scale * hoverScale * pulseScale
             m.scale(finalScale, finalScale, 1f)
-            val tw = textRenderer.getWidth(p.text)
-            context.drawTextWithShadow(textRenderer, p.text, -(tw / 2), 0, color)
+            
+            // При hover показываем полный текст многострочно, иначе сокращённый
+            if (isHovered) {
+                // Разбиваем на строки (макс 20 символов на строку)
+                val lines = wrapMotivationText(p.text, 20)
+                val lineHeight = textRenderer.fontHeight + 1
+                val totalHeight = lines.size * lineHeight
+                val startY = -(totalHeight / 2)
+                
+                lines.forEachIndexed { lineIdx, line ->
+                    val tw = textRenderer.getWidth(line)
+                    val lineY = startY + lineIdx * lineHeight
+                    context.drawTextWithShadow(textRenderer, line, -(tw / 2), lineY, color)
+                }
+            } else {
+                // Сокращённый текст (первые 18 символов + "...")
+                val displayText = if (p.text.length > 18) {
+                    p.text.substring(0, 18) + "..."
+                } else {
+                    p.text
+                }
+                val tw = textRenderer.getWidth(displayText)
+                context.drawTextWithShadow(textRenderer, displayText, -(tw / 2), 0, color)
+            }
+            
             m.pop()
         }
         
         if (forceOnTop) {
             com.mojang.blaze3d.systems.RenderSystem.enableDepthTest()
         }
+    }
+    
+    /**
+     * Разбивает текст мотивации на строки с учётом максимальной длины.
+     * Старается разбивать по словам.
+     */
+    private fun wrapMotivationText(text: String, maxChars: Int): List<String> {
+        val words = text.split(" ")
+        val lines = mutableListOf<String>()
+        var current = ""
+        
+        for (word in words) {
+            val test = if (current.isEmpty()) word else "$current $word"
+            if (test.length <= maxChars) {
+                current = test
+            } else {
+                if (current.isNotEmpty()) lines.add(current)
+                current = word
+            }
+        }
+        if (current.isNotEmpty()) lines.add(current)
+        
+        return lines.ifEmpty { listOf(text) }
     }
 
     // ── МИРОВОЗЗРЕНИЕ: вылет сверху вниз ─────────────────────────────────────
