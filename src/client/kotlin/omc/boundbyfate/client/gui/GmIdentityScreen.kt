@@ -419,15 +419,30 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderInputOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
         val W = width; val H = height
         val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
+        val isSecondLayer = inputMode == InputMode.ADD_TASK || inputMode == InputMode.EDIT_TASK || inputMode == InputMode.PICK_MOTIVATION
 
-        // For ADD_TASK/EDIT_TASK and PICK_MOTIVATION, render the EDIT_GOAL overlay first (background layer)
-        if (inputMode == InputMode.ADD_TASK || inputMode == InputMode.EDIT_TASK || inputMode == InputMode.PICK_MOTIVATION) {
+        context.matrices.push()
+        context.matrices.translate(0f, 0f, 400f)
+
+        if (isSecondLayer) {
+            // Draw the EDIT_GOAL overlay as background (same Z layer, no extra push)
             val savedMode = inputMode
             inputMode = InputMode.EDIT_GOAL
-            renderInputOverlay(context, -9999, -9999)  // render without mouse interaction
+            renderOverlayContent(context, -9999, -9999, W, H, overlayW)
             inputMode = savedMode
+            // Dim between layers
+            context.fill(0, 0, W, H, 0x66000000.toInt())
+        } else {
+            // Full dim for first-level overlays
+            context.fill(0, 0, W, H, 0xAA000000.toInt())
         }
 
+        renderOverlayContent(context, mouseX, mouseY, W, H, overlayW)
+
+        context.matrices.pop()
+    }
+
+    private fun renderOverlayContent(context: DrawContext, mouseX: Int, mouseY: Int, W: Int, H: Int, overlayW: Int) {
         val overlayH = when (inputMode) {
             InputMode.ADD_IDEAL, InputMode.EDIT_IDEAL -> 120
             InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> 100
@@ -439,20 +454,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             else -> 62
         }
         val ox = (W - overlayW) / 2
-        // Offset ADD_TASK/EDIT_TASK and PICK_MOTIVATION so they don't perfectly overlap
         val oy = when (inputMode) {
             InputMode.ADD_TASK, InputMode.EDIT_TASK -> (H - overlayH) / 2 - 20
             InputMode.PICK_MOTIVATION -> (H - overlayH) / 2 + 20
             else -> (H - overlayH) / 2
         }
 
-        context.matrices.push()
-        context.matrices.translate(0f, 0f, 400f)
-
-        // Only dim for top-level overlays
-        if (inputMode != InputMode.ADD_TASK && inputMode != InputMode.EDIT_TASK && inputMode != InputMode.PICK_MOTIVATION) {
-            context.fill(0, 0, W, H, 0xAA000000.toInt())
-        }
         box(context, ox, oy, overlayW, overlayH, 0xFF1a1a1a.toInt(), 0xFF8a6a3a.toInt())
 
         val title = when (inputMode) {
@@ -775,8 +782,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 inputMode = prevInputMode
             }
         }
-
-        context.matrices.pop()
     }
 
     private fun renderField(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, value: String, focused: Boolean, placeholder: String) {
