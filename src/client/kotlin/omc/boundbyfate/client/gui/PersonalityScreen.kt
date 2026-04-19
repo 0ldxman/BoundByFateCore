@@ -322,8 +322,7 @@ class PersonalityScreen(private val parent: Screen) :
         renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad - sideMargin, panelStartY, panelW, H - panelStartY - 20)
 
         // ── BACK BUTTON (верх справа) ────────────────────────────────────────
-        val backText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.button.back")
-        val arrow = "→"
+        val backText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.back.right")
         val bw = 70; val bh = 12
         val bx = W - bw - 8; val by = 8
         val backHov = mouseX in bx..(bx + bw) && mouseY in by..(by + bh)
@@ -334,9 +333,8 @@ class PersonalityScreen(private val parent: Screen) :
         context.fill(bx + bw - 1, by, bx + bw, by + bh, 0xFF8a6a3a.toInt())
         val bm = context.matrices; bm.push()
         bm.translate((bx + bw / 2).toFloat(), (by + 2).toFloat(), 0f); bm.scale(0.75f, 0.75f, 1f)
-        val fullText = "$backText $arrow"
-        val btw = textRenderer.getWidth(fullText)
-        context.drawTextWithShadow(textRenderer, fullText, -(btw / 2), 0, if (backHov) 0xFFD700 else 0xCCCCCC)
+        val btw = textRenderer.getWidth(backText)
+        context.drawTextWithShadow(textRenderer, backText, -(btw / 2), 0, if (backHov) 0xFFD700 else 0xCCCCCC)
         bm.pop()
         
         // ── SUGGEST MOTIVATION BUTTON (низ по центру) ────────────────────────
@@ -1480,13 +1478,16 @@ class PersonalityScreen(private val parent: Screen) :
         }
         
         // Suggest motivation button (низ по центру)
-        val sw = 100; val sh = 12
-        val sx = W / 2 - sw / 2; val sy = H - sh - 6
-        if (mouseX.toInt() in sx..(sx + sw) && mouseY.toInt() in sy..(sy + sh)) {
-            suggestMotivationOverlayOpen = true
-            suggestOverlayAnimTime = 0f
-            suggestMotivationText = ""
-            return true
+        if (button == 0 && !motivationsOverlayOpen && !suggestMotivationOverlayOpen) {
+            val sw = 100; val sh = 12
+            val sx = W / 2 - sw / 2; val sy = H - sh - 6
+            if (mouseX.toInt() in sx..(sx + sw) && mouseY.toInt() in sy..(sy + sh)) {
+                suggestMotivationOverlayOpen = true
+                suggestOverlayAnimTime = 0f
+                suggestMotivationText = ""
+                cursorPosition = 0
+                return true
+            }
         }
         
         return super.mouseClicked(mouseX, mouseY, button)

@@ -195,5 +195,6 @@
   "bbf.personality.motivations.tooltip": "Motivations\n\nInner drives and goals that\nmove the character forward\nin their adventures.",
   "bbf.personality.suggest_motivation": "Suggest Motivation",
   "bbf.personality.motivation_placeholder": "Enter your motivation...",
-  "bbf.personality.submit": "Submit"
+  "bbf.personality.submit": "Submit",
+  "bbf.personality.back.right": "Back →"
 }

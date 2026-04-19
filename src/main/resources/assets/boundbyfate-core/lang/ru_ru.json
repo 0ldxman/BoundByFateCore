@@ -196,5 +196,6 @@
   "bbf.personality.motivations.tooltip": "Мотивации\n\nВнутренние стремления и цели,\nкоторые движут персонажем\nв его приключениях.",
   "bbf.personality.suggest_motivation": "Предложить мотивацию",
   "bbf.personality.motivation_placeholder": "Введите вашу мотивацию...",
-  "bbf.personality.submit": "Отправить"
+  "bbf.personality.submit": "Отправить",
+  "bbf.personality.back.right": "Назад →"
 }
