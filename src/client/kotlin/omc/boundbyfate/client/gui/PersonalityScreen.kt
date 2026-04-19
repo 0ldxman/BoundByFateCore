@@ -547,7 +547,7 @@ class PersonalityScreen(private val parent: Screen) :
         val prog = easeOut(alignmentOverlayAnimTime)
         if (prog < 0.01f) return
 
-        val targetW = 200; val targetH = 180
+        val targetW = 220; val targetH = 230
         val ocx = W / 2; val ocy = H / 2
         val animW = (targetW * prog).toInt(); val animH = (targetH * prog).toInt()
         val x0 = ocx - animW / 2; val y0 = ocy - animH / 2
@@ -585,13 +585,16 @@ class PersonalityScreen(private val parent: Screen) :
         // Описание
         val descText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.desc")
         val descScale = 0.5f
+        val descLines = descText.split("\\n")
         var descY = y + pad + 14
-        val dm = context.matrices; dm.push()
-        dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
-        val dlw = textRenderer.getWidth(descText)
-        context.drawTextWithShadow(textRenderer, descText, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
-        dm.pop()
-        descY += (textRenderer.fontHeight * descScale + 2).toInt()
+        descLines.forEach { line ->
+            val dm = context.matrices; dm.push()
+            dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
+            val dlw = textRenderer.getWidth(line)
+            context.drawTextWithShadow(textRenderer, line, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
+            dm.pop()
+            descY += (textRenderer.fontHeight * descScale + 1).toInt()
+        }
 
         // Диаграмма — фиксированный маленький размер
         val diagPad = 8
@@ -703,9 +706,12 @@ class PersonalityScreen(private val parent: Screen) :
         alignmentCellTooltip?.let { tooltip ->
             val tooltipStr = tooltip.string
             if (tooltipStr.isNotEmpty()) {
-                val ttScale = 0.6f
-                val ttW = (textRenderer.getWidth(tooltipStr) * ttScale + 8).toInt()
-                val ttH = (textRenderer.fontHeight * ttScale + 6).toInt()
+                val ttScale = 0.55f
+                val ttLines = tooltipStr.split("\\n")
+                val ttLineH = (textRenderer.fontHeight * ttScale + 1).toInt()
+                val ttMaxW = ttLines.maxOf { textRenderer.getWidth(it) }
+                val ttW = (ttMaxW * ttScale + 10).toInt()
+                val ttH = ttLines.size * ttLineH + 6
                 val ttX = (mouseX + 6).coerceAtMost(x + w - ttW - 2)
                 val ttY = (mouseY - ttH - 2).coerceAtLeast(y + 2)
                 context.fill(ttX, ttY, ttX + ttW, ttY + ttH, 0xEE1a1a1a.toInt())
@@ -713,10 +719,14 @@ class PersonalityScreen(private val parent: Screen) :
                 context.fill(ttX, ttY + ttH - 1, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
                 context.fill(ttX, ttY, ttX + 1, ttY + ttH, 0xFF8a6a3a.toInt())
                 context.fill(ttX + ttW - 1, ttY, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
-                val ttm = context.matrices; ttm.push()
-                ttm.translate((ttX + 4).toFloat(), (ttY + 3).toFloat(), 0f); ttm.scale(ttScale, ttScale, 1f)
-                context.drawTextWithShadow(textRenderer, tooltipStr, 0, 0, 0xFFFFFFFF.toInt())
-                ttm.pop()
+                ttLines.forEachIndexed { lineIdx, line ->
+                    val lineColor = if (lineIdx == 0) 0xFFD700 else 0xCCCCCC  // первая строка — название золотом
+                    val ttm = context.matrices; ttm.push()
+                    ttm.translate((ttX + 5).toFloat(), (ttY + 3 + lineIdx * ttLineH).toFloat(), 0f)
+                    ttm.scale(ttScale, ttScale, 1f)
+                    context.drawTextWithShadow(textRenderer, line, 0, 0, (iAlpha shl 24) or lineColor)
+                    ttm.pop()
+                }
             }
         }
     }
@@ -1600,7 +1610,7 @@ class PersonalityScreen(private val parent: Screen) :
         if (alignmentOverlayOpen && button == 0) {
             val prog = easeOut(alignmentOverlayAnimTime)
             if (prog > 0.6f) {
-                val targetW = 200; val targetH = 180
+                val targetW = 220; val targetH = 230
                 val ocx = W / 2; val ocy = H / 2
                 val x0 = ocx - (targetW * prog).toInt() / 2
                 val y0 = ocy - (targetH * prog).toInt() / 2
