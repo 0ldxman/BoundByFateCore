@@ -1143,29 +1143,6 @@ class PersonalityScreen(private val parent: Screen) :
         val cancelColor = ((alpha * 255).toInt() shl 24) or (if (cancelHov) 0xFFD700 else 0xCCCCCC)
         context.drawTextWithShadow(textRenderer, cancelText, -(ctw / 2), 0, cancelColor)
         cbm.pop()
-        
-        // Кнопка закрытия (X) в правом верхнем углу
-        val closeSize = 16
-        val closeX = x + w - closeSize - 6
-        val closeY = y + 6
-        val closeHov = mouseX in closeX..(closeX + closeSize) && mouseY in closeY..(closeY + closeSize)
-        
-        // Фон кнопки закрытия
-        context.fill(closeX, closeY, closeX + closeSize, closeY + closeSize, if (closeHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
-        context.fill(closeX, closeY, closeX + closeSize, closeY + 1, borderColor)
-        context.fill(closeX, closeY + closeSize - 1, closeX + closeSize, closeY + closeSize, borderColor)
-        context.fill(closeX, closeY, closeX + 1, closeY + closeSize, borderColor)
-        context.fill(closeX + closeSize - 1, closeY, closeX + closeSize, closeY + closeSize, borderColor)
-        
-        // X символ
-        val xColor = ((alpha * 255).toInt() shl 24) or (if (closeHov) 0xFF5555 else 0xCCCCCC)
-        val xm = context.matrices
-        xm.push()
-        xm.translate((closeX + closeSize / 2).toFloat(), (closeY + closeSize / 2 - 4).toFloat(), 0f)
-        xm.scale(0.8f, 0.8f, 1f)
-        val xw = textRenderer.getWidth("X")
-        context.drawTextWithShadow(textRenderer, "X", -(xw / 2), 0, xColor)
-        xm.pop()
     }
     
     private fun renderMotivationsOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
@@ -1421,18 +1398,40 @@ class PersonalityScreen(private val parent: Screen) :
             val buttonH = 14
             val buttonSpacing = 8
             
-            // Кнопка закрытия (X) в правом верхнем углу
-            val closeSize = 16
-            val closeX = x0 + targetW - closeSize - 6
-            val closeY = y0 + 6
-            if (mouseX.toInt() in closeX..(closeX + closeSize) && mouseY.toInt() in closeY..(closeY + closeSize)) {
+            // Кнопка "Отправить" - проверяем первой
+            val submitX = x0 + targetW / 2 - buttonW - buttonSpacing / 2
+            if (mouseX.toInt() in submitX..(submitX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
+                if (suggestMotivationText.isNotEmpty()) {
+                    // Отправить мотивацию на сервер
+                    val buf = PacketByteBufs.create()
+                    buf.writeString(suggestMotivationText)
+                    ClientPlayNetworking.send(BbfPackets.PLAYER_PROPOSE_MOTIVATION, buf)
+                    
+                    suggestMotivationOverlayOpen = false
+                    suggestMotivationText = ""
+                    cursorPosition = 0
+                }
+                return true
+            }
+            
+            // Кнопка "Отмена" - проверяем второй
+            val cancelX = x0 + targetW / 2 + buttonSpacing / 2
+            if (mouseX.toInt() in cancelX..(cancelX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
                 suggestMotivationOverlayOpen = false
                 suggestMotivationText = ""
                 cursorPosition = 0
                 return true
             }
             
-            // Текстовое поле
+            // Клик вне оверлея закрывает его
+            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+                suggestMotivationOverlayOpen = false
+                suggestMotivationText = ""
+                cursorPosition = 0
+                return true
+            }
+            
+            // Текстовое поле - если клик внутри оверлея но не по кнопкам
             val fieldY = y0 + pad + 20
             val fieldH = 40
             val fieldX = x0 + pad
@@ -1460,40 +1459,8 @@ class PersonalityScreen(private val parent: Screen) :
                 return true
             }
             
-            // Кнопка "Отправить"
-            val submitX = x0 + targetW / 2 - buttonW - buttonSpacing / 2
-            if (mouseX.toInt() in submitX..(submitX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
-                if (suggestMotivationText.isNotEmpty()) {
-                    // Отправить мотивацию на сервер
-                    val buf = PacketByteBufs.create()
-                    buf.writeString(suggestMotivationText)
-                    ClientPlayNetworking.send(BbfPackets.PLAYER_PROPOSE_MOTIVATION, buf)
-                    
-                    suggestMotivationOverlayOpen = false
-                    suggestMotivationText = ""
-                    cursorPosition = 0
-                }
-                return true
-            }
-            
-            // Кнопка "Отмена"
-            val cancelX = x0 + targetW / 2 + buttonSpacing / 2
-            if (mouseX.toInt() in cancelX..(cancelX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
-                suggestMotivationOverlayOpen = false
-                suggestMotivationText = ""
-                cursorPosition = 0
-                return true
-            }
-            
-            // Клик вне оверлея закрывает его
-            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
-                suggestMotivationOverlayOpen = false
-                suggestMotivationText = ""
-                cursorPosition = 0
-                return true
-            }
-            
-            return true  // Поглощаем все клики внутри оверлея
+            // Любой другой клик внутри оверлея - просто поглощаем
+            return true
         }
         
         // Обработка кликов в оверлее мотиваций
