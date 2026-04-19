@@ -219,7 +219,7 @@ class PersonalityScreen(private val parent: Screen) :
         // Модель и мотивации - зона по центру, умеренная ширина
         // Уменьшаем высоту снизу чтобы не перекрывать кнопку "Назад"
         val modelX = cx - 65..cx + 65
-        val modelY = cy - 60..cy + 110
+        val modelY = cy - 60..cy + 100
         modelHovered = mouseX in modelX && mouseY in modelY
         modelAlpha = lerp(modelAlpha, if (modelHovered) 0.20f else 1f, 0.15f)
         motivationsBaseAlpha = lerp(motivationsBaseAlpha, if (modelHovered) 1f else 0.7f, 0.15f)
@@ -1391,6 +1391,34 @@ class PersonalityScreen(private val parent: Screen) :
             val buttonH = 14
             val buttonSpacing = 8
             
+            // Текстовое поле
+            val fieldY = y0 + pad + 20
+            val fieldH = 40
+            val fieldX = x0 + pad
+            val fieldW = targetW - pad * 2
+            
+            // Клик по текстовому полю - устанавливаем курсор
+            if (mouseX.toInt() in fieldX..(fieldX + fieldW) && mouseY.toInt() in fieldY..(fieldY + fieldH)) {
+                // Вычисляем позицию курсора по клику
+                val textScale = 0.7f
+                val relativeX = ((mouseX.toInt() - fieldX - 4) / textScale).toInt()
+                
+                // Находим ближайшую позицию в тексте
+                var bestPos = 0
+                var bestDist = Int.MAX_VALUE
+                for (i in 0..suggestMotivationText.length) {
+                    val substr = suggestMotivationText.substring(0, i)
+                    val w = textRenderer.getWidth(substr)
+                    val dist = kotlin.math.abs(w - relativeX)
+                    if (dist < bestDist) {
+                        bestDist = dist
+                        bestPos = i
+                    }
+                }
+                cursorPosition = bestPos
+                return true
+            }
+            
             // Кнопка "Отправить"
             val submitX = x0 + targetW / 2 - buttonW - buttonSpacing / 2
             if (mouseX.toInt() in submitX..(submitX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
@@ -1459,7 +1487,7 @@ class PersonalityScreen(private val parent: Screen) :
             val cx = W / 2
             val cy = H / 2
             val modelX = cx - 65..cx + 65
-            val modelY = cy - 60..cy + 110  // Уменьшена нижняя граница чтобы не перекрывать кнопку
+            val modelY = cy - 60..cy + 100  // Уменьшена нижняя граница чтобы не перекрывать кнопку
             
             if (mouseX.toInt() in modelX && mouseY.toInt() in modelY) {
                 motivationsOverlayOpen = true
