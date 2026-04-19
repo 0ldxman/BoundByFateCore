@@ -248,10 +248,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val alNameW = (textRenderer.getWidth(alName) * 0.7f).toInt()
         lbl(context, alName, x + w / 2 - alNameW / 2, geY + 12, 0.7f, 0xFFD700)
 
-        // Border warning
-        val (lcBorder, geBorder) = AlignmentCoordinates(alignLawChaos, alignGoodEvil).isOnBorder()
-        if (lcBorder || geBorder) {
-            lbl(context, "§6⚠ ${tr("bbf.gm.identity.wavering")}", x, geY + 24, 0.55f, 0xFFAA00)
+        // Border warning — only if any ideals are actually incompatible with current alignment
+        val hasConflictingIdeals = ideals.any { !it.alignmentAxis.isCompatibleWith(current) }
+        if (hasConflictingIdeals) {
+            val warnText = "§6⚠ ${tr("bbf.gm.identity.wavering")}"
+            val warnW = (textRenderer.getWidth(warnText) * 0.55f).toInt()
+            lbl(context, warnText, x + w / 2 - warnW / 2, geY + 24, 0.55f, 0xFFAA00)
         }
     }
 
