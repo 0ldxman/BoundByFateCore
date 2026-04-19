@@ -511,13 +511,14 @@ class PersonalityScreen(private val parent: Screen) :
         }
 
         // Рендер строк
+        var globalLineIdx = idealScroll  // Глобальный индекс строки для анимации
         lines.drop(idealScroll).take(visibleCount).forEachIndexed { i, line ->
-            if (line.text.isEmpty()) return@forEachIndexed
+            if (line.text.isEmpty()) { globalLineIdx++; return@forEachIndexed }
             val baseY = curY + i * lineH
-            val rowOffset = idealRowOffsets.getOrDefault(i + idealScroll, 0f)
+            val rowOffset = idealRowOffsets.getOrDefault(globalLineIdx, 0f)
             val ly = baseY + rowOffset.toInt()
-            val lp = lineProgress(i)
-            if (lp <= 0f) return@forEachIndexed
+            val lp = lineProgress(globalLineIdx)
+            if (lp <= 0f) { globalLineIdx++; return@forEachIndexed }
 
             val isHovered = line.isFirst && hoveredIdealIdx == line.idealIdx
             val hoverScale = if (line.isFirst) idealHoverScales.getOrDefault(line.idealIdx, 1f) else 1f
@@ -544,7 +545,7 @@ class PersonalityScreen(private val parent: Screen) :
 
             // Иконка появляется fade-in после текста
             if (line.isFirst) {
-                val ip = iconProgress(i)
+                val ip = iconProgress(globalLineIdx)
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
                     val iconScale = idealIconScales.getOrDefault(line.idealIdx, 1f)
@@ -561,6 +562,8 @@ class PersonalityScreen(private val parent: Screen) :
                     im.pop()
                 }
             }
+            
+            globalLineIdx++
         }
 
         if (lines.size > visibleCount && maxScroll > 0) {
@@ -662,13 +665,14 @@ class PersonalityScreen(private val parent: Screen) :
         }
 
         // Рендер строк
+        var globalLineIdx = flawScroll  // Глобальный индекс строки для анимации
         lines.drop(flawScroll).take(visibleCount).forEachIndexed { i, line ->
-            if (line.text.isEmpty()) return@forEachIndexed
+            if (line.text.isEmpty()) { globalLineIdx++; return@forEachIndexed }
             val baseY = curY + i * lineH
-            val rowOffset = flawRowOffsets.getOrDefault(i + flawScroll, 0f)
+            val rowOffset = flawRowOffsets.getOrDefault(globalLineIdx, 0f)
             val ly = baseY + rowOffset.toInt()
-            val lp = lineProgress(i)
-            if (lp <= 0f) return@forEachIndexed
+            val lp = lineProgress(globalLineIdx)
+            if (lp <= 0f) { globalLineIdx++; return@forEachIndexed }
 
             val isHovered = line.isFirst && hoveredFlawIdx == line.flawIdx
             val hoverScale = if (line.isFirst) flawHoverScales.getOrDefault(line.flawIdx, 1f) else 1f
@@ -697,7 +701,7 @@ class PersonalityScreen(private val parent: Screen) :
 
             // Иконка fade-in
             if (line.isFirst) {
-                val ip = iconProgress(i)
+                val ip = iconProgress(globalLineIdx)
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
                     val iconScale = flawIconScales.getOrDefault(line.flawIdx, 1f)
@@ -714,6 +718,8 @@ class PersonalityScreen(private val parent: Screen) :
                     im.pop()
                 }
             }
+            
+            globalLineIdx++
         }
 
         if (lines.size > visibleCount && maxScroll > 0) {
@@ -804,9 +810,9 @@ class PersonalityScreen(private val parent: Screen) :
     
     private fun updateOverlayAnimation() {
         if (motivationsOverlayOpen) {
-            overlayAnimTime = (overlayAnimTime + 0.025f).coerceAtMost(1f)
+            overlayAnimTime = (overlayAnimTime + 0.015f).coerceAtMost(1f)  // Медленнее: было 0.025
         } else {
-            overlayAnimTime = (overlayAnimTime - 0.04f).coerceAtLeast(0f)
+            overlayAnimTime = (overlayAnimTime - 0.035f).coerceAtLeast(0f)  // Быстрее закрытие: было 0.04
         }
     }
     
@@ -842,6 +848,11 @@ class PersonalityScreen(private val parent: Screen) :
         val x1 = x0 + animW
         val y1 = y0 + animH
         
+        // Рендер с высоким Z чтобы быть поверх всего
+        val m = context.matrices
+        m.push()
+        m.translate(0f, 0f, 500f)  // Высокий Z для рендера поверх всех элементов
+        
         // Фон оверлея
         context.fill(x0, y0, x1, y1, 0xDD1a1a1a.toInt())
         // Рамка
@@ -853,11 +864,13 @@ class PersonalityScreen(private val parent: Screen) :
         // Контент появляется только когда высота раскрылась
         if (heightProg > 0.3f) {
             val contentAlpha = ((heightProg - 0.3f) / 0.7f).coerceIn(0f, 1f)
-            renderOverlayContent(context, x0, y0, animW, animH, contentAlpha)
+            renderOverlayContent(context, x0, y0, animW, animH, contentAlpha, mouseX, mouseY)
         }
+        
+        m.pop()
     }
     
-    private fun renderOverlayContent(context: DrawContext, x: Int, y: Int, w: Int, h: Int, alpha: Float) {
+    private fun renderOverlayContent(context: DrawContext, x: Int, y: Int, w: Int, h: Int, alpha: Float, mouseX: Int, mouseY: Int) {
         val motivations = ClientPlayerData.motivations
         val pad = 12
         val contentX = x + pad
@@ -936,6 +949,31 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
         
+        // Кнопка закрытия (X) в правом верхнем углу
+        val closeSize = 16
+        val closeX = x + w - closeSize - 6
+        val closeY = y + 6
+        val closeHovered = mouseX in closeX..(closeX + closeSize) && mouseY in closeY..(closeY + closeSize)
+        
+        val closeBg = if (closeHovered) 0xCC8a3a3a.toInt() else 0xCC3a1a1a.toInt()
+        val closeFg = if (closeHovered) 0xFFFFFFFF.toInt() else 0xFFCCCCCC.toInt()
+        
+        context.fill(closeX, closeY, closeX + closeSize, closeY + closeSize, closeBg)
+        context.fill(closeX, closeY, closeX + closeSize, closeY + 1, 0xFF8a6a3a.toInt())
+        context.fill(closeX, closeY + closeSize - 1, closeX + closeSize, closeY + closeSize, 0xFF8a6a3a.toInt())
+        context.fill(closeX, closeY, closeX + 1, closeY + closeSize, 0xFF8a6a3a.toInt())
+        context.fill(closeX + closeSize - 1, closeY, closeX + closeSize, closeY + closeSize, 0xFF8a6a3a.toInt())
+        
+        // Рисуем X
+        val xm = context.matrices
+        xm.push()
+        xm.translate((closeX + closeSize / 2).toFloat(), (closeY + closeSize / 2 - 1).toFloat(), 0f)
+        xm.scale(0.8f, 0.8f, 1f)
+        val xText = "✕"
+        val xtw = textRenderer.getWidth(xText)
+        context.drawTextWithShadow(textRenderer, xText, -(xtw / 2), 0, closeFg)
+        xm.pop()
+        
         // Scrollbar если нужен
         if (motivations.size > visibleCount) {
             val sbX = x + w - 6
@@ -972,7 +1010,7 @@ class PersonalityScreen(private val parent: Screen) :
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val W = width; val H = height
         
-        // Закрытие оверлея при клике вне его
+        // Обработка кликов в оверлее мотиваций
         if (motivationsOverlayOpen && button == 0) {
             val targetW = (W * 0.5f).toInt().coerceAtMost(400)
             val targetH = (H * 0.7f).toInt().coerceAtMost(500)
@@ -983,12 +1021,22 @@ class PersonalityScreen(private val parent: Screen) :
             val x1 = x0 + targetW
             val y1 = y0 + targetH
             
-            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+            // Кнопка закрытия
+            val closeSize = 16
+            val closeX = x0 + targetW - closeSize - 6
+            val closeY = y0 + 6
+            if (mouseX.toInt() in closeX..(closeX + closeSize) && mouseY.toInt() in closeY..(closeY + closeSize)) {
                 motivationsOverlayOpen = false
-                motivationTypewriterProgress.clear()
-                motivationDividerProgress.clear()
                 return true
             }
+            
+            // Клик вне оверлея закрывает его
+            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+                motivationsOverlayOpen = false
+                return true
+            }
+            
+            return true  // Поглощаем все клики внутри оверлея
         }
         
         // Открытие оверлея при клике по модели или мотивации
