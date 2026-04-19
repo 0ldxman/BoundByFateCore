@@ -29,6 +29,13 @@ class PersonalityScreen(private val parent: Screen) :
     private var flawScroll = 0
     private var time = 0f
     private var openTime = 0f   // 0→1 за ~1.8 сек (delta * 0.018)
+    
+    // ── Оверлей мотиваций ─────────────────────────────────────────────────────
+    private var motivationsOverlayOpen = false
+    private var overlayAnimTime = 0f  // 0→1 анимация открытия
+    private var overlayScroll = 0
+    private val motivationTypewriterProgress = mutableMapOf<Int, Float>()  // прогресс печати для каждой мотивации
+    private val motivationDividerProgress = mutableMapOf<Int, Float>()     // прогресс divider для каждой мотивации
 
     // ── Hover состояния ───────────────────────────────────────────────────────
     private var hoveredIdealIdx: Int? = null
@@ -94,6 +101,11 @@ class PersonalityScreen(private val parent: Screen) :
         motivationsBaseAlpha = 1f
         idealIconRotations.clear()
         flawIconRotations.clear()
+        motivationsOverlayOpen = false
+        overlayAnimTime = 0f
+        overlayScroll = 0
+        motivationTypewriterProgress.clear()
+        motivationDividerProgress.clear()
         buildParticles()
     }
 
@@ -272,6 +284,12 @@ class PersonalityScreen(private val parent: Screen) :
         val btw = textRenderer.getWidth(backText)
         context.drawTextWithShadow(textRenderer, backText, -(btw / 2), 0, if (backHov) 0xFFD700 else 0xCCCCCC)
         bm.pop()
+
+        // ── MOTIVATIONS OVERLAY ───────────────────────────────────────────────
+        if (motivationsOverlayOpen) {
+            renderMotivationsOverlay(context, mouseX, mouseY)
+        }
+        updateOverlayAnimation()
 
         super.render(context, mouseX, mouseY, delta)
     }
@@ -781,8 +799,168 @@ class PersonalityScreen(private val parent: Screen) :
         if (current.isNotEmpty()) lines.add(current)
         return lines.ifEmpty { listOf(text) }
     }
+    
+    // ── MOTIVATIONS OVERLAY ───────────────────────────────────────────────────
+    
+    private fun updateOverlayAnimation() {
+        if (motivationsOverlayOpen) {
+            overlayAnimTime = (overlayAnimTime + 0.025f).coerceAtMost(1f)
+        } else {
+            overlayAnimTime = (overlayAnimTime - 0.04f).coerceAtLeast(0f)
+        }
+    }
+    
+    private fun renderMotivationsOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
+        if (overlayAnimTime < 0.01f) return
+        
+        val W = width
+        val H = height
+        val motivations = ClientPlayerData.motivations
+        if (motivations.isEmpty()) return
+        
+        // Размеры оверлея
+        val targetW = (W * 0.5f).toInt().coerceAtMost(400)
+        val targetH = (H * 0.7f).toInt().coerceAtMost(500)
+        val cx = W / 2
+        val cy = H / 2
+        
+        // Анимация: сначала ширина (0→0.4), затем подъём вверх (0.4→0.6), затем высота (0.6→1.0)
+        val widthProg = ((overlayAnimTime - 0.0f) / 0.4f).coerceIn(0f, 1f)
+        val riseProg = ((overlayAnimTime - 0.4f) / 0.2f).coerceIn(0f, 1f)
+        val heightProg = ((overlayAnimTime - 0.6f) / 0.4f).coerceIn(0f, 1f)
+        
+        val animW = (targetW * easeOut(widthProg)).toInt()
+        val animH = (targetH * easeOut(heightProg)).toInt()
+        
+        // Позиция: начинаем в центре, поднимаемся вверх
+        val startY = cy
+        val endY = cy - targetH / 2
+        val currentY = (startY + (endY - startY) * easeOut(riseProg)).toInt()
+        
+        val x0 = cx - animW / 2
+        val y0 = currentY
+        val x1 = x0 + animW
+        val y1 = y0 + animH
+        
+        // Фон оверлея
+        context.fill(x0, y0, x1, y1, 0xDD1a1a1a.toInt())
+        // Рамка
+        context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y0, x0 + 1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x1 - 1, y0, x1, y1, 0xFF8a6a3a.toInt())
+        
+        // Контент появляется только когда высота раскрылась
+        if (heightProg > 0.3f) {
+            val contentAlpha = ((heightProg - 0.3f) / 0.7f).coerceIn(0f, 1f)
+            renderOverlayContent(context, x0, y0, animW, animH, contentAlpha)
+        }
+    }
+    
+    private fun renderOverlayContent(context: DrawContext, x: Int, y: Int, w: Int, h: Int, alpha: Float) {
+        val motivations = ClientPlayerData.motivations
+        val pad = 12
+        val contentX = x + pad
+        val contentY = y + pad
+        val contentW = w - pad * 2
+        val contentH = h - pad * 2
+        
+        val textScale = 0.7f
+        val lineH = (textRenderer.fontHeight * textScale + 4).toInt()
+        val dividerH = 8
+        
+        val visibleCount = motivations.size.coerceAtMost(10)
+        val maxScroll = (motivations.size - visibleCount).coerceAtLeast(0)
+        overlayScroll = overlayScroll.coerceIn(0, maxScroll)
+        
+        // Рендер мотиваций с typewriter эффектом
+        var curY = contentY
+        motivations.drop(overlayScroll).take(visibleCount).forEachIndexed { idx, mot ->
+            val globalIdx = idx + overlayScroll
+            
+            // Typewriter прогресс для этой мотивации
+            val typewriterProg = motivationTypewriterProgress.getOrDefault(globalIdx, 0f)
+            val dividerProg = motivationDividerProgress.getOrDefault(globalIdx, 0f)
+            
+            // Обновляем прогресс: каждая мотивация начинает печататься после предыдущей
+            val prevDividerDone = if (globalIdx == 0) 1f else motivationDividerProgress.getOrDefault(globalIdx - 1, 0f)
+            if (prevDividerDone >= 0.99f) {
+                motivationTypewriterProgress[globalIdx] = (typewriterProg + 0.03f).coerceAtMost(1f)
+                
+                // Divider появляется после завершения печати
+                if (typewriterProg >= 0.99f) {
+                    motivationDividerProgress[globalIdx] = (dividerProg + 0.05f).coerceAtMost(1f)
+                }
+            }
+            
+            // Рендер текста с typewriter эффектом
+            val lines = wrapMotivationText(mot.text, 35)
+            
+            // Вычисляем общее количество символов во всех строках
+            val totalChars = lines.sumOf { it.length }
+            val visibleChars = (totalChars * typewriterProg).toInt()
+            
+            // Отслеживаем сколько символов уже отрисовано
+            var charsRendered = 0
+            
+            lines.forEach { line ->
+                val lineStartChar = charsRendered
+                val lineEndChar = charsRendered + line.length
+                
+                if (visibleChars > lineStartChar) {
+                    // Сколько символов этой строки нужно показать
+                    val visibleInLine = (visibleChars - lineStartChar).coerceAtMost(line.length)
+                    val displayText = line.substring(0, visibleInLine)
+                    
+                    val m = context.matrices
+                    m.push()
+                    m.translate(contentX.toFloat() + contentW / 2f, curY.toFloat(), 0f)
+                    m.scale(textScale, textScale, 1f)
+                    val tw = textRenderer.getWidth(displayText)
+                    val color = ((alpha * 255).toInt() shl 24) or 0xD4AF37
+                    context.drawTextWithShadow(textRenderer, displayText, -(tw / 2), 0, color)
+                    m.pop()
+                    
+                    curY += lineH
+                }
+                
+                charsRendered += line.length
+            }
+            
+            // Divider после текста (только если текст полностью напечатан)
+            if (typewriterProg >= 0.99f && dividerProg > 0.01f) {
+                curY += 2
+                val dividerAlpha = (alpha * dividerProg * 0.8f * 255).toInt()
+                drawFadeDividerAnimated(context, x + w / 2, curY, (contentW * 0.8f).toInt(), dividerProg, dividerAlpha)
+                curY += dividerH
+            }
+        }
+        
+        // Scrollbar если нужен
+        if (motivations.size > visibleCount) {
+            val sbX = x + w - 6
+            val sbH = contentH
+            val thumbH = ((visibleCount.toFloat() / motivations.size) * sbH).toInt().coerceAtLeast(10)
+            val thumbY = contentY + ((overlayScroll.toFloat() / maxScroll) * (sbH - thumbH)).toInt()
+            context.fill(sbX, contentY, sbX + 2, contentY + sbH, ((alpha * 0.3f * 255).toInt() shl 24) or 0xFFFFFF)
+            context.fill(sbX, thumbY, sbX + 2, thumbY + thumbH, ((alpha * 255).toInt() shl 24) or 0x8a6a3a)
+        }
+    }
+    
+    private fun drawFadeDividerAnimated(context: DrawContext, cx: Int, y: Int, totalW: Int, progress: Float, maxAlpha: Int = 0xAA) {
+        val halfW = (totalW / 2 * progress).toInt()
+        if (halfW <= 0) return
+        drawFadeDividerAlpha(context, cx, y, halfW * 2, maxAlpha)
+    }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
+        // Scroll в оверлее мотиваций
+        if (motivationsOverlayOpen) {
+            val delta = if (amount > 0) -1 else 1
+            overlayScroll = (overlayScroll + delta).coerceAtLeast(0)
+            return true
+        }
+        
         val W = width; val panelW = (W * 0.27f).toInt(); val pad = 8; val sideMargin = 18
         val mx = mouseX.toInt()
         val delta = if (amount > 0) -1 else 1
@@ -793,6 +971,43 @@ class PersonalityScreen(private val parent: Screen) :
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val W = width; val H = height
+        
+        // Закрытие оверлея при клике вне его
+        if (motivationsOverlayOpen && button == 0) {
+            val targetW = (W * 0.5f).toInt().coerceAtMost(400)
+            val targetH = (H * 0.7f).toInt().coerceAtMost(500)
+            val cx = W / 2
+            val cy = H / 2
+            val x0 = cx - targetW / 2
+            val y0 = cy - targetH / 2
+            val x1 = x0 + targetW
+            val y1 = y0 + targetH
+            
+            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+                motivationsOverlayOpen = false
+                motivationTypewriterProgress.clear()
+                motivationDividerProgress.clear()
+                return true
+            }
+        }
+        
+        // Открытие оверлея при клике по модели или мотивации
+        if (button == 0 && !motivationsOverlayOpen) {
+            val cx = W / 2
+            val cy = H / 2
+            val modelX = cx - 65..cx + 65
+            val modelY = cy - 60..cy + 160
+            
+            if (mouseX.toInt() in modelX && mouseY.toInt() in modelY) {
+                motivationsOverlayOpen = true
+                overlayAnimTime = 0f
+                motivationTypewriterProgress.clear()
+                motivationDividerProgress.clear()
+                return true
+            }
+        }
+        
+        // Back button
         val bw = 60; val bh = 12
         val bx = W / 2 - bw / 2; val by = H - bh - 6
         if (mouseX.toInt() in bx..(bx + bw) && mouseY.toInt() in by..(by + bh)) {
