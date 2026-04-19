@@ -792,16 +792,13 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             lbl(context, "§7${taskIndex + 1}.", rx + 6, ty + 2, 0.55f, 0x888888)
             lbl(context, statusIcon, rx + 16, ty + 2, 0.55f, 0xFFFFFF)
             lbl(context, truncate(task.description, panelW - 48, 0.55f), rx + 24, ty + 2, 0.55f, 0xCCCCCC)
-            // Edit button
-            btn(context, mouseX, mouseY, rx + panelW - 14, ty, 10, taskRowH - 2, "§7✎") {
-                resetDragState()
-                editingTaskId = task.id
-                inputBuffer = task.description
-                inputBuffer2 = task.goalDescriptionOverride
-                pendingGoalStatus = task.status
-                inputFocusField = 0
-                inputMode = InputMode.EDIT_TASK
-            }
+            // Edit button — drawn manually, handled in mouseClicked
+            val editHov = mouseX in (rx + panelW - 14)..(rx + panelW - 4) && mouseY in ty..(ty + taskRowH - 2)
+            box(context, rx + panelW - 14, ty, 10, taskRowH - 2, if (editHov) 0xCC4a3a2a.toInt() else 0xCC2b2321.toInt(), if (editHov) 0xFFd4a96a.toInt() else 0xFF6b5a3e.toInt())
+            val m2 = context.matrices; m2.push()
+            m2.translate((rx + panelW - 9).toFloat(), (ty + 2).toFloat(), 0f); m2.scale(0.55f, 0.55f, 1f)
+            context.drawTextWithShadow(textRenderer, "§7✎", -(textRenderer.getWidth("§7✎") / 2), 0, 0xFFFFFF)
+            m2.pop()
         }
 
         // Drop indicator at end of list
@@ -1221,7 +1218,21 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 visibleTasks.forEachIndexed { i, task ->
                     val taskIndex = sortedTasks.indexOf(task)
                     val ty = taskAreaY + i * taskRowH
-                    val hitbox = (mx in rx..(rx + panelW - 4) && my in ty..(ty + taskRowH - 2))
+                    val editBtnX = rx + panelW - 14
+
+                    // Edit button click — handled before drag hitbox
+                    if (mx in editBtnX..(editBtnX + 10) && my in ty..(ty + taskRowH - 2)) {
+                        resetDragState()
+                        editingTaskId = task.id
+                        inputBuffer = task.description
+                        inputBuffer2 = task.goalDescriptionOverride
+                        pendingGoalStatus = task.status
+                        inputFocusField = 0
+                        inputMode = InputMode.EDIT_TASK
+                        return true
+                    }
+
+                    val hitbox = (mx in rx..(editBtnX - 1) && my in ty..(ty + taskRowH - 2))
 
                     if (hitbox) {
                         // Single click — prepare for drag only (edit via button)
