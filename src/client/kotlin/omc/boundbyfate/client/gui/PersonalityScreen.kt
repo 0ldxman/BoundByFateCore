@@ -185,6 +185,9 @@ class PersonalityScreen(private val parent: Screen) :
             motivationAlphas[idx] = lerp(motivationAlphas.getOrDefault(idx, 1f), alphaTarget, 0.12f)
         }
 
+        // Убеждения и слабости hover (будет обновлено в renderIdealsPanel/renderFlawsPanel)
+        // Здесь только обновляем lerp-анимации на основе текущего hoveredIdealIdx/hoveredFlawIdx
+
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
