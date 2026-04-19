@@ -1459,7 +1459,7 @@ class PersonalityScreen(private val parent: Screen) :
             val cx = W / 2
             val cy = H / 2
             val modelX = cx - 65..cx + 65
-            val modelY = cy - 60..cy + 160
+            val modelY = cy - 60..cy + 110  // Уменьшена нижняя граница чтобы не перекрывать кнопку
             
             if (mouseX.toInt() in modelX && mouseY.toInt() in modelY) {
                 motivationsOverlayOpen = true
