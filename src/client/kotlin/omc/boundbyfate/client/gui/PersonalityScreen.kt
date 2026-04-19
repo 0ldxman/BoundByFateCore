@@ -48,11 +48,13 @@ class PersonalityScreen(private val parent: Screen) :
     private val idealIconScales = mutableMapOf<Int, Float>()       // иконка scale
     private val idealTextOffsets = mutableMapOf<Int, Float>()      // смещение текста
     private val idealRowOffsets = mutableMapOf<Int, Float>()       // смещение строки вниз
+    private val idealExpandProgress = mutableMapOf<Int, Float>()   // прогресс раскрытия текста (0→1)
     
     private val flawHoverScales = mutableMapOf<Int, Float>()
     private val flawIconScales = mutableMapOf<Int, Float>()
     private val flawTextOffsets = mutableMapOf<Int, Float>()
     private val flawRowOffsets = mutableMapOf<Int, Float>()
+    private val flawExpandProgress = mutableMapOf<Int, Float>()    // прогресс раскрытия текста (0→1)
     
     private val motivationScales = mutableMapOf<Int, Float>()
     private val motivationAlphas = mutableMapOf<Int, Float>()
@@ -286,7 +288,7 @@ class PersonalityScreen(private val parent: Screen) :
         bm.pop()
 
         // ── MOTIVATIONS OVERLAY ───────────────────────────────────────────────
-        if (motivationsOverlayOpen) {
+        if (motivationsOverlayOpen || overlayAnimTime > 0.01f) {
             renderMotivationsOverlay(context, mouseX, mouseY)
         }
         updateOverlayAnimation()
@@ -473,6 +475,7 @@ class PersonalityScreen(private val parent: Screen) :
             idealHoverScales[idx] = lerp(idealHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.1f else 1f, 0.15f)
             idealIconScales[idx] = lerp(idealIconScales.getOrDefault(idx, 1f), if (isHovered) 1.2f else 1f, 0.12f)
             idealTextOffsets[idx] = lerp(idealTextOffsets.getOrDefault(idx, 0f), if (isHovered) 12f else 0f, 0.15f)
+            idealExpandProgress[idx] = lerp(idealExpandProgress.getOrDefault(idx, 0f), if (isHovered) 1f else 0f, 0.18f)  // Анимация раскрытия
             // Ротация: при hover крутится медленно, при уходе нормализуем и плавно возвращаем к 0
             val currentRot = idealIconRotations.getOrDefault(idx, 0f)
             if (isHovered) {
@@ -484,17 +487,18 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
 
-        // Рассчитываем смещения для раздвигания при hover
+        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации)
         val idealOffsets = mutableMapOf<Int, Float>()
         var accumulatedOffset = 0f
         ideals.forEachIndexed { idx, ideal ->
             idealOffsets[idx] = accumulatedOffset
             
-            // Если наведён — добавляем пространство для многострочного текста
-            if (hoveredIdealIdx == idx) {
+            // Добавляем пространство пропорционально прогрессу раскрытия
+            val expandProg = idealExpandProgress.getOrDefault(idx, 0f)
+            if (expandProg > 0.01f) {
                 val lines = wrapText(ideal.text, maxChars)
                 val extraLines = (lines.size - 1).coerceAtLeast(0)
-                accumulatedOffset += extraLines * lineH
+                accumulatedOffset += extraLines * lineH * expandProg  // Плавное раздвигание
             }
         }
 
@@ -521,22 +525,40 @@ class PersonalityScreen(private val parent: Screen) :
             val m = context.matrices; m.push()
             m.translate(textOffX.toFloat(), 0f, 0f)
             
-            // Рендер текста: обрезанный или полный в зависимости от hover
-            if (isHovered) {
-                // Полный текст многострочно
-                val lines = wrapText(ideal.text, maxChars)
-                lines.forEachIndexed { lineIdx, lineText ->
-                    val lineY = ly + lineIdx * lineH
+            // Рендер текста: анимированное раскрытие
+            val expandProg = idealExpandProgress.getOrDefault(idx, 0f)
+            val lines = wrapText(ideal.text, maxChars)
+            
+            if (expandProg > 0.01f && lines.size > 1) {
+                // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
+                val firstLine = if (ideal.text.length > maxChars) {
+                    ideal.text.substring(0, maxChars) + "..."
+                } else {
+                    ideal.text
+                }
+                
+                // Первая строка (обрезанная)
+                val tm1 = context.matrices; tm1.push()
+                tm1.translate(textX.toFloat(), ly.toFloat(), 0f)
+                val finalScale = textScale * hoverScale
+                tm1.scale(finalScale, finalScale, 1f)
+                val tc1 = (textAlpha shl 24) or (color and 0xFFFFFF)
+                context.drawTextWithShadow(textRenderer, firstLine, 0, 0, tc1)
+                tm1.pop()
+                
+                // Дополнительные строки с fade-in
+                lines.drop(1).forEachIndexed { lineIdx, lineText ->
+                    val lineY = ly + (lineIdx + 1) * lineH
+                    val lineAlpha = (expandProg * textAlpha).toInt()
                     val tm = context.matrices; tm.push()
                     tm.translate(textX.toFloat(), lineY.toFloat(), 0f)
-                    val finalScale = textScale * hoverScale
                     tm.scale(finalScale, finalScale, 1f)
-                    val tc = (textAlpha shl 24) or (color and 0xFFFFFF)
+                    val tc = (lineAlpha shl 24) or (color and 0xFFFFFF)
                     context.drawTextWithShadow(textRenderer, lineText, 0, 0, tc)
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (первые maxChars символов + "...")
+                // Обрезанный текст (без раскрытия)
                 val displayText = if (ideal.text.length > maxChars) {
                     ideal.text.substring(0, maxChars) + "..."
                 } else {
@@ -626,6 +648,7 @@ class PersonalityScreen(private val parent: Screen) :
             flawHoverScales[idx] = lerp(flawHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.1f else 1f, 0.15f)
             flawIconScales[idx] = lerp(flawIconScales.getOrDefault(idx, 1f), if (isHovered) 1.2f else 1f, 0.12f)
             flawTextOffsets[idx] = lerp(flawTextOffsets.getOrDefault(idx, 0f), if (isHovered) -12f else 0f, 0.15f)
+            flawExpandProgress[idx] = lerp(flawExpandProgress.getOrDefault(idx, 0f), if (isHovered) 1f else 0f, 0.18f)  // Анимация раскрытия
             // Ротация: при hover крутится медленно, при уходе нормализуем и плавно возвращаем к 0
             val currentRot = flawIconRotations.getOrDefault(idx, 0f)
             if (isHovered) {
@@ -637,17 +660,18 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
 
-        // Рассчитываем смещения для раздвигания при hover
+        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации)
         val flawOffsets = mutableMapOf<Int, Float>()
         var accumulatedOffset = 0f
         flaws.forEachIndexed { idx, flaw ->
             flawOffsets[idx] = accumulatedOffset
             
-            // Если наведён — добавляем пространство для многострочного текста
-            if (hoveredFlawIdx == idx) {
+            // Добавляем пространство пропорционально прогрессу раскрытия
+            val expandProg = flawExpandProgress.getOrDefault(idx, 0f)
+            if (expandProg > 0.01f) {
                 val lines = wrapText(flaw.text, maxChars)
                 val extraLines = (lines.size - 1).coerceAtLeast(0)
-                accumulatedOffset += extraLines * lineH
+                accumulatedOffset += extraLines * lineH * expandProg  // Плавное раздвигание
             }
         }
 
@@ -674,23 +698,42 @@ class PersonalityScreen(private val parent: Screen) :
             val m = context.matrices; m.push()
             m.translate(textOffX.toFloat(), 0f, 0f)
             
-            // Рендер текста: обрезанный или полный в зависимости от hover
-            if (isHovered) {
-                // Полный текст многострочно
-                val lines = wrapText(flaw.text, maxChars)
-                lines.forEachIndexed { lineIdx, lineText ->
-                    val lineY = ly + lineIdx * lineH
+            // Рендер текста: анимированное раскрытие
+            val expandProg = flawExpandProgress.getOrDefault(idx, 0f)
+            val lines = wrapText(flaw.text, maxChars)
+            
+            if (expandProg > 0.01f && lines.size > 1) {
+                // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
+                val firstLine = if (flaw.text.length > maxChars) {
+                    flaw.text.substring(0, maxChars) + "..."
+                } else {
+                    flaw.text
+                }
+                
+                // Первая строка (обрезанная)
+                val tm1 = context.matrices; tm1.push()
+                tm1.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
+                val finalScale = textScale * hoverScale
+                tm1.scale(finalScale, finalScale, 1f)
+                val tw1 = textRenderer.getWidth(firstLine)
+                val tc1 = (textAlpha shl 24) or 0xCCCCCC
+                context.drawTextWithShadow(textRenderer, firstLine, -tw1, 0, tc1)
+                tm1.pop()
+                
+                // Дополнительные строки с fade-in
+                lines.drop(1).forEachIndexed { lineIdx, lineText ->
+                    val lineY = ly + (lineIdx + 1) * lineH
+                    val lineAlpha = (expandProg * textAlpha).toInt()
                     val tm = context.matrices; tm.push()
                     tm.translate(textRightEdge.toFloat(), lineY.toFloat(), 0f)
-                    val finalScale = textScale * hoverScale
                     tm.scale(finalScale, finalScale, 1f)
                     val tw = textRenderer.getWidth(lineText)
-                    val tc = (textAlpha shl 24) or 0xCCCCCC
+                    val tc = (lineAlpha shl 24) or 0xCCCCCC
                     context.drawTextWithShadow(textRenderer, lineText, -tw, 0, tc)
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (первые maxChars символов + "...")
+                // Обрезанный текст (без раскрытия)
                 val displayText = if (flaw.text.length > maxChars) {
                     flaw.text.substring(0, maxChars) + "..."
                 } else {
@@ -819,6 +862,10 @@ class PersonalityScreen(private val parent: Screen) :
         val H = height
         val motivations = ClientPlayerData.motivations
         if (motivations.isEmpty()) return
+        
+        // Затемнение фона (fade-in/out вместе с оверлеем)
+        val dimAlpha = (overlayAnimTime * 0xAA).toInt()
+        context.fill(0, 0, W, H, (dimAlpha shl 24) or 0x000000)
         
         // Размеры оверлея
         val targetW = (W * 0.5f).toInt().coerceAtMost(400)
