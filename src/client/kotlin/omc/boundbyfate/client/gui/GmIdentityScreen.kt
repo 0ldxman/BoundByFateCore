@@ -967,9 +967,9 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 if (text.isEmpty()) { inputMode = InputMode.EDIT_GOAL; inputBuffer2Scroll = 0; return }
                 sendAddTask(goalId, text, inputBuffer2.trim())
-                // Return to edit goal mode
                 inputMode = InputMode.EDIT_GOAL
                 inputBuffer2Scroll = 0
+                resetDragState()
                 val goal = goals.find { it.id == goalId }
                 if (goal != null) {
                     inputBuffer = goal.title
@@ -985,9 +985,9 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 if (text.isNotEmpty()) {
                     sendEditTask(goalId, taskId, text, inputBuffer2.trim(), pendingGoalStatus)
                 }
-                // Return to edit goal mode
                 inputMode = InputMode.EDIT_GOAL
                 inputBuffer2Scroll = 0
+                resetDragState()
                 val goal = goals.find { it.id == goalId }
                 if (goal != null) {
                     inputBuffer = goal.title
@@ -1162,8 +1162,15 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             goals[goalIndex] = goal.copy(tasks = reorderedTasks)
         }
     }
-    private fun sendReorderTask(goalId: String, taskId: String, newOrder: Int) {
-        val goalIndex = goals.indexOfFirst { it.id == goalId }
+    private fun resetDragState() {
+        isDragging = false
+        draggedTaskIndex = null
+        draggedTaskY = 0
+        dragStartY = 0
+        lastClickedTaskIndex = null
+    }
+
+    private fun sendReorderTask(goalId: String, taskId: String, newOrder: Int) {        val goalIndex = goals.indexOfFirst { it.id == goalId }
         if (goalIndex >= 0) {
             val goal = goals[goalIndex]
             val task = goal.tasks.find { it.id == taskId } ?: return
@@ -1209,6 +1216,11 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     if (hitbox) {
                         val currentTime = System.currentTimeMillis()
                         if (lastClickedTaskIndex == taskIndex && (currentTime - lastClickTime) < 300) {
+                            // Double click — open edit, clear drag state
+                            draggedTaskIndex = null
+                            draggedTaskY = 0
+                            dragStartY = 0
+                            isDragging = false
                             editingTaskId = task.id
                             inputBuffer = task.description
                             inputBuffer2 = task.goalDescriptionOverride
@@ -1218,11 +1230,13 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             lastClickedTaskIndex = null
                             lastClickTime = 0
                         } else {
+                            // Single click — prepare for potential drag only
                             lastClickedTaskIndex = taskIndex
                             lastClickTime = currentTime
                             draggedTaskIndex = taskIndex
                             draggedTaskY = ty
                             dragStartY = my
+                            isDragging = false  // reset, drag starts only on mouseDragged
                         }
                         return true
                     }
@@ -1266,7 +1280,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
                 
-                // Use taskListStartY saved during render — no need to recalculate
                 val relativeY = draggedTaskY - taskListStartY
                 val newOrder = (relativeY / taskRowH).coerceIn(0, sortedTasks.size - 1)
                 
@@ -1286,11 +1299,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 }
             }
             
-            isDragging = false
-            draggedTaskIndex = null
-            draggedTaskY = 0
-            dragStartY = 0
+            resetDragState()
             return true
+        }
+        // Always clear drag state on mouse release, even without actual drag
+        if (draggedTaskIndex != null) {
+            resetDragState()
         }
         return super.mouseReleased(mouseX, mouseY, button)
     }
@@ -1317,11 +1331,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     when (inputMode) {
                         InputMode.ADD_TASK, InputMode.EDIT_TASK -> {
                             inputMode = InputMode.EDIT_GOAL
+                            resetDragState()
                             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
                             if (goal != null) { inputBuffer = goal.title; inputBuffer2 = goal.description; pendingGoalStatus = goal.status; pendingMotivationId = goal.motivationId }
                         }
                         InputMode.PICK_MOTIVATION -> inputMode = prevInputMode
-                        else -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = "" }
+                        else -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; resetDragState() }
                     }
                     inputFocusField = 0; inputBuffer2Scroll = 0; return true
                 }
