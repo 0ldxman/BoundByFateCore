@@ -194,7 +194,7 @@
   "bbf.personality.ideals.tooltip": "Убеждения\n\nЦенности и принципы, которыми\nруководствуется персонаж.\nОпределяют его мировоззрение.",
   "bbf.personality.flaws.tooltip": "Слабости\n\nНедостатки и уязвимости\nперсонажа. Могут создавать\nпроблемы в приключениях.",
   "bbf.personality.motivations.tooltip": "Мотивации\n\nВнутренние стремления и цели,\nкоторые движут персонажем\nв его приключениях.",
-  "bbf.personality.suggest_motivation": "Предложить мотивацию",
+  "bbf.personality.suggest_motivation": "Обдумать мотивацию",
   "bbf.personality.motivation_placeholder": "Введите вашу мотивацию...",
   "bbf.personality.submit": "Отправить",
   "bbf.personality.back.right": "Назад →"

@@ -339,7 +339,8 @@ class PersonalityScreen(private val parent: Screen) :
         
         // ── SUGGEST MOTIVATION BUTTON (низ по центру) ────────────────────────
         val suggestText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.suggest_motivation")
-        val sw = 100; val sh = 12
+        val suggestScale = 0.75f
+        val sw = (textRenderer.getWidth(suggestText) * suggestScale + 16).toInt(); val sh = 12
         val sx = W / 2 - sw / 2; val sy = H - sh - 6
         val suggestHov = mouseX in sx..(sx + sw) && mouseY in sy..(sy + sh)
         context.fill(sx, sy, sx + sw, sy + sh, if (suggestHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
@@ -348,7 +349,7 @@ class PersonalityScreen(private val parent: Screen) :
         context.fill(sx, sy, sx + 1, sy + sh, 0xFF8a6a3a.toInt())
         context.fill(sx + sw - 1, sy, sx + sw, sy + sh, 0xFF8a6a3a.toInt())
         val sm = context.matrices; sm.push()
-        sm.translate((sx + sw / 2).toFloat(), (sy + 2).toFloat(), 0f); sm.scale(0.75f, 0.75f, 1f)
+        sm.translate((sx + sw / 2).toFloat(), (sy + 2).toFloat(), 0f); sm.scale(suggestScale, suggestScale, 1f)
         val stw = textRenderer.getWidth(suggestText)
         context.drawTextWithShadow(textRenderer, suggestText, -(stw / 2), 0, if (suggestHov) 0xFFD700 else 0xCCCCCC)
         sm.pop()
@@ -1142,6 +1143,29 @@ class PersonalityScreen(private val parent: Screen) :
         val cancelColor = ((alpha * 255).toInt() shl 24) or (if (cancelHov) 0xFFD700 else 0xCCCCCC)
         context.drawTextWithShadow(textRenderer, cancelText, -(ctw / 2), 0, cancelColor)
         cbm.pop()
+        
+        // Кнопка закрытия (X) в правом верхнем углу
+        val closeSize = 16
+        val closeX = x + w - closeSize - 6
+        val closeY = y + 6
+        val closeHov = mouseX in closeX..(closeX + closeSize) && mouseY in closeY..(closeY + closeSize)
+        
+        // Фон кнопки закрытия
+        context.fill(closeX, closeY, closeX + closeSize, closeY + closeSize, if (closeHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
+        context.fill(closeX, closeY, closeX + closeSize, closeY + 1, borderColor)
+        context.fill(closeX, closeY + closeSize - 1, closeX + closeSize, closeY + closeSize, borderColor)
+        context.fill(closeX, closeY, closeX + 1, closeY + closeSize, borderColor)
+        context.fill(closeX + closeSize - 1, closeY, closeX + closeSize, closeY + closeSize, borderColor)
+        
+        // X символ
+        val xColor = ((alpha * 255).toInt() shl 24) or (if (closeHov) 0xFF5555 else 0xCCCCCC)
+        val xm = context.matrices
+        xm.push()
+        xm.translate((closeX + closeSize / 2).toFloat(), (closeY + closeSize / 2 - 4).toFloat(), 0f)
+        xm.scale(0.8f, 0.8f, 1f)
+        val xw = textRenderer.getWidth("X")
+        context.drawTextWithShadow(textRenderer, "X", -(xw / 2), 0, xColor)
+        xm.pop()
     }
     
     private fun renderMotivationsOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
@@ -1376,6 +1400,12 @@ class PersonalityScreen(private val parent: Screen) :
         
         // Обработка кликов в оверлее предложения мотивации
         if (suggestMotivationOverlayOpen && button == 0) {
+            // Проверяем что анимация завершена (контент виден)
+            val prog = easeOut(suggestOverlayAnimTime)
+            if (prog < 0.6f) {
+                return true  // Поглощаем клики во время анимации
+            }
+            
             val targetW = 300
             val targetH = 150
             val cx = W / 2
@@ -1390,6 +1420,17 @@ class PersonalityScreen(private val parent: Screen) :
             val buttonW = 60
             val buttonH = 14
             val buttonSpacing = 8
+            
+            // Кнопка закрытия (X) в правом верхнем углу
+            val closeSize = 16
+            val closeX = x0 + targetW - closeSize - 6
+            val closeY = y0 + 6
+            if (mouseX.toInt() in closeX..(closeX + closeSize) && mouseY.toInt() in closeY..(closeY + closeSize)) {
+                suggestMotivationOverlayOpen = false
+                suggestMotivationText = ""
+                cursorPosition = 0
+                return true
+            }
             
             // Текстовое поле
             val fieldY = y0 + pad + 20
@@ -1440,6 +1481,7 @@ class PersonalityScreen(private val parent: Screen) :
             if (mouseX.toInt() in cancelX..(cancelX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
                 suggestMotivationOverlayOpen = false
                 suggestMotivationText = ""
+                cursorPosition = 0
                 return true
             }
             
@@ -1447,6 +1489,7 @@ class PersonalityScreen(private val parent: Screen) :
             if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
                 suggestMotivationOverlayOpen = false
                 suggestMotivationText = ""
+                cursorPosition = 0
                 return true
             }
             
@@ -1507,7 +1550,9 @@ class PersonalityScreen(private val parent: Screen) :
         
         // Suggest motivation button (низ по центру)
         if (button == 0 && !motivationsOverlayOpen && !suggestMotivationOverlayOpen) {
-            val sw = 100; val sh = 12
+            val suggestText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.suggest_motivation")
+            val suggestScale = 0.75f
+            val sw = (textRenderer.getWidth(suggestText) * suggestScale + 16).toInt(); val sh = 12
             val sx = W / 2 - sw / 2; val sy = H - sh - 6
             if (mouseX.toInt() in sx..(sx + sw) && mouseY.toInt() in sy..(sy + sh)) {
                 suggestMotivationOverlayOpen = true

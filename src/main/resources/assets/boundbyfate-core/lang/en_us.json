@@ -193,7 +193,7 @@
   "bbf.personality.ideals.tooltip": "Ideals\n\nValues and principles that\nguide the character.\nDefine their alignment.",
   "bbf.personality.flaws.tooltip": "Flaws\n\nWeaknesses and vulnerabilities\nof the character. Can create\nproblems in adventures.",
   "bbf.personality.motivations.tooltip": "Motivations\n\nInner drives and goals that\nmove the character forward\nin their adventures.",
-  "bbf.personality.suggest_motivation": "Suggest Motivation",
+  "bbf.personality.suggest_motivation": "Reflect on Motivation",
   "bbf.personality.motivation_placeholder": "Enter your motivation...",
   "bbf.personality.submit": "Submit",
   "bbf.personality.back.right": "Back →"
