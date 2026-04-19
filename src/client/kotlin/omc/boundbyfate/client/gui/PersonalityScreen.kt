@@ -487,18 +487,20 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
 
-        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации)
+        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации и задержки)
         val idealOffsets = mutableMapOf<Int, Float>()
         var accumulatedOffset = 0f
         ideals.forEachIndexed { idx, ideal ->
             idealOffsets[idx] = accumulatedOffset
             
             // Добавляем пространство пропорционально прогрессу раскрытия
+            // Используем задержку: схлопывание начинается только когда expandProg < 0.3
             val expandProg = idealExpandProgress.getOrDefault(idx, 0f)
-            if (expandProg > 0.01f) {
+            val collapseProg = if (expandProg < 0.3f) 0f else expandProg  // Задержка схлопывания
+            if (collapseProg > 0.01f) {
                 val lines = wrapText(ideal.text, maxChars)
                 val extraLines = (lines.size - 1).coerceAtLeast(0)
-                accumulatedOffset += extraLines * lineH * expandProg  // Плавное раздвигание
+                accumulatedOffset += extraLines * lineH * collapseProg  // Плавное раздвигание
             }
         }
 
@@ -531,19 +533,15 @@ class PersonalityScreen(private val parent: Screen) :
             
             if (expandProg > 0.01f && lines.size > 1) {
                 // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
-                val firstLine = if (ideal.text.length > maxChars) {
-                    ideal.text.substring(0, maxChars) + "..."
-                } else {
-                    ideal.text
-                }
+                val truncated = truncateTextByWords(ideal.text, maxChars)
                 
-                // Первая строка (обрезанная)
+                // Первая строка (обрезанная по словам)
                 val tm1 = context.matrices; tm1.push()
                 tm1.translate(textX.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
                 tm1.scale(finalScale, finalScale, 1f)
                 val tc1 = (textAlpha shl 24) or (color and 0xFFFFFF)
-                context.drawTextWithShadow(textRenderer, firstLine, 0, 0, tc1)
+                context.drawTextWithShadow(textRenderer, truncated, 0, 0, tc1)
                 tm1.pop()
                 
                 // Дополнительные строки с fade-in
@@ -558,12 +556,8 @@ class PersonalityScreen(private val parent: Screen) :
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (без раскрытия)
-                val displayText = if (ideal.text.length > maxChars) {
-                    ideal.text.substring(0, maxChars) + "..."
-                } else {
-                    ideal.text
-                }
+                // Обрезанный текст (без раскрытия) - обрезаем по словам
+                val displayText = truncateTextByWords(ideal.text, maxChars)
                 val tm = context.matrices; tm.push()
                 tm.translate(textX.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
@@ -660,18 +654,20 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
 
-        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации)
+        // Рассчитываем смещения для раздвигания при hover (с учётом прогресса анимации и задержки)
         val flawOffsets = mutableMapOf<Int, Float>()
         var accumulatedOffset = 0f
         flaws.forEachIndexed { idx, flaw ->
             flawOffsets[idx] = accumulatedOffset
             
             // Добавляем пространство пропорционально прогрессу раскрытия
+            // Используем задержку: схлопывание начинается только когда expandProg < 0.3
             val expandProg = flawExpandProgress.getOrDefault(idx, 0f)
-            if (expandProg > 0.01f) {
+            val collapseProg = if (expandProg < 0.3f) 0f else expandProg  // Задержка схлопывания
+            if (collapseProg > 0.01f) {
                 val lines = wrapText(flaw.text, maxChars)
                 val extraLines = (lines.size - 1).coerceAtLeast(0)
-                accumulatedOffset += extraLines * lineH * expandProg  // Плавное раздвигание
+                accumulatedOffset += extraLines * lineH * collapseProg  // Плавное раздвигание
             }
         }
 
@@ -704,20 +700,16 @@ class PersonalityScreen(private val parent: Screen) :
             
             if (expandProg > 0.01f && lines.size > 1) {
                 // Раскрытие: показываем обрезанный текст + дополнительные строки с альфой
-                val firstLine = if (flaw.text.length > maxChars) {
-                    flaw.text.substring(0, maxChars) + "..."
-                } else {
-                    flaw.text
-                }
+                val truncated = truncateTextByWords(flaw.text, maxChars)
                 
-                // Первая строка (обрезанная)
+                // Первая строка (обрезанная по словам)
                 val tm1 = context.matrices; tm1.push()
                 tm1.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
                 tm1.scale(finalScale, finalScale, 1f)
-                val tw1 = textRenderer.getWidth(firstLine)
+                val tw1 = textRenderer.getWidth(truncated)
                 val tc1 = (textAlpha shl 24) or 0xCCCCCC
-                context.drawTextWithShadow(textRenderer, firstLine, -tw1, 0, tc1)
+                context.drawTextWithShadow(textRenderer, truncated, -tw1, 0, tc1)
                 tm1.pop()
                 
                 // Дополнительные строки с fade-in
@@ -733,12 +725,8 @@ class PersonalityScreen(private val parent: Screen) :
                     tm.pop()
                 }
             } else {
-                // Обрезанный текст (без раскрытия)
-                val displayText = if (flaw.text.length > maxChars) {
-                    flaw.text.substring(0, maxChars) + "..."
-                } else {
-                    flaw.text
-                }
+                // Обрезанный текст (без раскрытия) - обрезаем по словам
+                val displayText = truncateTextByWords(flaw.text, maxChars)
                 val tm = context.matrices; tm.push()
                 tm.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
                 val finalScale = textScale * hoverScale
@@ -845,13 +833,39 @@ class PersonalityScreen(private val parent: Screen) :
         return lines.ifEmpty { listOf(text) }
     }
     
+    /**
+     * Обрезает текст по словам до указанной длины, добавляя "..." если текст обрезан.
+     */
+    private fun truncateTextByWords(text: String, maxChars: Int): String {
+        if (text.length <= maxChars) return text
+        
+        val words = text.split(" ")
+        var result = ""
+        
+        for (word in words) {
+            val test = if (result.isEmpty()) word else "$result $word"
+            if (test.length + 3 <= maxChars) {  // +3 для "..."
+                result = test
+            } else {
+                break
+            }
+        }
+        
+        return if (result.isEmpty()) {
+            // Если даже первое слово не влезает, обрезаем его
+            text.substring(0, (maxChars - 3).coerceAtLeast(1)) + "..."
+        } else {
+            "$result..."
+        }
+    }
+    
     // ── MOTIVATIONS OVERLAY ───────────────────────────────────────────────────
     
     private fun updateOverlayAnimation() {
         if (motivationsOverlayOpen) {
-            overlayAnimTime = (overlayAnimTime + 0.01f).coerceAtMost(1f)  // Ещё медленнее: было 0.015
+            overlayAnimTime = (overlayAnimTime + 0.01f).coerceAtMost(1f)
         } else {
-            overlayAnimTime = (overlayAnimTime - 0.035f).coerceAtLeast(0f)
+            overlayAnimTime = (overlayAnimTime - 0.01f).coerceAtLeast(0f)  // Такая же скорость как открытие
         }
     }
     
@@ -863,9 +877,13 @@ class PersonalityScreen(private val parent: Screen) :
         val motivations = ClientPlayerData.motivations
         if (motivations.isEmpty()) return
         
-        // Затемнение фона (fade-in/out вместе с оверлеем)
+        // Затемнение фона с высоким Z (fade-in/out вместе с оверлеем)
+        val m0 = context.matrices
+        m0.push()
+        m0.translate(0f, 0f, 400f)  // Z=400 чтобы быть поверх модели и текста
         val dimAlpha = (overlayAnimTime * 0xAA).toInt()
         context.fill(0, 0, W, H, (dimAlpha shl 24) or 0x000000)
+        m0.pop()
         
         // Размеры оверлея
         val targetW = (W * 0.5f).toInt().coerceAtMost(400)
@@ -894,7 +912,7 @@ class PersonalityScreen(private val parent: Screen) :
         // Рендер с высоким Z чтобы быть поверх всего
         val m = context.matrices
         m.push()
-        m.translate(0f, 0f, 500f)  // Высокий Z для рендера поверх всех элементов
+        m.translate(0f, 0f, 500f)  // Z=500 для рендера поверх затемнения
         
         // Фон оверлея
         context.fill(x0, y0, x1, y1, 0xDD1a1a1a.toInt())
