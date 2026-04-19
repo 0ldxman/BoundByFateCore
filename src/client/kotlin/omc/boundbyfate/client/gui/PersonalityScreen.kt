@@ -221,8 +221,10 @@ class PersonalityScreen(private val parent: Screen) :
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
-            // Сначала рендерим мотивации "за" персонажем (с depth test — они могут перекрываться моделью)
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
+            // Без hover: мотивации "за" рендерятся с depth test (могут перекрываться моделью)
+            if (!modelHovered) {
+                renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
+            }
 
             // Модель
             com.mojang.blaze3d.systems.RenderSystem.enableBlend()
@@ -236,15 +238,16 @@ class PersonalityScreen(private val parent: Screen) :
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
             com.mojang.blaze3d.systems.RenderSystem.disableBlend()
 
-            // Мотивации "перед" персонажем — всегда поверх модели (disableDepthTest)
+            // Мотивации "перед" всегда поверх модели
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = true)
+            
             // При hover — "за" мотивации тоже рисуем поверх модели
             if (modelHovered) {
                 renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = true)
             }
         } else {
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
-            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = true)
+            renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = false)
         }
 
         // ── ALIGNMENT (top center, вылет сверху) ─────────────────────────────

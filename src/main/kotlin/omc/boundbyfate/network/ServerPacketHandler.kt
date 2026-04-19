@@ -930,6 +930,7 @@ object ServerPacketHandler {
         val ideals = identityData.idealsData.ideals
         buf.writeInt(ideals.size)
         ideals.forEach { ideal ->
+            buf.writeString(ideal.id)  // добавляем id
             buf.writeString(ideal.text)
             buf.writeString(ideal.alignmentAxis.name)
             buf.writeBoolean(ideal.isCompatibleWith(currentAlignment))
@@ -937,11 +938,17 @@ object ServerPacketHandler {
 
         val flaws = identityData.idealsData.flaws
         buf.writeInt(flaws.size)
-        flaws.forEach { flaw -> buf.writeString(flaw.text) }
+        flaws.forEach { flaw ->
+            buf.writeString(flaw.id)  // добавляем id
+            buf.writeString(flaw.text)
+        }
 
         val motivations = identityData.motivationData.motivations.filter { it.isActive }
         buf.writeInt(motivations.size)
-        motivations.forEach { mot -> buf.writeString(mot.text) }
+        motivations.forEach { mot ->
+            buf.writeString(mot.id)  // добавляем id
+            buf.writeString(mot.text)
+        }
 
         ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)
     }

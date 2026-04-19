@@ -163,20 +163,25 @@ object ClientPacketHandler {
             val alignmentKey = buf.readString()
             val idealCount = buf.readInt()
             val ideals = (0 until idealCount).map {
+                val id = buf.readString()
                 val text = buf.readString()
                 val axisName = buf.readString()
                 val isCompatible = buf.readBoolean()
                 val axis = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(axisName) }
                            catch (e: Exception) { omc.boundbyfate.api.identity.IdealAlignment.ANY }
-                omc.boundbyfate.client.state.ClientIdeal("", text, axis, isCompatible)
+                omc.boundbyfate.client.state.ClientIdeal(id, text, axis, isCompatible)
             }
             val flawCount = buf.readInt()
             val flaws = (0 until flawCount).map {
-                omc.boundbyfate.client.state.ClientFlaw("", buf.readString())
+                val id = buf.readString()
+                val text = buf.readString()
+                omc.boundbyfate.client.state.ClientFlaw(id, text)
             }
             val motivationCount = buf.readInt()
             val motivations = (0 until motivationCount).map {
-                omc.boundbyfate.client.state.ClientMotivation("", buf.readString(), true, true)
+                val id = buf.readString()
+                val text = buf.readString()
+                omc.boundbyfate.client.state.ClientMotivation(id, text, true, true)
             }
 
             client.execute {
