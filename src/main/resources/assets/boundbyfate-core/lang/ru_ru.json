@@ -170,6 +170,7 @@
   "bbf.gm.identity.proposals": "Предложения",
   "bbf.gm.identity.add_motivation": "Добавить мотивацию",
   "bbf.gm.identity.edit_motivation": "Редактировать мотивацию",
+  "bbf.gm.identity.pick_motivation": "Выбрать мотивацию",
   "bbf.gm.identity.add_goal": "Добавить цель",
   "bbf.gm.identity.goal.title": "Название",
   "bbf.gm.identity.goal.description": "Описание",

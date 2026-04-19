@@ -169,6 +169,7 @@
   "bbf.gm.identity.proposals": "Proposals",
   "bbf.gm.identity.add_motivation": "Add Motivation",
   "bbf.gm.identity.edit_motivation": "Edit Motivation",
+  "bbf.gm.identity.pick_motivation": "Pick Motivation",
   "bbf.gm.identity.add_goal": "Add Goal",
   "bbf.gm.identity.goal.title": "Title",
   "bbf.gm.identity.goal.description": "Description",

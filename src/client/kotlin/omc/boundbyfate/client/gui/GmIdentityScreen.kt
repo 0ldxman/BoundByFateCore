@@ -53,7 +53,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var goalScroll = 0
 
     // ── Input overlay ─────────────────────────────────────────────────────────
-    private enum class InputMode { NONE, ADD_IDEAL, EDIT_IDEAL, ADD_FLAW, EDIT_FLAW, ADD_MOTIVATION, EDIT_MOTIVATION, ADD_GOAL, EDIT_GOAL, ADD_TASK, EDIT_TASK }
+    private enum class InputMode { NONE, ADD_IDEAL, EDIT_IDEAL, ADD_FLAW, EDIT_FLAW, ADD_MOTIVATION, EDIT_MOTIVATION, ADD_GOAL, EDIT_GOAL, ADD_TASK, EDIT_TASK, PICK_MOTIVATION }
     private var inputMode = InputMode.NONE
     private var inputBuffer = ""
     private var inputBuffer2 = ""
@@ -68,6 +68,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var editingMotivationId: String? = null
     private var pendingGoalStatus: String = "ACTIVE"
     private var pendingMotivationId: String? = null
+    private var prevInputMode: InputMode = InputMode.NONE  // for overlay-on-overlay
     private var taskListScroll = 0
     private var draggedTaskIndex: Int? = null
     private var draggedTaskY: Int = 0
@@ -418,22 +419,40 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderInputOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
         val W = width; val H = height
         val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
+
+        // For ADD_TASK/EDIT_TASK and PICK_MOTIVATION, render the EDIT_GOAL overlay first (background layer)
+        if (inputMode == InputMode.ADD_TASK || inputMode == InputMode.EDIT_TASK || inputMode == InputMode.PICK_MOTIVATION) {
+            val savedMode = inputMode
+            inputMode = InputMode.EDIT_GOAL
+            renderInputOverlay(context, -9999, -9999)  // render without mouse interaction
+            inputMode = savedMode
+        }
+
         val overlayH = when (inputMode) {
             InputMode.ADD_IDEAL, InputMode.EDIT_IDEAL -> 120
             InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> 100
             InputMode.ADD_MOTIVATION, InputMode.EDIT_MOTIVATION -> 100
             InputMode.ADD_GOAL -> 160
             InputMode.EDIT_GOAL -> minOf(H - 40, 280)
-            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 130
+            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 140
+            InputMode.PICK_MOTIVATION -> minOf(H - 80, 200)
             else -> 62
         }
         val ox = (W - overlayW) / 2
-        val oy = (H - overlayH) / 2
+        // Offset ADD_TASK/EDIT_TASK and PICK_MOTIVATION so they don't perfectly overlap
+        val oy = when (inputMode) {
+            InputMode.ADD_TASK, InputMode.EDIT_TASK -> (H - overlayH) / 2 - 20
+            InputMode.PICK_MOTIVATION -> (H - overlayH) / 2 + 20
+            else -> (H - overlayH) / 2
+        }
 
         context.matrices.push()
         context.matrices.translate(0f, 0f, 400f)
 
-        context.fill(0, 0, W, H, 0xAA000000.toInt())
+        // Only dim for top-level overlays
+        if (inputMode != InputMode.ADD_TASK && inputMode != InputMode.EDIT_TASK && inputMode != InputMode.PICK_MOTIVATION) {
+            context.fill(0, 0, W, H, 0xAA000000.toInt())
+        }
         box(context, ox, oy, overlayW, overlayH, 0xFF1a1a1a.toInt(), 0xFF8a6a3a.toInt())
 
         val title = when (inputMode) {
@@ -447,6 +466,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             InputMode.EDIT_GOAL      -> tr("bbf.gm.identity.edit_goal")
             InputMode.ADD_TASK       -> tr("bbf.gm.identity.add_task")
             InputMode.EDIT_TASK      -> tr("bbf.gm.identity.edit_task")
+            InputMode.PICK_MOTIVATION -> tr("bbf.gm.identity.pick_motivation")
             else -> ""
         }
         lbl(context, title, ox + 5, oy + 5, 0.7f, 0xD4AF37)
@@ -528,16 +548,14 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 btns.add(Btn(ox + 4, curY, overlayW - 8, descHeight) { inputFocusField = 1 })
                 curY += descHeight + 6
 
-                // Motivation selector
+                // Motivation selector — opens picker overlay
                 lbl(context, "§7${tr("bbf.gm.identity.goal.motivation")}", ox + 5, curY - 6, 0.5f, 0x888888)
                 val motBtnW = (overlayW - 8)
                 val motName = pendingMotivationId?.let { mid -> motivations.find { it.id == mid }?.text }
                     ?: tr("bbf.gm.none")
                 btn(context, mouseX, mouseY, ox + 4, curY, motBtnW, 10, "§7${truncate(motName, motBtnW - 10, 0.65f)}") {
-                    // Cycle through motivations
-                    val active = motivations.filter { it.isActive }
-                    val idx = active.indexOfFirst { it.id == pendingMotivationId }
-                    pendingMotivationId = if (idx < active.size - 1) active[idx + 1].id else null
+                    prevInputMode = inputMode
+                    inputMode = InputMode.PICK_MOTIVATION
                 }
                 curY += 16
 
@@ -702,6 +720,34 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 }
             }
 
+            InputMode.PICK_MOTIVATION -> {
+                // List of active motivations + "None" option
+                val active = listOf(null) + motivations.filter { it.isActive }
+                val rowH = 12
+                active.forEachIndexed { i, mot ->
+                    val fy = curY + i * rowH
+                    val isSelected = mot?.id == pendingMotivationId
+                    val hovered = mouseX in (ox + 4)..(ox + overlayW - 8) && mouseY in fy..(fy + rowH - 2)
+                    val bg = when {
+                        isSelected -> 0xFF3a2a1a.toInt()
+                        hovered -> 0xCC2a2a2a.toInt()
+                        else -> 0xCC1a1a1a.toInt()
+                    }
+                    val bd = if (isSelected) 0xFFFFD700.toInt() else if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt()
+                    box(context, ox + 4, fy, overlayW - 8, rowH - 2, bg, bd)
+                    val label = if (mot == null) "§8— ${tr("bbf.gm.none")} —" else {
+                        val tag = if (mot.addedByGm) "§8[GM] " else "§b[P] "
+                        "$tag§7${truncate(mot.text, overlayW - 30, 0.6f)}"
+                    }
+                    lbl(context, label, ox + 6, fy + 2, 0.6f, 0xCCCCCC)
+                    btns.add(Btn(ox + 4, fy, overlayW - 8, rowH - 2) {
+                        pendingMotivationId = mot?.id
+                        inputMode = prevInputMode
+                    })
+                }
+                curY += active.size * rowH + 4
+            }
+
             else -> {
                 // Simple single field
                 renderField(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, inputBuffer, true, "")
@@ -710,10 +756,24 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
         }
 
-        // Confirm / Cancel
-        btn(context, mouseX, mouseY, ox + 4, curY + 2, 50, 10, "§a${tr("bbf.gm.button.apply")}") { confirmInput() }
-        btn(context, mouseX, mouseY, ox + overlayW - 54, curY + 2, 50, 10, "§c${tr("bbf.gm.button.cancel")}") {
-            inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""
+        // Confirm / Cancel — not shown for PICK_MOTIVATION (selection is immediate)
+        if (inputMode != InputMode.PICK_MOTIVATION) {
+            btn(context, mouseX, mouseY, ox + 4, curY + 2, 50, 10, "§a${tr("bbf.gm.button.apply")}") { confirmInput() }
+            btn(context, mouseX, mouseY, ox + overlayW - 54, curY + 2, 50, 10, "§c${tr("bbf.gm.button.cancel")}") {
+                if (inputMode == InputMode.ADD_TASK || inputMode == InputMode.EDIT_TASK) {
+                    // Return to EDIT_GOAL
+                    inputMode = InputMode.EDIT_GOAL
+                    val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
+                    if (goal != null) { inputBuffer = goal.title; inputBuffer2 = goal.description; pendingGoalStatus = goal.status; pendingMotivationId = goal.motivationId }
+                } else {
+                    inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""
+                }
+            }
+        } else {
+            // Cancel for PICK_MOTIVATION
+            btn(context, mouseX, mouseY, ox + overlayW - 54, curY + 2, 50, 10, "§c${tr("bbf.gm.button.cancel")}") {
+                inputMode = prevInputMode
+            }
         }
 
         context.matrices.pop()
@@ -863,7 +923,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             }
             InputMode.ADD_TASK -> {
                 val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
-                if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                if (text.isEmpty()) { inputMode = InputMode.EDIT_GOAL; inputBuffer2Scroll = 0; return }
                 sendAddTask(goalId, text, inputBuffer2.trim())
                 // Return to edit goal mode
                 inputMode = InputMode.EDIT_GOAL
@@ -878,7 +938,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 return
             }
             InputMode.EDIT_TASK -> {
-                val taskId = editingTaskId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                val taskId = editingTaskId ?: run { inputMode = InputMode.EDIT_GOAL; inputBuffer2Scroll = 0; return }
                 val goalId = editingGoalId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 if (text.isNotEmpty()) {
                     sendEditTask(goalId, taskId, text, inputBuffer2.trim(), pendingGoalStatus)
@@ -1205,7 +1265,18 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         if (inputMode != InputMode.NONE) {
             when (keyCode) {
-                256 -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0; inputBuffer2Scroll = 0; return true } // ESC
+                256 -> { // ESC
+                    when (inputMode) {
+                        InputMode.ADD_TASK, InputMode.EDIT_TASK -> {
+                            inputMode = InputMode.EDIT_GOAL
+                            val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
+                            if (goal != null) { inputBuffer = goal.title; inputBuffer2 = goal.description; pendingGoalStatus = goal.status; pendingMotivationId = goal.motivationId }
+                        }
+                        InputMode.PICK_MOTIVATION -> inputMode = prevInputMode
+                        else -> { inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = "" }
+                    }
+                    inputFocusField = 0; inputBuffer2Scroll = 0; return true
+                }
                 257, 335 -> { confirmInput(); return true } // Enter
                 258 -> { // Tab — switch fields
                     inputFocusField = if (inputFocusField == 0) 1 else 0
