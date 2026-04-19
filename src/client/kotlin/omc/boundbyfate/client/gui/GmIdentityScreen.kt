@@ -791,7 +791,17 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             box(context, rx + 4, ty, panelW - 8, taskRowH - 2, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, "§7${taskIndex + 1}.", rx + 6, ty + 2, 0.55f, 0x888888)
             lbl(context, statusIcon, rx + 16, ty + 2, 0.55f, 0xFFFFFF)
-            lbl(context, truncate(task.description, panelW - 36, 0.55f), rx + 24, ty + 2, 0.55f, 0xCCCCCC)
+            lbl(context, truncate(task.description, panelW - 48, 0.55f), rx + 24, ty + 2, 0.55f, 0xCCCCCC)
+            // Edit button
+            btn(context, mouseX, mouseY, rx + panelW - 14, ty, 10, taskRowH - 2, "§7✎") {
+                resetDragState()
+                editingTaskId = task.id
+                inputBuffer = task.description
+                inputBuffer2 = task.goalDescriptionOverride
+                pendingGoalStatus = task.status
+                inputFocusField = 0
+                inputMode = InputMode.EDIT_TASK
+            }
         }
 
         // Drop indicator at end of list
@@ -1214,30 +1224,13 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     val hitbox = (mx in rx..(rx + panelW - 4) && my in ty..(ty + taskRowH - 2))
 
                     if (hitbox) {
-                        val currentTime = System.currentTimeMillis()
-                        if (lastClickedTaskIndex == taskIndex && (currentTime - lastClickTime) < 300) {
-                            // Double click — open edit, clear drag state
-                            draggedTaskIndex = null
-                            draggedTaskY = 0
-                            dragStartY = 0
-                            isDragging = false
-                            editingTaskId = task.id
-                            inputBuffer = task.description
-                            inputBuffer2 = task.goalDescriptionOverride
-                            pendingGoalStatus = task.status
-                            inputFocusField = 0
-                            inputMode = InputMode.EDIT_TASK
-                            lastClickedTaskIndex = null
-                            lastClickTime = 0
-                        } else {
-                            // Single click — prepare for potential drag only
-                            lastClickedTaskIndex = taskIndex
-                            lastClickTime = currentTime
-                            draggedTaskIndex = taskIndex
-                            draggedTaskY = ty
-                            dragStartY = my
-                            isDragging = false  // reset, drag starts only on mouseDragged
-                        }
+                        // Single click — prepare for drag only (edit via button)
+                        draggedTaskIndex = taskIndex
+                        draggedTaskY = ty
+                        dragStartY = my
+                        isDragging = false
+                        lastClickedTaskIndex = taskIndex
+                        lastClickTime = System.currentTimeMillis()
                         return true
                     }
                 }
