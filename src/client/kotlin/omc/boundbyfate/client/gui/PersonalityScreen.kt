@@ -170,7 +170,7 @@ class PersonalityScreen(private val parent: Screen) :
         // Модель и мотивации - зона по центру, умеренная ширина
         // Уменьшаем высоту снизу чтобы не перекрывать кнопку "Назад"
         val modelX = cx - 65..cx + 65
-        val modelY = cy - 60..cy + 140
+        val modelY = cy - 60..cy + 110
         modelHovered = mouseX in modelX && mouseY in modelY
         modelAlpha = lerp(modelAlpha, if (modelHovered) 0.20f else 1f, 0.15f)
         motivationsBaseAlpha = lerp(motivationsBaseAlpha, if (modelHovered) 1f else 0.7f, 0.15f)
@@ -960,11 +960,6 @@ class PersonalityScreen(private val parent: Screen) :
         context.drawTextWithShadow(textRenderer, headerText, -(htw / 2), 0, headerColor)
         hm.pop()
         
-        // Divider под заголовком
-        val headerH = (textRenderer.fontHeight * headerScale + 6).toInt()
-        val dividerY = contentY + headerH
-        drawFadeDividerAnimated(context, x + w / 2, dividerY, (contentW * 0.8f).toInt(), 1f, ((alpha * 0.8f) * 255).toInt())
-        
         val textScale = 0.7f
         val lineH = (textRenderer.fontHeight * textScale + 4).toInt()
         val dividerH = 8
@@ -973,8 +968,9 @@ class PersonalityScreen(private val parent: Screen) :
         val maxScroll = (motivations.size - visibleCount).coerceAtLeast(0)
         overlayScroll = overlayScroll.coerceIn(0, maxScroll)
         
-        // Рендер мотиваций с typewriter эффектом (начинаем после заголовка и divider)
-        var curY = dividerY + 8
+        // Рендер мотиваций с typewriter эффектом (начинаем после заголовка)
+        val headerH = (textRenderer.fontHeight * headerScale + 10).toInt()
+        var curY = contentY + headerH
         motivations.drop(overlayScroll).take(visibleCount).forEachIndexed { idx, mot ->
             val globalIdx = idx + overlayScroll
             
@@ -994,7 +990,9 @@ class PersonalityScreen(private val parent: Screen) :
             }
             
             // Рендер текста с typewriter эффектом
-            val lines = wrapMotivationText(mot.text, 35)
+            // Добавляем кавычки к тексту мотивации
+            val quotedText = "\"${mot.text}\""
+            val lines = wrapMotivationText(quotedText, 35)
             
             // Вычисляем общее количество символов во всех строках
             val totalChars = lines.sumOf { it.length }
@@ -1017,7 +1015,7 @@ class PersonalityScreen(private val parent: Screen) :
                     m.translate(contentX.toFloat() + contentW / 2f, curY.toFloat(), 0f)
                     m.scale(textScale, textScale, 1f)
                     val tw = textRenderer.getWidth(displayText)
-                    val color = ((alpha * 255).toInt() shl 24) or 0xD4AF37
+                    val color = ((alpha * 255).toInt() shl 24) or 0xFFFFFF  // Белый цвет
                     context.drawTextWithShadow(textRenderer, displayText, -(tw / 2), 0, color)
                     m.pop()
                     
