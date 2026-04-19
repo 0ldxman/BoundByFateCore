@@ -78,6 +78,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var lastClickedTaskIndex: Int? = null
 
     private var statusMsg = ""; private var statusTimer = 0f
+    private var scrollAnimTime = 0f  // for marquee text animation
 
     // ── Button registry ───────────────────────────────────────────────────────
     private data class Btn(val x: Int, val y: Int, val w: Int, val h: Int, val action: () -> Unit)
@@ -95,6 +96,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         renderBackground(context)
         btns.clear()
         if (statusTimer > 0f) statusTimer -= delta * 0.05f
+        scrollAnimTime += delta * 0.016f  // ~1 unit per second
 
         val W = width; val H = height; val pad = 5
 
@@ -118,18 +120,27 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         box(context, centerX, bodyY, colW, bodyH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
         box(context, rightX,  bodyY, colW, bodyH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
 
-        // Left: ideals (top half) + flaws (bottom half)
-        val leftHalf = (bodyH - 4) / 2
-        renderIdeals(context, mouseX, mouseY, leftX + 3, bodyY + 3, colW - 6, leftHalf - 3)
-        renderFlaws(context, mouseX, mouseY, leftX + 3, bodyY + leftHalf + 4, colW - 6, bodyH - leftHalf - 7)
+        // Left: ideals (top half) + flaws (bottom half) — separate boxes with gap
+        val gap = 4
+        val leftHalf = (bodyH - gap) / 2
+        val idealsBoxH = leftHalf
+        val flawsBoxH  = bodyH - leftHalf - gap
+        box(context, leftX, bodyY, colW, idealsBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        box(context, leftX, bodyY + idealsBoxH + gap, colW, flawsBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderIdeals(context, mouseX, mouseY, leftX + 3, bodyY + 3, colW - 6, idealsBoxH - 6)
+        renderFlaws(context, mouseX, mouseY, leftX + 3, bodyY + idealsBoxH + gap + 3, colW - 6, flawsBoxH - 6)
 
         // Center: alignment diagram
         renderAlignmentDiagram(context, mouseX, mouseY, centerX + 3, bodyY + 3, colW - 6, bodyH - 6)
 
-        // Right: motivations (top half) + goals (bottom half)
-        val rightHalf = (bodyH - 4) / 2
-        renderMotivations(context, mouseX, mouseY, rightX + 3, bodyY + 3, colW - 6, rightHalf - 3)
-        renderGoals(context, mouseX, mouseY, rightX + 3, bodyY + rightHalf + 4, colW - 6, bodyH - rightHalf - 7)
+        // Right: motivations (top half) + goals (bottom half) — separate boxes with gap
+        val rightHalf = (bodyH - gap) / 2
+        val motivBoxH = rightHalf
+        val goalsBoxH = bodyH - rightHalf - gap
+        box(context, rightX, bodyY, colW, motivBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        box(context, rightX, bodyY + motivBoxH + gap, colW, goalsBoxH, 0xCC1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        renderMotivations(context, mouseX, mouseY, rightX + 3, bodyY + 3, colW - 6, motivBoxH - 6)
+        renderGoals(context, mouseX, mouseY, rightX + 3, bodyY + motivBoxH + gap + 3, colW - 6, goalsBoxH - 6)
 
         // Input overlay — rendered last at high Z
         if (inputMode != InputMode.NONE) renderInputOverlay(context, mouseX, mouseY)
@@ -263,7 +274,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
             box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, "[$axisShort]", x + 2, fy + 1, 0.5f, axisCol)
-            lbl(context, truncate(ideal.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, textColor)
+            lbl(context, marquee(ideal.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, textColor)
             // Click to edit
             btns.add(Btn(x, fy, w - 13, rowH - 1) {
                 editingIdealId = ideal.id
@@ -282,8 +293,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderFlaws(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
-        // Divider line
-        context.fill(x, y - 2, x + w, y - 1, 0xFF4a3a2a.toInt())
         lbl(context, tr("bbf.gm.identity.flaws"), x, y, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, x + w - 11, y - 1, 11, 9, "§a+") {
             inputMode = InputMode.ADD_FLAW; inputBuffer = ""; inputBuffer2Scroll = 0
@@ -294,7 +303,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             val fy = listY + i * rowH
             val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
             box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
-            lbl(context, truncate(flaw.text, w - 22, 0.6f), x + 2, fy + 1, 0.6f, 0xCCCCCC)
+            lbl(context, marquee(flaw.text, w - 22, 0.6f), x + 2, fy + 1, 0.6f, 0xCCCCCC)
             // Click to edit
             btns.add(Btn(x, fy, w - 13, rowH - 1) {
                 editingFlawId = flaw.id
@@ -328,7 +337,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
             box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, tag, x + 2, fy + 1, 0.5f, if (mot.addedByGm) 0x666666 else 0x55AAFF)
-            lbl(context, truncate(mot.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, 0xCCCCCC)
+            lbl(context, marquee(mot.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, 0xCCCCCC)
             // Click to edit
             btns.add(Btn(x, fy, w - 13, rowH - 1) {
                 editingMotivationId = mot.id
@@ -361,7 +370,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderGoals(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
-        context.fill(x, y - 2, x + w, y - 1, 0xFF4a3a2a.toInt())
         lbl(context, tr("bbf.gm.identity.goals"), x, y, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, x + w - 11, y - 1, 11, 9, "§a+") {
             inputMode = InputMode.ADD_GOAL; inputBuffer = ""; inputBuffer2 = ""
@@ -441,6 +449,27 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         }
         lbl(context, title, ox + 5, oy + 5, 0.7f, 0xD4AF37)
 
+        // Small delete button in top-right corner for edit modes
+        when (inputMode) {
+            InputMode.EDIT_IDEAL -> btn(context, mouseX, mouseY, ox + overlayW - 22, oy + 3, 18, 9, "§c✗") {
+                val id = editingIdealId; if (id != null) ideals.removeIf { it.id == id }
+                inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+            }
+            InputMode.EDIT_FLAW -> btn(context, mouseX, mouseY, ox + overlayW - 22, oy + 3, 18, 9, "§c✗") {
+                val id = editingFlawId; if (id != null) flaws.removeIf { it.id == id }
+                inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+            }
+            InputMode.EDIT_MOTIVATION -> btn(context, mouseX, mouseY, ox + overlayW - 22, oy + 3, 18, 9, "§c✗") {
+                val id = editingMotivationId; if (id != null) motivations.removeIf { it.id == id }
+                inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+            }
+            InputMode.EDIT_GOAL -> btn(context, mouseX, mouseY, ox + overlayW - 22, oy + 3, 18, 9, "§c✗") {
+                val id = editingGoalId; if (id != null) { goals.removeIf { it.id == id } }
+                inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputBuffer2Scroll = 0
+            }
+            else -> {}
+        }
+
         var curY = oy + 17
 
         when (inputMode) {
@@ -467,16 +496,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     btns.add(Btn(bx, curY, bw - 1, 12) { pendingAxis = axis })
                 }
                 curY += 16
-
-                // Delete button (edit only)
-                if (inputMode == InputMode.EDIT_IDEAL) {
-                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
-                        val id = editingIdealId
-                        if (id != null) ideals.removeIf { it.id == id }
-                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
-                    }
-                    curY += 14
-                }
             }
 
             InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> {
@@ -484,15 +503,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
                 btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
                 curY += taH + 6
-
-                if (inputMode == InputMode.EDIT_FLAW) {
-                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
-                        val id = editingFlawId
-                        if (id != null) flaws.removeIf { it.id == id }
-                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
-                    }
-                    curY += 14
-                }
             }
 
             InputMode.ADD_MOTIVATION, InputMode.EDIT_MOTIVATION -> {
@@ -500,15 +510,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
                 btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
                 curY += taH + 6
-
-                if (inputMode == InputMode.EDIT_MOTIVATION) {
-                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
-                        val id = editingMotivationId
-                        if (id != null) motivations.removeIf { it.id == id }
-                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
-                    }
-                    curY += 14
-                }
             }
 
             InputMode.ADD_GOAL, InputMode.EDIT_GOAL -> {
@@ -1257,6 +1258,36 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         var t = text
         while (t.isNotEmpty() && textRenderer.getWidth("$t…") > max) t = t.dropLast(1)
         return "$t…"
+    }
+
+    /** Marquee: if text doesn't fit, scroll it horizontally using scrollAnimTime. */
+    private fun marquee(text: String, maxPx: Int, scale: Float): String {
+        val max = (maxPx / scale).toInt()
+        if (textRenderer.getWidth(text) <= max) return text
+        // Build padded string and cycle through it
+        val padded = "$text    "
+        val totalW = textRenderer.getWidth(padded)
+        val speed = 30f  // pixels per second
+        val offset = ((scrollAnimTime * speed).toInt() % totalW).coerceAtLeast(0)
+        // Find char index corresponding to offset
+        var charOffset = 0
+        var px = 0
+        for (c in padded) {
+            if (px >= offset) break
+            px += textRenderer.getWidth(c.toString())
+            charOffset++
+        }
+        val shifted = padded.substring(charOffset) + padded.substring(0, charOffset)
+        // Truncate to fit
+        var result = ""
+        var w = 0
+        for (c in shifted) {
+            val cw = textRenderer.getWidth(c.toString())
+            if (w + cw > max) break
+            result += c
+            w += cw
+        }
+        return result
     }
 
     private fun btn(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int, label: String, action: () -> Unit) {
