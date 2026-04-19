@@ -557,6 +557,10 @@ object ServerPacketHandler {
             server.execute {
                 omc.boundbyfate.system.identity.MotivationSystem.addProposal(player, text)
                 logger.info("Player ${player.name.string} proposed motivation: $text")
+                
+                // Sync to player so they see the proposal immediately
+                syncPlayerData(player)
+                
                 // Notify all GMs
                 server.playerManager.playerList
                     .filter { it.hasPermissionLevel(2) }
