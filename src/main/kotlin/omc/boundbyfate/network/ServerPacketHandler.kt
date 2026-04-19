@@ -879,8 +879,13 @@ object ServerPacketHandler {
             buf.writeInt(value)
         }
 
-        // Stat modifiers count (for now just send 0 - base stats are enough for display)
-        buf.writeInt(0)
+        // Stat bonuses from race/class
+        val locked = omc.boundbyfate.system.CharacterSourceResolver.resolve(player)
+        buf.writeInt(locked.statBonuses.size)
+        locked.statBonuses.forEach { (id, bonus) ->
+            buf.writeIdentifier(id)
+            buf.writeInt(bonus)
+        }
 
         // Skills
         val skills = skillData?.proficiencies ?: emptyMap()

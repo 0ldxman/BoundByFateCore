@@ -417,7 +417,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         val statValue = statsData?.getStatValue(stat.id)
         val base = statValue?.base ?: 10
         val total = statValue?.total ?: 10
-        val bonus = total - base
+        val bonus = ClientPlayerData.statBonuses[stat.id] ?: 0
         val mod = statValue?.dndModifier ?: 0
         val modStr = if (mod >= 0) "+$mod" else "$mod"
         val midX = x + shieldW / 2
@@ -428,13 +428,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         drawScaledCenteredText(context, shortName, midX, y + 9, 0xD4AF37, 0.6f)
 
         if (bonus != 0) {
-            // Show "base+bonus" format like GM screen
             val bonusStr = if (bonus > 0) "+$bonus" else "$bonus"
             val bonusColor = if (bonus > 0) 0x55AAFF else 0xFF8855
-            val combined = "$base§r§7$bonusStr"
-            // Draw base value slightly left, bonus right of it
             val baseStr = "$base"
-            val baseW = (textRenderer.getWidth(baseStr) * 1.0f).toInt()
+            val baseW = textRenderer.getWidth(baseStr)
             val bonusSmallW = (textRenderer.getWidth(bonusStr) * 0.65f).toInt()
             val totalDisplayW = baseW + bonusSmallW + 1
             val startX = midX - totalDisplayW / 2

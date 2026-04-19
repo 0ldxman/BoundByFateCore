@@ -120,9 +120,14 @@ object ClientPacketHandler {
                 val value = buf.readInt()
                 baseStats[id] = value
             }
-            // Modifiers (currently 0)
-            val modCount = buf.readInt()
-            repeat(modCount) { buf.readIdentifier(); buf.readInt() }
+            // Stat bonuses from race/class
+            val bonusCount = buf.readInt()
+            val statBonuses = mutableMapOf<net.minecraft.util.Identifier, Int>()
+            repeat(bonusCount) {
+                val id = buf.readIdentifier()
+                val bonus = buf.readInt()
+                statBonuses[id] = bonus
+            }
 
             // Skills
             val skillCount = buf.readInt()
@@ -161,6 +166,7 @@ object ClientPacketHandler {
                 ClientPlayerData.raceData = raceData
                 ClientPlayerData.level = level
                 ClientPlayerData.gender = gender
+                ClientPlayerData.statBonuses = statBonuses
             }
         }
 
