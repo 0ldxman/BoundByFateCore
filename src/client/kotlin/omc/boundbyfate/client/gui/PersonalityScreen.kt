@@ -30,6 +30,28 @@ class PersonalityScreen(private val parent: Screen) :
     private var time = 0f
     private var openTime = 0f   // 0→1 за ~1.8 сек (delta * 0.018)
 
+    // ── Hover состояния ───────────────────────────────────────────────────────
+    private var hoveredIdealIdx: Int? = null
+    private var hoveredFlawIdx: Int? = null
+    private var hoveredMotivationIdx: Int? = null
+    private var modelHovered = false
+    
+    // Lerp-анимации для hover
+    private val idealHoverScales = mutableMapOf<Int, Float>()      // текст scale
+    private val idealIconScales = mutableMapOf<Int, Float>()       // иконка scale
+    private val idealTextOffsets = mutableMapOf<Int, Float>()      // смещение текста
+    private val idealRowOffsets = mutableMapOf<Int, Float>()       // смещение строки вниз
+    
+    private val flawHoverScales = mutableMapOf<Int, Float>()
+    private val flawIconScales = mutableMapOf<Int, Float>()
+    private val flawTextOffsets = mutableMapOf<Int, Float>()
+    private val flawRowOffsets = mutableMapOf<Int, Float>()
+    
+    private val motivationScales = mutableMapOf<Int, Float>()
+    private val motivationAlphas = mutableMapOf<Int, Float>()
+    private var modelAlpha = 1f
+    private var motivationsBaseAlpha = 1f
+
     // ── Мотивации: орбитальные частицы ───────────────────────────────────────
     private data class MotivationParticle(
         val text: String,
@@ -46,6 +68,22 @@ class PersonalityScreen(private val parent: Screen) :
 
     override fun init() {
         openTime = 0f
+        hoveredIdealIdx = null
+        hoveredFlawIdx = null
+        hoveredMotivationIdx = null
+        modelHovered = false
+        idealHoverScales.clear()
+        idealIconScales.clear()
+        idealTextOffsets.clear()
+        idealRowOffsets.clear()
+        flawHoverScales.clear()
+        flawIconScales.clear()
+        flawTextOffsets.clear()
+        flawRowOffsets.clear()
+        motivationScales.clear()
+        motivationAlphas.clear()
+        modelAlpha = 1f
+        motivationsBaseAlpha = 1f
         buildParticles()
     }
 
@@ -104,17 +142,63 @@ class PersonalityScreen(private val parent: Screen) :
         val panelStartY = H / 3
         val cx = W / 2; val cy = H / 2
 
+        // ── Обновление hover-анимаций ─────────────────────────────────────────
+        // Модель и мотивации
+        val modelX = cx - 40..cx + 40
+        val modelY = cy + 15..cy + 155
+        modelHovered = mouseX in modelX && mouseY in modelY
+        modelAlpha = lerp(modelAlpha, if (modelHovered) 0.35f else 1f, 0.15f)
+        motivationsBaseAlpha = lerp(motivationsBaseAlpha, if (modelHovered) 1f else 0.7f, 0.15f)
+        
+        // Мотивации hover (проверяем позиции частиц)
+        var newHoveredMotivation: Int? = null
+        if (modelHovered) {
+            particles.forEachIndexed { idx, p ->
+                val angle = time * p.orbitSpeed + p.orbitPhase
+                val ox = cos(angle.toDouble()).toFloat() * p.orbitRadius
+                val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
+                val px = cx + ox
+                val py = cy + oy - 30f
+                val tw = (textRenderer.getWidth(p.text) * p.scale).toInt()
+                val th = (textRenderer.fontHeight * p.scale).toInt()
+                if (mouseX in (px - tw/2).toInt()..(px + tw/2).toInt() && 
+                    mouseY in (py - th/2).toInt()..(py + th/2).toInt()) {
+                    newHoveredMotivation = idx
+                }
+            }
+        }
+        hoveredMotivationIdx = newHoveredMotivation
+        
+        particles.forEachIndexed { idx, _ ->
+            val target = when {
+                hoveredMotivationIdx == idx -> 1.35f
+                hoveredMotivationIdx != null -> 0.85f
+                else -> 1f
+            }
+            motivationScales[idx] = lerp(motivationScales.getOrDefault(idx, 1f), target, 0.12f)
+            
+            val alphaTarget = when {
+                hoveredMotivationIdx == idx -> 1f
+                hoveredMotivationIdx != null -> 0.4f
+                else -> 1f
+            }
+            motivationAlphas[idx] = lerp(motivationAlphas.getOrDefault(idx, 1f), alphaTarget, 0.12f)
+        }
+
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
             // Мотивации ЗА персонажем (zLayer < 0)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
 
+            // Модель с альфой при hover
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, modelAlpha)
             InventoryScreen.drawEntity(
                 context, cx, cy + 85, 70,
                 (cx - mouseX).toFloat(), (cy - mouseY).toFloat(),
                 player
             )
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
 
             // Мотивации ПЕРЕД персонажем (zLayer >= 0)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
@@ -152,26 +236,42 @@ class PersonalityScreen(private val parent: Screen) :
     // ── МОТИВАЦИИ: орбитальное движение ──────────────────────────────────────
     private fun renderMotivations(context: DrawContext, centerX: Float, centerY: Float, behindOnly: Boolean) {
         val introAlpha = easeOut(openTime)
-        particles.forEach { p ->
+        particles.forEachIndexed { idx, p ->
             val isBehind = p.zLayer < 0f
-            if (isBehind != behindOnly) return@forEach
+            if (isBehind != behindOnly) return@forEachIndexed
 
-            val angle = time * p.orbitSpeed + p.orbitPhase
+            val isHovered = hoveredMotivationIdx == idx
+            val hoverScale = motivationScales.getOrDefault(idx, 1f)
+            val hoverAlpha = motivationAlphas.getOrDefault(idx, 1f)
+
+            // Если наведена — останавливаем орбиту, пульсируем scale
+            val angle = if (isHovered) {
+                p.orbitPhase  // замораживаем угол
+            } else {
+                time * p.orbitSpeed + p.orbitPhase
+            }
+            
             val ox = cos(angle.toDouble()).toFloat() * p.orbitRadius
             val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
 
             val px = centerX + ox
-            val py = centerY + oy - 30f  // чуть выше центра персонажа
+            val py = centerY + oy - 30f
 
-            // Альфа: за персонажем — тусклее
+            // Пульсация scale при hover
+            val pulseScale = if (isHovered) {
+                1f + sin((time * 2f).toDouble()).toFloat() * 0.08f
+            } else 1f
+
+            // Альфа: за персонажем — тусклее, + hover состояние
             val depthFade = if (isBehind) 0.45f else 1.0f
             val pulseAlpha = p.baseAlpha + sin((time * 0.5f + p.orbitPhase).toDouble()).toFloat() * 0.07f
-            val alpha = ((pulseAlpha * introAlpha * depthFade).coerceIn(0f, 1f) * 255).toInt()
+            val alpha = ((pulseAlpha * introAlpha * depthFade * motivationsBaseAlpha * hoverAlpha).coerceIn(0f, 1f) * 255).toInt()
             val color = (alpha shl 24) or p.color
 
             val m = context.matrices; m.push()
             m.translate(px, py, 0f)
-            m.scale(p.scale, p.scale, 1f)
+            val finalScale = p.scale * hoverScale * pulseScale
+            m.scale(finalScale, finalScale, 1f)
             val tw = textRenderer.getWidth(p.text)
             context.drawTextWithShadow(textRenderer, p.text, -(tw / 2), 0, color)
             m.pop()
@@ -447,6 +547,8 @@ class PersonalityScreen(private val parent: Screen) :
         drawCenteredScaledAlpha(context, text, cx, y, scale, color, 255)
 
     private fun easeOut(t: Float) = 1f - (1f - t) * (1f - t)
+    
+    private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
     private fun wrapText(text: String, maxChars: Int): List<String> {
         val words = text.split(" ")
