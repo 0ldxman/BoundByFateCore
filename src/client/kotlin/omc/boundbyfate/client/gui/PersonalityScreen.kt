@@ -106,6 +106,7 @@ class PersonalityScreen(private val parent: Screen) :
         val zLayer: Float         // -1..1: отрицательный = за персонажем
     )
     private val particles = mutableListOf<MotivationParticle>()
+    private var lastMotivationSnapshot: List<String> = emptyList()  // id+isActive для отслеживания изменений
 
     override fun init() {
         openTime = 0f
@@ -213,6 +214,13 @@ class PersonalityScreen(private val parent: Screen) :
         val pad = 8
         val sideMargin = 18
         val panelStartY = H / 3
+        
+        // Перестраиваем частицы если список мотиваций изменился
+        val currentSnapshot = ClientPlayerData.motivations.map { "${it.id}:${it.isActive}" }
+        if (currentSnapshot != lastMotivationSnapshot) {
+            lastMotivationSnapshot = currentSnapshot
+            buildParticles()
+        }
         val cx = W / 2; val cy = H / 2
 
         // ── Обновление hover-анимаций ─────────────────────────────────────────
