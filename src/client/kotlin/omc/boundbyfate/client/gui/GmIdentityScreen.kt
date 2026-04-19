@@ -53,7 +53,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var goalScroll = 0
 
     // ── Input overlay ─────────────────────────────────────────────────────────
-    private enum class InputMode { NONE, ADD_IDEAL, ADD_FLAW, ADD_MOTIVATION, ADD_GOAL, EDIT_GOAL, ADD_TASK, EDIT_TASK }
+    private enum class InputMode { NONE, ADD_IDEAL, EDIT_IDEAL, ADD_FLAW, EDIT_FLAW, ADD_MOTIVATION, EDIT_MOTIVATION, ADD_GOAL, EDIT_GOAL, ADD_TASK, EDIT_TASK }
     private var inputMode = InputMode.NONE
     private var inputBuffer = ""
     private var inputBuffer2 = ""
@@ -63,12 +63,16 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private var pendingAxis: IdealAlignment = IdealAlignment.ANY
     private var editingGoalId: String? = null
     private var editingTaskId: String? = null
+    private var editingIdealId: String? = null
+    private var editingFlawId: String? = null
+    private var editingMotivationId: String? = null
     private var pendingGoalStatus: String = "ACTIVE"
     private var pendingMotivationId: String? = null
     private var taskListScroll = 0
     private var draggedTaskIndex: Int? = null
     private var draggedTaskY: Int = 0
     private var dragStartY: Int = 0
+    private var taskListStartY: Int = 0  // absolute Y where task list starts (set during render)
     private var isDragging: Boolean = false
     private var lastClickTime: Long = 0
     private var lastClickedTaskIndex: Int? = null
@@ -246,7 +250,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderIdeals(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
         lbl(context, tr("bbf.gm.identity.ideals"), x, y, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, x + w - 11, y - 1, 11, 9, "§a+") {
-            inputMode = InputMode.ADD_IDEAL; inputBuffer = ""; pendingAxis = IdealAlignment.ANY
+            inputMode = InputMode.ADD_IDEAL; inputBuffer = ""; inputBuffer2Scroll = 0; pendingAxis = IdealAlignment.ANY
         }
         val listY = y + 11; val rowH = 11
         val visible = ideals.drop(idealScroll).take((h - 11) / rowH)
@@ -256,11 +260,20 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             val textColor = if (compatible) 0xCCCCCC else 0xFF5555
             val axisShort = ideal.alignmentAxis.name.take(3)
             val axisCol = axisColor(ideal.alignmentAxis)
-            box(context, x, fy, w - 13, rowH - 1, 0xCC1a1a1a.toInt(), 0xFF3a3a3a.toInt())
+            val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
+            box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, "[$axisShort]", x + 2, fy + 1, 0.5f, axisCol)
             lbl(context, truncate(ideal.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, textColor)
+            // Click to edit
+            btns.add(Btn(x, fy, w - 13, rowH - 1) {
+                editingIdealId = ideal.id
+                inputBuffer = ideal.text
+                pendingAxis = ideal.alignmentAxis
+                inputFocusField = 0; inputBuffer2Scroll = 0
+                inputMode = InputMode.EDIT_IDEAL
+            })
             btn(context, mouseX, mouseY, x + w - 11, fy, 10, 9, "§cX") {
-                sendRemoveIdeal(ideal.id); ideals.removeIf { it.id == ideal.id }
+                ideals.removeIf { it.id == ideal.id }
             }
         }
         if (idealScroll > 0) btn(context, mouseX, mouseY, x + w - 10, listY, 10, 9, "§7▲") { idealScroll-- }
@@ -273,16 +286,24 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         context.fill(x, y - 2, x + w, y - 1, 0xFF4a3a2a.toInt())
         lbl(context, tr("bbf.gm.identity.flaws"), x, y, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, x + w - 11, y - 1, 11, 9, "§a+") {
-            inputMode = InputMode.ADD_FLAW; inputBuffer = ""
+            inputMode = InputMode.ADD_FLAW; inputBuffer = ""; inputBuffer2Scroll = 0
         }
         val listY = y + 11; val rowH = 11
         val visible = flaws.drop(flawScroll).take((h - 11) / rowH)
         visible.forEachIndexed { i, flaw ->
             val fy = listY + i * rowH
-            box(context, x, fy, w - 13, rowH - 1, 0xCC1a1a1a.toInt(), 0xFF3a3a3a.toInt())
+            val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
+            box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, truncate(flaw.text, w - 22, 0.6f), x + 2, fy + 1, 0.6f, 0xCCCCCC)
+            // Click to edit
+            btns.add(Btn(x, fy, w - 13, rowH - 1) {
+                editingFlawId = flaw.id
+                inputBuffer = flaw.text
+                inputFocusField = 0; inputBuffer2Scroll = 0
+                inputMode = InputMode.EDIT_FLAW
+            })
             btn(context, mouseX, mouseY, x + w - 11, fy, 10, 9, "§cX") {
-                sendRemoveFlaw(flaw.id); flaws.removeIf { it.id == flaw.id }
+                flaws.removeIf { it.id == flaw.id }
             }
         }
         if (flawScroll > 0) btn(context, mouseX, mouseY, x + w - 10, listY, 10, 9, "§7▲") { flawScroll-- }
@@ -296,7 +317,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     private fun renderMotivations(context: DrawContext, mouseX: Int, mouseY: Int, x: Int, y: Int, w: Int, h: Int) {
         lbl(context, tr("bbf.gm.identity.motivations"), x, y, 0.65f, 0xD4AF37)
         btn(context, mouseX, mouseY, x + w - 11, y - 1, 11, 9, "§a+") {
-            inputMode = InputMode.ADD_MOTIVATION; inputBuffer = ""
+            inputMode = InputMode.ADD_MOTIVATION; inputBuffer = ""; inputBuffer2Scroll = 0
         }
         val listY = y + 11; val rowH = 11
         val active = motivations.filter { it.isActive }
@@ -304,11 +325,19 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         visible.forEachIndexed { i, mot ->
             val fy = listY + i * rowH
             val tag = if (mot.addedByGm) "§8[GM]" else "§b[P]"
-            box(context, x, fy, w - 13, rowH - 1, 0xCC1a1a1a.toInt(), 0xFF3a3a3a.toInt())
+            val hovered = mouseX in x..(x + w - 14) && mouseY in fy..(fy + rowH - 1)
+            box(context, x, fy, w - 13, rowH - 1, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
             lbl(context, tag, x + 2, fy + 1, 0.5f, if (mot.addedByGm) 0x666666 else 0x55AAFF)
             lbl(context, truncate(mot.text, w - 36, 0.6f), x + 22, fy + 1, 0.6f, 0xCCCCCC)
+            // Click to edit
+            btns.add(Btn(x, fy, w - 13, rowH - 1) {
+                editingMotivationId = mot.id
+                inputBuffer = mot.text
+                inputFocusField = 0; inputBuffer2Scroll = 0
+                inputMode = InputMode.EDIT_MOTIVATION
+            })
             btn(context, mouseX, mouseY, x + w - 11, fy, 10, 9, "§cX") {
-                sendRemoveMotivation(mot.id); motivations.removeIf { it.id == mot.id }
+                motivations.removeIf { it.id == mot.id }
             }
         }
         // Proposals
@@ -380,10 +409,12 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         val W = width; val H = height
         val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
         val overlayH = when (inputMode) {
-            InputMode.ADD_IDEAL -> 78
+            InputMode.ADD_IDEAL, InputMode.EDIT_IDEAL -> 120
+            InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> 100
+            InputMode.ADD_MOTIVATION, InputMode.EDIT_MOTIVATION -> 100
             InputMode.ADD_GOAL -> 160
-            InputMode.EDIT_GOAL -> minOf(H - 40, 280)  // Increased for textarea
-            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 130  // Increased for textarea
+            InputMode.EDIT_GOAL -> minOf(H - 40, 280)
+            InputMode.ADD_TASK, InputMode.EDIT_TASK -> 130
             else -> 62
         }
         val ox = (W - overlayW) / 2
@@ -397,8 +428,11 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
 
         val title = when (inputMode) {
             InputMode.ADD_IDEAL      -> tr("bbf.gm.identity.add_ideal")
+            InputMode.EDIT_IDEAL     -> tr("bbf.gm.identity.edit_ideal")
             InputMode.ADD_FLAW       -> tr("bbf.gm.identity.add_flaw")
+            InputMode.EDIT_FLAW      -> tr("bbf.gm.identity.edit_flaw")
             InputMode.ADD_MOTIVATION -> tr("bbf.gm.identity.add_motivation")
+            InputMode.EDIT_MOTIVATION -> tr("bbf.gm.identity.edit_motivation")
             InputMode.ADD_GOAL       -> tr("bbf.gm.identity.add_goal")
             InputMode.EDIT_GOAL      -> tr("bbf.gm.identity.edit_goal")
             InputMode.ADD_TASK       -> tr("bbf.gm.identity.add_task")
@@ -410,13 +444,14 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         var curY = oy + 17
 
         when (inputMode) {
-            InputMode.ADD_IDEAL -> {
-                // Text field
-                renderField(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, inputBuffer, inputFocusField == 0, "")
-                btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 0 })
-                curY += 18
+            InputMode.ADD_IDEAL, InputMode.EDIT_IDEAL -> {
+                // Text textarea
+                val taH = 50
+                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
+                btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
+                curY += taH + 6
 
-                // Axis selector — without TRUE_NEUTRAL, with distinct neutral labels
+                // Axis selector
                 val axes = IdealAlignment.values().filter { it != IdealAlignment.TRUE_NEUTRAL }
                 val bw = (overlayW - 8) / axes.size
                 axes.forEachIndexed { i, axis ->
@@ -432,6 +467,48 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     btns.add(Btn(bx, curY, bw - 1, 12) { pendingAxis = axis })
                 }
                 curY += 16
+
+                // Delete button (edit only)
+                if (inputMode == InputMode.EDIT_IDEAL) {
+                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
+                        val id = editingIdealId
+                        if (id != null) ideals.removeIf { it.id == id }
+                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+                    }
+                    curY += 14
+                }
+            }
+
+            InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> {
+                val taH = 50
+                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
+                btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
+                curY += taH + 6
+
+                if (inputMode == InputMode.EDIT_FLAW) {
+                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
+                        val id = editingFlawId
+                        if (id != null) flaws.removeIf { it.id == id }
+                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+                    }
+                    curY += 14
+                }
+            }
+
+            InputMode.ADD_MOTIVATION, InputMode.EDIT_MOTIVATION -> {
+                val taH = 50
+                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
+                btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
+                curY += taH + 6
+
+                if (inputMode == InputMode.EDIT_MOTIVATION) {
+                    btn(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, 10, "§c${tr("bbf.gm.button.delete")}") {
+                        val id = editingMotivationId
+                        if (id != null) motivations.removeIf { it.id == id }
+                        inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2Scroll = 0
+                    }
+                    curY += 14
+                }
             }
 
             InputMode.ADD_GOAL, InputMode.EDIT_GOAL -> {
@@ -495,6 +572,9 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                     val sortedTasks = goal?.tasks?.sortedBy { it.order } ?: emptyList()
                     val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
                     val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
+
+                    // Save taskListStartY for drag-n-drop calculations
+                    taskListStartY = curY
 
                     visibleTasks.forEachIndexed { i, task ->
                         val taskIndex = sortedTasks.indexOf(task)
@@ -738,13 +818,28 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddIdeal(text, pendingAxis)
             }
+            InputMode.EDIT_IDEAL -> {
+                val id = editingIdealId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                val idx = ideals.indexOfFirst { it.id == id }
+                if (idx >= 0) ideals[idx] = ideals[idx].copy(text = text.ifEmpty { ideals[idx].text }, alignmentAxis = pendingAxis)
+            }
             InputMode.ADD_FLAW -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddFlaw(text)
             }
+            InputMode.EDIT_FLAW -> {
+                val id = editingFlawId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                val idx = flaws.indexOfFirst { it.id == id }
+                if (idx >= 0) flaws[idx] = flaws[idx].copy(text = text.ifEmpty { flaws[idx].text })
+            }
             InputMode.ADD_MOTIVATION -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
                 sendAddMotivation(text)
+            }
+            InputMode.EDIT_MOTIVATION -> {
+                val id = editingMotivationId ?: run { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
+                val idx = motivations.indexOfFirst { it.id == id }
+                if (idx >= 0) motivations[idx] = motivations[idx].copy(text = text.ifEmpty { motivations[idx].text })
             }
             InputMode.ADD_GOAL -> {
                 if (text.isEmpty()) { inputMode = InputMode.NONE; inputBuffer2Scroll = 0; return }
@@ -985,35 +1080,17 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         if (inputMode == InputMode.EDIT_GOAL && button == 0) {
             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
             if (goal != null) {
-                val W = width; val H = height
+                val W = width
                 val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
-                val overlayH = minOf(H - 40, 280)  // Match renderInputOverlay
                 val ox = (W - overlayW) / 2
-                val oy = (H - overlayH) / 2
                 
-                // Calculate task list position - MUST match renderInputOverlay EXACTLY
-                // We need to replicate the EXACT same curY calculation from renderInputOverlay
-                var curY = oy + 17  // Title label
-                // Title field
-                curY += 20  // field height (12) + spacing
-                // Description label + textarea
-                curY += 6   // label spacing
-                curY += 50  // textarea height
-                curY += 6   // spacing after textarea
-                // Motivation label + selector
-                curY += 6   // label spacing  
-                curY += 10  // selector height
-                curY += 16  // spacing after selector
-                // Status selector (only in EDIT_GOAL mode)
-                curY += 12  // selector height
-                curY += 16  // spacing after selector
-                // Tasks label + add button
-                curY += 12  // label + button height + spacing
-                // Now curY is at the start of task list - this MUST match renderInputOverlay
-                
-                val taskListH = overlayH - (curY - oy) - 30
+                // Use taskListStartY saved during last render
+                val curY = taskListStartY
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
+                val overlayH = minOf(height - 40, 280)
+                val oy = (height - overlayH) / 2
+                val taskListH = overlayH - (curY - oy) - 30
                 val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
                 val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
                 
@@ -1040,7 +1117,7 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             lastClickedTaskIndex = taskIndex
                             lastClickTime = currentTime
                             draggedTaskIndex = taskIndex
-                            draggedTaskY = ty
+                            draggedTaskY = ty  // use actual rendered Y
                             dragStartY = my
                         }
                         return true
@@ -1077,38 +1154,17 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         if (isDragging && draggedTaskIndex != null) {
             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
             if (goal != null) {
-                val W = width; val H = height
-                val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
-                val overlayH = minOf(H - 40, 280)
-                val ox = (W - overlayW) / 2
-                val oy = (H - overlayH) / 2
-                
-                // Calculate task list position - MUST match mouseClicked and renderInputOverlay
-                var curY = oy + 17  // Title label
-                curY += 20  // Title field + spacing
-                curY += 6   // Description label spacing
-                curY += 50  // Description textarea height
-                curY += 6   // Spacing after description
-                curY += 6   // Motivation label spacing
-                curY += 10  // Motivation selector height
-                curY += 16  // Spacing after motivation
-                curY += 12  // Status selector height
-                curY += 16  // Spacing after status
-                curY += 12  // Tasks label + add button
-                
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
                 
-                // Calculate new position based on draggedTaskY
-                val relativeY = draggedTaskY - curY
+                // Use taskListStartY saved during render — no need to recalculate
+                val relativeY = draggedTaskY - taskListStartY
                 val newOrder = (relativeY / taskRowH).coerceIn(0, sortedTasks.size - 1)
                 
-                // Send reorder if position changed
                 if (newOrder != draggedTaskIndex) {
                     val draggedTask = sortedTasks[draggedTaskIndex!!]
                     sendReorderTask(goal.id, draggedTask.id, newOrder)
                     
-                    // Update local state immediately for responsive UI
                     val updatedTasks = sortedTasks.toMutableList()
                     updatedTasks.removeAt(draggedTaskIndex!!)
                     updatedTasks.add(newOrder, draggedTask)
@@ -1121,7 +1177,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 }
             }
             
-            // Reset drag state
             isDragging = false
             draggedTaskIndex = null
             draggedTaskY = 0
