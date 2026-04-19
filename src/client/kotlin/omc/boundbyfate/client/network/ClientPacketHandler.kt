@@ -159,6 +159,26 @@ object ClientPacketHandler {
             val hasGender = buf.readBoolean()
             val gender = if (hasGender) buf.readString() else null
 
+            // Identity data
+            val alignmentKey = buf.readString()
+            val idealCount = buf.readInt()
+            val ideals = (0 until idealCount).map {
+                val text = buf.readString()
+                val axisName = buf.readString()
+                val isCompatible = buf.readBoolean()
+                val axis = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(axisName) }
+                           catch (e: Exception) { omc.boundbyfate.api.identity.IdealAlignment.ANY }
+                omc.boundbyfate.client.state.ClientIdeal("", text, axis, isCompatible)
+            }
+            val flawCount = buf.readInt()
+            val flaws = (0 until flawCount).map {
+                omc.boundbyfate.client.state.ClientFlaw("", buf.readString())
+            }
+            val motivationCount = buf.readInt()
+            val motivations = (0 until motivationCount).map {
+                omc.boundbyfate.client.state.ClientMotivation("", buf.readString(), true, true)
+            }
+
             client.execute {
                 ClientPlayerData.statsData = EntityStatData(baseStats = baseStats)
                 ClientPlayerData.skillData = EntitySkillData(proficiencies = proficiencies)
@@ -167,6 +187,10 @@ object ClientPacketHandler {
                 ClientPlayerData.level = level
                 ClientPlayerData.gender = gender
                 ClientPlayerData.statBonuses = statBonuses
+                ClientPlayerData.alignmentText = net.minecraft.client.resource.language.I18n.translate(alignmentKey)
+                ClientPlayerData.ideals = ideals
+                ClientPlayerData.flaws = flaws
+                ClientPlayerData.motivations = motivations
             }
         }
 

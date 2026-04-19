@@ -5,6 +5,7 @@ import omc.boundbyfate.component.EntitySkillData
 import omc.boundbyfate.component.EntityStatData
 import omc.boundbyfate.component.PlayerClassData
 import omc.boundbyfate.component.PlayerRaceData
+
 /**
  * Client-side cache of player character data synced from server.
  */
@@ -18,6 +19,12 @@ object ClientPlayerData {
     var gender: String? = null
     var statBonuses: Map<Identifier, Int> = emptyMap()
 
+    // Identity data
+    var alignmentText: String = ""
+    var ideals: List<ClientIdeal> = emptyList()
+    var flaws: List<ClientFlaw> = emptyList()
+    var motivations: List<ClientMotivation> = emptyList()
+
     fun clear() {
         statsData = null
         skillData = null
@@ -26,5 +33,9 @@ object ClientPlayerData {
         level = 1
         gender = null
         statBonuses = emptyMap()
+        alignmentText = ""
+        ideals = emptyList()
+        flaws = emptyList()
+        motivations = emptyList()
     }
 }

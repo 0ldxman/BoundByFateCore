@@ -922,6 +922,27 @@ object ServerPacketHandler {
         buf.writeBoolean(gender != null)
         if (gender != null) buf.writeString(gender)
 
+        // Identity data for player's own personality screen
+        val identityData = player.getAttachedOrCreate(BbfAttachments.PLAYER_IDENTITY)
+        val currentAlignment = identityData.alignment.currentAlignment
+        buf.writeString(currentAlignment.translationKey)
+
+        val ideals = identityData.idealsData.ideals
+        buf.writeInt(ideals.size)
+        ideals.forEach { ideal ->
+            buf.writeString(ideal.text)
+            buf.writeString(ideal.alignmentAxis.name)
+            buf.writeBoolean(ideal.isCompatibleWith(currentAlignment))
+        }
+
+        val flaws = identityData.idealsData.flaws
+        buf.writeInt(flaws.size)
+        flaws.forEach { flaw -> buf.writeString(flaw.text) }
+
+        val motivations = identityData.motivationData.motivations.filter { it.isActive }
+        buf.writeInt(motivations.size)
+        motivations.forEach { mot -> buf.writeString(mot.text) }
+
         ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)
     }
 

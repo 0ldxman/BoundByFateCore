@@ -260,6 +260,22 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         super.render(context, mouseX, mouseY, delta)
 
+        // Personality button — bottom left
+        val btnText = net.minecraft.client.resource.language.I18n.translate("bbf.screen.personality")
+        val bw = 55; val bh = 12
+        val bx = 8; val by = height - bh - 8
+        val bHov = mouseX in bx..(bx + bw) && mouseY in by..(by + bh)
+        context.fill(bx, by, bx + bw, by + bh, if (bHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
+        context.fill(bx, by, bx + bw, by + 1, 0xFF8a6a3a.toInt())
+        context.fill(bx, by + bh - 1, bx + bw, by + bh, 0xFF8a6a3a.toInt())
+        context.fill(bx, by, bx + 1, by + bh, 0xFF8a6a3a.toInt())
+        context.fill(bx + bw - 1, by, bx + bw, by + bh, 0xFF8a6a3a.toInt())
+        val bm = context.matrices; bm.push()
+        bm.translate((bx + bw / 2).toFloat(), (by + 2).toFloat(), 0f); bm.scale(0.75f, 0.75f, 1f)
+        val btw = textRenderer.getWidth(btnText)
+        context.drawTextWithShadow(textRenderer, btnText, -(btw / 2), 0, if (bHov) 0xFFD700 else 0xCCCCCC)
+        bm.pop()
+
         // Тултип с анимацией
         pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
         updateTooltipAnim()
@@ -667,6 +683,16 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     }
 
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
+
+    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        val bw = 55; val bh = 12
+        val bx = 8; val by = height - bh - 8
+        if (mouseX.toInt() in bx..(bx + bw) && mouseY.toInt() in by..(by + bh)) {
+            client?.setScreen(PersonalityScreen(this))
+            return true
+        }
+        return super.mouseClicked(mouseX, mouseY, button)
+    }
 
     override fun shouldPause() = false
 }
