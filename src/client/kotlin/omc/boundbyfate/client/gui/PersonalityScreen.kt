@@ -143,9 +143,9 @@ class PersonalityScreen(private val parent: Screen) :
         val cx = W / 2; val cy = H / 2
 
         // ── Обновление hover-анимаций ─────────────────────────────────────────
-        // Модель и мотивации
-        val modelX = cx - 40..cx + 40
-        val modelY = cy + 15..cy + 155
+        // Модель и мотивации - расширенная область hover (вся центральная зона)
+        val modelX = cx - 100..cx + 100
+        val modelY = cy - 60..cy + 160
         modelHovered = mouseX in modelX && mouseY in modelY
         modelAlpha = lerp(modelAlpha, if (modelHovered) 0.35f else 1f, 0.15f)
         motivationsBaseAlpha = lerp(motivationsBaseAlpha, if (modelHovered) 1f else 0.7f, 0.15f)
@@ -159,10 +159,11 @@ class PersonalityScreen(private val parent: Screen) :
                 val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
                 val px = cx + ox
                 val py = cy + oy - 30f
-                val tw = (textRenderer.getWidth(p.text) * p.scale).toInt()
-                val th = (textRenderer.fontHeight * p.scale).toInt()
-                if (mouseX in (px - tw/2).toInt()..(px + tw/2).toInt() && 
-                    mouseY in (py - th/2).toInt()..(py + th/2).toInt()) {
+                val currentScale = motivationScales.getOrDefault(idx, 1f)
+                val tw = (textRenderer.getWidth(p.text) * p.scale * currentScale * 0.5f).toInt()
+                val th = (textRenderer.fontHeight * p.scale * currentScale * 0.5f).toInt()
+                if (mouseX in (px - tw).toInt()..(px + tw).toInt() && 
+                    mouseY in (py - th).toInt()..(py + th).toInt()) {
                     newHoveredMotivation = idx
                 }
             }
@@ -194,7 +195,9 @@ class PersonalityScreen(private val parent: Screen) :
             // Мотивации ЗА персонажем (zLayer < 0)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true)
 
-            // Модель с альфой при hover
+            // Модель с альфой при hover - используем enableBlend для прозрачности
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend()
+            com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc()
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, modelAlpha)
             InventoryScreen.drawEntity(
                 context, cx, cy + 85, 70,
@@ -202,6 +205,7 @@ class PersonalityScreen(private val parent: Screen) :
                 player
             )
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend()
 
             // Мотивации ПЕРЕД персонажем (zLayer >= 0)
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false)
@@ -374,7 +378,7 @@ class PersonalityScreen(private val parent: Screen) :
             val isHovered = hoveredIdealIdx == idx
             idealHoverScales[idx] = lerp(idealHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
             idealIconScales[idx] = lerp(idealIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
-            idealTextOffsets[idx] = lerp(idealTextOffsets.getOrDefault(idx, 0f), if (isHovered) -8f else 0f, 0.15f)
+            idealTextOffsets[idx] = lerp(idealTextOffsets.getOrDefault(idx, 0f), if (isHovered) 8f else 0f, 0.15f)
         }
 
         // Рассчитываем смещения строк (hover раздвигает)
@@ -427,7 +431,10 @@ class PersonalityScreen(private val parent: Screen) :
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
                     val iconScale = idealIconScales.getOrDefault(line.idealIdx, 1f)
-                    val iconRotation = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    // Медленная ротация + пульсация при hover
+                    val baseRotation = time * 15f  // медленная постоянная ротация
+                    val hoverPulse = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    val iconRotation = baseRotation + hoverPulse
                     
                     val im = context.matrices; im.push()
                     val icx = x + iconSize / 2f
@@ -515,7 +522,7 @@ class PersonalityScreen(private val parent: Screen) :
             val isHovered = hoveredFlawIdx == idx
             flawHoverScales[idx] = lerp(flawHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
             flawIconScales[idx] = lerp(flawIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
-            flawTextOffsets[idx] = lerp(flawTextOffsets.getOrDefault(idx, 0f), if (isHovered) 8f else 0f, 0.15f)
+            flawTextOffsets[idx] = lerp(flawTextOffsets.getOrDefault(idx, 0f), if (isHovered) -8f else 0f, 0.15f)
         }
 
         // Рассчитываем смещения строк
@@ -570,7 +577,10 @@ class PersonalityScreen(private val parent: Screen) :
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
                     val iconScale = flawIconScales.getOrDefault(line.flawIdx, 1f)
-                    val iconRotation = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    // Медленная ротация + пульсация при hover
+                    val baseRotation = time * 15f  // медленная постоянная ротация
+                    val hoverPulse = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    val iconRotation = baseRotation + hoverPulse
                     
                     val im = context.matrices; im.push()
                     val icx = rightEdge - iconSize / 2f
