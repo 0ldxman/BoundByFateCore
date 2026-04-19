@@ -74,6 +74,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
     // Анимация баннеров: 0=имя, 1=класс, 2=раса
     private val bannerScales = FloatArray(3) { 1f }
 
+    // Анимация кнопки "Личность" — fade-in с задержкой
+    private var personalityBtnAlpha = 0f
+
     // Направления въезда для каждого щита (нормализованные векторы * дистанция)
     // 0=STR(лево), 1=CON(низ-лево), 2=DEX(низ), 3=INT(право), 4=WIS(низ-право), 5=CHA(низ)
     private val slideStartX = floatArrayOf(-200f, -150f, 0f, 200f, 150f, 0f)
@@ -83,6 +86,7 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         cx = width / 2
         cy = height / 2
         openTime = 0f
+        personalityBtnAlpha = 0f
         shieldAnims.forEachIndexed { idx, it ->
             it.introProgress = 0f; it.skillSlide = 0f
             it.textAlpha = 0f; it.profScale = 0f
@@ -103,6 +107,11 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
         pendingTooltip = null
 
         openTime = (openTime + delta * 0.045f).coerceAtMost(1f)
+
+        // Анимация кнопки "Личность" — начинается после основных анимаций (задержка 0.7)
+        val btnDelay = 0.7f
+        val btnProgress = ((openTime - btnDelay) / (1f - btnDelay)).coerceIn(0f, 1f)
+        personalityBtnAlpha = lerp(personalityBtnAlpha, btnProgress, 0.12f)
 
         val player = MinecraftClient.getInstance().player ?: return
         val statsData = ClientPlayerData.statsData
@@ -260,21 +269,34 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         super.render(context, mouseX, mouseY, delta)
 
-        // Personality button — bottom left
-        val btnText = net.minecraft.client.resource.language.I18n.translate("bbf.screen.personality")
-        val bw = 55; val bh = 12
-        val bx = 8; val by = height - bh - 8
-        val bHov = mouseX in bx..(bx + bw) && mouseY in by..(by + bh)
-        context.fill(bx, by, bx + bw, by + bh, if (bHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
-        context.fill(bx, by, bx + bw, by + 1, 0xFF8a6a3a.toInt())
-        context.fill(bx, by + bh - 1, bx + bw, by + bh, 0xFF8a6a3a.toInt())
-        context.fill(bx, by, bx + 1, by + bh, 0xFF8a6a3a.toInt())
-        context.fill(bx + bw - 1, by, bx + bw, by + bh, 0xFF8a6a3a.toInt())
-        val bm = context.matrices; bm.push()
-        bm.translate((bx + bw / 2).toFloat(), (by + 2).toFloat(), 0f); bm.scale(0.75f, 0.75f, 1f)
-        val btw = textRenderer.getWidth(btnText)
-        context.drawTextWithShadow(textRenderer, btnText, -(btw / 2), 0, if (bHov) 0xFFD700 else 0xCCCCCC)
-        bm.pop()
+        // Personality button — bottom left (с fade-in анимацией)
+        if (personalityBtnAlpha > 0.01f) {
+            val btnText = net.minecraft.client.resource.language.I18n.translate("bbf.screen.personality")
+            val bw = 55; val bh = 12
+            val bx = 8; val by = height - bh - 8
+            val bHov = mouseX in bx..(bx + bw) && mouseY in by..(by + bh)
+            
+            val alpha = (personalityBtnAlpha * 255).toInt().coerceIn(0, 255)
+            val bgColor = if (bHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt()
+            val borderColor = 0xFF8a6a3a.toInt()
+            val textColor = if (bHov) 0xFFD700 else 0xCCCCCC
+            
+            // Применяем альфу к цветам
+            val bgWithAlpha = (bgColor and 0x00FFFFFF) or (((bgColor ushr 24) * personalityBtnAlpha).toInt() shl 24)
+            val borderWithAlpha = (borderColor and 0x00FFFFFF) or (((borderColor ushr 24) * personalityBtnAlpha).toInt() shl 24)
+            val textWithAlpha = (textColor and 0x00FFFFFF) or (alpha shl 24)
+            
+            context.fill(bx, by, bx + bw, by + bh, bgWithAlpha)
+            context.fill(bx, by, bx + bw, by + 1, borderWithAlpha)
+            context.fill(bx, by + bh - 1, bx + bw, by + bh, borderWithAlpha)
+            context.fill(bx, by, bx + 1, by + bh, borderWithAlpha)
+            context.fill(bx + bw - 1, by, bx + bw, by + bh, borderWithAlpha)
+            val bm = context.matrices; bm.push()
+            bm.translate((bx + bw / 2).toFloat(), (by + 2).toFloat(), 0f); bm.scale(0.75f, 0.75f, 1f)
+            val btw = textRenderer.getWidth(btnText)
+            context.drawTextWithShadow(textRenderer, btnText, -(btw / 2), 0, textWithAlpha)
+            bm.pop()
+        }
 
         // Тултип с анимацией
         pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
