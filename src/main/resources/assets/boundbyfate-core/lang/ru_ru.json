@@ -189,5 +189,9 @@
   "bbf.gm.identity.status.cancelled": "Отменено",
   "bbf.gm.button.delete": "Удалить",
   "bbf.alignment.axis.neutral_ge.short": "Н(Д-З)",
-  "bbf.alignment.axis.neutral_lc.short": "Н(З-Х)"
+  "bbf.alignment.axis.neutral_lc.short": "Н(З-Х)",
+  
+  "bbf.personality.ideals.tooltip": "Убеждения\n\nЦенности и принципы, которыми\nруководствуется персонаж.\nОпределяют его мировоззрение.",
+  "bbf.personality.flaws.tooltip": "Слабости\n\nНедостатки и уязвимости\nперсонажа. Могут создавать\nпроблемы в приключениях.",
+  "bbf.personality.motivations.tooltip": "Мотивации\n\nВнутренние стремления и цели,\nкоторые движут персонажем\nв его приключениях."
 }

@@ -43,6 +43,21 @@ class PersonalityScreen(private val parent: Screen) :
     private var hoveredMotivationIdx: Int? = null
     private var modelHovered = false
     
+    // Hover для заголовков
+    private var idealsHeaderHovered = false
+    private var flawsHeaderHovered = false
+    private var motivationsHeaderHovered = false
+    private var idealsHeaderScale = 1f
+    private var flawsHeaderScale = 1f
+    private var motivationsHeaderScale = 1f
+    
+    // Tooltip
+    private var pendingTooltip: net.minecraft.text.Text? = null
+    private var lastTooltipKey: String = ""
+    private var tooltipAnimW = 0f
+    private var tooltipAnimH = 0f
+    private var tooltipWidthTimer = 0f
+    
     // Lerp-анимации для hover
     private val idealHoverScales = mutableMapOf<Int, Float>()      // текст scale
     private val idealIconScales = mutableMapOf<Int, Float>()       // иконка scale
@@ -87,6 +102,12 @@ class PersonalityScreen(private val parent: Screen) :
         hoveredFlawIdx = null
         hoveredMotivationIdx = null
         modelHovered = false
+        idealsHeaderHovered = false
+        flawsHeaderHovered = false
+        motivationsHeaderHovered = false
+        idealsHeaderScale = 1f
+        flawsHeaderScale = 1f
+        motivationsHeaderScale = 1f
         idealHoverScales.clear()
         idealIconScales.clear()
         idealTextOffsets.clear()
@@ -108,6 +129,10 @@ class PersonalityScreen(private val parent: Screen) :
         overlayScroll = 0
         motivationTypewriterProgress.clear()
         motivationDividerProgress.clear()
+        tooltipAnimW = 0f
+        tooltipAnimH = 0f
+        tooltipWidthTimer = 0f
+        lastTooltipKey = ""
         buildParticles()
     }
 
@@ -156,6 +181,7 @@ class PersonalityScreen(private val parent: Screen) :
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context)
+        pendingTooltip = null
         time += delta * 0.016f
         openTime = (openTime + delta * 0.018f).coerceAtMost(1f)
 
@@ -293,6 +319,10 @@ class PersonalityScreen(private val parent: Screen) :
             renderMotivationsOverlay(context, mouseX, mouseY)
         }
         updateOverlayAnimation()
+
+        // ── TOOLTIP ───────────────────────────────────────────────────────────
+        pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
+        updateTooltipAnim()
 
         super.render(context, mouseX, mouseY, delta)
     }
@@ -432,14 +462,28 @@ class PersonalityScreen(private val parent: Screen) :
         val headerProg = headerProgress()
         val headerCx = x + w / 2
 
+        // Hover для заголовка
+        val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.ideals")
+        val headerScale = 0.6f
+        val headerW = (textRenderer.getWidth(headerText) * headerScale).toInt()
+        val headerH = (textRenderer.fontHeight * headerScale).toInt()
+        val headerX = headerCx - headerW / 2
+        val headerY = y + 4
+        idealsHeaderHovered = mouseX in headerX..(headerX + headerW) && mouseY in headerY..(headerY + headerH) && headerProg > 0.9f
+        idealsHeaderScale = lerp(idealsHeaderScale, if (idealsHeaderHovered) 1.15f else 1f, 0.15f)
+        
+        if (idealsHeaderHovered) {
+            pendingTooltip = net.minecraft.text.Text.translatable("bbf.personality.ideals.tooltip")
+        }
+
         // Заголовок въезжает слева
         if (headerProg > 0f) {
             val offX = ((1f - headerProg) * -(x + w + 20)).toInt()
             val alpha = (headerProg * 255).toInt()
             val m = context.matrices; m.push()
             m.translate(offX.toFloat(), 0f, 0f)
-            drawCenteredScaledAlpha(context, net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.ideals"),
-                headerCx, y + 4, 0.6f, 0xD4AF37, alpha)
+            drawCenteredScaledAlpha(context, headerText,
+                headerCx, headerY, headerScale * idealsHeaderScale, 0xD4AF37, alpha)
             m.pop()
         }
 
@@ -603,14 +647,28 @@ class PersonalityScreen(private val parent: Screen) :
         val headerCx = x + w / 2
         val W = width
 
+        // Hover для заголовка
+        val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.flaws")
+        val headerScale = 0.6f
+        val headerW = (textRenderer.getWidth(headerText) * headerScale).toInt()
+        val headerH = (textRenderer.fontHeight * headerScale).toInt()
+        val headerX = headerCx - headerW / 2
+        val headerY = y + 4
+        flawsHeaderHovered = mouseX in headerX..(headerX + headerW) && mouseY in headerY..(headerY + headerH) && headerProg > 0.9f
+        flawsHeaderScale = lerp(flawsHeaderScale, if (flawsHeaderHovered) 1.15f else 1f, 0.15f)
+        
+        if (flawsHeaderHovered) {
+            pendingTooltip = net.minecraft.text.Text.translatable("bbf.personality.flaws.tooltip")
+        }
+
         // Заголовок въезжает справа
         if (headerProg > 0f) {
             val offX = ((1f - headerProg) * (W - x + 20)).toInt()
             val alpha = (headerProg * 255).toInt()
             val m = context.matrices; m.push()
             m.translate(offX.toFloat(), 0f, 0f)
-            drawCenteredScaledAlpha(context, net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.flaws"),
-                headerCx, y + 4, 0.6f, 0xD4AF37, alpha)
+            drawCenteredScaledAlpha(context, headerText,
+                headerCx, headerY, headerScale * flawsHeaderScale, 0xD4AF37, alpha)
             m.pop()
         }
 
@@ -948,14 +1006,25 @@ class PersonalityScreen(private val parent: Screen) :
         val contentW = w - pad * 2
         val contentH = h - pad * 2
         
-        // Заголовок "Мотивации"
+        // Заголовок "Мотивации" с hover
         val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.motivations")
         val headerScale = 0.75f
+        val headerW = (textRenderer.getWidth(headerText) * headerScale).toInt()
+        val headerH = (textRenderer.fontHeight * headerScale).toInt()
+        val headerX = (x + w / 2) - headerW / 2
+        val headerY = contentY + 2
+        motivationsHeaderHovered = mouseX in headerX..(headerX + headerW) && mouseY in headerY..(headerY + headerH)
+        motivationsHeaderScale = lerp(motivationsHeaderScale, if (motivationsHeaderHovered) 1.15f else 1f, 0.15f)
+        
+        if (motivationsHeaderHovered) {
+            pendingTooltip = net.minecraft.text.Text.translatable("bbf.personality.motivations.tooltip")
+        }
+        
         val headerColor = ((alpha * 255).toInt() shl 24) or 0xD4AF37
         val hm = context.matrices
         hm.push()
-        hm.translate((x + w / 2).toFloat(), (contentY + 2).toFloat(), 0f)
-        hm.scale(headerScale, headerScale, 1f)
+        hm.translate((x + w / 2).toFloat(), headerY.toFloat(), 0f)
+        hm.scale(headerScale * motivationsHeaderScale, headerScale * motivationsHeaderScale, 1f)
         val htw = textRenderer.getWidth(headerText)
         context.drawTextWithShadow(textRenderer, headerText, -(htw / 2), 0, headerColor)
         hm.pop()
@@ -1147,6 +1216,88 @@ class PersonalityScreen(private val parent: Screen) :
             client?.setScreen(parent); return true
         }
         return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    // ── TOOLTIP ───────────────────────────────────────────────────────────────
+    
+    private fun updateTooltipAnim() {
+        val currentKey = pendingTooltip?.string ?: ""
+        if (currentKey != lastTooltipKey) {
+            // Новый тултип — сбрасываем анимацию
+            if (currentKey.isNotEmpty()) {
+                tooltipAnimW = 0f
+                tooltipAnimH = 0f
+                tooltipWidthTimer = 0f
+            }
+            lastTooltipKey = currentKey
+        }
+        if (currentKey.isNotEmpty()) {
+            tooltipAnimW = lerp(tooltipAnimW, 1f, 0.2f)
+            // Задержка перед раскрытием высоты: ждём пока ширина почти готова
+            if (tooltipAnimW > 0.85f) {
+                tooltipWidthTimer = (tooltipWidthTimer + 0.04f).coerceAtMost(1f)
+            }
+            if (tooltipWidthTimer > 0.6f) {
+                tooltipAnimH = lerp(tooltipAnimH, 1f, 0.15f)
+            }
+        } else {
+            tooltipAnimW = 0f
+            tooltipAnimH = 0f
+            tooltipWidthTimer = 0f
+        }
+    }
+    
+    private fun drawSmallTooltip(context: DrawContext, text: net.minecraft.text.Text, mouseX: Int, mouseY: Int) {
+        if (tooltipAnimW < 0.02f) return
+
+        val scale = 0.75f
+        val lines = text.string.split("\n")
+        val lineH = textRenderer.fontHeight + 1
+        val pad = 4
+        val maxW = lines.maxOf { textRenderer.getWidth(it) }
+        val totalH = lines.size * lineH
+
+        val tx = (mouseX + 6) / scale
+        val ty = (mouseY - 4) / scale
+
+        val bgColor  = 0xFF2b2321.toInt()
+        val brdColor = 0xFFb08a66.toInt()
+
+        val matrices = context.matrices
+        matrices.push()
+        matrices.translate(0f, 0f, 600f)  // Z=600 чтобы быть поверх всего
+        matrices.scale(scale, scale, 1f)
+
+        val x0 = tx.toInt()
+        val y0 = ty.toInt()
+        // Анимированные размеры
+        val animW = ((maxW + pad * 2) * tooltipAnimW).toInt()
+        val animH = ((totalH + pad * 2) * tooltipAnimH).toInt()
+        val x1 = x0 + animW
+        val y1 = y0 + animH
+
+        if (animW > 2) {
+            context.fill(x0, y0, x1, y1, bgColor)
+            context.fill(x0, y0, x1, y0 + 1, brdColor)
+            if (animH > 1) context.fill(x0, y1 - 1, x1, y1, brdColor)
+            context.fill(x0, y0, x0 + 1, y1, brdColor)
+            context.fill(x1 - 1, y0, x1, y1, brdColor)
+
+            // Текст показываем только когда высота достаточная
+            if (tooltipAnimH > 0.6f) {
+                val textAlpha = ((tooltipAnimH - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                val alpha = (textAlpha * 255).toInt()
+                lines.forEachIndexed { i, line ->
+                    val lineY = y0 + pad + i * lineH
+                    if (lineY + lineH < y1) {
+                        val color = (alpha shl 24) or 0xFFFFFF
+                        context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(line), x0 + pad, lineY, color)
+                    }
+                }
+            }
+        }
+
+        matrices.pop()
     }
 
     override fun shouldPause() = false

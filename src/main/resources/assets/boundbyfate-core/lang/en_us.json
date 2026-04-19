@@ -188,5 +188,9 @@
   "bbf.gm.identity.status.cancelled": "Cancelled",
   "bbf.gm.button.delete": "Delete",
   "bbf.alignment.axis.neutral_ge.short": "N(G-E)",
-  "bbf.alignment.axis.neutral_lc.short": "N(L-C)"
+  "bbf.alignment.axis.neutral_lc.short": "N(L-C)",
+  
+  "bbf.personality.ideals.tooltip": "Ideals\n\nValues and principles that\nguide the character.\nDefine their alignment.",
+  "bbf.personality.flaws.tooltip": "Flaws\n\nWeaknesses and vulnerabilities\nof the character. Can create\nproblems in adventures.",
+  "bbf.personality.motivations.tooltip": "Motivations\n\nInner drives and goals that\nmove the character forward\nin their adventures."
 }
