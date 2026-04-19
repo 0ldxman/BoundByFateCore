@@ -36,6 +36,11 @@ class PersonalityScreen(private val parent: Screen) :
     private var overlayScroll = 0
     private val motivationTypewriterProgress = mutableMapOf<Int, Float>()  // прогресс печати для каждой мотивации
     private val motivationDividerProgress = mutableMapOf<Int, Float>()     // прогресс divider для каждой мотивации
+    
+    // ── Оверлей предложения мотивации ────────────────────────────────────────
+    private var suggestMotivationOverlayOpen = false
+    private var suggestOverlayAnimTime = 0f
+    private var suggestMotivationText = ""
 
     // ── Hover состояния ───────────────────────────────────────────────────────
     private var hoveredIdealIdx: Int? = null
@@ -298,10 +303,11 @@ class PersonalityScreen(private val parent: Screen) :
         renderIdealsPanel(context, mouseX, mouseY, pad + sideMargin, panelStartY, panelW, H - panelStartY - 20)
         renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad - sideMargin, panelStartY, panelW, H - panelStartY - 20)
 
-        // ── BACK BUTTON ───────────────────────────────────────────────────────
+        // ── BACK BUTTON (верх справа) ────────────────────────────────────────
         val backText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.button.back")
-        val bw = 60; val bh = 12
-        val bx = W / 2 - bw / 2; val by = H - bh - 6
+        val arrow = "→"
+        val bw = 70; val bh = 12
+        val bx = W - bw - 8; val by = 8
         val backHov = mouseX in bx..(bx + bw) && mouseY in by..(by + bh)
         context.fill(bx, by, bx + bw, by + bh, if (backHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
         context.fill(bx, by, bx + bw, by + 1, 0xFF8a6a3a.toInt())
@@ -310,15 +316,38 @@ class PersonalityScreen(private val parent: Screen) :
         context.fill(bx + bw - 1, by, bx + bw, by + bh, 0xFF8a6a3a.toInt())
         val bm = context.matrices; bm.push()
         bm.translate((bx + bw / 2).toFloat(), (by + 2).toFloat(), 0f); bm.scale(0.75f, 0.75f, 1f)
-        val btw = textRenderer.getWidth(backText)
-        context.drawTextWithShadow(textRenderer, backText, -(btw / 2), 0, if (backHov) 0xFFD700 else 0xCCCCCC)
+        val fullText = "$backText $arrow"
+        val btw = textRenderer.getWidth(fullText)
+        context.drawTextWithShadow(textRenderer, fullText, -(btw / 2), 0, if (backHov) 0xFFD700 else 0xCCCCCC)
         bm.pop()
+        
+        // ── SUGGEST MOTIVATION BUTTON (низ по центру) ────────────────────────
+        val suggestText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.suggest_motivation")
+        val sw = 100; val sh = 12
+        val sx = W / 2 - sw / 2; val sy = H - sh - 6
+        val suggestHov = mouseX in sx..(sx + sw) && mouseY in sy..(sy + sh)
+        context.fill(sx, sy, sx + sw, sy + sh, if (suggestHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
+        context.fill(sx, sy, sx + sw, sy + 1, 0xFF8a6a3a.toInt())
+        context.fill(sx, sy + sh - 1, sx + sw, sy + sh, 0xFF8a6a3a.toInt())
+        context.fill(sx, sy, sx + 1, sy + sh, 0xFF8a6a3a.toInt())
+        context.fill(sx + sw - 1, sy, sx + sw, sy + sh, 0xFF8a6a3a.toInt())
+        val sm = context.matrices; sm.push()
+        sm.translate((sx + sw / 2).toFloat(), (sy + 2).toFloat(), 0f); sm.scale(0.75f, 0.75f, 1f)
+        val stw = textRenderer.getWidth(suggestText)
+        context.drawTextWithShadow(textRenderer, suggestText, -(stw / 2), 0, if (suggestHov) 0xFFD700 else 0xCCCCCC)
+        sm.pop()
 
         // ── MOTIVATIONS OVERLAY ───────────────────────────────────────────────
         if (motivationsOverlayOpen || overlayAnimTime > 0.01f) {
             renderMotivationsOverlay(context, mouseX, mouseY)
         }
         updateOverlayAnimation()
+        
+        // ── SUGGEST MOTIVATION OVERLAY ────────────────────────────────────────
+        if (suggestMotivationOverlayOpen || suggestOverlayAnimTime > 0.01f) {
+            renderSuggestMotivationOverlay(context, mouseX, mouseY)
+        }
+        updateSuggestOverlayAnimation()
 
         // ── TOOLTIP ───────────────────────────────────────────────────────────
         pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
@@ -936,6 +965,157 @@ class PersonalityScreen(private val parent: Screen) :
         }
     }
     
+    private fun updateSuggestOverlayAnimation() {
+        if (suggestMotivationOverlayOpen) {
+            suggestOverlayAnimTime = (suggestOverlayAnimTime + 0.015f).coerceAtMost(1f)
+        } else {
+            suggestOverlayAnimTime = (suggestOverlayAnimTime - 0.015f).coerceAtLeast(0f)
+        }
+    }
+    
+    private fun renderSuggestMotivationOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
+        if (suggestOverlayAnimTime < 0.01f) return
+        
+        val W = width
+        val H = height
+        
+        // Затемнение фона
+        val m0 = context.matrices
+        m0.push()
+        m0.translate(0f, 0f, 400f)
+        val dimAlpha = (suggestOverlayAnimTime * 0xAA).toInt()
+        context.fill(0, 0, W, H, (dimAlpha shl 24) or 0x000000)
+        m0.pop()
+        
+        // Размеры оверлея (меньше чем у мотиваций)
+        val targetW = 300
+        val targetH = 150
+        val cx = W / 2
+        val cy = H / 2
+        
+        // Анимация: простое раскрытие от центра
+        val prog = easeOut(suggestOverlayAnimTime)
+        val animW = (targetW * prog).toInt()
+        val animH = (targetH * prog).toInt()
+        
+        val x0 = cx - animW / 2
+        val y0 = cy - animH / 2
+        val x1 = x0 + animW
+        val y1 = y0 + animH
+        
+        // Рендер с высоким Z
+        val m = context.matrices
+        m.push()
+        m.translate(0f, 0f, 500f)
+        
+        // Фон оверлея
+        context.fill(x0, y0, x1, y1, 0xDD1a1a1a.toInt())
+        // Рамка
+        context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x0, y0, x0 + 1, y1, 0xFF8a6a3a.toInt())
+        context.fill(x1 - 1, y0, x1, y1, 0xFF8a6a3a.toInt())
+        
+        // Контент появляется когда анимация почти завершена
+        if (prog > 0.6f) {
+            val contentAlpha = ((prog - 0.6f) / 0.4f).coerceIn(0f, 1f)
+            renderSuggestMotivationContent(context, x0, y0, animW, animH, contentAlpha, mouseX, mouseY)
+        }
+        
+        m.pop()
+    }
+    
+    private fun renderSuggestMotivationContent(context: DrawContext, x: Int, y: Int, w: Int, h: Int, alpha: Float, mouseX: Int, mouseY: Int) {
+        val pad = 12
+        
+        // Заголовок
+        val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.suggest_motivation")
+        val headerScale = 0.75f
+        val headerColor = ((alpha * 255).toInt() shl 24) or 0xD4AF37
+        val hm = context.matrices
+        hm.push()
+        hm.translate((x + w / 2).toFloat(), (y + pad).toFloat(), 0f)
+        hm.scale(headerScale, headerScale, 1f)
+        val htw = textRenderer.getWidth(headerText)
+        context.drawTextWithShadow(textRenderer, headerText, -(htw / 2), 0, headerColor)
+        hm.pop()
+        
+        // Текстовое поле (простой прямоугольник с текстом)
+        val fieldY = y + pad + 20
+        val fieldH = 40
+        val fieldX = x + pad
+        val fieldW = w - pad * 2
+        
+        val fieldColor = 0xCC2a2a2a.toInt()
+        val borderColor = 0xFF8a6a3a.toInt()
+        context.fill(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH, fieldColor)
+        context.fill(fieldX, fieldY, fieldX + fieldW, fieldY + 1, borderColor)
+        context.fill(fieldX, fieldY + fieldH - 1, fieldX + fieldW, fieldY + fieldH, borderColor)
+        context.fill(fieldX, fieldY, fieldX + 1, fieldY + fieldH, borderColor)
+        context.fill(fieldX + fieldW - 1, fieldY, fieldX + fieldW, fieldY + fieldH, borderColor)
+        
+        // Текст в поле
+        val textColor = ((alpha * 255).toInt() shl 24) or 0xFFFFFF
+        val textScale = 0.7f
+        val tm = context.matrices
+        tm.push()
+        tm.translate((fieldX + 4).toFloat(), (fieldY + 4).toFloat(), 0f)
+        tm.scale(textScale, textScale, 1f)
+        
+        if (suggestMotivationText.isEmpty()) {
+            val placeholder = net.minecraft.client.resource.language.I18n.translate("bbf.personality.motivation_placeholder")
+            val placeholderColor = ((alpha * 128).toInt() shl 24) or 0x888888
+            context.drawTextWithShadow(textRenderer, placeholder, 0, 0, placeholderColor)
+        } else {
+            context.drawTextWithShadow(textRenderer, suggestMotivationText, 0, 0, textColor)
+        }
+        tm.pop()
+        
+        // Кнопки
+        val buttonY = y + h - pad - 16
+        val buttonW = 60
+        val buttonH = 14
+        val buttonSpacing = 8
+        
+        // Кнопка "Отправить"
+        val submitX = x + w / 2 - buttonW - buttonSpacing / 2
+        val submitHov = mouseX in submitX..(submitX + buttonW) && mouseY in buttonY..(buttonY + buttonH)
+        context.fill(submitX, buttonY, submitX + buttonW, buttonY + buttonH, if (submitHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
+        context.fill(submitX, buttonY, submitX + buttonW, buttonY + 1, borderColor)
+        context.fill(submitX, buttonY + buttonH - 1, submitX + buttonW, buttonY + buttonH, borderColor)
+        context.fill(submitX, buttonY, submitX + 1, buttonY + buttonH, borderColor)
+        context.fill(submitX + buttonW - 1, buttonY, submitX + buttonW, buttonY + buttonH, borderColor)
+        
+        val submitText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.submit")
+        val sbm = context.matrices
+        sbm.push()
+        sbm.translate((submitX + buttonW / 2).toFloat(), (buttonY + 3).toFloat(), 0f)
+        sbm.scale(0.7f, 0.7f, 1f)
+        val stw = textRenderer.getWidth(submitText)
+        val submitColor = ((alpha * 255).toInt() shl 24) or (if (submitHov) 0xFFD700 else 0xCCCCCC)
+        context.drawTextWithShadow(textRenderer, submitText, -(stw / 2), 0, submitColor)
+        sbm.pop()
+        
+        // Кнопка "Отмена"
+        val cancelX = x + w / 2 + buttonSpacing / 2
+        val cancelHov = mouseX in cancelX..(cancelX + buttonW) && mouseY in buttonY..(buttonY + buttonH)
+        context.fill(cancelX, buttonY, cancelX + buttonW, buttonY + buttonH, if (cancelHov) 0xCC4a3a2a.toInt() else 0xCC1a1a1a.toInt())
+        context.fill(cancelX, buttonY, cancelX + buttonW, buttonY + 1, borderColor)
+        context.fill(cancelX, buttonY + buttonH - 1, cancelX + buttonW, buttonY + buttonH, borderColor)
+        context.fill(cancelX, buttonY, cancelX + 1, buttonY + buttonH, borderColor)
+        context.fill(cancelX + buttonW - 1, buttonY, cancelX + buttonW, buttonY + buttonH, borderColor)
+        
+        val cancelText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.button.cancel")
+        val cbm = context.matrices
+        cbm.push()
+        cbm.translate((cancelX + buttonW / 2).toFloat(), (buttonY + 3).toFloat(), 0f)
+        cbm.scale(0.7f, 0.7f, 1f)
+        val ctw = textRenderer.getWidth(cancelText)
+        val cancelColor = ((alpha * 255).toInt() shl 24) or (if (cancelHov) 0xFFD700 else 0xCCCCCC)
+        context.drawTextWithShadow(textRenderer, cancelText, -(ctw / 2), 0, cancelColor)
+        cbm.pop()
+    }
+    
     private fun renderMotivationsOverlay(context: DrawContext, mouseX: Int, mouseY: Int) {
         if (overlayAnimTime < 0.01f) return
         
@@ -1164,6 +1344,52 @@ class PersonalityScreen(private val parent: Screen) :
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val W = width; val H = height
         
+        // Обработка кликов в оверлее предложения мотивации
+        if (suggestMotivationOverlayOpen && button == 0) {
+            val targetW = 300
+            val targetH = 150
+            val cx = W / 2
+            val cy = H / 2
+            val x0 = cx - targetW / 2
+            val y0 = cy - targetH / 2
+            val x1 = x0 + targetW
+            val y1 = y0 + targetH
+            
+            val pad = 12
+            val buttonY = y0 + targetH - pad - 16
+            val buttonW = 60
+            val buttonH = 14
+            val buttonSpacing = 8
+            
+            // Кнопка "Отправить"
+            val submitX = x0 + targetW / 2 - buttonW - buttonSpacing / 2
+            if (mouseX.toInt() in submitX..(submitX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
+                if (suggestMotivationText.isNotEmpty()) {
+                    // TODO: Отправить мотивацию на сервер
+                    suggestMotivationOverlayOpen = false
+                    suggestMotivationText = ""
+                }
+                return true
+            }
+            
+            // Кнопка "Отмена"
+            val cancelX = x0 + targetW / 2 + buttonSpacing / 2
+            if (mouseX.toInt() in cancelX..(cancelX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
+                suggestMotivationOverlayOpen = false
+                suggestMotivationText = ""
+                return true
+            }
+            
+            // Клик вне оверлея закрывает его
+            if (mouseX.toInt() !in x0..x1 || mouseY.toInt() !in y0..y1) {
+                suggestMotivationOverlayOpen = false
+                suggestMotivationText = ""
+                return true
+            }
+            
+            return true  // Поглощаем все клики внутри оверлея
+        }
+        
         // Обработка кликов в оверлее мотиваций
         if (motivationsOverlayOpen && button == 0) {
             val targetW = (W * 0.5f).toInt().coerceAtMost(400)
@@ -1194,7 +1420,7 @@ class PersonalityScreen(private val parent: Screen) :
         }
         
         // Открытие оверлея при клике по модели или мотивации
-        if (button == 0 && !motivationsOverlayOpen) {
+        if (button == 0 && !motivationsOverlayOpen && !suggestMotivationOverlayOpen) {
             val cx = W / 2
             val cy = H / 2
             val modelX = cx - 65..cx + 65
@@ -1209,12 +1435,23 @@ class PersonalityScreen(private val parent: Screen) :
             }
         }
         
-        // Back button
-        val bw = 60; val bh = 12
-        val bx = W / 2 - bw / 2; val by = H - bh - 6
+        // Back button (верх справа)
+        val bw = 70; val bh = 12
+        val bx = W - bw - 8; val by = 8
         if (mouseX.toInt() in bx..(bx + bw) && mouseY.toInt() in by..(by + bh)) {
             client?.setScreen(parent); return true
         }
+        
+        // Suggest motivation button (низ по центру)
+        val sw = 100; val sh = 12
+        val sx = W / 2 - sw / 2; val sy = H - sh - 6
+        if (mouseX.toInt() in sx..(sx + sw) && mouseY.toInt() in sy..(sy + sh)) {
+            suggestMotivationOverlayOpen = true
+            suggestOverlayAnimTime = 0f
+            suggestMotivationText = ""
+            return true
+        }
+        
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
