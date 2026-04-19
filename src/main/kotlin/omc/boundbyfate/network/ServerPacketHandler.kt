@@ -563,6 +563,121 @@ object ServerPacketHandler {
                     .forEach { gm -> syncGmData(gm) }
             }
         }
+
+        // Client → Server: GM sets complete identity data for a player (replaces all delta packets)
+        ServerPlayNetworking.registerGlobalReceiver(BbfPackets.GM_SET_PLAYER_IDENTITY) { server, gmPlayer, _, buf, _ ->
+            if (!gmPlayer.hasPermissionLevel(2)) return@registerGlobalReceiver
+            
+            // Read ALL data from buffer BEFORE server.execute to avoid IllegalReferenceCountException
+            val targetName = buf.readString()
+            
+            // Alignment coordinates
+            val lawChaos = buf.readInt()
+            val goodEvil = buf.readInt()
+            
+            // Ideals
+            val idealCount = buf.readInt()
+            data class IdealData(val id: String, val text: String, val axis: String)
+            val ideals = (0 until idealCount).map {
+                IdealData(buf.readString(), buf.readString(), buf.readString())
+            }
+            
+            // Flaws
+            val flawCount = buf.readInt()
+            data class FlawData(val id: String, val text: String)
+            val flaws = (0 until flawCount).map {
+                FlawData(buf.readString(), buf.readString())
+            }
+            
+            // Motivations
+            val motivationCount = buf.readInt()
+            data class MotivationData(val id: String, val text: String, val addedByGm: Boolean, val isActive: Boolean)
+            val motivations = (0 until motivationCount).map {
+                MotivationData(buf.readString(), buf.readString(), buf.readBoolean(), buf.readBoolean())
+            }
+            
+            // Proposals
+            val proposalCount = buf.readInt()
+            data class ProposalData(val id: String, val text: String, val proposedBy: String)
+            val proposals = (0 until proposalCount).map {
+                ProposalData(buf.readString(), buf.readString(), buf.readString())
+            }
+            
+            // Goals
+            val goalCount = buf.readInt()
+            data class TaskData(val id: String, val description: String, val goalDescOverride: String, val status: String, val order: Int)
+            data class GoalData(val id: String, val title: String, val description: String, val motivationId: String?, val status: String, val currentTaskIndex: Int, val tasks: List<TaskData>)
+            val goals = (0 until goalCount).map {
+                val goalId = buf.readString()
+                val title = buf.readString()
+                val description = buf.readString()
+                val motivationId = buf.readString().ifEmpty { null }
+                val status = buf.readString()
+                val currentTaskIndex = buf.readInt()
+                
+                // Tasks
+                val taskCount = buf.readInt()
+                val tasks = (0 until taskCount).map {
+                    TaskData(buf.readString(), buf.readString(), buf.readString(), buf.readString(), buf.readInt())
+                }
+                
+                GoalData(goalId, title, description, motivationId, status, currentTaskIndex, tasks)
+            }
+
+            server.execute {
+                val target = server.playerManager.getPlayer(targetName) ?: return@execute
+                
+                // Set alignment
+                omc.boundbyfate.system.identity.AlignmentSystem.setAlignment(target, lawChaos, goodEvil, "GM edit")
+                
+                // Replace ideals completely
+                val identityData = target.getAttachedOrCreate(BbfAttachments.PLAYER_IDENTITY)
+                val newIdeals = ideals.map { ideal ->
+                    val axis = try { omc.boundbyfate.api.identity.IdealAlignment.valueOf(ideal.axis) }
+                               catch (e: Exception) { omc.boundbyfate.api.identity.IdealAlignment.ANY }
+                    omc.boundbyfate.component.Ideal(ideal.id, ideal.text, axis)
+                }
+                
+                // Replace flaws completely
+                val newFlaws = flaws.map { flaw ->
+                    omc.boundbyfate.component.Flaw(flaw.id, flaw.text)
+                }
+                
+                // Replace motivations completely
+                val newMotivations = motivations.map { mot ->
+                    omc.boundbyfate.component.Motivation(mot.id, mot.text, mot.addedByGm, mot.isActive)
+                }
+                
+                // Replace proposals completely
+                val newProposals = proposals.map { prop ->
+                    omc.boundbyfate.component.MotivationProposal(prop.id, prop.text, prop.proposedBy)
+                }
+                
+                // Replace goals completely
+                val newGoals = goals.map { goal ->
+                    val status = try { omc.boundbyfate.component.GoalStatus.valueOf(goal.status) }
+                                 catch (e: Exception) { omc.boundbyfate.component.GoalStatus.ACTIVE }
+                    
+                    val goalTasks = goal.tasks.map { task ->
+                        val taskStatus = try { omc.boundbyfate.component.TaskStatus.valueOf(task.status) }
+                                         catch (e: Exception) { omc.boundbyfate.component.TaskStatus.PENDING }
+                        omc.boundbyfate.component.GoalTask(task.id, task.description, task.goalDescOverride, taskStatus, task.order)
+                    }
+                    
+                    omc.boundbyfate.component.PersonalGoal(goal.id, goal.title, goal.description, goal.motivationId, goalTasks, goal.currentTaskIndex, status)
+                }
+                
+                // Update identity data with new values
+                val updatedIdentity = identityData.copy(
+                    idealsData = identityData.idealsData.copy(ideals = newIdeals, flaws = newFlaws),
+                    motivationData = omc.boundbyfate.component.PlayerMotivationData(newMotivations, newProposals, newGoals)
+                )
+                target.setAttached(BbfAttachments.PLAYER_IDENTITY, updatedIdentity)
+                
+                logger.info("GM ${gmPlayer.name.string} set complete identity data for $targetName: ${newIdeals.size} ideals, ${newFlaws.size} flaws, ${newMotivations.size} motivations, ${newGoals.size} goals")
+                syncGmData(gmPlayer)
+            }
+        }
     }
 
     /**

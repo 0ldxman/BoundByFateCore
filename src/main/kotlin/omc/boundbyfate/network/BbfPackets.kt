@@ -124,4 +124,7 @@ object BbfPackets {
 
     /** Client → Server: player proposes a motivation to GM */
     val PLAYER_PROPOSE_MOTIVATION = Identifier("boundbyfate-core", "player_propose_motivation")
+    
+    /** Client → Server: GM sets complete identity data for a player (replaces all delta packets) */
+    val GM_SET_PLAYER_IDENTITY = Identifier("boundbyfate-core", "gm_set_player_identity")
 }
