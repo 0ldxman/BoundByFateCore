@@ -293,7 +293,7 @@ class PersonalityScreen(private val parent: Screen) :
         // ── PLAYER MODEL ─────────────────────────────────────────────────────
         val player = MinecraftClient.getInstance().player
         if (player != null) {
-            // Без hover: мотивации "за" рендерятся с depth test (могут перекрываться моделью)
+            // Без hover: мотивации "за" рендерятся ДО модели (перекрываются ею)
             if (!modelHovered) {
                 renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = true, forceOnTop = false)
             }
@@ -310,7 +310,7 @@ class PersonalityScreen(private val parent: Screen) :
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
             com.mojang.blaze3d.systems.RenderSystem.disableBlend()
 
-            // Мотивации "перед" всегда поверх модели
+            // Мотивации "перед" — поверх модели
             renderMotivations(context, cx.toFloat(), cy.toFloat(), behindOnly = false, forceOnTop = true)
             
             // При hover — "за" мотивации тоже рисуем поверх модели
@@ -390,16 +390,18 @@ class PersonalityScreen(private val parent: Screen) :
         }
         
         particles.forEachIndexed { idx, p ->
-            val isBehind = p.zLayer < 0f
-            if (isBehind != behindOnly) return@forEachIndexed
+            // Вычисляем текущий угол (тот же что и при рендере позиции)
+            val phase = motivationResumePhases.getOrDefault(idx, p.orbitPhase)
+            val angle = motivationFrozenAngles[idx] ?: (time * p.orbitSpeed + phase)
+            
+            // Динамический Z-слой: sin(angle) > 0 = перед персонажем, < 0 = за персонажем
+            val dynamicZLayer = sin(angle.toDouble()).toFloat()
+            val isBehind = dynamicZLayer < 0f
+            if (!forceOnTop && isBehind != behindOnly) return@forEachIndexed
 
             val isHovered = hoveredMotivationIdx == idx
             val hoverScale = motivationScales.getOrDefault(idx, 1f)
             val hoverAlpha = motivationAlphas.getOrDefault(idx, 1f)
-
-            // Если наведена — используем замороженный угол, иначе обычная орбита
-            val phase = motivationResumePhases.getOrDefault(idx, p.orbitPhase)
-            val angle = motivationFrozenAngles[idx] ?: (time * p.orbitSpeed + phase)
             
             val ox = cos(angle.toDouble()).toFloat() * p.orbitRadius
             val oy = sin(angle.toDouble()).toFloat() * p.orbitRadius * p.orbitTilt
