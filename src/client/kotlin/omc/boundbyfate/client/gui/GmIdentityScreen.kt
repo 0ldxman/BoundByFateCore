@@ -430,8 +430,8 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             inputMode = InputMode.EDIT_GOAL
             renderOverlayContent(context, -9999, -9999, W, H, overlayW)
             inputMode = savedMode
-            // Dim between layers, then push extra Z for the top overlay
-            context.fill(0, 0, W, H, 0x88000000.toInt())
+            // Dim AFTER drawing background content so it covers text too
+            context.fill(0, 0, W, H, 0xBB000000.toInt())
             context.matrices.push()
             context.matrices.translate(0f, 0f, 200f)  // Z+600 total for top overlay
             renderOverlayContent(context, mouseX, mouseY, W, H, overlayW)
@@ -446,12 +446,16 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
     }
 
     private fun renderOverlayContent(context: DrawContext, mouseX: Int, mouseY: Int, W: Int, H: Int, overlayW: Int) {
+        // EDIT_GOAL uses a special two-panel layout — wider
+        if (inputMode == InputMode.EDIT_GOAL || inputMode == InputMode.ADD_GOAL) {
+            renderGoalOverlay(context, mouseX, mouseY, W, H)
+            return
+        }
+
         val overlayH = when (inputMode) {
             InputMode.ADD_IDEAL, InputMode.EDIT_IDEAL -> 120
             InputMode.ADD_FLAW, InputMode.EDIT_FLAW -> 100
             InputMode.ADD_MOTIVATION, InputMode.EDIT_MOTIVATION -> 100
-            InputMode.ADD_GOAL -> 160
-            InputMode.EDIT_GOAL -> minOf(H - 40, 280)
             InputMode.ADD_TASK, InputMode.EDIT_TASK -> 140
             InputMode.PICK_MOTIVATION -> minOf(H - 80, 200)
             else -> 62
@@ -542,132 +546,6 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                 inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, taH, inputBuffer, inputFocusField == 0, inputBuffer2Scroll, "")
                 btns.add(Btn(ox + 4, curY, overlayW - 8, taH) { inputFocusField = 0 })
                 curY += taH + 6
-            }
-
-            InputMode.ADD_GOAL, InputMode.EDIT_GOAL -> {
-                // Title field
-                lbl(context, "§7${tr("bbf.gm.identity.goal.title")}", ox + 5, curY - 6, 0.5f, 0x888888)
-                renderField(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, inputBuffer, inputFocusField == 0, "")
-                btns.add(Btn(ox + 4, curY, overlayW - 8, 12) { inputFocusField = 0 })
-                curY += 20
-
-                // Description field (textarea)
-                lbl(context, "§7${tr("bbf.gm.identity.goal.description")}", ox + 5, curY - 6, 0.5f, 0x888888)
-                val descHeight = 50
-                inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, ox + 4, curY, overlayW - 8, descHeight, inputBuffer2, inputFocusField == 1, inputBuffer2Scroll, "")
-                btns.add(Btn(ox + 4, curY, overlayW - 8, descHeight) { inputFocusField = 1 })
-                curY += descHeight + 6
-
-                // Motivation selector — opens picker overlay
-                lbl(context, "§7${tr("bbf.gm.identity.goal.motivation")}", ox + 5, curY - 6, 0.5f, 0x888888)
-                val motBtnW = (overlayW - 8)
-                val motName = pendingMotivationId?.let { mid -> motivations.find { it.id == mid }?.text }
-                    ?: tr("bbf.gm.none")
-                btn(context, mouseX, mouseY, ox + 4, curY, motBtnW, 10, "§7${truncate(motName, motBtnW - 10, 0.65f)}") {
-                    prevInputMode = inputMode
-                    inputMode = InputMode.PICK_MOTIVATION
-                }
-                curY += 16
-
-                // Status selector (edit only)
-                if (inputMode == InputMode.EDIT_GOAL) {
-                    val statuses = listOf("ACTIVE", "COMPLETED", "FAILED", "CANCELLED")
-                    val statusLabels = listOf("§e▶ ${tr("bbf.gm.identity.status.active")}", "§a✓ ${tr("bbf.gm.identity.status.completed")}", "§c✗ ${tr("bbf.gm.identity.status.failed")}", "§7○ ${tr("bbf.gm.identity.status.cancelled")}")
-                    val sbw = (overlayW - 8) / statuses.size
-                    statuses.forEachIndexed { i, s ->
-                        val bx = ox + 4 + i * sbw
-                        val sel = s == pendingGoalStatus
-                        box(context, bx, curY, sbw - 1, 12, if (sel) 0xFF3a2a1a.toInt() else 0xFF222222.toInt(), if (sel) 0xFFFFD700.toInt() else 0xFF444444.toInt())
-                        val m = context.matrices; m.push()
-                        m.translate((bx + (sbw - 1) / 2).toFloat(), (curY + 3).toFloat(), 0f); m.scale(0.5f, 0.5f, 1f)
-                        val tw = textRenderer.getWidth(statusLabels[i])
-                        context.drawTextWithShadow(textRenderer, statusLabels[i], -(tw / 2), 0, 0xFFFFFF)
-                        m.pop()
-                        btns.add(Btn(bx, curY, sbw - 1, 12) { pendingGoalStatus = s })
-                    }
-                    curY += 16
-
-                    // Task list
-                    lbl(context, "§7${tr("bbf.gm.identity.tasks")}", ox + 5, curY, 0.6f, 0x888888)
-                    btn(context, mouseX, mouseY, ox + overlayW - 15, curY - 1, 11, 9, "§a+") {
-                        inputMode = InputMode.ADD_TASK
-                        inputBuffer = ""
-                        inputBuffer2 = ""
-                        inputFocusField = 0
-                    }
-                    curY += 12
-
-                    val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
-                    val taskListH = overlayH - (curY - oy) - 30  // Dynamic height based on available space
-                    val taskRowH = 14
-                    val sortedTasks = goal?.tasks?.sortedBy { it.order } ?: emptyList()
-                    val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
-                    val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
-
-                    // Save taskListStartY for drag-n-drop calculations
-                    taskListStartY = curY
-
-                    visibleTasks.forEachIndexed { i, task ->
-                        val taskIndex = sortedTasks.indexOf(task)
-                        val ty = curY + i * taskRowH
-                        val taskNum = taskIndex + 1
-                        
-                        // Skip rendering if this is the dragged task (will render it separately)
-                        if (isDragging && draggedTaskIndex == taskIndex) {
-                            return@forEachIndexed
-                        }
-                        
-                        val statusIcon = when (task.status) {
-                            "COMPLETED" -> "§a✓"
-                            "FAILED" -> "§c✗"
-                            "CANCELLED" -> "§7○"
-                            "PENDING" -> "§8□"
-                            else -> "§e▶"
-                        }
-                        val hovered = mouseX in (ox + 4)..(ox + overlayW - 16) && mouseY in ty..(ty + taskRowH - 2)
-                        val boxBg = if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt()
-                        val boxBd = if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt()
-                        box(context, ox + 4, ty, overlayW - 20, taskRowH - 2, boxBg, boxBd)
-                        lbl(context, "§7$taskNum.", ox + 6, ty + 2, 0.55f, 0x888888)
-                        lbl(context, statusIcon, ox + 16, ty + 2, 0.55f, 0xFFFFFF)
-                        lbl(context, truncate(task.description, overlayW - 50, 0.55f), ox + 24, ty + 2, 0.55f, 0xCCCCCC)
-                        
-                        // Double-click to edit task (handled in mouseClicked)
-                    }
-
-                    // Render dragged task on top with visual feedback
-                    if (isDragging && draggedTaskIndex != null) {
-                        val draggedTask = sortedTasks.getOrNull(draggedTaskIndex!!)
-                        if (draggedTask != null) {
-                            val taskNum = draggedTaskIndex!! + 1
-                            val statusIcon = when (draggedTask.status) {
-                                "COMPLETED" -> "§a✓"
-                                "FAILED" -> "§c✗"
-                                "CANCELLED" -> "§7○"
-                                "PENDING" -> "§8□"
-                                else -> "§e▶"
-                            }
-                            // Render with transparency and different color
-                            box(context, ox + 4, draggedTaskY, overlayW - 20, taskRowH - 2, 0xAA3a3a1a.toInt(), 0xFFFFD700.toInt())
-                            lbl(context, "§7$taskNum.", ox + 6, draggedTaskY + 2, 0.55f, 0x888888)
-                            lbl(context, statusIcon, ox + 16, draggedTaskY + 2, 0.55f, 0xFFFFFF)
-                            lbl(context, truncate(draggedTask.description, overlayW - 50, 0.55f), ox + 24, draggedTaskY + 2, 0.55f, 0xFFFFFF)
-                        }
-                    }
-                    
-                    // Scroll buttons for tasks
-                    if (sortedTasks.size > maxVisibleTasks) {
-                        val scrollX = ox + overlayW - 14
-                        if (taskListScroll > 0) {
-                            btn(context, mouseX, mouseY, scrollX, curY, 10, 9, "§7▲") { taskListScroll-- }
-                        }
-                        if (taskListScroll < sortedTasks.size - maxVisibleTasks) {
-                            btn(context, mouseX, mouseY, scrollX, curY + taskListH - 9, 10, 9, "§7▼") { taskListScroll++ }
-                        }
-                    }
-
-                    curY += taskListH + 4
-                }
             }
 
             InputMode.ADD_TASK, InputMode.EDIT_TASK -> {
@@ -784,6 +662,137 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
             btn(context, mouseX, mouseY, ox + overlayW - 54, curY + 2, 50, 10, "§c${tr("bbf.gm.button.cancel")}") {
                 inputMode = prevInputMode
             }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // GOAL OVERLAY — two-panel layout (left: details, right: tasks)
+    // ═════════════════════════════════════════════════════════════════════════
+    private fun renderGoalOverlay(context: DrawContext, mouseX: Int, mouseY: Int, W: Int, H: Int) {
+        val panelW = (W * 0.38f).toInt().coerceAtMost(280)
+        val gap = 6
+        val totalW = panelW * 2 + gap
+        val panelH = minOf(H - 40, 300)
+        val startX = (W - totalW) / 2
+        val startY = (H - panelH) / 2
+
+        val lx = startX          // left panel x
+        val rx = startX + panelW + gap  // right panel x
+
+        // Draw both panels
+        box(context, lx, startY, panelW, panelH, 0xFF1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+        box(context, rx, startY, panelW, panelH, 0xFF1a1a1a.toInt(), 0xFF8a6a3a.toInt())
+
+        // ── LEFT PANEL ────────────────────────────────────────────────────────
+        val title = if (inputMode == InputMode.EDIT_GOAL) tr("bbf.gm.identity.edit_goal") else tr("bbf.gm.identity.add_goal")
+        lbl(context, title, lx + 5, startY + 5, 0.7f, 0xD4AF37)
+
+        // Delete button (edit only)
+        if (inputMode == InputMode.EDIT_GOAL) {
+            btn(context, mouseX, mouseY, lx + panelW - 22, startY + 3, 18, 9, "§c✗") {
+                val id = editingGoalId; if (id != null) goals.removeIf { it.id == id }
+                inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""; inputBuffer2Scroll = 0
+            }
+        }
+
+        var ly = startY + 17
+
+        // Title field
+        lbl(context, "§7${tr("bbf.gm.identity.goal.title")}", lx + 5, ly - 6, 0.5f, 0x888888)
+        renderField(context, mouseX, mouseY, lx + 4, ly, panelW - 8, inputBuffer, inputFocusField == 0, "")
+        btns.add(Btn(lx + 4, ly, panelW - 8, 12) { inputFocusField = 0 })
+        ly += 20
+
+        // Description textarea
+        lbl(context, "§7${tr("bbf.gm.identity.goal.description")}", lx + 5, ly - 6, 0.5f, 0x888888)
+        val descH = 60
+        inputBuffer2Scroll = renderTextArea(context, mouseX, mouseY, lx + 4, ly, panelW - 8, descH, inputBuffer2, inputFocusField == 1, inputBuffer2Scroll, "")
+        btns.add(Btn(lx + 4, ly, panelW - 8, descH) { inputFocusField = 1 })
+        ly += descH + 6
+
+        // Motivation selector
+        lbl(context, "§7${tr("bbf.gm.identity.goal.motivation")}", lx + 5, ly - 6, 0.5f, 0x888888)
+        val motName = pendingMotivationId?.let { mid -> motivations.find { it.id == mid }?.text } ?: tr("bbf.gm.none")
+        btn(context, mouseX, mouseY, lx + 4, ly, panelW - 8, 10, "§7${truncate(motName, panelW - 18, 0.65f)}") {
+            prevInputMode = inputMode; inputMode = InputMode.PICK_MOTIVATION
+        }
+        ly += 16
+
+        // Status selector (edit only)
+        if (inputMode == InputMode.EDIT_GOAL) {
+            val statuses = listOf("ACTIVE", "COMPLETED", "FAILED", "CANCELLED")
+            val statusLabels = listOf("§e▶ ${tr("bbf.gm.identity.status.active")}", "§a✓ ${tr("bbf.gm.identity.status.completed")}", "§c✗ ${tr("bbf.gm.identity.status.failed")}", "§7○ ${tr("bbf.gm.identity.status.cancelled")}")
+            val sbw = (panelW - 8) / statuses.size
+            statuses.forEachIndexed { i, s ->
+                val bx = lx + 4 + i * sbw
+                val sel = s == pendingGoalStatus
+                box(context, bx, ly, sbw - 1, 12, if (sel) 0xFF3a2a1a.toInt() else 0xFF222222.toInt(), if (sel) 0xFFFFD700.toInt() else 0xFF444444.toInt())
+                val m = context.matrices; m.push()
+                m.translate((bx + (sbw - 1) / 2).toFloat(), (ly + 3).toFloat(), 0f); m.scale(0.5f, 0.5f, 1f)
+                val tw = textRenderer.getWidth(statusLabels[i])
+                context.drawTextWithShadow(textRenderer, statusLabels[i], -(tw / 2), 0, 0xFFFFFF)
+                m.pop()
+                btns.add(Btn(bx, ly, sbw - 1, 12) { pendingGoalStatus = s })
+            }
+            ly += 16
+        }
+
+        // Apply / Cancel buttons at bottom of left panel
+        val btnY = startY + panelH - 14
+        btn(context, mouseX, mouseY, lx + 4, btnY, 50, 10, "§a${tr("bbf.gm.button.apply")}") { confirmInput() }
+        btn(context, mouseX, mouseY, lx + panelW - 54, btnY, 50, 10, "§c${tr("bbf.gm.button.cancel")}") {
+            inputMode = InputMode.NONE; inputBuffer = ""; inputBuffer2 = ""
+        }
+
+        // ── RIGHT PANEL ───────────────────────────────────────────────────────
+        lbl(context, "§7${tr("bbf.gm.identity.tasks")}", rx + 5, startY + 5, 0.65f, 0xD4AF37)
+        btn(context, mouseX, mouseY, rx + panelW - 15, startY + 3, 11, 9, "§a+") {
+            inputMode = InputMode.ADD_TASK; inputBuffer = ""; inputBuffer2 = ""; inputFocusField = 0
+        }
+
+        val taskAreaY = startY + 17
+        val taskAreaH = panelH - 17 - 4
+        val taskRowH = 14
+        val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
+        val sortedTasks = goal?.tasks?.sortedBy { it.order } ?: emptyList()
+        val maxVisibleTasks = (taskAreaH / taskRowH).coerceAtLeast(1)
+        val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
+
+        taskListStartY = taskAreaY
+
+        visibleTasks.forEachIndexed { i, task ->
+            val taskIndex = sortedTasks.indexOf(task)
+            val ty = taskAreaY + i * taskRowH
+            if (isDragging && draggedTaskIndex == taskIndex) return@forEachIndexed
+
+            val statusIcon = when (task.status) {
+                "COMPLETED" -> "§a✓"; "FAILED" -> "§c✗"; "CANCELLED" -> "§7○"; "PENDING" -> "§8□"; else -> "§e▶"
+            }
+            val hovered = mouseX in rx..(rx + panelW - 4) && mouseY in ty..(ty + taskRowH - 2)
+            box(context, rx + 4, ty, panelW - 8, taskRowH - 2, if (hovered) 0xCC2a2a2a.toInt() else 0xCC1a1a1a.toInt(), if (hovered) 0xFF8a6a3a.toInt() else 0xFF3a3a3a.toInt())
+            lbl(context, "§7${taskIndex + 1}.", rx + 6, ty + 2, 0.55f, 0x888888)
+            lbl(context, statusIcon, rx + 16, ty + 2, 0.55f, 0xFFFFFF)
+            lbl(context, truncate(task.description, panelW - 36, 0.55f), rx + 24, ty + 2, 0.55f, 0xCCCCCC)
+        }
+
+        // Dragged task
+        if (isDragging && draggedTaskIndex != null) {
+            val draggedTask = sortedTasks.getOrNull(draggedTaskIndex!!)
+            if (draggedTask != null) {
+                val statusIcon = when (draggedTask.status) {
+                    "COMPLETED" -> "§a✓"; "FAILED" -> "§c✗"; "CANCELLED" -> "§7○"; "PENDING" -> "§8□"; else -> "§e▶"
+                }
+                box(context, rx + 4, draggedTaskY, panelW - 8, taskRowH - 2, 0xAA3a3a1a.toInt(), 0xFFFFD700.toInt())
+                lbl(context, "§7${draggedTaskIndex!! + 1}.", rx + 6, draggedTaskY + 2, 0.55f, 0x888888)
+                lbl(context, statusIcon, rx + 16, draggedTaskY + 2, 0.55f, 0xFFFFFF)
+                lbl(context, truncate(draggedTask.description, panelW - 36, 0.55f), rx + 24, draggedTaskY + 2, 0.55f, 0xFFFFFF)
+            }
+        }
+
+        // Scroll buttons
+        if (sortedTasks.size > maxVisibleTasks) {
+            if (taskListScroll > 0) btn(context, mouseX, mouseY, rx + panelW - 14, taskAreaY, 10, 9, "§7▲") { taskListScroll-- }
+            if (taskListScroll < sortedTasks.size - maxVisibleTasks) btn(context, mouseX, mouseY, rx + panelW - 14, taskAreaY + taskAreaH - 9, 10, 9, "§7▼") { taskListScroll++ }
         }
     }
 
@@ -1151,30 +1160,29 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
         if (inputMode == InputMode.EDIT_GOAL && button == 0) {
             val goal = editingGoalId?.let { gid -> goals.find { it.id == gid } }
             if (goal != null) {
-                val W = width
-                val overlayW = (W * 0.55f).toInt().coerceAtMost(320)
-                val ox = (W - overlayW) / 2
-                
-                // Use taskListStartY saved during last render
-                val curY = taskListStartY
+                val W = width; val H = height
+                val panelW = (W * 0.38f).toInt().coerceAtMost(280)
+                val gap = 6
+                val totalW = panelW * 2 + gap
+                val panelH = minOf(H - 40, 300)
+                val startX = (W - totalW) / 2
+                val rx = startX + panelW + gap  // right panel x
+
+                val taskAreaY = (H - panelH) / 2 + 17
+                val taskAreaH = panelH - 17 - 4
                 val taskRowH = 14
                 val sortedTasks = goal.tasks.sortedBy { it.order }
-                val overlayH = minOf(height - 40, 280)
-                val oy = (height - overlayH) / 2
-                val taskListH = overlayH - (curY - oy) - 30
-                val maxVisibleTasks = (taskListH / taskRowH).coerceAtLeast(1)
+                val maxVisibleTasks = (taskAreaH / taskRowH).coerceAtLeast(1)
                 val visibleTasks = sortedTasks.drop(taskListScroll).take(maxVisibleTasks)
-                
+
                 visibleTasks.forEachIndexed { i, task ->
                     val taskIndex = sortedTasks.indexOf(task)
-                    val ty = curY + i * taskRowH
-                    val hitbox = (mx in (ox + 4)..(ox + overlayW - 16) && my in ty..(ty + taskRowH - 2))
-                    
+                    val ty = taskAreaY + i * taskRowH
+                    val hitbox = (mx in rx..(rx + panelW - 4) && my in ty..(ty + taskRowH - 2))
+
                     if (hitbox) {
                         val currentTime = System.currentTimeMillis()
-                        // Double click detection (within 300ms)
                         if (lastClickedTaskIndex == taskIndex && (currentTime - lastClickTime) < 300) {
-                            // Double click - open edit
                             editingTaskId = task.id
                             inputBuffer = task.description
                             inputBuffer2 = task.goalDescriptionOverride
@@ -1184,11 +1192,10 @@ class GmIdentityScreen(private val snapshot: GmPlayerSnapshot) :
                             lastClickedTaskIndex = null
                             lastClickTime = 0
                         } else {
-                            // Single click - prepare for potential drag
                             lastClickedTaskIndex = taskIndex
                             lastClickTime = currentTime
                             draggedTaskIndex = taskIndex
-                            draggedTaskY = ty  // use actual rendered Y
+                            draggedTaskY = ty
                             dragStartY = my
                         }
                         return true
