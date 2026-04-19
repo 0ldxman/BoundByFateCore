@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import omc.boundbyfate.client.state.ClientPlayerData
+import omc.boundbyfate.client.gui.GuiAtlas
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.abs
@@ -96,10 +97,11 @@ class PersonalityScreen(private val parent: Screen) :
         renderAlignmentTop(context, W, pad)
 
         // ── LEFT PANEL: Ideals (no box) ───────────────────────────────────────
-        renderIdealsPanel(context, mouseX, mouseY, pad + sideMargin, 40, panelW, H - 50)
+        val panelStartY = H / 3
+        renderIdealsPanel(context, mouseX, mouseY, pad + sideMargin, panelStartY, panelW, H - panelStartY - 20)
 
         // ── RIGHT PANEL: Flaws (no box, right-aligned) ────────────────────────
-        renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad - sideMargin, 40, panelW, H - 50)
+        renderFlawsPanel(context, mouseX, mouseY, W - panelW - pad - sideMargin, panelStartY, panelW, H - panelStartY - 20)
 
         // ── BACK BUTTON ───────────────────────────────────────────────────────
         val backText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.button.back")
@@ -215,11 +217,16 @@ class PersonalityScreen(private val parent: Screen) :
         lines.drop(idealScroll).take(visibleCount).forEachIndexed { i, line ->
             if (line.text.isEmpty()) return@forEachIndexed
             val ly = curY + i * lineH
-            val prefix = if (line.isFirst) "• " else "  "
+            val iconSize = 5
+            val iconY = ly + (lineH * textScale / 2 - iconSize / 2).toInt()
+            if (line.isFirst) {
+                GuiAtlas.ICON_PROFICIENCY.draw(context, x, iconY, iconSize, iconSize)
+            }
+            val textX = x + iconSize + 2
             val m = context.matrices; m.push()
-            m.translate(x.toFloat(), ly.toFloat(), 0f)
+            m.translate(textX.toFloat(), ly.toFloat(), 0f)
             m.scale(textScale, textScale, 1f)
-            context.drawTextWithShadow(textRenderer, "$prefix${line.text}", 0, 0, line.color)
+            context.drawTextWithShadow(textRenderer, line.text, 0, 0, line.color)
             m.pop()
         }
 
@@ -268,14 +275,18 @@ class PersonalityScreen(private val parent: Screen) :
         lines.drop(flawScroll).take(visibleCount).forEachIndexed { i, line ->
             if (line.text.isEmpty()) return@forEachIndexed
             val ly = curY + i * lineH
-            val suffix = if (line.isFirst) " •" else ""
-            val fullText = "${line.text}$suffix"
+            val iconSize = 5
+            val iconY = ly + (lineH * textScale / 2 - iconSize / 2).toInt()
+            val rightEdge = x + w
+            if (line.isFirst) {
+                GuiAtlas.ICON_PROFICIENCY.draw(context, rightEdge - iconSize, iconY, iconSize, iconSize)
+            }
+            val textRightEdge = rightEdge - iconSize - 2
             val m = context.matrices; m.push()
-            // Right-align: translate to right edge
-            m.translate((x + w).toFloat(), ly.toFloat(), 0f)
+            m.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
             m.scale(textScale, textScale, 1f)
-            val tw = textRenderer.getWidth(fullText)
-            context.drawTextWithShadow(textRenderer, fullText, -tw, 0, 0xCCCCCC)
+            val tw = textRenderer.getWidth(line.text)
+            context.drawTextWithShadow(textRenderer, line.text, -(tw), 0, 0xCCCCCC)
             m.pop()
         }
 
