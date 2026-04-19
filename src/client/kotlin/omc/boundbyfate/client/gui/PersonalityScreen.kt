@@ -1,11 +1,15 @@
 package omc.boundbyfate.client.gui
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 import net.minecraft.text.Text
 import omc.boundbyfate.client.state.ClientPlayerData
+import omc.boundbyfate.network.BbfPackets
+import org.lwjgl.glfw.GLFW
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -41,6 +45,8 @@ class PersonalityScreen(private val parent: Screen) :
     private var suggestMotivationOverlayOpen = false
     private var suggestOverlayAnimTime = 0f
     private var suggestMotivationText = ""
+    private var cursorPosition = 0
+    private var cursorBlinkTime = 0f
 
     // ── Hover состояния ───────────────────────────────────────────────────────
     private var hoveredIdealIdx: Int? = null
@@ -159,7 +165,13 @@ class PersonalityScreen(private val parent: Screen) :
             val orbitTilt = 0.35f + rand.nextFloat() * 0.25f  // эллипс
             val scale = 0.42f + rand.nextFloat() * 0.12f      // чуть меньше чем раньше
             val baseAlpha = 0.55f + rand.nextFloat() * 0.25f
-            val colors = listOf(0xD4AF37, 0xC8A96E, 0xFFD700, 0xB8956A, 0xE8C97A)
+            
+            // Pending мотивации (не одобренные ГМом) - серые
+            val colors = if (mot.addedByGm) {
+                listOf(0xD4AF37, 0xC8A96E, 0xFFD700, 0xB8956A, 0xE8C97A)  // Золотые цвета
+            } else {
+                listOf(0x666666, 0x777777, 0x888888, 0x555555, 0x999999)  // Серые цвета для pending
+            }
             val color = colors[i % colors.size]
             // Z-слой: чередуем за/перед персонажем по фазе
             val zLayer = sin(phase.toDouble()).toFloat()
@@ -189,6 +201,12 @@ class PersonalityScreen(private val parent: Screen) :
         pendingTooltip = null
         time += delta * 0.016f
         openTime = (openTime + delta * 0.018f).coerceAtMost(1f)
+        
+        // Обновляем мигание курсора
+        if (suggestMotivationOverlayOpen) {
+            cursorBlinkTime += delta * 0.05f
+            if (cursorBlinkTime > 1f) cursorBlinkTime = 0f
+        }
 
         val W = width; val H = height
         val panelW = (W * 0.27f).toInt()
@@ -1067,7 +1085,19 @@ class PersonalityScreen(private val parent: Screen) :
             val placeholderColor = ((alpha * 128).toInt() shl 24) or 0x888888
             context.drawTextWithShadow(textRenderer, placeholder, 0, 0, placeholderColor)
         } else {
-            context.drawTextWithShadow(textRenderer, suggestMotivationText, 0, 0, textColor)
+            // Рендер текста с курсором
+            val beforeCursor = suggestMotivationText.substring(0, cursorPosition)
+            val afterCursor = suggestMotivationText.substring(cursorPosition)
+            
+            context.drawTextWithShadow(textRenderer, beforeCursor, 0, 0, textColor)
+            val cursorX = textRenderer.getWidth(beforeCursor)
+            
+            // Мигающий курсор
+            if (cursorBlinkTime < 0.5f) {
+                context.fill(cursorX, 0, cursorX + 1, textRenderer.fontHeight, textColor)
+            }
+            
+            context.drawTextWithShadow(textRenderer, afterCursor, cursorX + 2, 0, textColor)
         }
         tm.pop()
         
@@ -1264,7 +1294,9 @@ class PersonalityScreen(private val parent: Screen) :
                     m.translate(contentX.toFloat() + contentW / 2f, curY.toFloat(), 0f)
                     m.scale(textScale, textScale, 1f)
                     val tw = textRenderer.getWidth(displayText)
-                    val color = ((alpha * 255).toInt() shl 24) or 0xFFFFFF  // Белый цвет
+                    // Pending мотивации (не одобренные ГМом) - темно-серые
+                    val textColor = if (mot.addedByGm) 0xFFFFFF else 0x666666
+                    val color = ((alpha * 255).toInt() shl 24) or textColor
                     context.drawTextWithShadow(textRenderer, displayText, -(tw / 2), 0, color)
                     m.pop()
                     
@@ -1365,9 +1397,14 @@ class PersonalityScreen(private val parent: Screen) :
             val submitX = x0 + targetW / 2 - buttonW - buttonSpacing / 2
             if (mouseX.toInt() in submitX..(submitX + buttonW) && mouseY.toInt() in buttonY..(buttonY + buttonH)) {
                 if (suggestMotivationText.isNotEmpty()) {
-                    // TODO: Отправить мотивацию на сервер
+                    // Отправить мотивацию на сервер
+                    val buf = PacketByteBufs.create()
+                    buf.writeString(suggestMotivationText)
+                    ClientPlayNetworking.send(BbfPackets.PLAYER_PROPOSE_MOTIVATION, buf)
+                    
                     suggestMotivationOverlayOpen = false
                     suggestMotivationText = ""
+                    cursorPosition = 0
                 }
                 return true
             }
@@ -1453,6 +1490,76 @@ class PersonalityScreen(private val parent: Screen) :
         }
         
         return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (suggestMotivationOverlayOpen) {
+            when (keyCode) {
+                GLFW.GLFW_KEY_ESCAPE -> {
+                    suggestMotivationOverlayOpen = false
+                    suggestMotivationText = ""
+                    cursorPosition = 0
+                    return true
+                }
+                GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
+                    if (suggestMotivationText.isNotEmpty()) {
+                        val buf = PacketByteBufs.create()
+                        buf.writeString(suggestMotivationText)
+                        ClientPlayNetworking.send(BbfPackets.PLAYER_PROPOSE_MOTIVATION, buf)
+                        
+                        suggestMotivationOverlayOpen = false
+                        suggestMotivationText = ""
+                        cursorPosition = 0
+                    }
+                    return true
+                }
+                GLFW.GLFW_KEY_BACKSPACE -> {
+                    if (cursorPosition > 0) {
+                        suggestMotivationText = suggestMotivationText.substring(0, cursorPosition - 1) + 
+                                               suggestMotivationText.substring(cursorPosition)
+                        cursorPosition--
+                    }
+                    return true
+                }
+                GLFW.GLFW_KEY_DELETE -> {
+                    if (cursorPosition < suggestMotivationText.length) {
+                        suggestMotivationText = suggestMotivationText.substring(0, cursorPosition) + 
+                                               suggestMotivationText.substring(cursorPosition + 1)
+                    }
+                    return true
+                }
+                GLFW.GLFW_KEY_LEFT -> {
+                    if (cursorPosition > 0) cursorPosition--
+                    return true
+                }
+                GLFW.GLFW_KEY_RIGHT -> {
+                    if (cursorPosition < suggestMotivationText.length) cursorPosition++
+                    return true
+                }
+                GLFW.GLFW_KEY_HOME -> {
+                    cursorPosition = 0
+                    return true
+                }
+                GLFW.GLFW_KEY_END -> {
+                    cursorPosition = suggestMotivationText.length
+                    return true
+                }
+            }
+            return true
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    override fun charTyped(chr: Char, modifiers: Int): Boolean {
+        if (suggestMotivationOverlayOpen) {
+            if (chr.code >= 32 && suggestMotivationText.length < 200) {  // Ограничение 200 символов
+                suggestMotivationText = suggestMotivationText.substring(0, cursorPosition) + chr + 
+                                       suggestMotivationText.substring(cursorPosition)
+                cursorPosition++
+            }
+            return true
+        }
+        return super.charTyped(chr, modifiers)
     }
 
     // ── TOOLTIP ───────────────────────────────────────────────────────────────
