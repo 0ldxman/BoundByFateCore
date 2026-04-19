@@ -953,8 +953,17 @@ object ServerPacketHandler {
         val motivations = identityData.motivationData.motivations.filter { it.isActive }
         buf.writeInt(motivations.size)
         motivations.forEach { mot ->
-            buf.writeString(mot.id)  // добавляем id
+            buf.writeString(mot.id)
             buf.writeString(mot.text)
+            buf.writeBoolean(mot.addedByGm)
+        }
+
+        // Proposals — отправляем как pending мотивации (addedByGm = false)
+        val proposals = identityData.motivationData.proposals
+        buf.writeInt(proposals.size)
+        proposals.forEach { prop ->
+            buf.writeString(prop.id)
+            buf.writeString(prop.text)
         }
 
         ServerPlayNetworking.send(player, BbfPackets.SYNC_PLAYER_DATA, buf)

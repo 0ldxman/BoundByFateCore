@@ -181,7 +181,14 @@ object ClientPacketHandler {
             val motivations = (0 until motivationCount).map {
                 val id = buf.readString()
                 val text = buf.readString()
-                omc.boundbyfate.client.state.ClientMotivation(id, text, true, true)
+                val addedByGm = buf.readBoolean()
+                omc.boundbyfate.client.state.ClientMotivation(id, text, addedByGm, true)
+            }
+            val proposalCount = buf.readInt()
+            val proposals = (0 until proposalCount).map {
+                val id = buf.readString()
+                val text = buf.readString()
+                omc.boundbyfate.client.state.ClientMotivation(id, text, false, false)
             }
 
             client.execute {
@@ -195,7 +202,7 @@ object ClientPacketHandler {
                 ClientPlayerData.alignmentText = net.minecraft.client.resource.language.I18n.translate(alignmentKey)
                 ClientPlayerData.ideals = ideals
                 ClientPlayerData.flaws = flaws
-                ClientPlayerData.motivations = motivations
+                ClientPlayerData.motivations = motivations + proposals
             }
         }
 
