@@ -167,7 +167,7 @@ class PersonalityScreen(private val parent: Screen) :
             val baseAlpha = 0.55f + rand.nextFloat() * 0.25f
             
             // Pending мотивации (не одобренные ГМом) - серые
-            val colors = if (mot.addedByGm) {
+            val colors = if (mot.isActive) {
                 listOf(0xD4AF37, 0xC8A96E, 0xFFD700, 0xB8956A, 0xE8C97A)  // Золотые цвета
             } else {
                 listOf(0x666666, 0x777777, 0x888888, 0x555555, 0x999999)  // Серые цвета для pending
@@ -1294,7 +1294,7 @@ class PersonalityScreen(private val parent: Screen) :
                     m.scale(textScale, textScale, 1f)
                     val tw = textRenderer.getWidth(displayText)
                     // Pending мотивации (не одобренные ГМом) - темно-серые
-                    val textColor = if (mot.addedByGm) 0xFFFFFF else 0x666666
+                    val textColor = if (mot.isActive) 0xFFFFFF else 0x666666
                     val color = ((alpha * 255).toInt() shl 24) or textColor
                     context.drawTextWithShadow(textRenderer, displayText, -(tw / 2), 0, color)
                     m.pop()
