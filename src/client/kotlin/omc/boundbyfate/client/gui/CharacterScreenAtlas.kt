@@ -416,9 +416,9 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
         val statValue = statsData?.getStatValue(stat.id)
         val base = statValue?.base ?: 10
-        val total = statValue?.total ?: 10
         val bonus = ClientPlayerData.statBonuses[stat.id] ?: 0
-        val mod = statValue?.dndModifier ?: 0
+        val total = base + bonus
+        val mod = (total - 10) / 2  // D&D modifier from actual total
         val modStr = if (mod >= 0) "+$mod" else "$mod"
         val midX = x + shieldW / 2
 
@@ -498,7 +498,10 @@ class CharacterScreenAtlas : Screen(Text.translatable("screen.boundbyfate.charac
 
             val y = (anchorY + i * rowH + pushY).toInt()
             val bonus = if (statsData != null) {
-                val statMod = statsData.getStatValue(def.linkedStat).dndModifier
+                val statBase = statsData.getStatValue(def.linkedStat).base
+                val statRaceBonus = ClientPlayerData.statBonuses[def.linkedStat] ?: 0
+                val statTotal = statBase + statRaceBonus
+                val statMod = (statTotal - 10) / 2
                 val profLevel = skillData?.getProficiency(def.id)?.multiplier ?: 0
                 statMod + 2 * profLevel
             } else 0
