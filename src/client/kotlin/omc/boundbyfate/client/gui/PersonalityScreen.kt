@@ -531,7 +531,7 @@ class PersonalityScreen(private val parent: Screen) :
             val expandProg = idealExpandProgress.getOrDefault(idx, 0f)
             val lines = wrapText(ideal.text, maxChars)
             
-            if (expandProg > 0.01f && lines.size > 1) {
+            if (expandProg > 0.3f && lines.size > 1) {
                 // Раскрытие: показываем первую строку полностью + дополнительные строки с альфой
                 // Первая строка (полная, без "...")
                 val tm1 = context.matrices; tm1.push()
@@ -542,16 +542,22 @@ class PersonalityScreen(private val parent: Screen) :
                 context.drawTextWithShadow(textRenderer, lines[0], 0, 0, tc1)
                 tm1.pop()
                 
-                // Дополнительные строки с fade-in
-                lines.drop(1).forEachIndexed { lineIdx, lineText ->
-                    val lineY = ly + (lineIdx + 1) * lineH
-                    val lineAlpha = (expandProg * textAlpha).toInt()
-                    val tm = context.matrices; tm.push()
-                    tm.translate(textX.toFloat(), lineY.toFloat(), 0f)
-                    tm.scale(finalScale, finalScale, 1f)
-                    val tc = (lineAlpha shl 24) or (color and 0xFFFFFF)
-                    context.drawTextWithShadow(textRenderer, lineText, 0, 0, tc)
-                    tm.pop()
+                // Дополнительные строки с fade-in (только когда expandProg > 0.3)
+                // Нормализуем прогресс: 0.3→1.0 становится 0→1
+                val normalizedProg = ((expandProg - 0.3f) / 0.7f).coerceIn(0f, 1f)
+                
+                // Рендерим дополнительные строки только если normalizedProg достаточно высокий
+                if (normalizedProg > 0.05f) {
+                    lines.drop(1).forEachIndexed { lineIdx, lineText ->
+                        val lineY = ly + (lineIdx + 1) * lineH
+                        val lineAlpha = (normalizedProg * textAlpha).toInt()
+                        val tm = context.matrices; tm.push()
+                        tm.translate(textX.toFloat(), lineY.toFloat(), 0f)
+                        tm.scale(finalScale, finalScale, 1f)
+                        val tc = (lineAlpha shl 24) or (color and 0xFFFFFF)
+                        context.drawTextWithShadow(textRenderer, lineText, 0, 0, tc)
+                        tm.pop()
+                    }
                 }
             } else {
                 // Обрезанный текст (без раскрытия) - обрезаем по словам с "..."
@@ -696,7 +702,7 @@ class PersonalityScreen(private val parent: Screen) :
             val expandProg = flawExpandProgress.getOrDefault(idx, 0f)
             val lines = wrapText(flaw.text, maxChars)
             
-            if (expandProg > 0.01f && lines.size > 1) {
+            if (expandProg > 0.3f && lines.size > 1) {
                 // Раскрытие: показываем первую строку полностью + дополнительные строки с альфой
                 // Первая строка (полная, без "...")
                 val tm1 = context.matrices; tm1.push()
@@ -708,17 +714,23 @@ class PersonalityScreen(private val parent: Screen) :
                 context.drawTextWithShadow(textRenderer, lines[0], -tw1, 0, tc1)
                 tm1.pop()
                 
-                // Дополнительные строки с fade-in
-                lines.drop(1).forEachIndexed { lineIdx, lineText ->
-                    val lineY = ly + (lineIdx + 1) * lineH
-                    val lineAlpha = (expandProg * textAlpha).toInt()
-                    val tm = context.matrices; tm.push()
-                    tm.translate(textRightEdge.toFloat(), lineY.toFloat(), 0f)
-                    tm.scale(finalScale, finalScale, 1f)
-                    val tw = textRenderer.getWidth(lineText)
-                    val tc = (lineAlpha shl 24) or 0xCCCCCC
-                    context.drawTextWithShadow(textRenderer, lineText, -tw, 0, tc)
-                    tm.pop()
+                // Дополнительные строки с fade-in (только когда expandProg > 0.3)
+                // Нормализуем прогресс: 0.3→1.0 становится 0→1
+                val normalizedProg = ((expandProg - 0.3f) / 0.7f).coerceIn(0f, 1f)
+                
+                // Рендерим дополнительные строки только если normalizedProg достаточно высокий
+                if (normalizedProg > 0.05f) {
+                    lines.drop(1).forEachIndexed { lineIdx, lineText ->
+                        val lineY = ly + (lineIdx + 1) * lineH
+                        val lineAlpha = (normalizedProg * textAlpha).toInt()
+                        val tm = context.matrices; tm.push()
+                        tm.translate(textRightEdge.toFloat(), lineY.toFloat(), 0f)
+                        tm.scale(finalScale, finalScale, 1f)
+                        val tw = textRenderer.getWidth(lineText)
+                        val tc = (lineAlpha shl 24) or 0xCCCCCC
+                        context.drawTextWithShadow(textRenderer, lineText, -tw, 0, tc)
+                        tm.pop()
+                    }
                 }
             } else {
                 // Обрезанный текст (без раскрытия) - обрезаем по словам с "..."
