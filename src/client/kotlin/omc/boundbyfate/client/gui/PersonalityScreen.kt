@@ -86,7 +86,9 @@ class PersonalityScreen(private val parent: Screen) :
         return easeOut(((openTime - delay) / 0.18f).coerceIn(0f, 1f))
     }
     private fun iconProgress(lineIdx: Int): Float {
-        val delay = 0.60f + lineIdx * 0.06f
+        // Иконка появляется только после того как текст полностью вылетел
+        val textDone = 0.50f + lineIdx * 0.06f + 0.18f  // конец анимации текста
+        val delay = textDone + 0.05f
         return ((openTime - delay) / 0.15f).coerceIn(0f, 1f)
     }
 
@@ -193,14 +195,16 @@ class PersonalityScreen(private val parent: Screen) :
 
         val m = context.matrices; m.push()
         m.translate(0f, offY.toFloat(), 0f)
-        drawCenteredScaledAlpha(context, labelText, cx, pad + 2, 0.55f, 0x888888, alpha)
+        // "Мировоззрение" появляется fade-in после того как основной текст вылетел
+        val labelAlpha = (((prog - 0.7f) / 0.3f).coerceIn(0f, 1f) * 255).toInt()
+        drawCenteredScaledAlpha(context, labelText, cx, pad + 2, 0.55f, 0x888888, labelAlpha)
         drawCenteredScaledAlpha(context, alignText, cx, pad + 11, 0.9f, 0xD4AF37, alpha)
         m.pop()
 
-        // Divider под мировоззрением (появляется вместе с ним)
-        if (prog > 0.5f) {
-            val divAlpha = ((prog - 0.5f) / 0.5f * 0xAA).toInt()
-            drawFadeDividerAlpha(context, cx, pad + 22, 120, divAlpha)
+        // Divider под мировоззрением — такая же анимация раскрытия от центра к краям
+        val divProg = ((prog - 0.7f) / 0.3f).coerceIn(0f, 1f)
+        if (divProg > 0f) {
+            drawFadeDividerAnimated(context, cx, pad + 22, 120, divProg)
         }
     }
 
