@@ -343,38 +343,79 @@ class PersonalityScreen(private val parent: Screen) :
         val lineH = 9
         val listH = h - (curY - y) - 20
 
-        data class Line(val text: String, val color: Int, val isFirst: Boolean)
+        data class Line(val text: String, val color: Int, val isFirst: Boolean, val idealIdx: Int)
         val lines = mutableListOf<Line>()
-        ideals.forEach { ideal ->
+        ideals.forEachIndexed { idealIdx, ideal ->
             val color = if (ideal.isCompatible) 0xCCCCCC else 0xFF7777
             wrapText(ideal.text, maxChars).forEachIndexed { i, line ->
-                lines.add(Line(line, color, i == 0))
+                lines.add(Line(line, color, i == 0, idealIdx))
             }
-            lines.add(Line("", 0, false))
+            lines.add(Line("", 0, false, -1))
         }
 
         val visibleCount = (listH / lineH).coerceAtLeast(1)
         val maxScroll = (lines.size - visibleCount).coerceAtLeast(0)
         idealScroll = idealScroll.coerceIn(0, maxScroll)
 
+        // Hit-test для hover
+        var newHoveredIdeal: Int? = null
+        lines.drop(idealScroll).take(visibleCount).forEachIndexed { i, line ->
+            if (line.text.isEmpty() || !line.isFirst) return@forEachIndexed
+            val ly = curY + i * lineH
+            val hitH = lineH + 2
+            if (mouseX in x..(x + w) && mouseY in ly..(ly + hitH)) {
+                newHoveredIdeal = line.idealIdx
+            }
+        }
+        hoveredIdealIdx = newHoveredIdeal
+
+        // Обновляем lerp-анимации
+        ideals.forEachIndexed { idx, _ ->
+            val isHovered = hoveredIdealIdx == idx
+            idealHoverScales[idx] = lerp(idealHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
+            idealIconScales[idx] = lerp(idealIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
+            idealTextOffsets[idx] = lerp(idealTextOffsets.getOrDefault(idx, 0f), if (isHovered) -8f else 0f, 0.15f)
+        }
+
+        // Рассчитываем смещения строк (hover раздвигает)
+        var accumulatedOffset = 0f
+        lines.forEachIndexed { i, line ->
+            if (line.isFirst && line.idealIdx >= 0) {
+                val hoverScale = idealHoverScales.getOrDefault(line.idealIdx, 1f)
+                val extraSpace = (lineH * (hoverScale - 1f)).coerceAtLeast(0f)
+                idealRowOffsets[i] = accumulatedOffset
+                accumulatedOffset += extraSpace
+            } else {
+                idealRowOffsets[i] = accumulatedOffset
+            }
+        }
+
+        // Рендер строк
         lines.drop(idealScroll).take(visibleCount).forEachIndexed { i, line ->
             if (line.text.isEmpty()) return@forEachIndexed
-            val ly = curY + i * lineH
+            val baseY = curY + i * lineH
+            val rowOffset = idealRowOffsets.getOrDefault(i + idealScroll, 0f)
+            val ly = baseY + rowOffset.toInt()
             val lp = lineProgress(i)
             if (lp <= 0f) return@forEachIndexed
+
+            val isHovered = line.isFirst && hoveredIdealIdx == line.idealIdx
+            val hoverScale = if (line.isFirst) idealHoverScales.getOrDefault(line.idealIdx, 1f) else 1f
+            val textOffset = if (line.isFirst) idealTextOffsets.getOrDefault(line.idealIdx, 0f) else 0f
 
             // Текст выезжает слева направо
             val textOffX = ((1f - lp) * -(w + 30)).toInt()
             val textAlpha = (lp * 255).toInt()
             val iconSize = 5
             val iconY = ly + (lineH * textScale / 2 - iconSize / 2).toInt()
-            val textX = x + iconSize + 2
+            val textX = x + iconSize + 2 + textOffset.toInt()
 
             val m = context.matrices; m.push()
             m.translate(textOffX.toFloat(), 0f, 0f)
             val tm = context.matrices; tm.push()
             tm.translate(textX.toFloat(), ly.toFloat(), 0f)
-            tm.scale(textScale, textScale, 1f)
+            val finalScale = textScale * hoverScale
+            tm.scale(finalScale, finalScale, 1f)
             val tc = (textAlpha shl 24) or (line.color and 0xFFFFFF)
             context.drawTextWithShadow(textRenderer, line.text, 0, 0, tc)
             tm.pop()
@@ -385,8 +426,18 @@ class PersonalityScreen(private val parent: Screen) :
                 val ip = iconProgress(i)
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
-                    // Рисуем иконку с альфой через матрицы (нет прямого alpha в draw, используем RenderSystem)
+                    val iconScale = idealIconScales.getOrDefault(line.idealIdx, 1f)
+                    val iconRotation = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    
+                    val im = context.matrices; im.push()
+                    val icx = x + iconSize / 2f
+                    val icy = iconY + iconSize / 2f
+                    im.translate(icx, icy, 0f)
+                    im.scale(iconScale, iconScale, 1f)
+                    im.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(iconRotation))
+                    im.translate(-icx, -icy, 0f)
                     drawIconWithAlpha(context, x, iconY, iconSize, iconSize, iconAlpha)
+                    im.pop()
                 }
             }
         }
@@ -434,24 +485,64 @@ class PersonalityScreen(private val parent: Screen) :
         val lineH = 9
         val listH = h - (curY - y) - 20
 
-        data class Line(val text: String, val isFirst: Boolean)
+        data class Line(val text: String, val isFirst: Boolean, val flawIdx: Int)
         val lines = mutableListOf<Line>()
-        flaws.forEach { flaw ->
+        flaws.forEachIndexed { flawIdx, flaw ->
             wrapText(flaw.text, maxChars).forEachIndexed { i, line ->
-                lines.add(Line(line, i == 0))
+                lines.add(Line(line, i == 0, flawIdx))
             }
-            lines.add(Line("", false))
+            lines.add(Line("", false, -1))
         }
 
         val visibleCount = (listH / lineH).coerceAtLeast(1)
         val maxScroll = (lines.size - visibleCount).coerceAtLeast(0)
         flawScroll = flawScroll.coerceIn(0, maxScroll)
 
+        // Hit-test для hover
+        var newHoveredFlaw: Int? = null
+        lines.drop(flawScroll).take(visibleCount).forEachIndexed { i, line ->
+            if (line.text.isEmpty() || !line.isFirst) return@forEachIndexed
+            val ly = curY + i * lineH
+            val hitH = lineH + 2
+            if (mouseX in x..(x + w) && mouseY in ly..(ly + hitH)) {
+                newHoveredFlaw = line.flawIdx
+            }
+        }
+        hoveredFlawIdx = newHoveredFlaw
+
+        // Обновляем lerp-анимации
+        flaws.forEachIndexed { idx, _ ->
+            val isHovered = hoveredFlawIdx == idx
+            flawHoverScales[idx] = lerp(flawHoverScales.getOrDefault(idx, 1f), if (isHovered) 1.15f else 1f, 0.15f)
+            flawIconScales[idx] = lerp(flawIconScales.getOrDefault(idx, 1f), if (isHovered) 1.3f else 1f, 0.12f)
+            flawTextOffsets[idx] = lerp(flawTextOffsets.getOrDefault(idx, 0f), if (isHovered) 8f else 0f, 0.15f)
+        }
+
+        // Рассчитываем смещения строк
+        var accumulatedOffset = 0f
+        lines.forEachIndexed { i, line ->
+            if (line.isFirst && line.flawIdx >= 0) {
+                val hoverScale = flawHoverScales.getOrDefault(line.flawIdx, 1f)
+                val extraSpace = (lineH * (hoverScale - 1f)).coerceAtLeast(0f)
+                flawRowOffsets[i] = accumulatedOffset
+                accumulatedOffset += extraSpace
+            } else {
+                flawRowOffsets[i] = accumulatedOffset
+            }
+        }
+
+        // Рендер строк
         lines.drop(flawScroll).take(visibleCount).forEachIndexed { i, line ->
             if (line.text.isEmpty()) return@forEachIndexed
-            val ly = curY + i * lineH
+            val baseY = curY + i * lineH
+            val rowOffset = flawRowOffsets.getOrDefault(i + flawScroll, 0f)
+            val ly = baseY + rowOffset.toInt()
             val lp = lineProgress(i)
             if (lp <= 0f) return@forEachIndexed
+
+            val isHovered = line.isFirst && hoveredFlawIdx == line.flawIdx
+            val hoverScale = if (line.isFirst) flawHoverScales.getOrDefault(line.flawIdx, 1f) else 1f
+            val textOffset = if (line.isFirst) flawTextOffsets.getOrDefault(line.flawIdx, 0f) else 0f
 
             // Текст выезжает справа налево
             val textOffX = ((1f - lp) * (W - x + 30)).toInt()
@@ -459,13 +550,14 @@ class PersonalityScreen(private val parent: Screen) :
             val iconSize = 5
             val iconY = ly + (lineH * textScale / 2 - iconSize / 2).toInt()
             val rightEdge = x + w
-            val textRightEdge = rightEdge - iconSize - 2
+            val textRightEdge = rightEdge - iconSize - 2 + textOffset.toInt()
 
             val m = context.matrices; m.push()
             m.translate(textOffX.toFloat(), 0f, 0f)
             val tm = context.matrices; tm.push()
             tm.translate(textRightEdge.toFloat(), ly.toFloat(), 0f)
-            tm.scale(textScale, textScale, 1f)
+            val finalScale = textScale * hoverScale
+            tm.scale(finalScale, finalScale, 1f)
             val tw = textRenderer.getWidth(line.text)
             val tc = (textAlpha shl 24) or 0xCCCCCC
             context.drawTextWithShadow(textRenderer, line.text, -tw, 0, tc)
@@ -477,7 +569,18 @@ class PersonalityScreen(private val parent: Screen) :
                 val ip = iconProgress(i)
                 if (ip > 0f) {
                     val iconAlpha = (ip * 255).toInt().coerceIn(0, 255)
+                    val iconScale = flawIconScales.getOrDefault(line.flawIdx, 1f)
+                    val iconRotation = if (isHovered) sin((time * 1.5f).toDouble()).toFloat() * 8f else 0f
+                    
+                    val im = context.matrices; im.push()
+                    val icx = rightEdge - iconSize / 2f
+                    val icy = iconY + iconSize / 2f
+                    im.translate(icx, icy, 0f)
+                    im.scale(iconScale, iconScale, 1f)
+                    im.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(iconRotation))
+                    im.translate(-icx, -icy, 0f)
                     drawIconWithAlpha(context, rightEdge - iconSize, iconY, iconSize, iconSize, iconAlpha)
+                    im.pop()
                 }
             }
         }
