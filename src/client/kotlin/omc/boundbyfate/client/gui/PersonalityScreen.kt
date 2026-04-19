@@ -168,8 +168,9 @@ class PersonalityScreen(private val parent: Screen) :
 
         // ── Обновление hover-анимаций ─────────────────────────────────────────
         // Модель и мотивации - зона по центру, умеренная ширина
+        // Уменьшаем высоту снизу чтобы не перекрывать кнопку "Назад"
         val modelX = cx - 65..cx + 65
-        val modelY = cy - 60..cy + 160
+        val modelY = cy - 60..cy + 140
         modelHovered = mouseX in modelX && mouseY in modelY
         modelAlpha = lerp(modelAlpha, if (modelHovered) 0.20f else 1f, 0.15f)
         motivationsBaseAlpha = lerp(motivationsBaseAlpha, if (modelHovered) 1f else 0.7f, 0.15f)
@@ -947,6 +948,23 @@ class PersonalityScreen(private val parent: Screen) :
         val contentW = w - pad * 2
         val contentH = h - pad * 2
         
+        // Заголовок "Мотивации"
+        val headerText = net.minecraft.client.resource.language.I18n.translate("bbf.gm.identity.motivations")
+        val headerScale = 0.75f
+        val headerColor = ((alpha * 255).toInt() shl 24) or 0xD4AF37
+        val hm = context.matrices
+        hm.push()
+        hm.translate((x + w / 2).toFloat(), (contentY + 2).toFloat(), 0f)
+        hm.scale(headerScale, headerScale, 1f)
+        val htw = textRenderer.getWidth(headerText)
+        context.drawTextWithShadow(textRenderer, headerText, -(htw / 2), 0, headerColor)
+        hm.pop()
+        
+        // Divider под заголовком
+        val headerH = (textRenderer.fontHeight * headerScale + 6).toInt()
+        val dividerY = contentY + headerH
+        drawFadeDividerAnimated(context, x + w / 2, dividerY, (contentW * 0.8f).toInt(), 1f, ((alpha * 0.8f) * 255).toInt())
+        
         val textScale = 0.7f
         val lineH = (textRenderer.fontHeight * textScale + 4).toInt()
         val dividerH = 8
@@ -955,8 +973,8 @@ class PersonalityScreen(private val parent: Screen) :
         val maxScroll = (motivations.size - visibleCount).coerceAtLeast(0)
         overlayScroll = overlayScroll.coerceIn(0, maxScroll)
         
-        // Рендер мотиваций с typewriter эффектом
-        var curY = contentY
+        // Рендер мотиваций с typewriter эффектом (начинаем после заголовка и divider)
+        var curY = dividerY + 8
         motivations.drop(overlayScroll).take(visibleCount).forEachIndexed { idx, mot ->
             val globalIdx = idx + overlayScroll
             
