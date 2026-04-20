@@ -555,8 +555,8 @@ class PersonalityScreen(private val parent: Screen) :
         val m = context.matrices; m.push()
         m.translate(0f, 0f, 400f)
 
-        // Лёгкое затемнение только за оверлеем (не весь экран)
-        context.fill(x0 - 4, y0 - 4, x1 + 4, y1 + 4, ((prog * 0x55).toInt() shl 24) or 0x000000)
+        // Затемнение на весь экран
+        context.fill(0, 0, W, H, ((prog * 0xAA).toInt() shl 24) or 0x000000)
         context.fill(x0, y0, x1, y1, 0xEE1a1a1a.toInt())
         context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
         context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
@@ -596,32 +596,36 @@ class PersonalityScreen(private val parent: Screen) :
             descY += (textRenderer.fontHeight * descScale + 1).toInt()
         }
 
-        // Диаграмма — по ширине текста описания
+        // Диаграмма — по ширине текста описания, с отступом снизу
         val diagTop = descY + 6
         val maxDescW = descLines.maxOf { (textRenderer.getWidth(it) * descScale).toInt() }
-        val diagSize = maxDescW.coerceAtLeast(80)
+        val diagSize = (maxDescW - 16).coerceAtLeast(70)  // чуть меньше ширины текста
         val diagX = x + (w - diagSize) / 2
         val diagY = diagTop
+        // Проверяем что диаграмма влезает с отступом снизу 8px
+        val diagBottom = diagY + diagSize
+        val availH = (y + h) - diagTop - 8
+        val finalDiagSize = diagSize.coerceAtMost(availH)
 
-        context.fill(diagX, diagY, diagX + diagSize, diagY + diagSize, (iAlpha shl 24) or 0x111111)
+        context.fill(diagX, diagY, diagX + finalDiagSize, diagY + finalDiagSize, (iAlpha shl 24) or 0x111111)
 
-        val third = diagSize / 3
+        val third = finalDiagSize / 3
         val lineColor = ((iAlpha / 2) shl 24) or 0x333333
-        context.fill(diagX + third, diagY, diagX + third + 1, diagY + diagSize, lineColor)
-        context.fill(diagX + third * 2, diagY, diagX + third * 2 + 1, diagY + diagSize, lineColor)
-        context.fill(diagX, diagY + third, diagX + diagSize, diagY + third + 1, lineColor)
-        context.fill(diagX, diagY + third * 2, diagX + diagSize, diagY + third * 2 + 1, lineColor)
+        context.fill(diagX + third, diagY, diagX + third + 1, diagY + finalDiagSize, lineColor)
+        context.fill(diagX + third * 2, diagY, diagX + third * 2 + 1, diagY + finalDiagSize, lineColor)
+        context.fill(diagX, diagY + third, diagX + finalDiagSize, diagY + third + 1, lineColor)
+        context.fill(diagX, diagY + third * 2, diagX + finalDiagSize, diagY + third * 2 + 1, lineColor)
 
         val axisColor = ((iAlpha / 3) shl 24) or 0x555555
-        val acx = diagX + diagSize / 2; val acy = diagY + diagSize / 2
-        context.fill(acx, diagY, acx + 1, diagY + diagSize, axisColor)
-        context.fill(diagX, acy, diagX + diagSize, acy + 1, axisColor)
+        val acx = diagX + finalDiagSize / 2; val acy = diagY + finalDiagSize / 2
+        context.fill(acx, diagY, acx + 1, diagY + finalDiagSize, axisColor)
+        context.fill(diagX, acy, diagX + finalDiagSize, acy + 1, axisColor)
 
         val borderColor = (iAlpha shl 24) or 0x6b5a3e
-        context.fill(diagX, diagY, diagX + diagSize, diagY + 1, borderColor)
-        context.fill(diagX, diagY + diagSize - 1, diagX + diagSize, diagY + diagSize, borderColor)
-        context.fill(diagX, diagY, diagX + 1, diagY + diagSize, borderColor)
-        context.fill(diagX + diagSize - 1, diagY, diagX + diagSize, diagY + diagSize, borderColor)
+        context.fill(diagX, diagY, diagX + finalDiagSize, diagY + 1, borderColor)
+        context.fill(diagX, diagY + finalDiagSize - 1, diagX + finalDiagSize, diagY + finalDiagSize, borderColor)
+        context.fill(diagX, diagY, diagX + 1, diagY + finalDiagSize, borderColor)
+        context.fill(diagX + finalDiagSize - 1, diagY, diagX + finalDiagSize, diagY + finalDiagSize, borderColor)
 
         val alignments = listOf(
             omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD,
@@ -673,9 +677,9 @@ class PersonalityScreen(private val parent: Screen) :
             }
 
             val shortName = net.minecraft.client.resource.language.I18n.translate(al.getShortKey())
+            // Текст текущего мировоззрения — тёмный (цвет фона диаграммы)
             val textColor = if (isCurrent) {
-                val c = alignmentFillColor(al)
-                (iAlpha shl 24) or ((c shr 1) and 0x7F7F7F)
+                (iAlpha shl 24) or 0x111111
             } else if (al.name.contains("EVIL")) {
                 (iAlpha shl 24) or 0x884444
             } else if (al.name.contains("GOOD")) {
@@ -686,7 +690,7 @@ class PersonalityScreen(private val parent: Screen) :
 
             val sm = context.matrices; sm.push()
             sm.translate(cellCx.toFloat(), cellCy.toFloat(), 0f)
-            sm.scale(0.6f * cellScale, 0.6f * cellScale, 1f)
+            sm.scale(0.85f * cellScale, 0.85f * cellScale, 1f)  // увеличен шрифт с 0.6 до 0.85
             val tw = textRenderer.getWidth(shortName)
             context.drawTextWithShadow(textRenderer, shortName, -(tw / 2), -3, textColor)
             sm.pop()

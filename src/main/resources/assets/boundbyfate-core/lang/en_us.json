@@ -199,13 +199,13 @@
   "bbf.personality.back.right": "Back →",
   "bbf.personality.alignment.overlay.title": "Alignment",
   "bbf.personality.alignment.overlay.desc": "Almost all creatures have an alignment that\ndescribes their moral views. It consists of\ntwo factors: moral principles (good, evil,\nneutral) and attitude to order (lawful,\nchaotic, neutral).",
-  "bbf.alignment.lawful_good.tooltip": "Lawful Good\\nTry to do what society expects. Fight\\nagainst injustice and protect the innocent.",
-  "bbf.alignment.neutral_good.tooltip": "Neutral Good\\nWork within rules but don't feel bound\\nby them. Help others according to their needs.",
-  "bbf.alignment.chaotic_good.tooltip": "Chaotic Good\\nFollow only their conscience, caring little\\nfor what others expect. Rebels acting for good.",
-  "bbf.alignment.lawful_neutral.tooltip": "Lawful Neutral\\nAct according to law, tradition or personal\\nmorality. Follow strict rules of life.",
-  "bbf.alignment.true_neutral.tooltip": "True Neutral\\nAvoid moral questions and don't take sides.\\nDo what seems best at the moment.",
-  "bbf.alignment.chaotic_neutral.tooltip": "Chaotic Neutral\\nFollow their whims, valuing personal freedom\\nabove all. Live by their own rules.",
-  "bbf.alignment.lawful_evil.tooltip": "Lawful Evil\\nMethodically take what they want within\\nthe law. Exploit others in pursuit of power.",
-  "bbf.alignment.neutral_evil.tooltip": "Neutral Evil\\nDon't care about harm caused in pursuit\\nof their desires. Rob and kill at will.",
-  "bbf.alignment.chaotic_evil.tooltip": "Chaotic Evil\\nCommit violence on a whim, driven by\\nhatred or bloodlust. Villains of destruction."
+  "bbf.alignment.lawful_good.tooltip": "Lawful Good\nTry to do what society expects. Fight\nagainst injustice and protect the innocent.",
+  "bbf.alignment.neutral_good.tooltip": "Neutral Good\nWork within rules but don't feel bound\nby them. Help others according to their needs.",
+  "bbf.alignment.chaotic_good.tooltip": "Chaotic Good\nFollow only their conscience, caring little\nfor what others expect. Rebels acting for good.",
+  "bbf.alignment.lawful_neutral.tooltip": "Lawful Neutral\nAct according to law, tradition or personal\nmorality. Follow strict rules of life.",
+  "bbf.alignment.true_neutral.tooltip": "True Neutral\nAvoid moral questions and don't take sides.\nDo what seems best at the moment.",
+  "bbf.alignment.chaotic_neutral.tooltip": "Chaotic Neutral\nFollow their whims, valuing personal freedom\nabove all. Live by their own rules.",
+  "bbf.alignment.lawful_evil.tooltip": "Lawful Evil\nMethodically take what they want within\nthe law. Exploit others in pursuit of power.",
+  "bbf.alignment.neutral_evil.tooltip": "Neutral Evil\nDon't care about harm caused in pursuit\nof their desires. Rob and kill at will.",
+  "bbf.alignment.chaotic_evil.tooltip": "Chaotic Evil\nCommit violence on a whim, driven by\nhatred or bloodlust. Villains of destruction."
 }
