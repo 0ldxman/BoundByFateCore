@@ -204,7 +204,7 @@ class PersonalityScreen(private val parent: Screen) :
         // Иконка появляется только после того как текст полностью вылетел
         val textDone = 0.50f + lineIdx * 0.06f + 0.18f  // конец анимации текста
         val delay = textDone + 0.05f
-        return ((openTime - delay) / 0.15f).coerceIn(0f, 1f)
+        return easeOut(((openTime - delay) / 0.25f).coerceIn(0f, 1f))  // Увеличена длительность и добавлен easeOut
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -576,7 +576,7 @@ class PersonalityScreen(private val parent: Screen) :
         val pad = 10
         val iAlpha = (alpha * 255).toInt()
 
-        // Заголовок
+        // Заголовок (появляется сразу с окном)
         val titleText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.title")
         val tm = context.matrices; tm.push()
         tm.translate((x + w / 2).toFloat(), (y + pad).toFloat(), 0f); tm.scale(0.7f, 0.7f, 1f)
@@ -584,132 +584,173 @@ class PersonalityScreen(private val parent: Screen) :
         context.drawTextWithShadow(textRenderer, titleText, -(ttw / 2), 0, (iAlpha shl 24) or 0xD4AF37)
         tm.pop()
 
-        // Описание
+        // Описание с typewriter эффектом (начинается после появления заголовка)
         val descText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.desc")
         val descScale = 0.65f
         val descLines = descText.split("\n")
         var descY = y + pad + 14
+        
+        // Typewriter прогресс: начинается когда alpha > 0.3
+        val typewriterStart = 0.3f
+        val typewriterProg = if (alpha > typewriterStart) {
+            ((alpha - typewriterStart) / (1f - typewriterStart)).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+        
+        // Вычисляем общее количество символов
+        val totalChars = descLines.sumOf { it.length + 1 }  // +1 для переноса строки
+        val visibleChars = (totalChars * typewriterProg).toInt()
+        
+        var charsRendered = 0
         descLines.forEach { line ->
-            val dm = context.matrices; dm.push()
-            dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
-            val dlw = textRenderer.getWidth(line)
-            context.drawTextWithShadow(textRenderer, line, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
-            dm.pop()
+            val lineStartChar = charsRendered
+            val lineEndChar = charsRendered + line.length
+            
+            if (visibleChars > lineStartChar) {
+                val visibleInLine = (visibleChars - lineStartChar).coerceAtMost(line.length)
+                val displayText = line.substring(0, visibleInLine)
+                
+                val dm = context.matrices; dm.push()
+                dm.translate((x + w / 2).toFloat(), descY.toFloat(), 0f); dm.scale(descScale, descScale, 1f)
+                val dlw = textRenderer.getWidth(displayText)
+                context.drawTextWithShadow(textRenderer, displayText, -(dlw / 2), 0, (iAlpha shl 24) or 0x888888)
+                dm.pop()
+            }
+            
             descY += (textRenderer.fontHeight * descScale + 1).toInt()
+            charsRendered += line.length + 1  // +1 для переноса строки
         }
 
-        // Диаграмма — по ширине текста описания, с отступом снизу
+        // Диаграмма с scale-in анимацией (начинается одновременно с typewriter)
         val diagTop = descY + 6
         val maxDescW = descLines.maxOf { (textRenderer.getWidth(it) * descScale).toInt() }
-        val diagSize = (maxDescW - 16).coerceAtLeast(70)  // чуть меньше ширины текста
+        val diagSize = (maxDescW - 16).coerceAtLeast(70)
         val diagX = x + (w - diagSize) / 2
         val diagY = diagTop
-        // Проверяем что диаграмма влезает с отступом снизу 8px
-        val diagBottom = diagY + diagSize
         val availH = (y + h) - diagTop - 8
         val finalDiagSize = diagSize.coerceAtMost(availH)
 
-        context.fill(diagX, diagY, diagX + finalDiagSize, diagY + finalDiagSize, (iAlpha shl 24) or 0x111111)
+        // Scale-in прогресс диаграммы (начинается одновременно с typewriter)
+        val diagramScaleProg = easeOut(typewriterProg)
+        val scaledDiagSize = (finalDiagSize * diagramScaleProg).toInt()
+        
+        if (scaledDiagSize > 2) {
+            val scaledDiagX = diagX + (finalDiagSize - scaledDiagSize) / 2
+            val scaledDiagY = diagY + (finalDiagSize - scaledDiagSize) / 2
 
-        val third = finalDiagSize / 3
-        val lineColor = ((iAlpha / 2) shl 24) or 0x333333
-        context.fill(diagX + third, diagY, diagX + third + 1, diagY + finalDiagSize, lineColor)
-        context.fill(diagX + third * 2, diagY, diagX + third * 2 + 1, diagY + finalDiagSize, lineColor)
-        context.fill(diagX, diagY + third, diagX + finalDiagSize, diagY + third + 1, lineColor)
-        context.fill(diagX, diagY + third * 2, diagX + finalDiagSize, diagY + third * 2 + 1, lineColor)
+            context.fill(scaledDiagX, scaledDiagY, scaledDiagX + scaledDiagSize, scaledDiagY + scaledDiagSize, (iAlpha shl 24) or 0x111111)
 
-        val axisColor = ((iAlpha / 3) shl 24) or 0x555555
-        val acx = diagX + finalDiagSize / 2; val acy = diagY + finalDiagSize / 2
-        context.fill(acx, diagY, acx + 1, diagY + finalDiagSize, axisColor)
-        context.fill(diagX, acy, diagX + finalDiagSize, acy + 1, axisColor)
+            val third = scaledDiagSize / 3
+            val lineColor = ((iAlpha / 2) shl 24) or 0x333333
+            context.fill(scaledDiagX + third, scaledDiagY, scaledDiagX + third + 1, scaledDiagY + scaledDiagSize, lineColor)
+            context.fill(scaledDiagX + third * 2, scaledDiagY, scaledDiagX + third * 2 + 1, scaledDiagY + scaledDiagSize, lineColor)
+            context.fill(scaledDiagX, scaledDiagY + third, scaledDiagX + scaledDiagSize, scaledDiagY + third + 1, lineColor)
+            context.fill(scaledDiagX, scaledDiagY + third * 2, scaledDiagX + scaledDiagSize, scaledDiagY + third * 2 + 1, lineColor)
 
-        val borderColor = (iAlpha shl 24) or 0x6b5a3e
-        context.fill(diagX, diagY, diagX + finalDiagSize, diagY + 1, borderColor)
-        context.fill(diagX, diagY + finalDiagSize - 1, diagX + finalDiagSize, diagY + finalDiagSize, borderColor)
-        context.fill(diagX, diagY, diagX + 1, diagY + finalDiagSize, borderColor)
-        context.fill(diagX + finalDiagSize - 1, diagY, diagX + finalDiagSize, diagY + finalDiagSize, borderColor)
+            val axisColor = ((iAlpha / 3) shl 24) or 0x555555
+            val acx = scaledDiagX + scaledDiagSize / 2; val acy = scaledDiagY + scaledDiagSize / 2
+            context.fill(acx, scaledDiagY, acx + 1, scaledDiagY + scaledDiagSize, axisColor)
+            context.fill(scaledDiagX, acy, scaledDiagX + scaledDiagSize, acy + 1, axisColor)
 
-        val alignments = listOf(
-            omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD,
-            omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL, omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL,
-            omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_EVIL
-        )
+            val borderColor = (iAlpha shl 24) or 0x6b5a3e
+            context.fill(scaledDiagX, scaledDiagY, scaledDiagX + scaledDiagSize, scaledDiagY + 1, borderColor)
+            context.fill(scaledDiagX, scaledDiagY + scaledDiagSize - 1, scaledDiagX + scaledDiagSize, scaledDiagY + scaledDiagSize, borderColor)
+            context.fill(scaledDiagX, scaledDiagY, scaledDiagX + 1, scaledDiagY + scaledDiagSize, borderColor)
+            context.fill(scaledDiagX + scaledDiagSize - 1, scaledDiagY, scaledDiagX + scaledDiagSize, scaledDiagY + scaledDiagSize, borderColor)
 
-        val lawChaos = ClientPlayerData.alignmentLawChaos
-        val goodEvil = ClientPlayerData.alignmentGoodEvil
-        val currentAlignment = AlignmentCoordinates(lawChaos, goodEvil).getAlignment()
-
-        fun alignmentFillColor(al: omc.boundbyfate.api.identity.Alignment): Int = when {
-            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD -> 0x4488FF
-            al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD -> 0x44CC44
-            al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD -> 0x88FF44
-            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL -> 0x8888CC
-            al == omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL -> 0xAAAAAA
-            al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL -> 0xCC8844
-            al == omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL -> 0x884444
-            al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL -> 0xAA4444
-            else -> 0xFF4444
-        }
-
-        var newHoveredCell: Int? = null
-        alignmentCellTooltip = null
-
-        alignments.forEachIndexed { i, al ->
-            val col = i % 3; val row = i / 3
-            val cellX = diagX + col * third
-            val cellY = diagY + row * third
-            val cellCx = cellX + third / 2
-            val cellCy = cellY + third / 2
-
-            val isCurrent = al == currentAlignment
-            val isHovered = mouseX in cellX..(cellX + third) && mouseY in cellY..(cellY + third)
-            if (isHovered) newHoveredCell = i
-
-            val cellScale = alignmentCellScales.getOrDefault(i, 1f)
-
-            if (isCurrent) {
-                val fillColor = alignmentFillColor(al)
-                val fillAlpha = (iAlpha * 0.35f).toInt()
-                context.fill(cellX + 1, cellY + 1, cellX + third - 1, cellY + third - 1, (fillAlpha shl 24) or fillColor)
-                val rimAlpha = (iAlpha * 0.8f).toInt()
-                context.fill(cellX, cellY, cellX + third, cellY + 1, (rimAlpha shl 24) or fillColor)
-                context.fill(cellX, cellY + third - 1, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
-                context.fill(cellX, cellY, cellX + 1, cellY + third, (rimAlpha shl 24) or fillColor)
-                context.fill(cellX + third - 1, cellY, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
-            }
-
-            val shortName = net.minecraft.client.resource.language.I18n.translate(al.getShortKey())
-            // Текст текущего мировоззрения — тёмный (цвет фона диаграммы)
-            val textColor = if (isCurrent) {
-                (iAlpha shl 24) or 0x111111
-            } else if (al.name.contains("EVIL")) {
-                (iAlpha shl 24) or 0x884444
-            } else if (al.name.contains("GOOD")) {
-                (iAlpha shl 24) or 0x448844
+            // Названия мировоззрений с fade-in (появляются после завершения scale-in диаграммы)
+            val textFadeStart = 0.8f  // Текст начинает появляться когда диаграмма на 80%
+            val textFadeProg = if (diagramScaleProg > textFadeStart) {
+                ((diagramScaleProg - textFadeStart) / (1f - textFadeStart)).coerceIn(0f, 1f)
             } else {
-                (iAlpha shl 24) or 0x666666
+                0f
             }
+            val textAlpha = (iAlpha * textFadeProg).toInt()
 
-            val sm = context.matrices; sm.push()
-            sm.translate(cellCx.toFloat(), cellCy.toFloat(), 0f)
-            sm.scale(0.85f * cellScale, 0.85f * cellScale, 1f)  // увеличен шрифт с 0.6 до 0.85
-            val tw = textRenderer.getWidth(shortName)
-            context.drawTextWithShadow(textRenderer, shortName, -(tw / 2), -3, textColor)
-            sm.pop()
+            if (textAlpha > 5) {
+                val alignments = listOf(
+                    omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD,
+                    omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL, omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL,
+                    omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL,    omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL,  omc.boundbyfate.api.identity.Alignment.CHAOTIC_EVIL
+                )
 
-            if (isHovered) {
-                alignmentCellTooltip = net.minecraft.text.Text.translatable("${al.translationKey}.tooltip")
+                val lawChaos = ClientPlayerData.alignmentLawChaos
+                val goodEvil = ClientPlayerData.alignmentGoodEvil
+                val currentAlignment = AlignmentCoordinates(lawChaos, goodEvil).getAlignment()
+
+                fun alignmentFillColor(al: omc.boundbyfate.api.identity.Alignment): Int = when {
+                    al == omc.boundbyfate.api.identity.Alignment.LAWFUL_GOOD -> 0x4488FF
+                    al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_GOOD -> 0x44CC44
+                    al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_GOOD -> 0x88FF44
+                    al == omc.boundbyfate.api.identity.Alignment.LAWFUL_NEUTRAL -> 0x8888CC
+                    al == omc.boundbyfate.api.identity.Alignment.TRUE_NEUTRAL -> 0xAAAAAA
+                    al == omc.boundbyfate.api.identity.Alignment.CHAOTIC_NEUTRAL -> 0xCC8844
+                    al == omc.boundbyfate.api.identity.Alignment.LAWFUL_EVIL -> 0x884444
+                    al == omc.boundbyfate.api.identity.Alignment.NEUTRAL_EVIL -> 0xAA4444
+                    else -> 0xFF4444
+                }
+
+                var newHoveredCell: Int? = null
+                alignmentCellTooltip = null
+
+                alignments.forEachIndexed { i, al ->
+                    val col = i % 3; val row = i / 3
+                    val cellX = scaledDiagX + col * third
+                    val cellY = scaledDiagY + row * third
+                    val cellCx = cellX + third / 2
+                    val cellCy = cellY + third / 2
+
+                    val isCurrent = al == currentAlignment
+                    val isHovered = mouseX in cellX..(cellX + third) && mouseY in cellY..(cellY + third)
+                    if (isHovered) newHoveredCell = i
+
+                    val cellScale = alignmentCellScales.getOrDefault(i, 1f)
+
+                    if (isCurrent) {
+                        val fillColor = alignmentFillColor(al)
+                        val fillAlpha = (textAlpha * 0.35f).toInt()
+                        context.fill(cellX + 1, cellY + 1, cellX + third - 1, cellY + third - 1, (fillAlpha shl 24) or fillColor)
+                        val rimAlpha = (textAlpha * 0.8f).toInt()
+                        context.fill(cellX, cellY, cellX + third, cellY + 1, (rimAlpha shl 24) or fillColor)
+                        context.fill(cellX, cellY + third - 1, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
+                        context.fill(cellX, cellY, cellX + 1, cellY + third, (rimAlpha shl 24) or fillColor)
+                        context.fill(cellX + third - 1, cellY, cellX + third, cellY + third, (rimAlpha shl 24) or fillColor)
+                    }
+
+                    val shortName = net.minecraft.client.resource.language.I18n.translate(al.getShortKey())
+                    val textColor = if (isCurrent) {
+                        (textAlpha shl 24) or 0x111111
+                    } else if (al.name.contains("EVIL")) {
+                        (textAlpha shl 24) or 0x884444
+                    } else if (al.name.contains("GOOD")) {
+                        (textAlpha shl 24) or 0x448844
+                    } else {
+                        (textAlpha shl 24) or 0x666666
+                    }
+
+                    val sm = context.matrices; sm.push()
+                    sm.translate(cellCx.toFloat(), cellCy.toFloat(), 0f)
+                    sm.scale(0.85f * cellScale, 0.85f * cellScale, 1f)
+                    val tw = textRenderer.getWidth(shortName)
+                    context.drawTextWithShadow(textRenderer, shortName, -(tw / 2), -3, textColor)
+                    sm.pop()
+
+                    if (isHovered) {
+                        alignmentCellTooltip = net.minecraft.text.Text.translatable("${al.translationKey}.tooltip")
+                    }
+                }
+
+                hoveredAlignmentCell = newHoveredCell
+                alignments.forEachIndexed { i, _ ->
+                    val target = if (hoveredAlignmentCell == i) 1.2f else 1f
+                    alignmentCellScales[i] = lerp(alignmentCellScales.getOrDefault(i, 1f), target, 0.15f)
+                }
+
+                // Tooltip ячейки — через pendingTooltip для правильного Z и анимации
+                alignmentCellTooltip?.let { pendingTooltip = it }
             }
         }
-
-        hoveredAlignmentCell = newHoveredCell
-        alignments.forEachIndexed { i, _ ->
-            val target = if (hoveredAlignmentCell == i) 1.2f else 1f
-            alignmentCellScales[i] = lerp(alignmentCellScales.getOrDefault(i, 1f), target, 0.15f)
-        }
-
-        // Tooltip ячейки — через pendingTooltip для правильного Z и анимации
-        alignmentCellTooltip?.let { pendingTooltip = it }
     }
 
     // ── ПАНЕЛЬ УБЕЖДЕНИЙ ──────────────────────────────────────────────────────
@@ -1963,22 +2004,49 @@ class PersonalityScreen(private val parent: Screen) :
             "True" to 0x888888
         )
         
-        // Разбиваем текст на слова и рендерим каждое с нужным цветом
         var currentX = x
-        val words = text.split(" ")
+        var currentWord = ""
+        var i = 0
         
-        words.forEachIndexed { index, word ->
-            // Проверяем есть ли это слово в словаре цветов
-            val baseColor = colorMap.entries.firstOrNull { word.contains(it.key, ignoreCase = true) }?.value ?: 0xFFFFFF
-            val color = (alpha shl 24) or baseColor
+        while (i < text.length) {
+            val char = text[i]
             
-            context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(word), currentX, y, color)
-            currentX += textRenderer.getWidth(word)
-            
-            // Добавляем пробел после слова (кроме последнего)
-            if (index < words.size - 1) {
-                currentX += textRenderer.getWidth(" ")
+            if (char == ' ' || char == '-' || char == '\n' || i == text.length - 1) {
+                // Завершаем текущее слово
+                if (i == text.length - 1 && char != ' ' && char != '-' && char != '\n') {
+                    currentWord += char
+                }
+                
+                if (currentWord.isNotEmpty()) {
+                    // Проверяем есть ли это слово в словаре цветов
+                    val baseColor = colorMap.entries.firstOrNull { 
+                        currentWord.equals(it.key, ignoreCase = true) 
+                    }?.value ?: 0xFFFFFF
+                    val color = (alpha shl 24) or baseColor
+                    
+                    context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(currentWord), currentX, y, color)
+                    currentX += textRenderer.getWidth(currentWord)
+                    currentWord = ""
+                }
+                
+                // Рендерим разделитель (пробел, дефис или перенос строки)
+                if (char == ' ') {
+                    currentX += textRenderer.getWidth(" ")
+                } else if (char == '-') {
+                    val color = (alpha shl 24) or 0xFFFFFF
+                    context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal("-"), currentX, y, color)
+                    currentX += textRenderer.getWidth("-")
+                } else if (char == '\n') {
+                    // Для переноса строки просто рендерим как есть
+                    val color = (alpha shl 24) or 0xFFFFFF
+                    context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(text), x, y, color)
+                    return
+                }
+            } else {
+                currentWord += char
             }
+            
+            i++
         }
     }
 
