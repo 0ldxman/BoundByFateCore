@@ -398,10 +398,11 @@ class PersonalityScreen(private val parent: Screen) :
         if (alignmentOverlayOpen || alignmentOverlayAnimTime > 0.01f) {
             renderAlignmentOverlay(context, mouseX, mouseY)
         }
+        // Анимация оверлея мировоззрения с той же скоростью что и у мотиваций
         if (alignmentOverlayOpen && alignmentOverlayAnimTime < 1f) {
-            alignmentOverlayAnimTime = (alignmentOverlayAnimTime + 0.07f).coerceAtMost(1f)
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime + 0.01f).coerceAtMost(1f)  // Такая же скорость как у мотиваций
         } else if (!alignmentOverlayOpen && alignmentOverlayAnimTime > 0f) {
-            alignmentOverlayAnimTime = (alignmentOverlayAnimTime - 0.07f).coerceAtLeast(0f)
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime - 0.01f).coerceAtLeast(0f)  // Такая же скорость закрытия
         }
 
         // ── TOOLTIP ───────────────────────────────────────────────────────────
@@ -555,8 +556,9 @@ class PersonalityScreen(private val parent: Screen) :
         val m = context.matrices; m.push()
         m.translate(0f, 0f, 400f)
 
-        // Затемнение на весь экран
-        context.fill(0, 0, W, H, ((prog * 0xAA).toInt() shl 24) or 0x000000)
+        // Затемнение на весь экран с fade-in/fade-out анимацией
+        val dimAlpha = (prog * 0xAA).toInt()
+        context.fill(0, 0, W, H, (dimAlpha shl 24) or 0x000000)
         context.fill(x0, y0, x1, y1, 0xEE1a1a1a.toInt())
         context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
         context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
@@ -1884,7 +1886,18 @@ class PersonalityScreen(private val parent: Screen) :
         val maxW = lines.maxOf { textRenderer.getWidth(it) }
         val totalH = lines.size * lineH
 
-        val tx = (mouseX + 6) / scale
+        // Вычисляем ширину тултипа в экранных координатах
+        val tooltipWidth = ((maxW + pad * 2) * scale).toInt()
+        
+        // Проверяем выходит ли тултип за правый край экрана
+        val renderOnLeft = (mouseX + 6 + tooltipWidth) > width
+        
+        // Позиция тултипа: справа или слева от курсора
+        val tx = if (renderOnLeft) {
+            (mouseX - tooltipWidth - 6) / scale
+        } else {
+            (mouseX + 6) / scale
+        }
         val ty = (mouseY - 4) / scale
 
         val bgColor  = 0xFF2b2321.toInt()
@@ -1917,14 +1930,56 @@ class PersonalityScreen(private val parent: Screen) :
                 lines.forEachIndexed { i, line ->
                     val lineY = y0 + pad + i * lineH
                     if (lineY + lineH < y1) {
-                        val color = (alpha shl 24) or 0xFFFFFF
-                        context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(line), x0 + pad, lineY, color)
+                        // Применяем цветное форматирование для мировоззрений
+                        renderColoredAlignmentText(context, line, x0 + pad, lineY, alpha)
                     }
                 }
             }
         }
 
         matrices.pop()
+    }
+    
+    /**
+     * Рендерит текст с цветным форматированием для слов мировоззрений.
+     * Добрый - зелёный, Злой - красный, Законно - светло-синий, Хаотично - оранжевый, Нейтральный - серый.
+     */
+    private fun renderColoredAlignmentText(context: DrawContext, text: String, x: Int, y: Int, alpha: Int) {
+        // Словарь замен для цветного форматирования
+        val colorMap = mapOf(
+            "Добрый" to 0x44CC44,      // Зелёный
+            "Злой" to 0xFF4444,        // Красный
+            "Законно" to 0x4488FF,     // Светло-синий
+            "Хаотично" to 0xFF8844,    // Оранжевый
+            "Нейтральный" to 0x888888, // Серый
+            "Нейтрально" to 0x888888,  // Серый
+            "Истинно" to 0x888888,     // Серый
+            // Английские варианты
+            "Good" to 0x44CC44,
+            "Evil" to 0xFF4444,
+            "Lawful" to 0x4488FF,
+            "Chaotic" to 0xFF8844,
+            "Neutral" to 0x888888,
+            "True" to 0x888888
+        )
+        
+        // Разбиваем текст на слова и рендерим каждое с нужным цветом
+        var currentX = x
+        val words = text.split(" ")
+        
+        words.forEachIndexed { index, word ->
+            // Проверяем есть ли это слово в словаре цветов
+            val baseColor = colorMap.entries.firstOrNull { word.contains(it.key, ignoreCase = true) }?.value ?: 0xFFFFFF
+            val color = (alpha shl 24) or baseColor
+            
+            context.drawTextWithShadow(textRenderer, net.minecraft.text.Text.literal(word), currentX, y, color)
+            currentX += textRenderer.getWidth(word)
+            
+            // Добавляем пробел после слова (кроме последнего)
+            if (index < words.size - 1) {
+                currentX += textRenderer.getWidth(" ")
+            }
+        }
     }
 
     override fun shouldPause() = false
