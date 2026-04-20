@@ -198,7 +198,7 @@
   "bbf.personality.submit": "Submit",
   "bbf.personality.back.right": "Back →",
   "bbf.personality.alignment.overlay.title": "Alignment",
-  "bbf.personality.alignment.overlay.desc": "Almost all creatures have an alignment that\\ndescribes their moral views. It consists of\\ntwo factors: moral principles (good, evil,\\nneutral) and attitude to order (lawful,\\nchaotic, neutral).",
+  "bbf.personality.alignment.overlay.desc": "Almost all creatures have an alignment that\ndescribes their moral views. It consists of\ntwo factors: moral principles (good, evil,\nneutral) and attitude to order (lawful,\nchaotic, neutral).",
   "bbf.alignment.lawful_good.tooltip": "Lawful Good\\nTry to do what society expects. Fight\\nagainst injustice and protect the innocent.",
   "bbf.alignment.neutral_good.tooltip": "Neutral Good\\nWork within rules but don't feel bound\\nby them. Help others according to their needs.",
   "bbf.alignment.chaotic_good.tooltip": "Chaotic Good\\nFollow only their conscience, caring little\\nfor what others expect. Rebels acting for good.",

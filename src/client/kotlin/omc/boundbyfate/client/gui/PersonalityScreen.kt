@@ -394,6 +394,16 @@ class PersonalityScreen(private val parent: Screen) :
         }
         updateSuggestOverlayAnimation()
 
+        // ── ALIGNMENT OVERLAY ─────────────────────────────────────────────────
+        if (alignmentOverlayOpen || alignmentOverlayAnimTime > 0.01f) {
+            renderAlignmentOverlay(context, mouseX, mouseY)
+        }
+        if (alignmentOverlayOpen && alignmentOverlayAnimTime < 1f) {
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime + 0.07f).coerceAtMost(1f)
+        } else if (!alignmentOverlayOpen && alignmentOverlayAnimTime > 0f) {
+            alignmentOverlayAnimTime = (alignmentOverlayAnimTime - 0.07f).coerceAtLeast(0f)
+        }
+
         // ── TOOLTIP ───────────────────────────────────────────────────────────
         pendingTooltip?.let { drawSmallTooltip(context, it, mouseX, mouseY) }
         updateTooltipAnim()
@@ -501,8 +511,7 @@ class PersonalityScreen(private val parent: Screen) :
     }
 
     // ── МИРОВОЗЗРЕНИЕ: вылет сверху вниз ─────────────────────────────────────
-    private fun renderAlignmentTop(context: DrawContext, W: Int, pad: Int, mouseX: Int, mouseY: Int) {
-        val prog = alignProgress()
+    private fun renderAlignmentTop(context: DrawContext, W: Int, pad: Int, mouseX: Int, mouseY: Int) {        val prog = alignProgress()
         if (prog <= 0f) return
 
         val alignText = ClientPlayerData.alignmentText.ifEmpty {
@@ -529,16 +538,6 @@ class PersonalityScreen(private val parent: Screen) :
         if (divProg > 0f) {
             drawFadeDividerAnimated(context, cx, pad + 22, 120, divProg)
         }
-        
-        // Оверлей мировоззрения
-        if (alignmentOverlayOpen || alignmentOverlayAnimTime > 0.01f) {
-            renderAlignmentOverlay(context, mouseX, mouseY)
-        }
-        if (alignmentOverlayOpen && alignmentOverlayAnimTime < 1f) {
-            alignmentOverlayAnimTime = (alignmentOverlayAnimTime + 0.07f).coerceAtMost(1f)
-        } else if (!alignmentOverlayOpen && alignmentOverlayAnimTime > 0f) {
-            alignmentOverlayAnimTime = (alignmentOverlayAnimTime - 0.07f).coerceAtLeast(0f)
-        }
     }
 
     // ── ОВЕРЛЕЙ МИРОВОЗЗРЕНИЯ ─────────────────────────────────────────────────
@@ -556,7 +555,8 @@ class PersonalityScreen(private val parent: Screen) :
         val m = context.matrices; m.push()
         m.translate(0f, 0f, 400f)
 
-        context.fill(0, 0, W, H, ((prog * 0x99).toInt() shl 24) or 0x000000)
+        // Лёгкое затемнение только за оверлеем (не весь экран)
+        context.fill(x0 - 4, y0 - 4, x1 + 4, y1 + 4, ((prog * 0x55).toInt() shl 24) or 0x000000)
         context.fill(x0, y0, x1, y1, 0xEE1a1a1a.toInt())
         context.fill(x0, y0, x1, y0 + 1, 0xFF8a6a3a.toInt())
         context.fill(x0, y1 - 1, x1, y1, 0xFF8a6a3a.toInt())
@@ -584,8 +584,8 @@ class PersonalityScreen(private val parent: Screen) :
 
         // Описание
         val descText = net.minecraft.client.resource.language.I18n.translate("bbf.personality.alignment.overlay.desc")
-        val descScale = 0.5f
-        val descLines = descText.split("\\n")
+        val descScale = 0.65f
+        val descLines = descText.split("\n")
         var descY = y + pad + 14
         descLines.forEach { line ->
             val dm = context.matrices; dm.push()
@@ -596,10 +596,10 @@ class PersonalityScreen(private val parent: Screen) :
             descY += (textRenderer.fontHeight * descScale + 1).toInt()
         }
 
-        // Диаграмма — фиксированный маленький размер
-        val diagPad = 8
-        val diagTop = descY + 4
-        val diagSize = 72  // фиксированный размер ~1/3 от оверлея
+        // Диаграмма — по ширине текста описания
+        val diagTop = descY + 6
+        val maxDescW = descLines.maxOf { (textRenderer.getWidth(it) * descScale).toInt() }
+        val diagSize = maxDescW.coerceAtLeast(80)
         val diagX = x + (w - diagSize) / 2
         val diagY = diagTop
 
@@ -702,33 +702,8 @@ class PersonalityScreen(private val parent: Screen) :
             alignmentCellScales[i] = lerp(alignmentCellScales.getOrDefault(i, 1f), target, 0.15f)
         }
 
-        // Tooltip ячейки
-        alignmentCellTooltip?.let { tooltip ->
-            val tooltipStr = tooltip.string
-            if (tooltipStr.isNotEmpty()) {
-                val ttScale = 0.55f
-                val ttLines = tooltipStr.split("\\n")
-                val ttLineH = (textRenderer.fontHeight * ttScale + 1).toInt()
-                val ttMaxW = ttLines.maxOf { textRenderer.getWidth(it) }
-                val ttW = (ttMaxW * ttScale + 10).toInt()
-                val ttH = ttLines.size * ttLineH + 6
-                val ttX = (mouseX + 6).coerceAtMost(x + w - ttW - 2)
-                val ttY = (mouseY - ttH - 2).coerceAtLeast(y + 2)
-                context.fill(ttX, ttY, ttX + ttW, ttY + ttH, 0xEE1a1a1a.toInt())
-                context.fill(ttX, ttY, ttX + ttW, ttY + 1, 0xFF8a6a3a.toInt())
-                context.fill(ttX, ttY + ttH - 1, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
-                context.fill(ttX, ttY, ttX + 1, ttY + ttH, 0xFF8a6a3a.toInt())
-                context.fill(ttX + ttW - 1, ttY, ttX + ttW, ttY + ttH, 0xFF8a6a3a.toInt())
-                ttLines.forEachIndexed { lineIdx, line ->
-                    val lineColor = if (lineIdx == 0) 0xFFD700 else 0xCCCCCC  // первая строка — название золотом
-                    val ttm = context.matrices; ttm.push()
-                    ttm.translate((ttX + 5).toFloat(), (ttY + 3 + lineIdx * ttLineH).toFloat(), 0f)
-                    ttm.scale(ttScale, ttScale, 1f)
-                    context.drawTextWithShadow(textRenderer, line, 0, 0, (iAlpha shl 24) or lineColor)
-                    ttm.pop()
-                }
-            }
-        }
+        // Tooltip ячейки — через pendingTooltip для правильного Z и анимации
+        alignmentCellTooltip?.let { pendingTooltip = it }
     }
 
     // ── ПАНЕЛЬ УБЕЖДЕНИЙ ──────────────────────────────────────────────────────
