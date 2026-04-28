@@ -90,3 +90,9 @@ fun FloatVec3Expr.eval(ctx: MolangContext): de.fabmax.kool.math.Vec3f {
     return de.fabmax.kool.math.Vec3f(x, y, z)
 }
 
+
+/**
+ * Extension function to parse a JsonPrimitive as a Molang expression.
+ */
+fun kotlinx.serialization.json.JsonPrimitive.parseMolangExpression(): FloatExpr =
+    parseMolangExpression(content)

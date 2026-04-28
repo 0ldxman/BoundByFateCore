@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.GlStateManager
 import de.fabmax.kool.input.Input
 import de.fabmax.kool.pipeline.CullMethod
 import de.fabmax.kool.pipeline.DepthCompareOp
-import de.fabmax.kool.pipeline.backend.gl.GlRenderPass
 import de.fabmax.kool.pipeline.backend.gl.glOp
 import de.fabmax.kool.scene.Scene
 import kotlinx.coroutines.runBlocking
@@ -42,14 +41,15 @@ object GlContext {
         cullState = GL30.glIsEnabled(GL30.GL_CULL_FACE)
         cullMode = GL30.glGetInteger(GL30.GL_CULL_FACE_MODE)
 
-        MCGlApi.depthMask(GlRenderPass.GlState.actIsWriteDepth)
-        if (GlRenderPass.GlState.actDepthTest == DepthCompareOp.ALWAYS) {
+        MCGlApi.depthMask(KoolHooks.getGlStateIsWriteDepth())
+        val actDepthTest = KoolHooks.getGlStateDepthTest()
+        if (actDepthTest == DepthCompareOp.ALWAYS) {
             MCGlApi.disable(MCGlApi.DEPTH_TEST)
         } else {
             MCGlApi.enable(MCGlApi.DEPTH_TEST)
-            GlRenderPass.GlState.actDepthTest?.glOp(MCGlApi)?.let(MCGlApi::depthFunc)
+            actDepthTest?.glOp(MCGlApi)?.let(MCGlApi::depthFunc)
         }
-        when (GlRenderPass.GlState.actCullMethod) {
+        when (KoolHooks.getGlStateCullMethod()) {
             CullMethod.CULL_BACK_FACES -> {
                 MCGlApi.enable(MCGlApi.CULL_FACE)
                 MCGlApi.cullFace(MCGlApi.BACK)

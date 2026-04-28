@@ -1,7 +1,7 @@
-﻿package omc.boundbyfate.client.models.internal
+package omc.boundbyfate.client.models.internal
 
 import kotlinx.serialization.Serializable
-import net.minecraft.util.Mth
+import net.minecraft.util.MathHelper
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
@@ -15,15 +15,15 @@ data class Transform(
     val matrix: Matrix4f
         get() = Matrix4f()
             .translate(tX, tY, tZ)
-            .rotate(Quaternionf().rotateX(rX * Mth.DEG_TO_RAD))
-            .rotate(Quaternionf().rotateY(rY * Mth.DEG_TO_RAD))
-            .rotate(Quaternionf().rotateZ(rZ * Mth.DEG_TO_RAD))
+            .rotate(Quaternionf().rotateX(rX * MathHelper.RADIANS_PER_DEGREE))
+            .rotate(Quaternionf().rotateY(rY * MathHelper.RADIANS_PER_DEGREE))
+            .rotate(Quaternionf().rotateZ(rZ * MathHelper.RADIANS_PER_DEGREE))
             .scale(sX, sY, sZ)
     val normalMatrix: Matrix3f
         get() = Matrix3f()
-            .rotate(Quaternionf().rotateX(rX * Mth.DEG_TO_RAD))
-            .rotate(Quaternionf().rotateY(rY * Mth.DEG_TO_RAD))
-            .rotate(Quaternionf().rotateZ(rZ * Mth.DEG_TO_RAD))
+            .rotate(Quaternionf().rotateX(rX * MathHelper.RADIANS_PER_DEGREE))
+            .rotate(Quaternionf().rotateY(rY * MathHelper.RADIANS_PER_DEGREE))
+            .rotate(Quaternionf().rotateZ(rZ * MathHelper.RADIANS_PER_DEGREE))
             .scale(sX, sY, sZ)
 
     companion object {

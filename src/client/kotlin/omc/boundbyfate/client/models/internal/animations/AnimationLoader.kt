@@ -13,7 +13,7 @@ object AnimationLoader {
     @Suppress("UNCHECKED_CAST")
     fun createAnimation(
         nodes: Map<Int, NodeDefinition>,
-        animationModel: ru.hollowhorizon.hollowengine.client.models.internal.Animation,
+        animationModel: omc.boundbyfate.client.models.internal.Animation,
     ): Animation {
         val animData = animationModel.channels
             .map { channel ->

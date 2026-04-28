@@ -1,9 +1,9 @@
-﻿package omc.boundbyfate.client.models.internal.rendering
+package omc.boundbyfate.client.models.internal.rendering
 
 import com.mojang.blaze3d.platform.GlStateManager
 import com.mojang.blaze3d.systems.RenderSystem
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.ShaderInstance
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gl.ShaderProgram
 import org.lwjgl.opengl.GL33
 import omc.boundbyfate.client.models.internal.*
 import omc.boundbyfate.client.models.internal.manager.HollowModelManager
@@ -56,10 +56,10 @@ inline fun withInstancingRenderState(body: () -> Unit) {
 
     RenderSystem.activeTexture(GL33.GL_TEXTURE1)
     val texture1 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
-    Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
+    MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
     RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
     RenderSystem.setShaderTexture(1, RenderSystem.getShaderTexture(1))
-    Minecraft.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+    MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
 
     RenderSystem.activeTexture(GL33.GL_TEXTURE0)
     val texture0 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
@@ -87,8 +87,8 @@ inline fun withInstancingRenderState(body: () -> Unit) {
 
 inline fun renderOpaque(
     batches: Map<PipelineRenderer, List<SubmittedInstance>>,
-    shader: ShaderInstance,
-    render: (PipelineRenderer, List<SubmittedInstance>, ShaderInstance) -> Unit,
+    shader: ShaderProgram,
+    render: (PipelineRenderer, List<SubmittedInstance>, ShaderProgram) -> Unit,
 ) {
     for ((renderer, instances) in batches.entries.asSequence().filter { !it.key.isTranslucent }) {
         render(renderer, instances, shader)
@@ -97,8 +97,8 @@ inline fun renderOpaque(
 
 inline fun renderTranslucent(
     batches: Map<PipelineRenderer, List<SubmittedInstance>>,
-    shader: ShaderInstance,
-    render: (PipelineRenderer, List<SubmittedInstance>, ShaderInstance) -> Unit,
+    shader: ShaderProgram,
+    render: (PipelineRenderer, List<SubmittedInstance>, ShaderProgram) -> Unit,
 ) {
     for ((renderer, instances) in batches.entries
         .asSequence()
@@ -111,7 +111,7 @@ inline fun renderTranslucent(
 fun fallbackToCapturedDraws(
     renderer: PipelineRenderer,
     instances: List<SubmittedInstance>,
-    shader: ShaderInstance = SHADER,
+    shader: ShaderProgram = SHADER,
 ) {
     val drawInstances = if (renderer.isTranslucent) instances.sortedByDescending(SubmittedInstance::sortKey) else instances
     for (instance in drawInstances) {

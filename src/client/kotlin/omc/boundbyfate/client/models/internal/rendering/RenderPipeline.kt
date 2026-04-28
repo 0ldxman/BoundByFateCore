@@ -2,10 +2,10 @@
 
 import com.mojang.blaze3d.platform.GlStateManager
 import com.mojang.blaze3d.systems.RenderSystem
-import com.mojang.blaze3d.vertex.PoseStack
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.MultiBufferSource
-import net.minecraft.client.renderer.RenderType
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.render.VertexConsumerProvider
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.util.math.MatrixStack
 import org.lwjgl.opengl.GL33
 import omc.boundbyfate.client.models.internal.drawWithShader
 import omc.boundbyfate.client.models.internal.manager.HollowModelManager
@@ -27,12 +27,12 @@ interface RenderPipeline {
 
 
 data class RenderContext(
-    val stack: PoseStack,
-    val source: MultiBufferSource,
+    val stack: MatrixStack,
+    val source: VertexConsumerProvider,
     val light: Int,
     val overlay: Int,
     val allowInstancing: Boolean = false,
-    val openedBatchedRenderTypes: MutableSet<RenderType>? = null,
+    val openedBatchedRenderTypes: MutableSet<RenderLayer>? = null,
 )
 
 
@@ -95,9 +95,9 @@ class ListRenderPipeline : RenderPipeline {
         RenderSystem.bindTexture(HollowModelManager.lightTexture.id)
         RenderSystem.activeTexture(GL33.GL_TEXTURE1)
         val texture1 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
-        Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
-        Minecraft.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
         RenderSystem.activeTexture(GL33.GL_TEXTURE0)
 
         val texture = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
@@ -136,9 +136,9 @@ class ListRenderPipeline : RenderPipeline {
         RenderSystem.bindTexture(HollowModelManager.lightTexture.id)
         RenderSystem.activeTexture(GL33.GL_TEXTURE1)
         val texture1 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
-        Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
-        Minecraft.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
         RenderSystem.activeTexture(GL33.GL_TEXTURE0)
 
         val texture = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding

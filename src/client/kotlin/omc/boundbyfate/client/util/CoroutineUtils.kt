@@ -1,12 +1,12 @@
 package omc.boundbyfate.client.util
 
 import kotlinx.coroutines.*
-import net.minecraft.client.Minecraft
+import net.minecraft.client.MinecraftClient
 
 /**
  * Coroutine scope tied to the Minecraft client lifecycle.
  */
-val Minecraft.coroutineScope: CoroutineScope
+val MinecraftClient.coroutineScope: CoroutineScope
     get() = ClientCoroutineScope
 
 object ClientCoroutineScope : CoroutineScope {

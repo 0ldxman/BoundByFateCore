@@ -4,14 +4,14 @@ import de.fabmax.kool.math.MutableVec3f
 import de.fabmax.kool.math.Vec2f
 import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.util.Color
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.Material
 import omc.boundbyfate.client.models.internal.Model
 import omc.boundbyfate.client.models.internal.Scene
 import omc.boundbyfate.client.util.stream
 import omc.boundbyfate.client.util.rl
 
-class OBJModel(private var location: ResourceLocation, private var mtlLocation: ResourceLocation? = null) {
+class OBJModel(private var location: Identifier, private var mtlLocation: Identifier? = null) {
     private val vertices = mutableListOf<Vec3f>()
     private val textures = mutableListOf<Vec2f>()
     private val normals = mutableListOf<Vec3f>()

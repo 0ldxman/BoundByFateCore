@@ -7,7 +7,7 @@ import de.fabmax.kool.util.Time
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import net.minecraft.client.Minecraft
+import net.minecraft.client.MinecraftClient
 import omc.boundbyfate.client.models.internal.AnimatedModel
 import omc.boundbyfate.client.models.internal.Material
 import omc.boundbyfate.client.models.internal.Primitive
@@ -49,7 +49,7 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
     init {
         ensureCompiled(flow.value)
-        flow.onEach { ensureCompiled(it) }.launchIn(Minecraft.getInstance().coroutineScope)
+        flow.onEach { ensureCompiled(it) }.launchIn(MinecraftClient.getInstance().coroutineScope)
     }
 
     val triangles get() =

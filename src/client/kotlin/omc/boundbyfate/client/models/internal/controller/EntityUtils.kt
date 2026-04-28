@@ -1,8 +1,8 @@
 ﻿package omc.boundbyfate.client.models.internal.controller
 
-import net.minecraft.client.Minecraft
-import net.minecraft.util.Mth
-import net.minecraft.world.entity.LivingEntity
+import net.minecraft.client.MinecraftClient
+import net.minecraft.util.MathHelper
+import net.minecraft.entity.LivingEntity
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -16,18 +16,18 @@ const val MOVEMENT_FACTOR = (1 / 256f)
 val LivingEntity.isMoving get() = abs(animationSpeed) >= MOVEMENT_FACTOR
 
 fun calculateSpeedViaDeltaMovement(entity: LivingEntity): Float {
-    val vel = entity.deltaMovement
+    val vel = entity.velocity
     val dx = vel.x.toFloat()
     val dz = vel.z.toFloat()
 
-    val yawRad = Math.toRadians(entity.yBodyRot.toDouble()).toFloat()
-    val forwardX = -Mth.sin(yawRad)
-    val forwardZ = Mth.cos(yawRad)
+    val yawRad = Math.toRadians(entity.bodyYaw.toDouble()).toFloat()
+    val forwardX = -MathHelper.sin(yawRad)
+    val forwardZ = MathHelper.cos(yawRad)
 
     val forwardSpeed = dx * forwardX + dz * forwardZ
     val moveSpeed = forwardSpeed * 20f
 
-    val bodyTurnDelta = Mth.wrapDegrees(entity.yBodyRot - entity.yBodyRotO)
+    val bodyTurnDelta = MathHelper.wrapDegrees(entity.bodyYaw - entity.prevBodyYaw)
     val absTurnDelta = abs(bodyTurnDelta)
     val turnSpeed = if (absTurnDelta <= TURN_ANIMATION_DEAD_ZONE) {
         0f
@@ -41,8 +41,5 @@ fun calculateSpeedViaDeltaMovement(entity: LivingEntity): Float {
     val speed = moveSpeed + turnSpeed
     if (abs(speed) < MOVEMENT_FACTOR) return 0f
 
-    return speed * if (Minecraft.getInstance().isPaused) 0f else 1f
+    return speed * if (MinecraftClient.getInstance().isPaused) 0f else 1f
 }
-
-
-

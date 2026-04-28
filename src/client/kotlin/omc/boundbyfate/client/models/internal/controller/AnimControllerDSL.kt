@@ -5,7 +5,7 @@ import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.scene.TrsTransformF
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import net.minecraft.world.entity.LivingEntity
+import net.minecraft.entity.LivingEntity
 // HollowCore removed
 import omc.boundbyfate.client.models.internal.NodeDefinition
 import omc.boundbyfate.client.models.internal.animations.Animation

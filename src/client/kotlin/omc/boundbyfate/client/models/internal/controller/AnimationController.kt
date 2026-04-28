@@ -1,7 +1,7 @@
 ﻿package omc.boundbyfate.client.models.internal.controller
 
 import kotlinx.coroutines.launch
-import net.minecraft.world.entity.LivingEntity
+import net.minecraft.entity.LivingEntity
 
 open class AnimationController(val system: AnimationSystem) {
 

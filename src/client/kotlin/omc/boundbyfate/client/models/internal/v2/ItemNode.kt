@@ -1,11 +1,11 @@
 ﻿package omc.boundbyfate.client.models.internal.v2
 
 import de.fabmax.kool.math.MutableMat3f
-import net.minecraft.client.Minecraft
-import net.minecraft.util.Mth
-import net.minecraft.world.entity.EquipmentSlot
-import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.item.ItemDisplayContext
+import net.minecraft.client.MinecraftClient
+import net.minecraft.util.MathHelper
+import net.minecraft.entity.EquipmentSlot
+import net.minecraft.entity.LivingEntity
+import net.minecraft.item.ModelTransformationMode
 import org.joml.Quaternionf
 import omc.boundbyfate.client.models.internal.rendering.RenderPipeline
 import omc.boundbyfate.client.util.asMatrix3f
@@ -16,32 +16,28 @@ class ItemNode(val entity: LivingEntity, val slot: EquipmentSlot, parent: Attach
     override fun collectCommands(pipeline: RenderPipeline) {
         super.collectCommands(pipeline)
         pipeline.addBatchedRenderable {
-            stack.pushPose()
+            stack.push()
 
-            stack.mulPoseMatrix(globalMatrix.asMatrix4f())
-            stack.last().normal().mul(globalMatrix.getUpperLeft(MutableMat3f()).asMatrix3f())
+            stack.multiplyPositionMatrix(globalMatrix.asMatrix4f())
+            stack.peek().normalMatrix.mul(globalMatrix.getUpperLeft(MutableMat3f()).asMatrix3f())
 
-            stack.mulPose(Quaternionf().rotateX(-90 * Mth.DEG_TO_RAD))
+            stack.multiply(Quaternionf().rotateX(-90 * MathHelper.RADIANS_PER_DEGREE))
 
-            Minecraft.getInstance().itemRenderer.renderStatic(
-                entity,
-                entity.getItemBySlot(slot),
+            MinecraftClient.getInstance().itemRenderer.renderItem(
+                entity.getEquippedStack(slot),
                 when (slot) {
-                    EquipmentSlot.MAINHAND -> ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
-                    EquipmentSlot.OFFHAND -> ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
-                    EquipmentSlot.HEAD -> ItemDisplayContext.HEAD
-                    else -> ItemDisplayContext.FIXED
+                    EquipmentSlot.MAINHAND -> ModelTransformationMode.THIRD_PERSON_RIGHT_HAND
+                    EquipmentSlot.OFFHAND -> ModelTransformationMode.THIRD_PERSON_LEFT_HAND
+                    EquipmentSlot.HEAD -> ModelTransformationMode.HEAD
+                    else -> ModelTransformationMode.FIXED
                 },
                 slot == EquipmentSlot.OFFHAND,
                 stack,
                 source,
-                entity.level(),
-                light, overlay, 0
+                light, overlay
             )
 
-            stack.popPose()
+            stack.pop()
         }
     }
 }
-
-

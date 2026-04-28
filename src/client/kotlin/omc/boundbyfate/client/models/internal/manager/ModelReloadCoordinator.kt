@@ -1,6 +1,6 @@
 ﻿package omc.boundbyfate.client.models.internal.manager
 
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 
 data class PreparedModelUpdate<T>(
     val exists: Boolean,
@@ -14,9 +14,9 @@ internal data class ModelSwap<T>(
 
 internal object ModelReloadCoordinator {
     fun reloadTargets(
-        cached: Set<ResourceLocation>,
-        indexed: Set<ResourceLocation>,
-    ): Set<ResourceLocation> = linkedSetOf<ResourceLocation>().apply {
+        cached: Set<Identifier>,
+        indexed: Set<Identifier>,
+    ): Set<Identifier> = linkedSetOf<Identifier>().apply {
         addAll(cached)
         addAll(indexed)
     }

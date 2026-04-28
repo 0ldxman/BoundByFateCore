@@ -22,9 +22,9 @@ class MinecraftCamera : PerspectiveCamera() {
         val mc = MinecraftClient.getInstance()
         if (mc.player == null || mc.world == null) return
 
-        val partialTick = mc.renderTickCounter.getTickDelta(true)
+        val partialTick = mc.renderTickCounter.tickDelta
         bobHurt(proj, partialTick)
-        if (mc.options.bobView) {
+        if (mc.options.bobView.value) {
             bobView(proj, partialTick)
         }
     }
@@ -44,7 +44,7 @@ fun MinecraftCamera.syncFromMinecraft() {
     if (mc.player == null || mc.world == null) return
 
     val gameRenderer = mc.gameRenderer
-    val partialTick = mc.renderTickCounter.getTickDelta(true)
+    val partialTick = mc.renderTickCounter.tickDelta
 
     clipNear = 0.05f
     clipFar = gameRenderer.viewDistance.toFloat()
@@ -79,7 +79,7 @@ private fun bobHurt(mat4f: MutableMat4f, partialTicks: Float) {
 
         f /= 10.0f // hurtDuration equivalent
         f = MathHelper.sin(f * f * f * f * MathHelper.PI)
-        g = cameraEntity.lastDamageTakenBeforeAbsorption
+        g = cameraEntity.lastDamageTaken
         mat4f.rotate(QuatF((-g).deg, Vec3f.Y_AXIS))
         val h = ((-f).toDouble() * 14.0 * mc.options.damageTiltStrength.value).toFloat()
         mat4f.rotate(QuatF(h.deg, Vec3f.Z_AXIS))

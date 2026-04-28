@@ -1,13 +1,13 @@
 ﻿package omc.boundbyfate.client.models.fbx
 
-import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import de.fabmax.kool.math.*
 import de.fabmax.kool.scene.TrsTransformF
 import de.fabmax.kool.util.Color
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.texture.DynamicTexture
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.texture.NativeImage
+import net.minecraft.client.texture.NativeImageBackedTexture
+import net.minecraft.util.Identifier
 // HollowCore removed
 import omc.boundbyfate.client.models.fbx.TransformationComp
 import omc.boundbyfate.client.models.internal.*
@@ -56,7 +56,7 @@ operator fun Array<Mat4f>.set(transf: Tc, mat: Mat4f) = set(transf.i, mat)
 
 const val BBSCALE = 100f
 
-fun Document.convert(location: ResourceLocation): InternalModel {
+fun Document.convert(location: Identifier): InternalModel {
     val isBlockBenchModel = creator.contains("blockbench", ignoreCase = true)
     
     // Сначала конвертируем узлы
@@ -89,7 +89,7 @@ fun Document.convert(location: ResourceLocation): InternalModel {
 
     // Конвертируем анимации
     val animations = animationStacks().mapNotNull { stack ->
-        val intermediateAnim = convertAnimationStackIntermediate(stack)
+        val intermediateAnim = convertAnimationStackIntermediate(this, stack)
         if (intermediateAnim != null) {
             AnimationLoader.createAnimation(nodeMap, intermediateAnim)
         } else {
@@ -102,8 +102,7 @@ fun Document.convert(location: ResourceLocation): InternalModel {
     }
 }
 
-context(doc: Document)
-fun convertAnimationStackIntermediate(st: AnimationStack): Animation? {
+fun convertAnimationStackIntermediate(doc: Document, st: AnimationStack): Animation? {
     val channels = mutableListOf<Channel>()
 
     // FBX stores time in "FBX time units" where 1 second = 46186158000 FBX time units
@@ -179,7 +178,7 @@ fun convertAnimationStackIntermediate(st: AnimationStack): Animation? {
     return Animation(cleanName, channels)
 }
 
-fun Document.convertNodes(parentId: Long, location: ResourceLocation): List<NodeDefinition> {
+fun Document.convertNodes(parentId: Long, location: Identifier): List<NodeDefinition> {
     val connections = getConnectionsByDestinationSequenced(parentId, "Model")
 
     val nodes = ArrayList<NodeDefinition>()
@@ -306,12 +305,10 @@ fun generateTransformationNodeChain(model: Model): TrsTransformF {
     }
 }
 
-fun Document.getSkinForModel(model: Model): ru.hollowhorizon.hollowengine.client.models.internal.Skin? {
-    // Получаем все соединения от модели к скинам
+fun Document.getSkinForModel(model: Model): Skin? {
     val skinConnections = getConnectionsBySourceSequenced(model.id, "Deformer")
-
     for (conn in skinConnections) {
-        val skinObj = conn.destinationObject as? ru.hollowhorizon.hollowengine.client.models.fbx.Skin
+        val skinObj = conn.destinationObject as? Skin
         if (skinObj != null) {
             return convertSkin(skinObj)
         }
@@ -319,28 +316,26 @@ fun Document.getSkinForModel(model: Model): ru.hollowhorizon.hollowengine.client
     return null
 }
 
-fun convertSkin(fbxSkin: ru.hollowhorizon.hollowengine.client.models.fbx.Skin): ru.hollowhorizon.hollowengine.client.models.internal.Skin {
+fun convertSkin(fbxSkin: Skin): omc.boundbyfate.client.models.internal.Skin {
     val jointsIds = mutableListOf<Int>()
     val inverseBindMatrices = mutableListOf<de.fabmax.kool.math.Mat4f>()
 
     for (cluster in fbxSkin.clusters) {
         cluster.node?.let { model ->
             jointsIds.add(model.id.toInt())
-            // В FBX transformLink - это матрица бинда в пространстве сустава
-            // Нам нужна обратная матрица бинда (inverse bind matrix)
             val inverseBindMatrix = MutableMat4f(cluster.transformLink)
             inverseBindMatrix.invert()
             inverseBindMatrices.add(inverseBindMatrix)
         }
     }
 
-    return ru.hollowhorizon.hollowengine.client.models.internal.Skin(
+    return omc.boundbyfate.client.models.internal.Skin(
         jointsIds,
         inverseBindMatrices.toTypedArray()
     )
 }
 
-fun convertModel(model: Model, transform: TrsTransformF, location: ResourceLocation, doc: Document): NodeDefinition {
+fun convertModel(model: Model, transform: TrsTransformF, location: Identifier, doc: Document): NodeDefinition {
     val isBlockBenchModel = doc.creator.contains("blockbench", ignoreCase = true)
     val primitives = model.geometry.mapNotNull {
         (it as? MeshGeometry)?.let { convertMesh(it, model, location, doc, isBlockBenchModel) }
@@ -466,7 +461,7 @@ fun Document.getMorphTargetsForMesh(mesh: MeshGeometry): List<Map<String, FloatA
     return morphTargets
 }
 
-fun convertMesh(mesh: MeshGeometry, model: Model, location: ResourceLocation, doc: Document, isBlockBench: Boolean = false): Primitive {
+fun convertMesh(mesh: MeshGeometry, model: Model, location: Identifier, doc: Document, isBlockBench: Boolean = false): Primitive {
     val (joints, jointWeights) = doc.getSkinDataForMesh(mesh, model)
     val morphTargets = doc.getMorphTargetsForMesh(mesh)
     
@@ -495,26 +490,25 @@ fun convertMesh(mesh: MeshGeometry, model: Model, location: ResourceLocation, do
     )
 }
 
-fun Material.convert(model: ResourceLocation, color: Vec4f): InternalMaterial {
+fun Material.convert(model: Identifier, color: Vec4f): InternalMaterial {
     var diffuseTexture = InternalMaterial.MISSING_TEXTURE
     var normalTexture = InternalMaterial.MISSING_NORMAL
     var specularTexture = InternalMaterial.MISSING_SPECULAR
 
-    // Map FBX texture types to internal texture types
     textures.forEach { (type, texture) ->
         texture.media?.let { media ->
             val textureLocation = model.withPath(
                 model.path.substringBefore('.') + '/' + media.name.lowercase()
-                    .filter(ResourceLocation::validPathChar) + ".png"
+                    .filter { it.isLetterOrDigit() || it == '_' || it == '/' || it == '.' || it == '-' } + ".png"
             )
 
             if (media.content.isNotEmpty()) {
                 RenderSystem.recordRenderCall {
                     try {
-                        val nativeImage = NativeImage.read(media.content)
-                        val dynamicTexture = DynamicTexture(nativeImage)
-                        Minecraft.getInstance().textureManager.register(textureLocation, dynamicTexture)
-                    } catch (e: IOException) {
+                        val nativeImage = NativeImage.read(media.content.inputStream())
+                        val dynamicTexture = NativeImageBackedTexture(nativeImage)
+                        MinecraftClient.getInstance().textureManager.registerTexture(textureLocation, dynamicTexture)
+                    } catch (e: java.io.IOException) {
                         org.apache.logging.log4j.LogManager.getLogger().error("Invalid texture $textureLocation!")
                     }
                 }
@@ -680,8 +674,7 @@ fun frameRateToDouble(fp: FileGlobalSettings.FrameRate, customFPSVal: Double = -
     Fr.CUSTOM -> customFPSVal
 }
 
-context(doc: Document)
-fun convertAnimationStack(st: AnimationStack): ru.hollowhorizon.hollowengine.client.models.internal.animations.Animation? {
+fun convertAnimationStack(doc: Document, st: AnimationStack): omc.boundbyfate.client.models.internal.animations.Animation? {
     val channels = mutableListOf<Channel>()
 
     // FBX stores time in "FBX time units" where 1 second = 46186158000 FBX time units

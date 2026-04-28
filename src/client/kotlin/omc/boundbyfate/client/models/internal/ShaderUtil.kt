@@ -1,89 +1,73 @@
 ﻿package omc.boundbyfate.client.models.internal
 
 import com.mojang.blaze3d.systems.RenderSystem
-import com.mojang.blaze3d.vertex.DefaultVertexFormat
-import com.mojang.blaze3d.vertex.VertexFormat
-import net.irisshaders.iris.shadows.ShadowRenderer
-import net.minecraft.Util
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.GameRenderer
-import net.minecraft.client.renderer.RenderStateShard
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.texture.TextureManager
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gl.ShaderProgram
+import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.VertexFormats
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL13
-// ShaderInstanceAccessor mixin removed
-// shouldOverrideShaders removed
-// ModShaders removed - TODO: register shaders
-import java.util.function.Function
+import omc.boundbyfate.client.models.internal.rendering.RenderContext
+import omc.boundbyfate.client.util.rl
 
+// Shader utilities for NPC model rendering
 
-inline fun drawWithShader(
-    shader: net.minecraft.client.renderer.ShaderInstance = SHADER,
-    state: RenderType = translucentShaderState(),
-    body: () -> Unit,
-) {
-    val accessor = shader as ShaderInstanceAccessor
+fun opaqueRenderLayer(texture: Identifier): RenderLayer =
+    RenderLayer.getEntityCutoutNoCull(texture)
 
-    state.setupRenderState()
-    shader.setDefaultUniforms(
-        VertexFormat.Mode.TRIANGLES,
-        RenderSystem.getModelViewMatrix(),
-        RenderSystem.getProjectionMatrix(),
-        Minecraft.getInstance().window
-    )
-    shader.apply()
+fun translucentRenderLayer(texture: Identifier): RenderLayer =
+    RenderLayer.getEntityTranslucent(texture)
 
-    accessor.samplerLocations().forEachIndexed { texture, index ->
-        RenderSystem.glUniform1i(index, texture)
-    }
+val SHADER: ShaderProgram?
+    get() = MinecraftClient.getInstance().gameRenderer.getProgram("rendertype_entity_cutout")
 
-    body()
-
-    shader.clear()
-    state.clearRenderState()
-}
-
-fun opaqueShaderState(): RenderType = RenderType.entityCutoutNoCull(TextureManager.INTENTIONAL_MISSING_TEXTURE)
-
-fun translucentShaderState(): RenderType = RenderType.entityTranslucent(TextureManager.INTENTIONAL_MISSING_TEXTURE)
-
-val batchingRenderType: Function<Material, RenderType> = Util.memoize<Material, RenderType> { material: Material ->
-    val compositeState =
-        RenderType.CompositeState.builder()
-            .setShaderState(RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeEntityCutoutShader))
-            .setTextureState(RenderStateShard.TextureStateShard(material.texture, false, false))
-            .setTransparencyState(
-                when (material.blend) {
-                    Material.Blend.BLEND -> RenderStateShard.TRANSLUCENT_TRANSPARENCY
-                    Material.Blend.OPAQUE -> RenderStateShard.NO_TRANSPARENCY
-                }
-            )
-            .setCullState(if (material.doubleSided) RenderStateShard.NO_CULL else RenderStateShard.CULL)
-            .setLightmapState(RenderStateShard.LIGHTMAP)
-            .setOverlayState(RenderStateShard.OVERLAY)
-            .createCompositeState(true)
-    RenderType.create(
-        "hollowengine:entity_cutout",
-        DefaultVertexFormat.NEW_ENTITY,
-        VertexFormat.Mode.TRIANGLES,
-        4096,
-        true,
-        false,
-        compositeState
-    )
-}
-
-val SHADER
-    get() =
-        if (ShadowRenderer.ACTIVE || false) GameRenderer.getRendertypeEntityCutoutShader()!!
-        else net.minecraft.client.Minecraft.getInstance().gameRenderer.getRendertypeEntityCutoutShader()!! // Ванильный шейдер не поддерживает матрицу нормалей
-
-val INSTANCED_SHADER
-    get() = net.minecraft.client.Minecraft.getInstance().gameRenderer.getRendertypeEntityCutoutShader()!!
+val INSTANCED_SHADER: ShaderProgram?
+    get() = MinecraftClient.getInstance().gameRenderer.getProgram("rendertype_entity_cutout")
 
 const val COLOR_MAP_INDEX = GL13.GL_TEXTURE0
 const val NORMAL_MAP_INDEX = GL13.GL_TEXTURE1
 const val SPECULAR_MAP_INDEX = GL13.GL_TEXTURE3
 
+/**
+ * Batching render type selector - returns appropriate RenderLayer for a material.
+ */
+val RenderContext.batchingRenderType: java.util.function.Function<Material, RenderLayer>
+    get() = java.util.function.Function { material ->
+        when (material.blend) {
+            Material.Blend.OPAQUE -> RenderLayer.getEntityCutoutNoCull(material.texture)
+            Material.Blend.BLEND -> RenderLayer.getEntityTranslucent(material.texture)
+        }
+    }
 
+/**
+ * Execute a block with the given shader active.
+ */
+inline fun drawWithShader(shader: ShaderProgram? = SHADER, shaderSetup: (() -> Unit)? = null, block: () -> Unit) {
+    val prev = RenderSystem.getShader()
+    shaderSetup?.invoke()
+    if (shader != null) {
+        RenderSystem.setShader { shader }
+    }
+    try {
+        block()
+    } finally {
+        RenderSystem.setShader { prev }
+    }
+}
 
+/**
+ * Opaque shader state setup.
+ */
+fun opaqueShaderState(): (() -> Unit) = {
+    RenderSystem.disableBlend()
+    RenderSystem.enableDepthTest()
+}
+
+/**
+ * Translucent shader state setup.
+ */
+fun translucentShaderState(): (() -> Unit) = {
+    RenderSystem.enableBlend()
+    RenderSystem.defaultBlendFunc()
+    RenderSystem.enableDepthTest()
+}

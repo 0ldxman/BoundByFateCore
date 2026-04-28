@@ -3,7 +3,7 @@
 import de.fabmax.kool.math.Vec2f
 import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.scene.TrsTransformF
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.Material
 import omc.boundbyfate.client.models.internal.Mesh
 import omc.boundbyfate.client.models.internal.NodeDefinition
@@ -71,9 +71,9 @@ data class OBJMaterial(var name: String) {
     var a: Float = 1.0f
     var hasTexture: Boolean = false
     var linear: Boolean = false
-    var texture: ResourceLocation? = null
-    var normalTexture: ResourceLocation? = null
-    var specularTexture: ResourceLocation? = null
+    var texture: Identifier? = null
+    var normalTexture: Identifier? = null
+    var specularTexture: Identifier? = null
 }
 
 class OBJFace(lines: Array<String>) {

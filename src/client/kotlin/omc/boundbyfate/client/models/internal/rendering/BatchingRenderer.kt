@@ -1,6 +1,6 @@
 ﻿package omc.boundbyfate.client.models.internal.rendering
 
-import com.mojang.blaze3d.vertex.VertexConsumer
+import net.minecraft.client.render.VertexConsumer
 import de.fabmax.kool.math.MutableMat3f
 import de.fabmax.kool.math.MutableVec3f
 import de.fabmax.kool.math.Vec2f
@@ -42,8 +42,8 @@ class BatchingRenderer(
             val renderType = batchingRenderType.apply(primitive.material)
             openedBatchedRenderTypes?.add(renderType)
             val vertexConsumer = source.getBuffer(renderType)
-            val pose = stack.last().pose()
-            val normal = stack.last().normal()
+            val pose = stack.peek().positionMatrix
+            val normal = stack.peek().normalMatrix
             val color = primitive.material.color
 
             for (i in iterator) {
@@ -74,9 +74,9 @@ class BatchingRenderer(
         consumer
             .vertex(pose, pos.x, pos.y, pos.z)
             .color(color.r, color.g, color.b, color.a)
-            .uv(texArray[index].x, texArray[index].y)
-            .overlayCoords(overlayCoords)
-            .uv2(packedLight)
+            .texture(texArray[index].x, texArray[index].y)
+            .overlay(overlayCoords)
+            .light(packedLight)
             .normal(normalMat, normal.x, normal.y, normal.z)
     }
 

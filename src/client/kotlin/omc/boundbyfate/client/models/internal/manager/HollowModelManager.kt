@@ -36,6 +36,10 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     var glProgramSkinning = -1
     var glProgramMorphing = -1
 
+    /** The lightmap texture used for entity rendering. */
+    val lightTexture: net.minecraft.client.texture.AbstractTexture
+        get() = MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.texture
+
     private val loaders: List<ModelLoader> = listOf(
         GltfModelLoader,
         ObjModelLoader,

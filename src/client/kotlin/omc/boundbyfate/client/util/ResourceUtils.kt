@@ -22,3 +22,9 @@ val Identifier.stream: InputStream
  */
 fun Identifier.exists(): Boolean =
     MinecraftClient.getInstance().resourceManager.getResource(this).isPresent
+
+/**
+ * Gets the AbstractTexture for this Identifier from the texture manager.
+ */
+fun Identifier.toTexture(): net.minecraft.client.texture.AbstractTexture =
+    MinecraftClient.getInstance().textureManager.getTexture(this)

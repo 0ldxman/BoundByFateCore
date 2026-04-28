@@ -1,10 +1,10 @@
-﻿package omc.boundbyfate.client.models.internal.rendering
+package omc.boundbyfate.client.models.internal.rendering
 
 import com.mojang.blaze3d.systems.RenderSystem
 import de.fabmax.kool.math.MutableMat3f
 import de.fabmax.kool.math.Vec3f
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.ShaderInstance
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gl.ShaderProgram
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -232,7 +232,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         GL33.glBindVertexArray(0)
     }
 
-    private fun getInstancedBinding(shader: ShaderInstance, layoutMode: InstancedShaderLayoutMode): InstancedShaderBinding {
+    private fun getInstancedBinding(shader: ShaderProgram, layoutMode: InstancedShaderLayoutMode): InstancedShaderBinding {
         if (layoutMode == InstancedShaderLayoutMode.FIXED) {
             return InstancedShaderBinding(instancedVao, 1)
         }
@@ -242,7 +242,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         }
     }
 
-    private fun createRuntimeInstancedBinding(shader: ShaderInstance): InstancedShaderBinding {
+    private fun createRuntimeInstancedBinding(shader: ShaderProgram): InstancedShaderBinding {
         val runtimeVao = GL33.glGenVertexArrays()
         GL33.glBindVertexArray(runtimeVao)
 
@@ -290,7 +290,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     }
 
     private fun bindVertexAttribute(
-        shader: ShaderInstance,
+        shader: ShaderProgram,
         name: String,
         buffer: VboWrapper?,
         size: Int,
@@ -306,7 +306,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         GL33.glEnableVertexAttribArray(location)
     }
 
-    private fun bindIntegerAsFloatAttribute(shader: ShaderInstance, name: String, buffer: VboWrapper?) {
+    private fun bindIntegerAsFloatAttribute(shader: ShaderProgram, name: String, buffer: VboWrapper?) {
         val location = GL33.glGetAttribLocation(shader.id, name)
         if (location == -1 || buffer == null) return
 
@@ -317,7 +317,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     }
 
     private fun bindIntegerAttribute(
-        shader: ShaderInstance,
+        shader: ShaderProgram,
         name: String,
         buffer: VboWrapper?,
         size: Int,
@@ -371,10 +371,10 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
     private fun RenderContext.captureInstance(node: MatrixGetter): SubmittedInstance {
         val matrix = node()
-        val modelView = Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose())
+        val modelView = Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().positionMatrix)
         modelView.mul(matrix.asMatrix4f())
 
-        val normal = Matrix3f(stack.last().normal())
+        val normal = Matrix3f(stack.peek().normalMatrix)
         normal.mul(matrix.getUpperLeft(MutableMat3f()).asMatrix3f())
 
         return SubmittedInstance(
@@ -399,7 +399,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
     fun renderInstanced(
         instances: List<SubmittedInstance>,
-        shader: ShaderInstance,
+        shader: ShaderProgram,
         layoutMode: InstancedShaderLayoutMode = InstancedShaderLayoutMode.FIXED,
     ) {
         if (instances.isEmpty()) return
@@ -424,7 +424,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         GL33.glBindVertexArray(0)
     }
 
-    fun renderCapturedInstance(instance: SubmittedInstance, shader: ShaderInstance) {
+    fun renderCapturedInstance(instance: SubmittedInstance, shader: ShaderProgram) {
         applyMaterial(shader, primitive.material)
 
         GL33.glVertexAttribI2i(3, instance.overlay and FFFF, instance.overlay shr 16 and FFFF)
@@ -545,13 +545,13 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         indexBuffer?.bind()
 
-        val modelView = Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose())
+        val modelView = Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().positionMatrix)
         modelView.mul(matrix.asMatrix4f())
         shader.MODEL_VIEW_MATRIX?.set(modelView)
         shader.MODEL_VIEW_MATRIX?.upload()
 
         shader.getUniform("NormalMat")?.let {
-            val normal = Matrix3f(stack.last().normal())
+            val normal = Matrix3f(stack.peek().normalMatrix)
             normal.mul(matrix.getUpperLeft(MutableMat3f()).asMatrix3f())
             it.set(normal)
             it.upload()
@@ -567,7 +567,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         GL33.glBindVertexArray(0)
     }
 
-    private fun applyMaterial(shader: ShaderInstance, material: Material, colorLocation: Int = 1) {
+    private fun applyMaterial(shader: ShaderProgram, material: Material, colorLocation: Int = 1) {
         if (colorLocation != -1) {
             GL33.glVertexAttrib4f(colorLocation, material.color.r, material.color.g, material.color.b, material.color.a)
         }
@@ -589,7 +589,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         }
 
         RenderSystem.activeTexture(COLOR_MAP_INDEX)
-        RenderSystem.bindTexture(Minecraft.getInstance().textureManager.getTexture(material.texture).id)
+        RenderSystem.bindTexture(MinecraftClient.getInstance().textureManager.getTexture(material.texture).id)
 
         if (material.doubleSided) RenderSystem.disableCull()
         else RenderSystem.enableCull()
