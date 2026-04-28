@@ -1,16 +1,14 @@
 ﻿package omc.boundbyfate.client.kool
 
-import de.fabmax.kool.Assets
 import de.fabmax.kool.KoolConfigJvm
 import de.fabmax.kool.KoolSystem
-import de.fabmax.kool.loadImage2d
 import de.fabmax.kool.pipeline.*
-import de.fabmax.kool.scene.Scene
 import de.fabmax.kool.util.*
-import net.minecraft.resources.ResourceLocation
+import de.fabmax.kool.scene.Scene
 import omc.boundbyfate.client.kool.minecraft.ImageManager
 import omc.boundbyfate.client.kool.minecraft.MCAssetLoader
 import omc.boundbyfate.client.kool.minecraft.SamplerMode
+import net.minecraft.util.Identifier
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
@@ -28,7 +26,7 @@ object KoolManager {
         context = MCKoolContext()
     }
 
-    fun loadTexture(texture: ResourceLocation, mode: SamplerMode = SamplerMode.NEAREST) {
+    fun loadTexture(texture: Identifier, mode: SamplerMode = SamplerMode.NEAREST) {
         ImageManager.load(texture, mode)
     }
 
@@ -36,5 +34,3 @@ object KoolManager {
         context.scenes.stageAdd(scene, 0)
     }
 }
-
-

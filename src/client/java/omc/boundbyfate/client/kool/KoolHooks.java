@@ -4,10 +4,19 @@ import de.fabmax.kool.KoolContext;
 import de.fabmax.kool.KoolSystem;
 import de.fabmax.kool.modules.ui2.Focusable;
 import de.fabmax.kool.modules.ui2.UiSurface;
+import de.fabmax.kool.pipeline.ComputePass;
+import de.fabmax.kool.pipeline.ComputePassImpl;
 import de.fabmax.kool.pipeline.CullMethod;
 import de.fabmax.kool.pipeline.DepthCompareOp;
+import de.fabmax.kool.pipeline.OffscreenPass2d;
+import de.fabmax.kool.pipeline.OffscreenPass2dImpl;
+import de.fabmax.kool.pipeline.OffscreenPassCube;
+import de.fabmax.kool.pipeline.OffscreenPassCubeImpl;
+import de.fabmax.kool.pipeline.Texture;
+import de.fabmax.kool.pipeline.backend.GpuTexture;
 import de.fabmax.kool.pipeline.backend.gl.RenderBackendGl;
 import de.fabmax.kool.pipeline.backend.gl.ShaderManager;
+import de.fabmax.kool.util.RenderLoopCoroutineDispatcher;
 import de.fabmax.kool.util.Time;
 import de.fabmax.kool.util.TriggeredCoroutineDispatcher;
 import sun.misc.Unsafe;
@@ -137,6 +146,14 @@ public class KoolHooks {
         KoolSystem.INSTANCE.onContextCreated$kool_core(context);
     }
 
+    public static void setScale(KoolContext context, float scale) {
+        context.setWindowScale$kool_core(scale);
+    }
+
+    public static void executeCoroutineTasks() {
+        RenderLoopCoroutineDispatcher.INSTANCE.executeDispatchedTasks$kool_core();
+    }
+
     public static void executeCoroutineTasks(TriggeredCoroutineDispatcher dispatcher) {
         dispatcher.executeDispatchedTasks$kool_core();
     }
@@ -160,6 +177,26 @@ public class KoolHooks {
 
     public static void incrementFrameCount() {
         Time.INSTANCE.setFrameCount$kool_core(Time.INSTANCE.getFrameCount() + 1);
+    }
+
+    public static GpuTexture getGpuTexture(Texture<?> tex) {
+        return tex.getGpuTexture$kool_core();
+    }
+
+    public static void setGpuTexture(Texture<?> tex, GpuTexture gpu) {
+        tex.setGpuTexture$kool_core(gpu);
+    }
+
+    public static OffscreenPass2dImpl impl(OffscreenPass2d pass) {
+        return pass.getImpl$kool_core();
+    }
+
+    public static OffscreenPassCubeImpl impl(OffscreenPassCube pass) {
+        return pass.getImpl$kool_core();
+    }
+
+    public static ComputePassImpl impl(ComputePass pass) {
+        return pass.getImpl$kool_core();
     }
 
     public static boolean getGlStateIsWriteDepth() {

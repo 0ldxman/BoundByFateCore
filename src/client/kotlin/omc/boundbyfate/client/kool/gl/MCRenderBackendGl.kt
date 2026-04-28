@@ -1,31 +1,34 @@
 ﻿package omc.boundbyfate.client.kool.gl
 
-import de.fabmax.kool.*
-import de.fabmax.kool.pipeline.GpuBuffer
+import de.fabmax.kool.KoolContext
+import de.fabmax.kool.KoolSystem
+import de.fabmax.kool.configJvm
+import de.fabmax.kool.pipeline.ComputePass
+import de.fabmax.kool.pipeline.GpuPass
+import de.fabmax.kool.pipeline.OffscreenPass2d
+import de.fabmax.kool.pipeline.OffscreenPassCube
 import de.fabmax.kool.pipeline.backend.BackendFeatures
 import de.fabmax.kool.pipeline.backend.DeviceCoordinates
+import de.fabmax.kool.pipeline.backend.gl.GlImpl
 import de.fabmax.kool.pipeline.backend.gl.GlslGenerator
-import de.fabmax.kool.pipeline.backend.gl.GlFramebuffer
-import de.fabmax.kool.pipeline.backend.gl.GpuBufferGl
 import de.fabmax.kool.pipeline.backend.gl.RenderBackendGl
 import de.fabmax.kool.pipeline.backend.gl.TimeQuery
 import de.fabmax.kool.pipeline.backend.stats.BackendStats
 import de.fabmax.kool.scene.Scene
-import de.fabmax.kool.util.Buffer
 import de.fabmax.kool.util.Color
-import kotlinx.coroutines.CompletableDeferred
-import org.lwjgl.opengl.GL30
+import omc.boundbyfate.client.kool.KoolHooks
+
+// Extension functions to call KoolHooks.impl from Kotlin
+private fun impl(pass: OffscreenPass2d) = KoolHooks.impl(pass)
+private fun impl(pass: OffscreenPassCube) = KoolHooks.impl(pass)
+private fun impl(pass: ComputePass) = KoolHooks.impl(pass)
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm.numSamples, MCGlApi, ctx) {
     val gl = MCGlApi
-    private val koolContext = ctx
     override val features: BackendFeatures
     val mcSceneRenderer = MCSceneRenderPass(numSamples, this)
-    private val pendingScreenPasses = mutableMapOf<Scene, PassData>()
-    private val awaitedStorageBuffers = mutableListOf<ReadbackStorageBuffer>()
-    lateinit var currentFrameData: FrameData
 
     init {
         gl.initOpenGl(this)
@@ -34,7 +37,6 @@ class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm
             computeShaders = true,
             cubeMapArrays = true,
             reversedDepth = gl.capabilities.hasClipControl,
-
             maxSamples = 4,
             readWriteStorageTextures = true,
             depthOnlyShaderColorOutput = Color.BLACK,
@@ -45,7 +47,6 @@ class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm
         deviceCoordinates = DeviceCoordinates.OPEN_GL
     }
 
-    override val name = "Minecraft OpenGL"
     override var frameGpuTime: Duration = 0.0.seconds
     private val timer = TimeQuery(gl)
 
@@ -54,35 +55,30 @@ class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm
 
     override fun cleanup(ctx: KoolContext) {}
 
-    override val isAsyncRendering: Boolean
-        get() = true
-
-    override fun renderFrame(frameData: FrameData, ctx: KoolContext) {
+    override fun renderFrame(ctx: KoolContext) {
         if (timer.isAvailable) {
             frameGpuTime = timer.getQueryResult()
         }
-
         timer.timedScope {
-            prepareMCFrame(frameData, ctx)
+            renderMCFrame(ctx)
         }
     }
 
-    fun prepareMCFrame(frameData: FrameData, ctx: KoolContext) {
+    fun renderMCFrame(ctx: KoolContext) {
         BackendStats.resetPerFrameCounts()
-        currentFrameData = frameData
 
-        pendingScreenPasses.clear()
+        mcSceneRenderer.applySize(ctx.windowWidth, ctx.windowHeight)
+        ctx.backgroundScene.executePasses()
 
-        mcSceneRenderer.applySize(ctx.window.size.x, ctx.window.size.y)
-        frameData.forEachPass { passData ->
-            val pass = passData.gpuPass
-            if (pass is Scene.ScreenPass) {
-                pass.parentScene?.let { scene ->
-                    pendingScreenPasses[scene] = passData
-                }
-            } else {
-                passData.executePass()
+        for (i in ctx.scenes.indices) {
+            val scene = ctx.scenes[i]
+            if (scene.isVisible) {
+                scene.executePasses()
             }
+        }
+
+        if (useFloatDepthBuffer) {
+            mcSceneRenderer.resolve(gl.DEFAULT_FRAMEBUFFER, gl.COLOR_BUFFER_BIT)
         }
 
         if (awaitedStorageBuffers.isNotEmpty()) {
@@ -90,65 +86,13 @@ class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm
         }
     }
 
-    fun renderScene(scene: Scene) {
-        val passData = pendingScreenPasses[scene] ?: return
-        val targetFbo = currentTargetFramebuffer()
-        mcSceneRenderer.draw(passData)
-        pendingScreenPasses.remove(scene)
-        mcSceneRenderer.resolve(targetFbo, gl.COLOR_BUFFER_BIT)
-    }
-
-    fun collectScene(scene: Scene, passData: PassData = PassData()): PassData {
-        passData.reset(scene.mainRenderPass)
-        scene.mainRenderPass.collect(passData, koolContext)
-        return passData
-    }
-
-    fun renderCollectedScene(passData: PassData) {
-        val targetFbo = currentTargetFramebuffer()
-        passData.updatePipelineData()
-        mcSceneRenderer.draw(passData)
-        mcSceneRenderer.resolve(targetFbo, gl.COLOR_BUFFER_BIT)
-    }
-
-    fun renderSceneLate(scene: Scene, passData: PassData = PassData()) {
-        pendingScreenPasses.remove(scene)
-        renderCollectedScene(collectScene(scene, passData))
-    }
-
-    private fun currentTargetFramebuffer(): GlFramebuffer =
-        GlFramebuffer(GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING))
-
-    fun readbackStorageBuffers() {
-        gl.memoryBarrier(gl.SHADER_STORAGE_BARRIER_BIT)
-        awaitedStorageBuffers.forEach { readback ->
-            val gpuBuf = readback.storage.gpuBuffer as GpuBufferGl?
-            if (gpuBuf == null || !gl.readBuffer(gpuBuf, readback.resultBuffer)) {
-                readback.deferred.completeExceptionally(IllegalStateException("Failed reading buffer"))
-            } else {
-                readback.deferred.complete(Unit)
-            }
-        }
-        awaitedStorageBuffers.clear()
-    }
-
-    private fun PassData.updatePipelineData() {
-        for (vi in viewData.indices) {
-            val viewData = viewData[vi]
-            viewData.drawQueue.forEach {
-                it.updatePipelineData()
-                it.captureData()
-            }
-            viewData.drawQueue.view.viewPipelineData.captureBuffer()
+    override fun GpuPass.execute() {
+        when (this) {
+            is Scene.ScreenPass -> mcSceneRenderer.draw(this)
+            is OffscreenPass2d -> impl(this).draw()
+            is OffscreenPassCube -> impl(this).draw()
+            is ComputePass -> impl(this).dispatch()
+            else -> error("Gpu pass type not implemented: $this")
         }
     }
-
-    private class ReadbackStorageBuffer(
-        val storage: GpuBuffer,
-        val deferred: CompletableDeferred<Unit>,
-        val resultBuffer: Buffer,
-    )
 }
-
-
-

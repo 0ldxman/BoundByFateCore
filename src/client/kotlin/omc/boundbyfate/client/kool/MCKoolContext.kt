@@ -1,48 +1,68 @@
 ﻿package omc.boundbyfate.client.kool
 
-import de.fabmax.kool.FrameData
 import de.fabmax.kool.KoolContext
-import de.fabmax.kool.util.ApplicationScope
-import de.fabmax.kool.util.KoolDispatchers
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import net.minecraft.client.Minecraft
-import org.lwjgl.glfw.GLFW.glfwGetWindowContentScale
+import de.fabmax.kool.input.CursorShape
+import de.fabmax.kool.input.PlatformInputJvm
+import net.minecraft.client.MinecraftClient
+import org.lwjgl.glfw.GLFW.*
 import omc.boundbyfate.client.kool.gl.MCRenderBackendGl
-import omc.boundbyfate.client.kool.window.MCWindow
 import java.awt.Desktop
 import java.net.URI
 
 class MCKoolContext : KoolContext() {
-    val mcWindow = MCWindow(this)
-    override val backend = MCRenderBackendGl(this)
-    override val window: MCWindow get() = mcWindow
-    private var nextFrameData: Deferred<FrameData>? = null
 
     init {
         KoolHooks.createContext(this)
+        isWindowFocused = true
 
+        val shapesField = PlatformInputJvm::class.java.getDeclaredField("cursorShapes")
+        shapesField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val map = shapesField.get(PlatformInputJvm) as MutableMap<CursorShape, Long>
+        createStandardCursors(map)
         val xScale = FloatArray(1)
         val yScale = FloatArray(1)
-        glfwGetWindowContentScale(Minecraft.getInstance().window.window, xScale, yScale)
-        mcWindow.parentScreenScale = xScale[0]
+        glfwGetWindowContentScale(MinecraftClient.getInstance().window.handle, xScale, yScale)
+        KoolHooks.setScale(this, xScale[0])
     }
 
+    override var renderScale = 1f
+
+    private fun createStandardCursors(cursorShapes: MutableMap<CursorShape, Long>): MutableMap<CursorShape, Long> {
+        cursorShapes[CursorShape.DEFAULT] = 0L
+        cursorShapes[CursorShape.TEXT] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR)
+        cursorShapes[CursorShape.CROSSHAIR] = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR)
+        cursorShapes[CursorShape.HAND] = glfwCreateStandardCursor(GLFW_HAND_CURSOR)
+        cursorShapes[CursorShape.NOT_ALLOWED] = glfwCreateStandardCursor(GLFW_NOT_ALLOWED_CURSOR)
+        cursorShapes[CursorShape.RESIZE_EW] = glfwCreateStandardCursor(GLFW_RESIZE_EW_CURSOR)
+        cursorShapes[CursorShape.RESIZE_NS] = glfwCreateStandardCursor(GLFW_RESIZE_NS_CURSOR)
+        cursorShapes[CursorShape.RESIZE_NESW] = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR)
+        cursorShapes[CursorShape.RESIZE_NWSE] = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR)
+        cursorShapes[CursorShape.RESIZE_ALL] = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR)
+        return cursorShapes
+    }
+
+    override val backend = MCRenderBackendGl(this)
+    private val mcWindow = MinecraftClient.getInstance().window
+
+    override var isFullscreen: Boolean
+        get() = mcWindow.isFullscreen
+        set(value) {
+            if (mcWindow.isFullscreen != value) mcWindow.toggleFullscreen()
+        }
+    override val windowHeight: Int get() = mcWindow.height
+    override val windowWidth: Int get() = mcWindow.width
+
     override fun getSysInfos() = emptyList<String>()
+
     override fun openUrl(url: String, sameWindow: Boolean) {
         Desktop.getDesktop().browse(URI(url))
     }
 
     override fun run() {}
 
-    suspend fun renderFrame() {
-        val frameData = nextFrameData?.await() ?: render()
-        frameData.syncData()
-        incrementFrameTime()
-        nextFrameData = ApplicationScope.async { render() }
-        KoolHooks.executeCoroutineTasks(KoolDispatchers.Backend)
-        backend.renderFrame(frameData, this@MCKoolContext)
+    fun renderFrame() {
+        render(0.0)
+        backend.renderFrame(this)
     }
 }
-
-

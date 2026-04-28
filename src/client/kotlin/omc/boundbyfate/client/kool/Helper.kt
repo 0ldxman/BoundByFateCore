@@ -3,11 +3,16 @@
 import de.fabmax.kool.KoolContext
 import de.fabmax.kool.input.KeyCode
 import de.fabmax.kool.input.KeyboardInput
+import de.fabmax.kool.pipeline.Texture
+import de.fabmax.kool.pipeline.backend.GpuTexture
 import de.fabmax.kool.pipeline.backend.gl.RenderBackendGl
 import org.lwjgl.glfw.GLFW
 
 val RenderBackendGl.ctx: KoolContext get() = KoolHooks.getContext(this)
 
+var Texture<*>.gpuTexture: GpuTexture?
+    get() = KoolHooks.getGpuTexture(this)
+    set(value) = KoolHooks.setGpuTexture(this, value)
 
 @JvmField
 val KEY_CODE_MAP: Map<Int, KeyCode> = mutableMapOf(
@@ -53,7 +58,3 @@ val KEY_CODE_MAP: Map<Int, KeyCode> = mutableMapOf(
     GLFW.GLFW_KEY_F11 to KeyboardInput.KEY_F11,
     GLFW.GLFW_KEY_F12 to KeyboardInput.KEY_F12
 )
-
-
-
-
