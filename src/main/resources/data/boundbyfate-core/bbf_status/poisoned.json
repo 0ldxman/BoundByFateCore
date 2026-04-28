@@ -1,0 +1,7 @@
+{
+  "id": "boundbyfate-core:poisoned",
+  "effects": [
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_roll", "advantage": "disadvantage"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "ability_check", "advantage": "disadvantage"}}
+  ]
+}

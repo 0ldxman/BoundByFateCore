@@ -1,7 +1,0 @@
-{
-  "displayName": "Дварфийская выдержка",
-  "description": "Максимальное значение ваших хитов увеличивается на 1, и вы получаете 1 дополнительный хит с каждым новым уровнем.",
-  "effects": [
-    { "type": "boundbyfate-core:modify_hp_per_level", "bonusPerLevel": 1 }
-  ]
-}

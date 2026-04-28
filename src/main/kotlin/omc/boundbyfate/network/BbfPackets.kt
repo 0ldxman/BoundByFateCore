@@ -1,130 +1,133 @@
 package omc.boundbyfate.network
 
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.minecraft.util.Identifier
+import omc.boundbyfate.network.core.PacketRegistry
+import omc.boundbyfate.network.packet.c2s.CreateCharacterPacket
+import omc.boundbyfate.network.packet.c2s.FileUploadCancelPacket
+import omc.boundbyfate.network.packet.c2s.FileUploadChunkPacket
+import omc.boundbyfate.network.packet.c2s.FileUploadStartPacket
+import omc.boundbyfate.network.packet.c2s.MusicSliderUpdatePacket
+import omc.boundbyfate.network.packet.c2s.MusicTrackAssignPacket
+import omc.boundbyfate.network.packet.c2s.SwitchCharacterPacket
+import omc.boundbyfate.network.packet.s2c.FileDistributeChunkPacket
+import omc.boundbyfate.network.packet.s2c.FileDistributeStartPacket
+import omc.boundbyfate.network.packet.s2c.FileUploadAckPacket
+import omc.boundbyfate.network.packet.s2c.FileSyncListPacket
+import omc.boundbyfate.network.packet.s2c.MusicStatePacket
+import omc.boundbyfate.network.packet.s2c.PlaySoundPacket
+import omc.boundbyfate.network.packet.s2c.SpawnParticlesPacket
+import omc.boundbyfate.network.packet.s2c.SyncActiveCharacterPacket
+import omc.boundbyfate.network.packet.s2c.SyncBatchPacket
+import omc.boundbyfate.network.packet.s2c.SyncComponentPacket
+import omc.boundbyfate.network.packet.s2c.SyncSectionPacket
+import omc.boundbyfate.network.packet.s2c.SyncWorldDataPacket
+import org.slf4j.LoggerFactory
 
 /**
- * Network packet identifiers for BoundByFate.
+ * Регистрация всех пакетов мода.
+ * 
+ * Использует Fabric Networking API для регистрации пакетов.
  */
 object BbfPackets {
-    /** Server → Client: spawn particles at a position */
-    val SPAWN_PARTICLES = Identifier("boundbyfate-core", "spawn_particles")
-
-    /** Client → Server: player wants to use a feature */
-    val USE_FEATURE = Identifier("boundbyfate-core", "use_feature")
-
-    /** Server → Client: sync feature hotbar slots for a player */
-    val SYNC_FEATURE_SLOTS = Identifier("boundbyfate-core", "sync_feature_slots")
-
-    /** Client → Server: player updated a hotbar slot */
-    val UPDATE_FEATURE_SLOT = Identifier("boundbyfate-core", "update_feature_slot")
-
-    /** Server → Client: sync all granted features to client */
-    val SYNC_GRANTED_FEATURES = Identifier("boundbyfate-core", "sync_granted_features")
-
-    /** Server → Client: sync weapon definitions to client for tooltips */
-    val SYNC_WEAPON_REGISTRY = Identifier("boundbyfate-core", "sync_weapon_registry")
-
-    /** Server → Client: show floating attack roll text above target (only to attacker) */
-    val SHOW_ATTACK_ROLL = Identifier("boundbyfate-core", "show_attack_roll")
-
-    /** Server → Client: set custom skin for a player */
-    val SYNC_PLAYER_SKIN = Identifier("boundbyfate-core", "sync_player_skin")
-
-    /** Server → Client: clear custom skin for a player (revert to Mojang skin) */
-    val CLEAR_PLAYER_SKIN = Identifier("boundbyfate-core", "clear_player_skin")
-
-    // ── Ability System ────────────────────────────────────────────────────────
-
-    /** Client → Server: activate an ability */
-    val ACTIVATE_ABILITY = Identifier("boundbyfate-core", "activate_ability")
-
-    /** Client → Server: release a charged/channeled ability */
-    val RELEASE_ABILITY = Identifier("boundbyfate-core", "release_ability")
-
-    /** Client → Server: cancel ability activation */
-    val CANCEL_ABILITY = Identifier("boundbyfate-core", "cancel_ability")
-
-    /** Server → Client: sync ability activation state */
-    val SYNC_ABILITY_ACTIVATION = Identifier("boundbyfate-core", "sync_ability_activation")
-
-    /** Server → Client: update concentration status */
-    val UPDATE_CONCENTRATION = Identifier("boundbyfate-core", "update_concentration")
-
-    /** Server → Client: broadcast ability cast (for visual effects) */
-    val BROADCAST_ABILITY_CAST = Identifier("boundbyfate-core", "broadcast_ability_cast")
-
-    /** Server → Client: sync player character data (stats, skills, class, race, level) */
-    val SYNC_PLAYER_DATA = Identifier("boundbyfate-core", "sync_player_data")
-
-    /** Server → Client: sync all online players data to GM */
-    val SYNC_GM_PLAYERS = Identifier("boundbyfate-core", "sync_gm_players")
-
-    /** Server → Client: tell client to open GM screen */
-    val OPEN_GM_SCREEN = Identifier("boundbyfate-core", "open_gm_screen")
-
-    /** Client → Server: GM requests player data refresh */
-    val GM_REQUEST_REFRESH = Identifier("boundbyfate-core", "gm_request_refresh")
-
-    /** Client → Server: request GM data refresh (for auto-sync after changes) */
-    val REQUEST_GM_DATA = Identifier("boundbyfate-core", "request_gm_data")
-
-    /** Client → Server: GM edits a player's stats */
-    val GM_EDIT_PLAYER_STATS = Identifier("boundbyfate-core", "gm_edit_player_stats")
-
-    /** Client → Server: GM edits a player's class/race/level/gender */
-    val GM_EDIT_PLAYER_IDENTITY = Identifier("boundbyfate-core", "gm_edit_player_identity")
-
-    /** Client → Server: GM edits a player's skill/save proficiencies */
-    val GM_EDIT_PLAYER_SKILLS = Identifier("boundbyfate-core", "gm_edit_player_skills")
-
-    /** Client → Server: GM adds/removes a feature from a player */
-    val GM_EDIT_PLAYER_FEATURE = Identifier("boundbyfate-core", "gm_edit_player_feature")
-
-    /** Client → Server: GM sets vitality/scars for a player */
-    val GM_EDIT_PLAYER_VITALITY = Identifier("boundbyfate-core", "gm_edit_player_vitality")
-
-    /** Client → Server: GM sets HP (current, max, temp) for a player */
-    val GM_EDIT_PLAYER_HP = Identifier("boundbyfate-core", "gm_edit_player_hp")
-
-    /** Client → Server: GM sets speed (ft) and scale for a player */
-    val GM_EDIT_PLAYER_SPEED_SCALE = Identifier("boundbyfate-core", "gm_edit_player_speed_scale")
-
-    /** Client → Server: GM sets skin for a player (by skin name) */
-    val GM_SET_PLAYER_SKIN = Identifier("boundbyfate-core", "gm_set_player_skin")
-
-    /** Server → Client: sync darkvision range to client */
-    val SYNC_DARKVISION = Identifier("boundbyfate-core", "sync_darkvision")
-
-    /** Server → Client: sync available skin names for GM picker */
-    val SYNC_SKIN_LIST = Identifier("boundbyfate-core", "sync_skin_list")
-
-    /** Server → Client: sync available classes/races/skills for GM dropdowns */
-    val SYNC_GM_REGISTRY = Identifier("boundbyfate-core", "sync_gm_registry")
-
-    /** Server → Client: sync player identity data (alignment, ideals, flaws) to GM */
-    val SYNC_PLAYER_IDENTITY = Identifier("boundbyfate-core", "sync_player_identity")
-
-    /** Client → Server: GM edits player alignment */
-    val GM_EDIT_PLAYER_ALIGNMENT = Identifier("boundbyfate-core", "gm_edit_player_alignment")
-
-    /** Client → Server: GM adds/removes/updates an ideal for a player */
-    val GM_EDIT_PLAYER_IDEAL = Identifier("boundbyfate-core", "gm_edit_player_ideal")
-
-    /** Client → Server: GM adds/removes/updates a flaw for a player */
-    val GM_EDIT_PLAYER_FLAW = Identifier("boundbyfate-core", "gm_edit_player_flaw")
-
-    /** Client → Server: GM adds/removes/updates a motivation for a player */
-    val GM_EDIT_PLAYER_MOTIVATION = Identifier("boundbyfate-core", "gm_edit_player_motivation")
-
-    /** Client → Server: GM accepts/rejects a motivation proposal */
-    val GM_HANDLE_PROPOSAL = Identifier("boundbyfate-core", "gm_handle_proposal")
-
-    /** Client → Server: GM adds/removes/updates a goal for a player */
-    val GM_EDIT_PLAYER_GOAL = Identifier("boundbyfate-core", "gm_edit_player_goal")
-
-    /** Client → Server: player proposes a motivation to GM */
-    val PLAYER_PROPOSE_MOTIVATION = Identifier("boundbyfate-core", "player_propose_motivation")
+    private val logger = LoggerFactory.getLogger(BbfPackets::class.java)
     
-    /** Client → Server: GM sets complete identity data for a player (replaces all delta packets) */
-    val GM_SET_PLAYER_IDENTITY = Identifier("boundbyfate-core", "gm_set_player_identity")
+    // ========== Идентификаторы пакетов ==========
+    
+    // Server to Client
+    val SYNC_COMPONENT_S2C = Identifier.of("boundbyfate-core", "sync_component")
+    val SYNC_BATCH_S2C = Identifier.of("boundbyfate-core", "sync_batch")
+    val SYNC_WORLD_DATA_S2C = Identifier.of("boundbyfate-core", "sync_world_data")
+    val SYNC_ACTIVE_CHARACTER_S2C = Identifier.of("boundbyfate-core", "sync_active_character")
+    val SYNC_SECTION_S2C = Identifier.of("boundbyfate-core", "sync_section")
+    val SPAWN_PARTICLES_S2C = Identifier.of("boundbyfate-core", "spawn_particles")
+
+    // File Transfer
+    val FILE_UPLOAD_START_C2S = Identifier.of("boundbyfate-core", "file_upload_start")
+    val FILE_UPLOAD_CHUNK_C2S = Identifier.of("boundbyfate-core", "file_upload_chunk")
+    val FILE_UPLOAD_CANCEL_C2S = Identifier.of("boundbyfate-core", "file_upload_cancel")
+    val FILE_UPLOAD_ACK_S2C = Identifier.of("boundbyfate-core", "file_upload_ack")
+    val FILE_DISTRIBUTE_START_S2C = Identifier.of("boundbyfate-core", "file_distribute_start")
+    val FILE_DISTRIBUTE_CHUNK_S2C = Identifier.of("boundbyfate-core", "file_distribute_chunk")
+    val FILE_SYNC_LIST_S2C = Identifier.of("boundbyfate-core", "file_sync_list")
+
+    // Sound & Music
+    val PLAY_SOUND_S2C = Identifier.of("boundbyfate-core", "play_sound")
+    val MUSIC_STATE_S2C = Identifier.of("boundbyfate-core", "music_state")
+    val MUSIC_SLIDER_UPDATE_C2S = Identifier.of("boundbyfate-core", "music_slider_update")
+    val MUSIC_TRACK_ASSIGN_C2S = Identifier.of("boundbyfate-core", "music_track_assign")
+    
+    // Client to Server
+    val SWITCH_CHARACTER_C2S = Identifier.of("boundbyfate-core", "switch_character")
+    val CREATE_CHARACTER_C2S = Identifier.of("boundbyfate-core", "create_character")
+    
+    /**
+     * Регистрирует все пакеты.
+     */
+    fun register() {
+        logger.info("Registering BoundByFate packets...")
+        
+        // Регистрация S2C пакетов
+        PayloadTypeRegistry.playS2C().register(
+            SyncComponentPacket.ID,
+            SyncComponentPacket.CODEC
+        )
+        
+        PayloadTypeRegistry.playS2C().register(
+            SyncBatchPacket.ID,
+            SyncBatchPacket.CODEC
+        )
+        
+        PayloadTypeRegistry.playS2C().register(
+            SyncWorldDataPacket.ID,
+            SyncWorldDataPacket.CODEC
+        )
+        
+        PayloadTypeRegistry.playS2C().register(
+            SyncActiveCharacterPacket.ID,
+            SyncActiveCharacterPacket.CODEC
+        )
+        
+        PayloadTypeRegistry.playS2C().register(
+            SyncSectionPacket.ID,
+            SyncSectionPacket.CODEC
+        )
+
+        PayloadTypeRegistry.playS2C().register(
+            SpawnParticlesPacket.ID,
+            SpawnParticlesPacket.CODEC
+        )
+
+        // File Transfer — S2C
+        PayloadTypeRegistry.playS2C().register(FileUploadAckPacket.ID, FileUploadAckPacket.CODEC)
+        PayloadTypeRegistry.playS2C().register(FileDistributeStartPacket.ID, FileDistributeStartPacket.CODEC)
+        PayloadTypeRegistry.playS2C().register(FileDistributeChunkPacket.ID, FileDistributeChunkPacket.CODEC)
+        PayloadTypeRegistry.playS2C().register(FileSyncListPacket.ID, FileSyncListPacket.CODEC)
+
+        // Регистрация C2S пакетов
+        PayloadTypeRegistry.playC2S().register(
+            SwitchCharacterPacket.ID,
+            SwitchCharacterPacket.CODEC
+        )
+
+        PayloadTypeRegistry.playC2S().register(
+            CreateCharacterPacket.ID,
+            CreateCharacterPacket.CODEC
+        )
+
+        // Sound & Music — S2C
+        PayloadTypeRegistry.playS2C().register(PlaySoundPacket.ID, PlaySoundPacket.CODEC)
+        PayloadTypeRegistry.playS2C().register(MusicStatePacket.ID, MusicStatePacket.CODEC)
+
+        // File Transfer — C2S
+        PayloadTypeRegistry.playC2S().register(FileUploadStartPacket.ID, FileUploadStartPacket.CODEC)
+        PayloadTypeRegistry.playC2S().register(FileUploadChunkPacket.ID, FileUploadChunkPacket.CODEC)
+        PayloadTypeRegistry.playC2S().register(FileUploadCancelPacket.ID, FileUploadCancelPacket.CODEC)
+
+        // Sound & Music — C2S
+        PayloadTypeRegistry.playC2S().register(MusicSliderUpdatePacket.ID, MusicSliderUpdatePacket.CODEC)
+        PayloadTypeRegistry.playC2S().register(MusicTrackAssignPacket.ID, MusicTrackAssignPacket.CODEC)
+
+        logger.info("Registered 15 packets (9 S2C, 5 C2S + 1 visual)")
+    }
 }

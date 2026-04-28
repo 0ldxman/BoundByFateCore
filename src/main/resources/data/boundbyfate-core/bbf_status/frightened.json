@@ -1,0 +1,22 @@
+{
+  "id": "boundbyfate-core:frightened",
+  "effects": [
+    {
+      "id": "boundbyfate-core:advantage",
+      "data": {
+        "on": "ability_check",
+        "advantage": "disadvantage",
+        "conditions": [{"type": "boundbyfate-core:fear_source_in_sight"}]
+      }
+    },
+    {
+      "id": "boundbyfate-core:advantage",
+      "data": {
+        "on": "attack_roll",
+        "advantage": "disadvantage",
+        "conditions": [{"type": "boundbyfate-core:fear_source_in_sight"}]
+      }
+    },
+    {"id": "boundbyfate-core:block_approach_fear_source"}
+  ]
+}

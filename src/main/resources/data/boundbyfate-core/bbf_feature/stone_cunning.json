@@ -1,0 +1,11 @@
+{
+  "id": "dnd:stone_cunning",
+  "tags": ["racial", "dwarf"],
+  "effects": [
+    {
+      "type": "skill_modifier",
+      "skill": "dnd:history",
+      "value": 5
+    }
+  ]
+}

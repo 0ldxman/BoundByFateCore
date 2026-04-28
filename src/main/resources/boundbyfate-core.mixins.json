@@ -1,17 +1,13 @@
 {
-	"required": true,
-	"package": "omc.boundbyfate.mixin",
-	"compatibilityLevel": "JAVA_17",
-	"mixins": [
-		"ExampleMixin",
-		"LivingEntityDamageMixin",
-		"AttackRollMixin",
-		"WeaponHoldMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
-	}
+  "required": true,
+  "minVersion": "0.8",
+  "package": "omc.boundbyfate.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

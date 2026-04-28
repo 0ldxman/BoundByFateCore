@@ -1,8 +1,17 @@
 {
-  "displayName": "Воинское оружие",
-  "includes": [
-    "boundbyfate-core:swords",
-    "boundbyfate-core:axes_weapon",
-    "boundbyfate-core:bows"
-  ]
+  "id": "boundbyfate-core:martial_weapons",
+  "tags": ["weapon", "martial", "group"],
+  "matcher": {
+    "type": "includes",
+    "proficiencies": [
+      "boundbyfate-core:swords",
+      "boundbyfate-core:axes",
+      "boundbyfate-core:bows",
+      "boundbyfate-core:polearms"
+    ]
+  },
+  "penalty": {
+    "type": "attack_penalty",
+    "attack_penalty": -4
+  }
 }

@@ -1,195 +1,196 @@
 package omc.boundbyfate.system.feature
 
-import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
-import net.minecraft.util.math.Vec3d
-import omc.boundbyfate.api.effect.BbfEffectContext
-import omc.boundbyfate.api.feature.FeatureEffectConfig
-import omc.boundbyfate.component.EntityFeatureData
-import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.registry.BbfEffectRegistry
-import omc.boundbyfate.registry.FeatureRegistry
+import omc.boundbyfate.api.effect.EffectContext
+import omc.boundbyfate.api.feature.FeatureGrant
+import omc.boundbyfate.component.core.getOrCreate
+import omc.boundbyfate.registry.EffectRegistry
+import omc.boundbyfate.system.effect.EffectApplier
+import omc.boundbyfate.system.mechanic.ClassMechanicManager
+import omc.boundbyfate.util.source.SourceReference
 import org.slf4j.LoggerFactory
 
 /**
- * Core system for Features (Особенности).
+ * Система управления особенностями классов.
  *
- * Features are passive properties — they either apply on grant or fire
- * automatically when a game event matches their trigger condition.
+ * Отвечает за:
+ * - Применение грантов особенности
+ * - Снятие грантов особенности
+ * - Получение информации об особенностях персонажа
  *
- * Usage:
+ * ## Использование
+ *
  * ```kotlin
- * // Grant a feature to a player (applies immediately if no trigger)
- * FeatureSystem.grantFeature(player, Identifier("boundbyfate-core", "darkvision"))
+ * // Применить особенность
+ * FeatureSystem.applyFeature(player, featureId, sourceClassId, level)
  *
- * // Fire an event — all matching triggered features will execute
- * FeatureSystem.fireEvent(entity, "on_critical_hit", mapOf("damage" to 15f))
+ * // Снять особенность
+ * FeatureSystem.removeFeature(player, featureId)
  * ```
  */
 object FeatureSystem {
-    private val logger = LoggerFactory.getLogger("boundbyfate-core")
-
+    
+    private val logger = LoggerFactory.getLogger(FeatureSystem::class.java)
+    
     /**
-     * Grants a feature to an entity.
-     * If the feature has no trigger (ALWAYS), its effects are applied immediately.
-     * If the feature grants abilities, those are also granted.
+     * Применяет особенность к игроку.
+     *
+     * @param player игрок
+     * @param featureId ID особенности
+     * @param sourceClassId ID класса который даёт особенность
+     * @param level уровень на котором даётся особенность
      */
-    fun grantFeature(entity: LivingEntity, featureId: Identifier) {
-        val definition = FeatureRegistry.getFeature(featureId) ?: run {
-            logger.warn("Unknown feature: $featureId")
+    fun applyFeature(
+        player: ServerPlayerEntity,
+        featureId: Identifier,
+        sourceClassId: Identifier,
+        level: Int
+    ) {
+        val feature = FeatureRegistry.get(featureId)
+        if (feature == null) {
+            logger.error("Feature $featureId not found in registry")
             return
         }
-
-        val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, EntityFeatureData())
-        entity.setAttached(BbfAttachments.ENTITY_FEATURES, data.withFeature(featureId))
-
-        // Apply effects immediately for always-on features (no trigger)
-        if (!definition.isTriggered && definition.effects.isNotEmpty()) {
-            val context = buildContext(entity, featureId, listOf(entity), null)
-            executeEffects(definition.effects, context)
-        }
-
-        // Grant abilities from this feature (level-gated)
-        if (definition.grantsAbilities.isNotEmpty()) {
-            val level = getEntityLevel(entity)
-            for (grant in definition.grantsAbilities) {
-                if (level >= grant.minLevel) {
-                    grantAbility(entity, grant.abilityId)
-                }
-            }
-        }
-
-        logger.debug("Granted feature $featureId to ${entity.name.string}")
-    }
-
-    /**
-     * Removes a feature from an entity.
-     * Also cleans up any effects applied by the feature.
-     */
-    fun removeFeature(entity: LivingEntity, featureId: Identifier) {
-        val data = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
-        entity.setAttached(BbfAttachments.ENTITY_FEATURES, data.withoutFeature(featureId))
         
-        // Clean up darkvision if this was a darkvision feature
-        if (featureId.path.contains("darkvision")) {
-            // Clear darkvision attachment
-            entity.removeAttached(BbfAttachments.DARKVISION)
+        logger.info("Applying feature ${feature.id} to ${player.name.string} (from $sourceClassId level $level)")
+        
+        // Применяем все гранты особенности
+        for (grant in feature.grants) {
+            applyGrant(player, grant, feature.id, sourceClassId, level)
+        }
+    }
+    
+    /**
+     * Применяет один грант особенности.
+     */
+    private fun applyGrant(
+        player: ServerPlayerEntity,
+        grant: FeatureGrant,
+        featureId: Identifier,
+        sourceClassId: Identifier,
+        level: Int
+    ) {
+        when (grant) {
+            is FeatureGrant.Effect -> {
+                val handler = EffectRegistry.getHandler(grant.definition.id) ?: run {
+                    logger.warn("Effect handler '${grant.definition.id}' not found for feature $featureId")
+                    return
+                }
+                val source = SourceReference.feature(featureId)
+                val ctx = EffectContext.passive(player, grant.definition, source)
+                EffectApplier.apply(handler, ctx)
+                logger.debug("Applied effect '${grant.definition.id}' from feature $featureId")
+            }
             
-            // Sync to client (rangeFt=0 means disabled)
-            if (entity is net.minecraft.server.network.ServerPlayerEntity) {
-                val buf = net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create()
-                buf.writeInt(0)
-                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
-                    entity, 
-                    omc.boundbyfate.network.BbfPackets.SYNC_DARKVISION, 
-                    buf
+            is FeatureGrant.Ability -> {
+                val stats = player.getOrCreate(omc.boundbyfate.component.components.EntityAbilitiesData.TYPE)
+                if (!stats.knownAbilities.contains(grant.abilityId)) {
+                    stats.knownAbilities.add(grant.abilityId)
+                }
+                logger.debug("Granted ability ${grant.abilityId} from feature $featureId")
+            }
+            
+            is FeatureGrant.Resource -> {
+                val abilities = player.getOrCreate(omc.boundbyfate.component.components.EntityAbilitiesData.TYPE)
+                val current = abilities.resourcesMaximums[grant.resourceId] ?: 0
+                abilities.resourcesMaximums[grant.resourceId] = current + grant.amount
+                // Инициализируем текущее значение если ещё нет
+                if (!abilities.resourcesCurrent.containsKey(grant.resourceId)) {
+                    abilities.resourcesCurrent[grant.resourceId] = current + grant.amount
+                }
+                logger.debug("Granted resource ${grant.resourceId} (${grant.amount}) from feature $featureId")
+            }
+            
+            is FeatureGrant.Mechanic -> {
+                // Активируем механику через ClassMechanicManager
+                ClassMechanicManager.activateMechanic(
+                    player = player,
+                    mechanicId = grant.mechanicId,
+                    config = grant.config,
+                    sourceFeature = featureId,
+                    sourceClass = sourceClassId
                 )
             }
+            
+            is FeatureGrant.Proficiency -> {
+                omc.boundbyfate.system.proficiency.ProficiencySystem.addProficiency(player, grant.proficiencyId)
+                logger.debug("Granted proficiency ${grant.proficiencyId} from feature $featureId")
+            }
+        }
+    }
+    
+    /**
+     * Снимает особенность с игрока.
+     *
+     * @param player игрок
+     * @param featureId ID особенности
+     */
+    fun removeFeature(player: ServerPlayerEntity, featureId: Identifier) {
+        val feature = FeatureRegistry.get(featureId)
+        if (feature == null) {
+            logger.error("Feature $featureId not found in registry")
+            return
         }
         
-        logger.debug("Removed feature $featureId from ${entity.name.string}")
-    }
-
-    /**
-     * Fires a game event. All triggered features on the entity whose trigger.event
-     * matches [eventId] and whose filters match [eventData] will execute.
-     *
-     * @param entity The entity whose features are checked
-     * @param eventId The event identifier (e.g. "on_critical_hit", "on_hit")
-     * @param eventData Key-value data from the event (e.g. "damage" -> 15f)
-     * @param target Optional target entity (e.g. the entity that was hit)
-     */
-    fun fireEvent(
-        entity: LivingEntity,
-        eventId: String,
-        eventData: Map<String, Any> = emptyMap(),
-        target: LivingEntity? = null
-    ) {
-        val featureData = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
-
-        for (featureId in featureData.grantedFeatures) {
-            val definition = FeatureRegistry.getFeature(featureId) ?: continue
-            val trigger = definition.trigger ?: continue
-            if (trigger.event != eventId) continue
-
-            // Check filters — all filter entries must match eventData
-            val filtersMatch = trigger.filter.all { (key, value) ->
-                eventData[key]?.toString() == value
-            }
-            if (!filtersMatch) continue
-
-            val targets = if (target != null) listOf(target) else listOf(entity)
-            val context = buildContext(entity, featureId, targets, target?.pos, eventData)
-            executeEffects(definition.effects, context)
+        logger.info("Removing feature ${feature.id} from ${player.name.string}")
+        
+        // Снимаем все гранты особенности
+        for (grant in feature.grants) {
+            removeGrant(player, grant, feature.id)
         }
     }
-
+    
     /**
-     * Re-evaluates level-gated ability grants for a feature.
-     * Call this when a player levels up to grant newly unlocked abilities.
+     * Снимает один грант особенности.
      */
-    fun reapplyAbilityGrants(entity: LivingEntity) {
-        val featureData = entity.getAttachedOrElse(BbfAttachments.ENTITY_FEATURES, null) ?: return
-        val level = getEntityLevel(entity)
-
-        for (featureId in featureData.grantedFeatures) {
-            val definition = FeatureRegistry.getFeature(featureId) ?: continue
-            for (grant in definition.grantsAbilities) {
-                if (level >= grant.minLevel) {
-                    grantAbility(entity, grant.abilityId)
+    private fun removeGrant(
+        player: ServerPlayerEntity,
+        grant: FeatureGrant,
+        featureId: Identifier
+    ) {
+        when (grant) {
+            is FeatureGrant.Effect -> {
+                val handler = EffectRegistry.getHandler(grant.definition.id) ?: run {
+                    logger.warn("Effect handler '${grant.definition.id}' not found for feature $featureId")
+                    return
                 }
+                val source = SourceReference.feature(featureId)
+                val ctx = EffectContext.passive(player, grant.definition, source)
+                EffectApplier.remove(handler, ctx)
+                logger.debug("Removed effect '${grant.definition.id}' from feature $featureId")
+            }
+            
+            is FeatureGrant.Ability -> {
+                player.getOrCreate(omc.boundbyfate.component.components.EntityAbilitiesData.TYPE)
+                    .knownAbilities.remove(grant.abilityId)
+                logger.debug("Removed ability ${grant.abilityId} from feature $featureId")
+            }
+            
+            is FeatureGrant.Resource -> {
+                val abilities = player.getOrCreate(omc.boundbyfate.component.components.EntityAbilitiesData.TYPE)
+                val current = abilities.resourcesMaximums[grant.resourceId] ?: 0
+                val newMax = maxOf(0, current - grant.amount)
+                if (newMax == 0) {
+                    abilities.resourcesMaximums.remove(grant.resourceId)
+                    abilities.resourcesCurrent.remove(grant.resourceId)
+                } else {
+                    abilities.resourcesMaximums[grant.resourceId] = newMax
+                    // Ограничиваем текущее значение новым максимумом
+                    val currentVal = abilities.resourcesCurrent[grant.resourceId] ?: 0
+                    abilities.resourcesCurrent[grant.resourceId] = minOf(currentVal, newMax)
+                }
+                logger.debug("Removed resource ${grant.resourceId} from feature $featureId")
+            }
+            
+            is FeatureGrant.Mechanic -> {
+                ClassMechanicManager.deactivateMechanic(player, grant.mechanicId)
+            }
+            
+            is FeatureGrant.Proficiency -> {
+                omc.boundbyfate.system.proficiency.ProficiencySystem.removeProficiency(player, grant.proficiencyId)
+                logger.debug("Removed proficiency ${grant.proficiencyId} from feature $featureId")
             }
         }
-    }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
-    private fun executeEffects(
-        effectConfigs: List<FeatureEffectConfig>,
-        context: BbfEffectContext
-    ) {
-        for (config in effectConfigs) {
-            val effect = BbfEffectRegistry.create(config.type, config.params) ?: run {
-                logger.warn("Unknown effect type: ${config.type}")
-                continue
-            }
-            if (effect.canApply(context)) {
-                effect.apply(context)
-            }
-        }
-    }
-
-    private fun buildContext(
-        source: LivingEntity,
-        featureId: Identifier,
-        targets: List<LivingEntity>,
-        targetPos: Vec3d?,
-        eventData: Map<String, Any> = emptyMap()
-    ): BbfEffectContext {
-        val world = source.world as net.minecraft.server.world.ServerWorld
-        val statsData = source.getAttachedOrElse(BbfAttachments.ENTITY_STATS, null)
-        val level = getEntityLevel(source)
-
-        return BbfEffectContext(
-            source = source,
-            targets = targets,
-            targetPos = targetPos,
-            world = world,
-            sourceId = featureId,
-            sourceLevel = level,
-            sourceStats = statsData,
-            eventData = eventData
-        )
-    }
-
-    private fun getEntityLevel(entity: LivingEntity): Int {
-        if (entity !is ServerPlayerEntity) return 1
-        return entity.getAttachedOrElse(BbfAttachments.PLAYER_LEVEL, null)?.level ?: 1
-    }
-
-    private fun grantAbility(entity: LivingEntity, abilityId: Identifier) {
-        // TODO: add to entity's ability hotbar/granted abilities when ability system is ready
-        logger.debug("Feature grants ability $abilityId to ${entity.name.string} (hotbar TODO)")
     }
 }

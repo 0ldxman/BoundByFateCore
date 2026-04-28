@@ -1,0 +1,15 @@
+{
+  "id": "dnd:unarmored_defense_barbarian",
+  "tags": ["class", "barbarian", "ac"],
+  "effects": [
+    {
+      "type": "armor_class_formula",
+      "formula": "10 + @dex_modifier + @con_modifier",
+      "conditions": [
+        {
+          "type": "not_wearing_armor"
+        }
+      ]
+    }
+  ]
+}

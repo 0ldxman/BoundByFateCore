@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:sorcery_points", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/long"}}

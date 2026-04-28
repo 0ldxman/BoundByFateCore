@@ -1,0 +1,7 @@
+{
+  "id": "boundbyfate-core:charmed",
+  "effects": [
+    {"id": "boundbyfate-core:block_attack_charmer"},
+    {"id": "boundbyfate-core:charmer_social_advantage"}
+  ]
+}

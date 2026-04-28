@@ -1,0 +1,15 @@
+{
+  "id": "dnd:unarmored_defense_monk",
+  "tags": ["class", "monk", "ac"],
+  "effects": [
+    {
+      "type": "armor_class_formula",
+      "formula": "10 + @dex_modifier + @wis_modifier",
+      "conditions": [
+        {
+          "type": "not_wearing_armor"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:persuasion",
+  "linked_stat": "boundbyfate-core:charisma",
+  "is_saving_throw": false
+}

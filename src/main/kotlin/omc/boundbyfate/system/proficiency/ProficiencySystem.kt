@@ -1,169 +1,122 @@
 package omc.boundbyfate.system.proficiency
 
-import net.minecraft.block.Block
+import net.minecraft.entity.LivingEntity
 import net.minecraft.item.ItemStack
-import net.minecraft.registry.Registries
-import net.minecraft.registry.RegistryKeys
-import net.minecraft.registry.tag.TagKey
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.text.Text
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.proficiency.PenaltyContext
+import omc.boundbyfate.api.effect.EffectContext
+import omc.boundbyfate.api.proficiency.PenaltyConfig
 import omc.boundbyfate.api.proficiency.ProficiencyDefinition
-import omc.boundbyfate.component.EntityProficiencyData
-import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.registry.PenaltyEffectRegistry
-import omc.boundbyfate.registry.ProficiencyRegistry
-import omc.boundbyfate.system.proficiency.penalty.ActivePenaltyTracker
+import omc.boundbyfate.component.components.EntityStatsData
+import omc.boundbyfate.component.core.getOrCreate
+import omc.boundbyfate.registry.EffectRegistry
+import omc.boundbyfate.system.effect.EffectApplier
+import omc.boundbyfate.util.source.SourceReference
 import org.slf4j.LoggerFactory
 
 /**
- * Core system for proficiency checks and penalty application.
- *
- * Item coverage is determined solely by item tags defined in
- * data/<namespace>/tags/items/proficiency/<name>.json
- * Each leaf ProficiencyDefinition has an [itemTag] pointing to that tag.
- *
- * Hierarchy: parent proficiency includes children.
- * Having "martial_weapons" grants "swords", "axes_weapon", etc.
+ * Система управления владениями персонажей.
  */
 object ProficiencySystem {
-    private val logger = LoggerFactory.getLogger("boundbyfate-core")
+    private val logger = LoggerFactory.getLogger(ProficiencySystem::class.java)
 
-    // ── Proficiency checks ────────────────────────────────────────────────────
+    // ── Проверка владений ─────────────────────────────────────────────────
 
-    fun hasProficiency(player: ServerPlayerEntity, proficiencyId: Identifier): Boolean {
-        val data = player.getAttachedOrElse(BbfAttachments.ENTITY_PROFICIENCIES, EntityProficiencyData())
-        if (data.has(proficiencyId)) return true
-        // Check via parent container proficiencies
-        return ProficiencyRegistry.getAll().any { parent ->
-            data.has(parent.id) && proficiencyId in parent.includes
-        }
+    fun hasProficiency(entity: LivingEntity, proficiency: Identifier): Boolean =
+        entity.getOrCreate(EntityStatsData.TYPE).hasProficiency(proficiency)
+
+    fun canUseItem(entity: LivingEntity, item: ItemStack): Boolean {
+        if (item.isEmpty) return true
+        val matchingProficiencies = ProficiencyRegistry.findMatchingProficiencies(item)
+        if (matchingProficiencies.isEmpty()) return true
+        return matchingProficiencies.any { hasProficiency(entity, it) }
     }
 
-    fun getEffectiveProficiencies(player: ServerPlayerEntity): Set<Identifier> {
-        val data = player.getAttachedOrElse(BbfAttachments.ENTITY_PROFICIENCIES, EntityProficiencyData())
-        val result = data.proficiencies.toMutableSet()
-        for (profId in data.proficiencies) {
-            ProficiencyRegistry.get(profId)?.includes?.let { result.addAll(it) }
-        }
-        return result
-    }
-
-    // ── Item penalties ────────────────────────────────────────────────────────
-
-    /**
-     * Finds the leaf proficiency that covers this item via its itemTag.
-     * Returns null if no proficiency covers this item.
-     */
-    fun findItemProficiency(item: ItemStack): ProficiencyDefinition? {
+    fun getPenaltyForItem(entity: LivingEntity, item: ItemStack): PenaltyConfig? {
         if (item.isEmpty) return null
-        return ProficiencyRegistry.getAll().firstOrNull { prof ->
-            prof.itemTag != null && item.isIn(prof.itemTag)
+        val matchingProficiencies = ProficiencyRegistry.findMatchingProficiencies(item)
+        if (matchingProficiencies.isEmpty()) return null
+        if (matchingProficiencies.any { hasProficiency(entity, it) }) return null
+
+        for (profId in matchingProficiencies) {
+            val definition = ProficiencyRegistry.get(profId) ?: continue
+            val penalty = definition.penalty
+            if (penalty != null && penalty.isNotEmpty()) return penalty
         }
-    }
-
-    /**
-     * Returns display names of all proficiency categories this item belongs to,
-     * derived from ProficiencyRegistry. Includes both leaf and container matches.
-     * Filters out containers if a more specific leaf already matched.
-     */
-    fun getProficiencyCategoriesForItem(item: ItemStack): List<String> {
-        if (item.isEmpty) return emptyList()
-
-        // Find all leaf proficiencies that cover this item
-        val leafMatches = ProficiencyRegistry.getAll()
-            .filter { it.isLeaf && it.itemTag != null && item.isIn(it.itemTag) }
-            .map { it.id }
-            .toSet()
-
-        if (leafMatches.isEmpty()) return emptyList()
-
-        val result = mutableListOf<String>()
-
-        // Add leaf names
-        leafMatches.forEach { leafId ->
-            ProficiencyRegistry.get(leafId)?.let { result.add(it.displayName) }
-        }
-
-        // Add container names only if ALL their children that cover this item are matched
-        ProficiencyRegistry.getAll()
-            .filter { it.isContainer }
-            .forEach { container ->
-                val relevantChildren = container.includes.filter { childId ->
-                    ProficiencyRegistry.get(childId)?.let { child ->
-                        child.itemTag != null && item.isIn(child.itemTag)
-                    } == true
-                }
-                if (relevantChildren.isNotEmpty() && relevantChildren.all { it in leafMatches }) {
-                    result.add(container.displayName)
-                }
-            }
-
-        return result
-    }
-
-    /**
-     * Applies penalties for holding an item without proficiency.
-     */
-    fun applyItemPenalties(player: ServerPlayerEntity, item: ItemStack) {
-        val prof = findItemProficiency(item)
-
-        if (prof == null) {
-            ActivePenaltyTracker.clearAll(player)
-            return
-        }
-
-        if (hasProficiency(player, prof.id)) {
-            ActivePenaltyTracker.clearAll(player)
-            return
-        }
-
-        val penalty = prof.penalty ?: return
-        val effect = PenaltyEffectRegistry.create(penalty.type, penalty.params) ?: run {
-            logger.warn("Unknown penalty type: ${penalty.type}")
-            return
-        }
-
-        effect.apply(PenaltyContext(player, prof.id, prof.displayName))
-    }
-
-    // ── Block interaction ─────────────────────────────────────────────────────
-
-    /**
-     * Returns the proficiency definition if this block requires proficiency and player lacks it.
-     * Returns null if allowed.
-     */
-    fun getBlockedProficiency(player: ServerPlayerEntity, block: Block): ProficiencyDefinition? {
-        val blockId = Registries.BLOCK.getId(block)
-
-        for (prof in ProficiencyRegistry.getAll()) {
-            if (!prof.isLeaf) continue
-
-            val coversBlock = blockId in prof.blocks ||
-                prof.blockTags.any { tagId ->
-                    block.defaultState.isIn(TagKey.of(RegistryKeys.BLOCK, tagId))
-                }
-
-            if (!coversBlock) continue
-            if (hasProficiency(player, prof.id)) return null
-
-            if (prof.penalty?.type == Identifier("boundbyfate-core", "block_interaction")) {
-                return prof
-            }
-        }
-
         return null
     }
 
-    // ── Mutation ──────────────────────────────────────────────────────────────
+    // ── Применение штрафов ────────────────────────────────────────────────
 
-    fun addProficiency(player: ServerPlayerEntity, proficiencyId: Identifier) {
-        val data = player.getAttachedOrElse(BbfAttachments.ENTITY_PROFICIENCIES, EntityProficiencyData())
-        player.setAttached(BbfAttachments.ENTITY_PROFICIENCIES, data.with(proficiencyId))
+    fun applyPenalty(entity: LivingEntity, penalty: PenaltyConfig, source: SourceReference): Boolean {
+        if (penalty.prohibit) {
+            if (entity is ServerPlayerEntity) {
+                val message = penalty.message ?: "You lack the proficiency to use this item"
+                entity.sendMessage(Text.literal(message), true)
+            }
+            return true
+        }
+
+        var applied = false
+        for (effectDef in penalty.effects) {
+            val handler = EffectRegistry.getHandler(effectDef.id) ?: run {
+                logger.warn("Penalty effect handler '${effectDef.id}' not found")
+                return@run
+            }
+            val ctx = EffectContext.passive(entity, effectDef, source)
+            if (EffectApplier.apply(handler, ctx)) applied = true
+        }
+        return applied
     }
 
-    fun removeProficiency(player: ServerPlayerEntity, proficiencyId: Identifier) {
-        val data = player.getAttachedOrElse(BbfAttachments.ENTITY_PROFICIENCIES, null) ?: return
-        player.setAttached(BbfAttachments.ENTITY_PROFICIENCIES, data.without(proficiencyId))
+    fun removePenalty(entity: LivingEntity, penalty: PenaltyConfig, source: SourceReference) {
+        for (effectDef in penalty.effects) {
+            val handler = EffectRegistry.getHandler(effectDef.id) ?: run {
+                logger.warn("Penalty effect handler '${effectDef.id}' not found")
+                return@run
+            }
+            val ctx = EffectContext.passive(entity, effectDef, source)
+            EffectApplier.remove(handler, ctx)
+        }
     }
+
+    // ── Управление владениями ─────────────────────────────────────────────
+
+    fun addProficiency(entity: LivingEntity, proficiency: Identifier, temporary: Boolean = false) {
+        val stats = entity.getOrCreate(EntityStatsData.TYPE)
+        if (!stats.itemProficiencies.contains(proficiency)) {
+            stats.itemProficiencies.add(proficiency)
+            logger.debug("Added proficiency $proficiency to ${entity.name.string}")
+        }
+    }
+
+    fun removeProficiency(entity: LivingEntity, proficiency: Identifier) {
+        entity.getOrCreate(EntityStatsData.TYPE).itemProficiencies.remove(proficiency)
+        logger.debug("Removed proficiency $proficiency from ${entity.name.string}")
+    }
+
+    fun getProficiencies(entity: LivingEntity): Set<Identifier> =
+        entity.getOrCreate(EntityStatsData.TYPE).itemProficiencies.toSet()
+
+    // ── Удобные геттеры ───────────────────────────────────────────────────
+
+    fun hasLanguageProficiency(entity: LivingEntity, language: Identifier): Boolean =
+        hasProficiency(entity, language)
+
+    fun getLanguages(entity: LivingEntity): List<ProficiencyDefinition> =
+        getProficiencies(entity).mapNotNull { profId ->
+            ProficiencyRegistry.get(profId)?.takeIf { it.isLanguage() }
+        }
+
+    fun getItemProficiencies(entity: LivingEntity): List<ProficiencyDefinition> =
+        getProficiencies(entity).mapNotNull { profId ->
+            ProficiencyRegistry.get(profId)?.takeIf { it.isItem() }
+        }
+
+    fun checkEquipmentPenalty(entity: LivingEntity, item: ItemStack): PenaltyConfig? =
+        getPenaltyForItem(entity, item)
+
+    fun checkAttackPenalty(entity: LivingEntity, weapon: ItemStack): PenaltyConfig? =
+        getPenaltyForItem(entity, weapon)
 }

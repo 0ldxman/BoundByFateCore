@@ -1,49 +1,125 @@
 package omc.boundbyfate.api.stat
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.text.Text
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.core.Definition
+import omc.boundbyfate.api.core.Registrable
+import omc.boundbyfate.util.codec.CodecUtil
 
 /**
- * Immutable definition of a character/mob stat (e.g., Strength, Dexterity).
+ * Определение характеристики (Stat).
  * 
- * StatDefinitions are registered in [omc.boundbyfate.registry.StatRegistry] and describe
- * the properties of a stat without storing actual values.
- *
- * @property id Unique identifier for this stat (e.g., "boundbyfate-core:strength")
- * @property shortName Short display name (e.g., "STR")
- * @property displayName Full display name (e.g., "Сила")
- * @property minValue Minimum allowed value (default: 1)
- * @property maxValue Maximum allowed value (default: 30)
- * @property defaultValue Default value when not specified (default: 10)
- * @property effects List of effects to apply when this stat changes
- *
- * @throws IllegalArgumentException if minValue > maxValue or defaultValue is out of range
+ * Характеристики — это базовые атрибуты персонажа в D&D:
+ * - Strength (STR) — Сила
+ * - Dexterity (DEX) — Ловкость
+ * - Constitution (CON) — Телосложение
+ * - Intelligence (INT) — Интеллект
+ * - Wisdom (WIS) — Мудрость
+ * - Charisma (CHA) — Харизма
+ * 
+ * Пример JSON:
+ * ```json
+ * {
+ *   "abbreviation": "STR",
+ *   "default_value": 10,
+ *   "min_value": 1,
+ *   "max_value": 30
+ * }
+ * ```
+ * 
+ * Локализация (en_us.json):
+ * ```json
+ * {
+ *   "stat.boundbyfate-core.strength": "Strength",
+ *   "stat.boundbyfate-core.strength.description": "Physical power and athletic ability",
+ *   "stat.boundbyfate-core.strength.abbreviation": "STR"
+ * }
+ * ```
  */
 data class StatDefinition(
-    val id: Identifier,
-    val shortName: String,
-    val displayName: String,
-    val minValue: Int = 1,
-    val maxValue: Int = 30,
+    override val id: Identifier,
+    
+    /**
+     * Аббревиатура (например, "STR", "DEX").
+     * Может быть ключом локализации.
+     */
+    val abbreviation: String,
+    
+    /**
+     * Значение по умолчанию (обычно 10 в D&D).
+     */
     val defaultValue: Int = 10,
-    val effects: List<StatEffectBinding> = emptyList()
-) {
-    init {
-        require(minValue <= maxValue) {
-            "StatDefinition $id: minValue ($minValue) must be <= maxValue ($maxValue)"
+    
+    /**
+     * Минимальное значение.
+     */
+    val minValue: Int = 1,
+    
+    /**
+     * Максимальное значение.
+     */
+    val maxValue: Int = 30
+) : Definition, Registrable {
+    
+    companion object {
+        /**
+         * Codec для сериализации/десериализации.
+         */
+        val CODEC: Codec<StatDefinition> = RecordCodecBuilder.create { instance ->
+            instance.group(
+                CodecUtil.IDENTIFIER.fieldOf("id").forGetter { it.id },
+                Codec.STRING.fieldOf("abbreviation").forGetter { it.abbreviation },
+                Codec.INT.optionalFieldOf("default_value", 10).forGetter { it.defaultValue },
+                Codec.INT.optionalFieldOf("min_value", 1).forGetter { it.minValue },
+                Codec.INT.optionalFieldOf("max_value", 30).forGetter { it.maxValue }
+            ).apply(instance, ::StatDefinition)
         }
-        require(defaultValue in minValue..maxValue) {
-            "StatDefinition $id: defaultValue ($defaultValue) must be in range [$minValue, $maxValue]"
+    }
+    
+    override fun getTranslationKey(): String = "stat.${id.namespace}.${id.path}"
+    
+    /**
+     * Ключ локализации для аббревиатуры.
+     */
+    fun getAbbreviationKey(): String = "${getTranslationKey()}.abbreviation"
+    
+    /**
+     * Получает локализованную аббревиатуру.
+     * Если ключ не найден, возвращает значение из JSON.
+     */
+    fun getTranslatedAbbreviation(): Text = 
+        Text.translatable(getAbbreviationKey()).also {
+            // Fallback на значение из JSON если перевод не найден
+            // (Minecraft автоматически использует ключ если перевод отсутствует)
         }
-        require(shortName.isNotBlank()) {
-            "StatDefinition $id: shortName cannot be blank"
+    
+    override fun validate() {
+        require(minValue <= defaultValue) {
+            "Default value ($defaultValue) must be >= min value ($minValue)"
         }
-        require(displayName.isNotBlank()) {
-            "StatDefinition $id: displayName cannot be blank"
+        require(defaultValue <= maxValue) {
+            "Default value ($defaultValue) must be <= max value ($maxValue)"
+        }
+        require(abbreviation.isNotBlank()) {
+            "Abbreviation cannot be blank"
         }
     }
     
     /**
-     * Clamps a value to this stat's valid range.
+     * Вычисляет модификатор характеристики.
+     * В D&D: modifier = (value - 10) / 2
      */
-    fun clamp(value: Int): Int = value.coerceIn(minValue, maxValue)
+    fun calculateModifier(value: Int): Int = (value - 10) / 2
+    
+    /**
+     * Проверяет, находится ли значение в допустимых пределах.
+     */
+    fun isValidValue(value: Int): Boolean = value in minValue..maxValue
+    
+    /**
+     * Ограничивает значение допустимыми пределами.
+     */
+    fun clampValue(value: Int): Int = value.coerceIn(minValue, maxValue)
 }

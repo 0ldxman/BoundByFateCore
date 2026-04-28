@@ -1,0 +1,8 @@
+{
+  "id": "boundbyfate-core:blinded",
+  "effects": [
+    {"id": "boundbyfate-core:auto_fail_sight_checks"},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_against", "advantage": "advantage"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_roll", "advantage": "disadvantage"}}
+  ]
+}

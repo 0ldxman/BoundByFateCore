@@ -1,0 +1,10 @@
+{
+  "id": "dnd:second_wind_feature",
+  "tags": ["class", "fighter"],
+  "effects": [
+    {
+      "type": "grant_ability",
+      "ability": "dnd:second_wind_ability"
+    }
+  ]
+}

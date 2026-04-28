@@ -1,0 +1,24 @@
+{
+  "id": "boundbyfate-core:wizard_spellcasting",
+  "grants": [
+    {
+      "grant_type": "mechanic",
+      "id": "boundbyfate-core:spellcasting",
+      "config": {
+        "stat": "intelligence",
+        "type": "full",
+        "ritual_casting": true,
+        "spell_list": "boundbyfate-core:wizard"
+      }
+    },
+    {
+      "grant_type": "mechanic",
+      "id": "boundbyfate-core:wizard_spellbook",
+      "config": {
+        "starting_spells": 6,
+        "spells_per_level": 2
+      }
+    }
+  ],
+  "tags": ["spellcasting", "wizard"]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "dnd:fey_ancestry",
+  "tags": ["racial", "elf"],
+  "effects": [
+    {
+      "type": "advantage",
+      "on": "saving_throw",
+      "conditions": [
+        {
+          "type": "has_condition",
+          "condition": "dnd:charmed"
+        }
+      ]
+    },
+    {
+      "type": "condition_immunity",
+      "condition": "dnd:magical_sleep"
+    }
+  ]
+}

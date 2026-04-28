@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:medicine",
+  "linked_stat": "boundbyfate-core:wisdom",
+  "is_saving_throw": false
+}

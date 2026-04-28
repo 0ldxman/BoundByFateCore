@@ -1,0 +1,13 @@
+{
+  "id": "boundbyfate-core:extra_attack",
+  "grants": [
+    {
+      "grant_type": "effect",
+      "id": "boundbyfate-core:extra_attack",
+      "data": {
+        "attacks": 2
+      }
+    }
+  ],
+  "tags": ["combat", "passive", "martial"]
+}

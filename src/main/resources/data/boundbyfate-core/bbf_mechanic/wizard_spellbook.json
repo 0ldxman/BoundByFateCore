@@ -1,0 +1,14 @@
+{
+  "id": "boundbyfate-core:wizard_spellbook",
+  "handler": "boundbyfate-core:wizard_spellbook",
+  "default_config": {
+    "starting_spells": 6,
+    "spells_per_level": 2,
+    "can_copy_scrolls": true,
+    "copy_cost_per_level": 50
+  },
+  "dependencies": [
+    "boundbyfate-core:spellcasting"
+  ],
+  "tags": ["spellcasting", "wizard", "spellbook"]
+}

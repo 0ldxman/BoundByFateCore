@@ -1,0 +1,10 @@
+{
+  "id": "boundbyfate-core:mountain_dwarf",
+  "parent_race": "boundbyfate-core:dwarf",
+  "grants": [
+    { "type": "boundbyfate-core:stat_bonus", "stat": "boundbyfate-core:strength", "value": 2 },
+    { "type": "boundbyfate-core:feature", "id": "boundbyfate-core:dwarven_armor_training" }
+  ],
+  "choices": [],
+  "tags": ["mountain_dwarf"]
+}

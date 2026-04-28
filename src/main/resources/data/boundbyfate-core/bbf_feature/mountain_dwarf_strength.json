@@ -1,0 +1,11 @@
+{
+  "id": "dnd:mountain_dwarf_strength",
+  "tags": ["racial", "dwarf", "mountain_dwarf"],
+  "effects": [
+    {
+      "type": "stat_modifier",
+      "stat": "dnd:strength",
+      "value": 2
+    }
+  ]
+}

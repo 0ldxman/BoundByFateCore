@@ -1,0 +1,16 @@
+{
+  "id": "boundbyfate-core:restrained",
+  "effects": [
+    {"id": "boundbyfate-core:set_speed", "data": {"value": 0}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_against", "advantage": "advantage"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_roll", "advantage": "disadvantage"}},
+    {
+      "id": "boundbyfate-core:advantage",
+      "data": {
+        "on": "save",
+        "stat": "boundbyfate-core:dexterity",
+        "advantage": "disadvantage"
+      }
+    }
+  ]
+}

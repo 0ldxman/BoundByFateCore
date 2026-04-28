@@ -1,31 +1,11 @@
 {
-  "displayName": "Второе дыхание",
-  "description": "Восстановить 1d10 + уровень воина HP",
-  "icon": "item:minecraft:golden_apple",
-  "activation": { "type": "Instant" },
-  "targeting": { "type": "Self" },
-  "costs": [
-    { "type": "Resource", "resource": "boundbyfate-core:second_wind", "amount": 1 }
-  ],
-  "effects": [
-    {
-      "type": "boundbyfate-core:heal",
-      "diceCount": 1,
-      "diceType": "D10",
-      "bonusLevel": true
-    },
-    {
-      "type": "boundbyfate-core:spawn_particles",
-      "particle": "minecraft:heart",
-      "count": 15,
-      "spread": 0.8,
-      "onCaster": true
-    },
-    {
-      "type": "boundbyfate-core:play_sound",
-      "sound": "minecraft:entity.player.levelup",
-      "volume": 0.8,
-      "pitch": 1.2
-    }
-  ]
+  "id": "boundbyfate-core:second_wind",
+  "action_cost": "bonus_action",
+  "recovery": {
+    "type": "on_event",
+    "event": "boundbyfate-core:rest/short"
+  },
+  "data": {
+    "heal_dice": "1d10"
+  }
 }

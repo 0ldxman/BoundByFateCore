@@ -1,0 +1,15 @@
+{
+  "id": "boundbyfate-core:unconscious",
+  "includes": ["boundbyfate-core:incapacitated"],
+  "effects": [
+    {"id": "boundbyfate-core:block_movement"},
+    {"id": "boundbyfate-core:block_speech"},
+    {"id": "boundbyfate-core:block_awareness"},
+    {"id": "boundbyfate-core:force_drop_items"},
+    {"id": "boundbyfate-core:force_prone"},
+    {"id": "boundbyfate-core:auto_fail_save", "data": {"stat": "boundbyfate-core:strength"}},
+    {"id": "boundbyfate-core:auto_fail_save", "data": {"stat": "boundbyfate-core:dexterity"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_against", "advantage": "advantage"}},
+    {"id": "boundbyfate-core:melee_crit_auto"}
+  ]
+}

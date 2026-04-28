@@ -1,0 +1,30 @@
+{
+  "id": "dnd:sneak_attack",
+  "tags": ["class", "rogue", "damage"],
+  "effects": [
+    {
+      "type": "conditional_damage",
+      "formula": "@sneak_attack_dice",
+      "damage_type": "dnd:piercing",
+      "trigger": "attack_hit",
+      "conditions": [
+        {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "has_advantage"
+            },
+            {
+              "type": "ally_within",
+              "distance": 5.0
+            }
+          ]
+        },
+        {
+          "type": "weapon_property",
+          "property": "finesse"
+        }
+      ]
+    }
+  ]
+}

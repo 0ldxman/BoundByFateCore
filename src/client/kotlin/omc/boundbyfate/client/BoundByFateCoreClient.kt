@@ -1,90 +1,70 @@
-package omc.boundbyfate.client
+﻿package omc.boundbyfate.client
 
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
-import net.fabricmc.fabric.api.client.screen.v1.Screens
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.screen.ingame.InventoryScreen
-import net.minecraft.client.gui.widget.ButtonWidget
-import net.minecraft.text.Text
-import omc.boundbyfate.client.gui.CharacterScreenAtlas
-import omc.boundbyfate.client.gui.FeatureScreen
-import omc.boundbyfate.client.gui.GmScreen
-import omc.boundbyfate.client.keybind.FeatureKeyBindings
-import omc.boundbyfate.client.keybind.FeatureSlotManager
-import omc.boundbyfate.client.network.ClientPacketHandler
-import omc.boundbyfate.client.render.FloatingTextRenderer
-import omc.boundbyfate.client.tooltip.ItemTooltipManager
-import omc.boundbyfate.client.tooltip.ProficiencyTooltipProvider
-import omc.boundbyfate.client.tooltip.WeaponTooltipProvider
-import omc.boundbyfate.network.BbfPackets
+import net.minecraft.client.Minecraft
+import org.slf4j.LoggerFactory
 
-object BoundByFateCoreClient : ClientModInitializer {
+/**
+ * Клиентская часть мода BoundByFate Core.
+ *
+ * Отвечает за инициализацию клиентских систем:
+ * - Kool 3D движок (рендеринг моделей НПС)
+ * - Рендереры сущностей
+ * - GUI
+ * - Keybindings
+ */
+class BoundByFateCoreClient : ClientModInitializer {
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(BoundByFateCoreClient::class.java)
+    }
+
     override fun onInitializeClient() {
-        // Register packet handlers
-        ClientPacketHandler.register()
+        logger.info("=".repeat(50))
+        logger.info("Initializing BoundByFate Core Client...")
+        logger.info("=".repeat(50))
 
-        // Open GM screen when server sends the signal
-        ClientPlayNetworking.registerGlobalReceiver(BbfPackets.OPEN_GM_SCREEN) { client, _, _, _ ->
-            client.execute { client.setScreen(GmScreen()) }
-        }
+        // Регистрация рендереров сущностей
+        omc.boundbyfate.client.render.NpcEntityRendererRegistry.register()
+        omc.boundbyfate.client.render.NpcRenderEventHandler.register()
 
-        // Register tooltip providers
-        ItemTooltipManager.register(ProficiencyTooltipProvider)
-        ItemTooltipManager.register(WeaponTooltipProvider)
+        // Регистрация HollowModelManager как reload listener
+        net.fabricmc.fabric.api.resource.ResourceManagerHelper
+            .get(net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
+            .registerReloadListener(omc.boundbyfate.client.models.internal.manager.HollowModelManager)
 
-        // Register darkvision shader callback
-        omc.boundbyfate.client.render.DarkvisionRenderer.register()
-
-        // Register floating text renderer
-        WorldRenderEvents.LAST.register { context -> FloatingTextRenderer.render(context) }
-
-        // Tick floating texts
-        ClientTickEvents.END_CLIENT_TICK.register { _ -> FloatingTextRenderer.tick() }
-
-        // Register keybindings
-        FeatureKeyBindings.register()
-
-        // Add buttons to inventory screen
-        ScreenEvents.AFTER_INIT.register { client, screen, scaledWidth, scaledHeight ->
-            if (screen is InventoryScreen) {
-                val x = (scaledWidth - 176) / 2
-                val y = (scaledHeight - 166) / 2
-
-                Screens.getButtons(screen).add(
-                    ButtonWidget.builder(Text.literal("📜")) {
-                        client.setScreen(CharacterScreenAtlas())
-                    }.dimensions(x - 24, y, 20, 20).build()
-                )
-
-                Screens.getButtons(screen).add(
-                    ButtonWidget.builder(Text.literal("⚔")) {
-                        client.setScreen(FeatureScreen())
-                    }.dimensions(x - 24, y + 22, 20, 20).build()
-                )
+        // KoolManager и HollowModelManager инициализируются при первом тике
+        // когда OpenGL контекст Minecraft уже полностью готов
+        var koolInitialized = false
+        ClientTickEvents.START_CLIENT_TICK.register { client: Minecraft ->
+            if (!koolInitialized && client.world != null) {
+                koolInitialized = true
+                try {
+                    // Инициализируем kool контекст
+                    omc.boundbyfate.client.kool.KoolManager
+                    // Инициализируем менеджер моделей (создаёт GL текстуры и шейдеры)
+                    omc.boundbyfate.client.models.internal.manager.HollowModelManager.initialize()
+                    logger.info("KoolManager and model system initialized")
+                } catch (e: Exception) {
+                    logger.error("Failed to initialize KoolManager", e)
+                }
             }
         }
 
-        // Client tick
-        ClientTickEvents.END_CLIENT_TICK.register { client ->
-            // Feature slot activation
-            FeatureSlotManager.tick(client)
+        // Система передачи файлов
+        omc.boundbyfate.client.transfer.FileTransferClientSystem.register()
 
-            // Darkvision visual effect
-            omc.boundbyfate.client.render.DarkvisionRenderer.tick(client)
+        // Система партиклов
+        omc.boundbyfate.client.visual.ParticlePacketHandler.register()
 
-            // Open feature screen
-            if (FeatureKeyBindings.openFeatureScreen.wasPressed()) {
-                client.setScreen(FeatureScreen())
-            }
+        // Система звуков
+        omc.boundbyfate.client.visual.SoundPacketHandler.register()
 
-            // Open character sheet
-            if (FeatureKeyBindings.openCharacterSheet.wasPressed()) {
-                client.setScreen(CharacterScreenAtlas())
-            }
-        }
+        // Музыкальная система
+        omc.boundbyfate.client.visual.music.MusicClientSystem.register()
+
+        logger.info("BoundByFate Core Client initialized successfully!")
+        logger.info("=".repeat(50))
     }
 }

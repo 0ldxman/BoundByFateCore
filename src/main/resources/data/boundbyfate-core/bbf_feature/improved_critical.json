@@ -1,0 +1,10 @@
+{
+  "id": "dnd:improved_critical",
+  "tags": ["class", "fighter", "champion", "combat"],
+  "effects": [
+    {
+      "type": "critical_range",
+      "value": 19
+    }
+  ]
+}

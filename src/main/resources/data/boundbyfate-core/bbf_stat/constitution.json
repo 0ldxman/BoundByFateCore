@@ -1,0 +1,7 @@
+{
+  "id": "boundbyfate-core:constitution",
+  "abbreviation": "CON",
+  "default_value": 10,
+  "min_value": 1,
+  "max_value": 30
+}

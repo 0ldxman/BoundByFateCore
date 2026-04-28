@@ -1,8 +1,15 @@
 {
-  "displayName": "Мечи",
-  "itemTag": "boundbyfate-core:proficiency/swords",
+  "id": "boundbyfate-core:swords",
+  "tags": ["weapon", "martial"],
+  "matches": [
+    "#boundbyfate-core:proficiency/swords"
+  ],
   "penalty": {
-    "type": "boundbyfate-core:attack_chance",
-    "missChance": 0.4
+    "effects": [
+      {
+        "id": "boundbyfate-core:attack_penalty",
+        "data": { "penalty": -4 }
+      }
+    ]
   }
 }

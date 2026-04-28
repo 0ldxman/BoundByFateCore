@@ -1,7 +1,0 @@
-{
-  "displayName": "Владение средними доспехами",
-  "description": "Вы владеете средними доспехами.",
-  "effects": [
-    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:medium_armor" }
-  ]
-}

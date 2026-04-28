@@ -1,0 +1,6 @@
+{
+  "id": "boundbyfate-core:grappled",
+  "effects": [
+    {"id": "boundbyfate-core:set_speed", "data": {"value": 0}}
+  ]
+}

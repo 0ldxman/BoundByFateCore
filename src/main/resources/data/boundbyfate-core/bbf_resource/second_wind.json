@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:second_wind", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/short"}}

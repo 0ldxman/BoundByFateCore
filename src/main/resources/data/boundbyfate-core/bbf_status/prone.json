@@ -1,0 +1,23 @@
+{
+  "id": "boundbyfate-core:prone",
+  "effects": [
+    {"id": "boundbyfate-core:force_crawl"},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_roll", "advantage": "disadvantage"}},
+    {
+      "id": "boundbyfate-core:advantage",
+      "data": {
+        "on": "attack_against",
+        "advantage": "advantage",
+        "conditions": [{"type": "boundbyfate-core:attacker_within_melee_range"}]
+      }
+    },
+    {
+      "id": "boundbyfate-core:advantage",
+      "data": {
+        "on": "attack_against",
+        "advantage": "disadvantage",
+        "conditions": [{"type": "boundbyfate-core:attacker_beyond_melee_range"}]
+      }
+    }
+  ]
+}

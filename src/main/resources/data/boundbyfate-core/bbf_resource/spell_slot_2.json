@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:spell_slot_2", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/long"}}

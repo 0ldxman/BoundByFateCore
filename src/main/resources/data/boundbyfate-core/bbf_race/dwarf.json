@@ -1,21 +1,20 @@
 {
-  "displayName": "Дварф",
-  "size": "MEDIUM",
-  "scaleOverride": 0.5,
-  "speedFt": 25,
-  "statBonuses": {
-    "boundbyfate-core:constitution": 2
-  },
-  "features": [
-    "boundbyfate-core:darkvision_60",
-    "boundbyfate-core:dwarven_resilience",
-    "boundbyfate-core:dwarven_combat_training",
-    "boundbyfate-core:dwarven_tool_proficiency",
-    "boundbyfate-core:stonecunning",
-    "boundbyfate-core:save_proficiency_constitution"
-  ],
+  "id": "boundbyfate-core:dwarf",
   "subraces": [
-    "boundbyfate-core:hill_dwarf",
-    "boundbyfate-core:mountain_dwarf"
-  ]
+    "boundbyfate-core:mountain_dwarf",
+    "boundbyfate-core:hill_dwarf"
+  ],
+  "grants": [
+    { "type": "boundbyfate-core:size", "size": "medium" },
+    { "type": "boundbyfate-core:speed", "movement": "walk", "value": 25 },
+    { "type": "boundbyfate-core:stat_bonus", "stat": "boundbyfate-core:constitution", "value": 2 },
+    { "type": "boundbyfate-core:feature", "id": "boundbyfate-core:darkvision_60" },
+    { "type": "boundbyfate-core:feature", "id": "boundbyfate-core:dwarven_resilience" },
+    { "type": "boundbyfate-core:feature", "id": "boundbyfate-core:dwarven_combat_training" },
+    { "type": "boundbyfate-core:feature", "id": "boundbyfate-core:stonecunning" },
+    { "type": "boundbyfate-core:language", "id": "boundbyfate-core:lang_common" },
+    { "type": "boundbyfate-core:language", "id": "boundbyfate-core:lang_dwarvish" }
+  ],
+  "choices": [],
+  "tags": ["humanoid", "dwarf"]
 }

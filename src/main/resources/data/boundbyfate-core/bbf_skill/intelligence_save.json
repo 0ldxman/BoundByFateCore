@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:intelligence_save",
+  "linked_stat": "boundbyfate-core:intelligence",
+  "is_saving_throw": true
+}

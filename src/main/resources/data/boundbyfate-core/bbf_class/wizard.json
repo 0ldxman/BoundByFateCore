@@ -1,0 +1,50 @@
+{
+  "id": "boundbyfate-core:wizard",
+  "hit_die": "d6",
+  "hp_per_level": 4,
+  "starting_proficiencies": {
+    "proficiencies": [
+      "boundbyfate-core:dagger",
+      "boundbyfate-core:dart",
+      "boundbyfate-core:sling",
+      "boundbyfate-core:quarterstaff",
+      "boundbyfate-core:light_crossbow"
+    ],
+    "saving_throws": [
+      "boundbyfate-core:intelligence_save",
+      "boundbyfate-core:wisdom_save"
+    ],
+    "skill_choice": {
+      "choose": 2,
+      "from": [
+        "boundbyfate-core:arcana",
+        "boundbyfate-core:history",
+        "boundbyfate-core:insight",
+        "boundbyfate-core:investigation",
+        "boundbyfate-core:medicine",
+        "boundbyfate-core:religion"
+      ]
+    }
+  },
+  "subclass_level": 2,
+  "subclasses": [
+    "boundbyfate-core:school_of_evocation",
+    "boundbyfate-core:school_of_abjuration"
+  ],
+  "levels": {
+    "1": [
+      {"type": "feature", "id": "boundbyfate-core:wizard_spellcasting"},
+      {"type": "feature", "id": "boundbyfate-core:arcane_recovery"}
+    ],
+    "2": [
+      {"type": "subclass_choice"}
+    ],
+    "18": [
+      {"type": "feature", "id": "boundbyfate-core:spell_mastery"}
+    ],
+    "20": [
+      {"type": "feature", "id": "boundbyfate-core:signature_spells"}
+    ]
+  },
+  "tags": ["spellcaster", "full_caster", "intelligence"]
+}

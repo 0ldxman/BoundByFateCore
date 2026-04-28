@@ -2,61 +2,59 @@ package omc.boundbyfate.registry
 
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.charclass.ClassDefinition
-import omc.boundbyfate.api.charclass.SubclassDefinition
-import java.util.concurrent.ConcurrentHashMap
+import omc.boundbyfate.registry.core.BbfRegistry
 
 /**
- * Central registry for class and subclass definitions.
+ * Реестр классов персонажей.
  *
- * Populated by ClassLoader on server start from JSON datapacks.
- * Can also be used by other mods to register classes programmatically.
+ * Хранит [ClassDefinition] — определения классов и подклассов.
+ * Загружаются из JSON датапаков через [omc.boundbyfate.config.loader.ClassConfigLoader].
+ *
+ * ## Использование
+ *
+ * ```kotlin
+ * val fighter = ClassRegistry.get(Identifier.of("boundbyfate-core", "fighter"))
+ * val champion = ClassRegistry.get(Identifier.of("boundbyfate-core", "champion"))
+ * ```
+ *
+ * ## Структура файлов
+ *
+ * ```
+ * data/
+ *   boundbyfate-core/
+ *     bbf_class/
+ *       fighter.json
+ *       wizard.json
+ *       champion.json  (подкласс)
+ * ```
  */
-object ClassRegistry {
-    private val classes = ConcurrentHashMap<Identifier, ClassDefinition>()
-    private val subclasses = ConcurrentHashMap<Identifier, SubclassDefinition>()
-
-    // ── Classes ───────────────────────────────────────────────────────────────
-
-    fun registerClass(definition: ClassDefinition): ClassDefinition {
-        val existing = classes.putIfAbsent(definition.id, definition)
-        require(existing == null) { "Class with ID ${definition.id} is already registered" }
-        return definition
+object ClassRegistry : BbfRegistry<ClassDefinition>("classes") {
+    
+    /**
+     * Получает все основные классы (не подклассы).
+     */
+    fun getAllMainClasses(): List<ClassDefinition> {
+        return getAll().filter { !it.isSubclass }
     }
-
-    fun getClass(id: Identifier): ClassDefinition? = classes[id]
-
-    fun getClassOrThrow(id: Identifier): ClassDefinition =
-        getClass(id) ?: throw IllegalArgumentException("Unknown class ID: $id")
-
-    fun getAllClasses(): Collection<ClassDefinition> = classes.values.toList()
-
-    fun containsClass(id: Identifier): Boolean = classes.containsKey(id)
-
-    // ── Subclasses ────────────────────────────────────────────────────────────
-
-    fun registerSubclass(definition: SubclassDefinition): SubclassDefinition {
-        val existing = subclasses.putIfAbsent(definition.id, definition)
-        require(existing == null) { "Subclass with ID ${definition.id} is already registered" }
-        return definition
+    
+    /**
+     * Получает все подклассы.
+     */
+    fun getAllSubclasses(): List<ClassDefinition> {
+        return getAll().filter { it.isSubclass }
     }
-
-    fun getSubclass(id: Identifier): SubclassDefinition? = subclasses[id]
-
-    fun getSubclassOrThrow(id: Identifier): SubclassDefinition =
-        getSubclass(id) ?: throw IllegalArgumentException("Unknown subclass ID: $id")
-
-    fun getSubclassesFor(classId: Identifier): Collection<SubclassDefinition> =
-        subclasses.values.filter { it.parentClass == classId }
-
-    fun getAllSubclasses(): Collection<SubclassDefinition> = subclasses.values.toList()
-
-    // ── Reload ────────────────────────────────────────────────────────────────
-
-    fun clearAll() {
-        classes.clear()
-        subclasses.clear()
+    
+    /**
+     * Получает подклассы для конкретного класса.
+     */
+    fun getSubclassesFor(classId: Identifier): List<ClassDefinition> {
+        return getAllSubclasses().filter { it.parentClass == classId }
     }
-
-    val classCount: Int get() = classes.size
-    val subclassCount: Int get() = subclasses.size
+    
+    /**
+     * Получает класс по тегу.
+     */
+    fun getByTag(tag: String): List<ClassDefinition> {
+        return getAll().filter { it.hasTag(tag) }
+    }
 }

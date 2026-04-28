@@ -1,0 +1,6 @@
+{
+  "id": "boundbyfate-core:deafened",
+  "effects": [
+    {"id": "boundbyfate-core:auto_fail_hearing_checks"}
+  ]
+}

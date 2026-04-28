@@ -1,0 +1,11 @@
+{
+  "id": "dnd:hellish_resistance",
+  "tags": ["racial", "tiefling", "resistance"],
+  "effects": [
+    {
+      "type": "damage_resistance",
+      "damage_type": "dnd:fire",
+      "level": "resistance"
+    }
+  ]
+}

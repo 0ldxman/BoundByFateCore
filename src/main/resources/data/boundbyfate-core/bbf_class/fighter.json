@@ -1,55 +1,56 @@
 {
-  "displayName": "Воин",
-  "hitDie": 10,
-  "hpPerLevel": 6,
-  "subclassLevel": 3,
-  "progression": {
-    "1": {
-      "resources": {
-        "boundbyfate-core:second_wind": 1,
-        "boundbyfate-core:action_surge": 1
-      },
-      "proficiencies": [
-        "boundbyfate-core:save_strength",
-        "boundbyfate-core:save_constitution"
-      ],
-      "itemProficiencies": [
-        "boundbyfate-core:martial_weapons",
-        "boundbyfate-core:heavy_armor"
-      ],
-      "abilities": [
-        "boundbyfate-core:second_wind",
-        "boundbyfate-core:action_surge"
-      ]
-    },
-    "4": {
-      "upgrade": true
-    },
-    "5": {
-      "features": [
-        "boundbyfate-core:extra_attack"
-      ]
-    },
-    "6": {
-      "upgrade": true
-    },
-    "8": {
-      "upgrade": true
-    },
-    "9": {
-      "resources": {
-        "boundbyfate-core:action_surge": 2
-      }
-    },
-    "11": {
-      "features": [
-        "boundbyfate-core:extra_attack_2"
-      ]
-    },
-    "20": {
-      "features": [
-        "boundbyfate-core:extra_attack_3"
+  "id": "boundbyfate-core:fighter",
+  "hit_die": "d10",
+  "hp_per_level": 6,
+  "starting_proficiencies": {
+    "proficiencies": [
+      "boundbyfate-core:light_armor",
+      "boundbyfate-core:medium_armor",
+      "boundbyfate-core:heavy_armor",
+      "boundbyfate-core:shields",
+      "boundbyfate-core:simple_weapons",
+      "boundbyfate-core:martial_weapons"
+    ],
+    "saving_throws": [
+      "boundbyfate-core:strength_save",
+      "boundbyfate-core:constitution_save"
+    ],
+    "skill_choice": {
+      "choose": 2,
+      "from": [
+        "boundbyfate-core:acrobatics",
+        "boundbyfate-core:animal_handling",
+        "boundbyfate-core:athletics",
+        "boundbyfate-core:history",
+        "boundbyfate-core:insight",
+        "boundbyfate-core:intimidation",
+        "boundbyfate-core:perception",
+        "boundbyfate-core:survival"
       ]
     }
-  }
+  },
+  "subclass_level": 3,
+  "subclasses": [
+    "boundbyfate-core:champion",
+    "boundbyfate-core:battle_master"
+  ],
+  "levels": {
+    "1": [
+      {"type": "feature", "id": "boundbyfate-core:fighting_style_choice"},
+      {"type": "feature", "id": "boundbyfate-core:second_wind"}
+    ],
+    "2": [
+      {"type": "feature", "id": "boundbyfate-core:action_surge"}
+    ],
+    "3": [
+      {"type": "subclass_choice"}
+    ],
+    "5": [
+      {"type": "feature", "id": "boundbyfate-core:extra_attack"}
+    ],
+    "9": [
+      {"type": "feature", "id": "boundbyfate-core:indomitable"}
+    ]
+  },
+  "tags": ["martial", "simple"]
 }

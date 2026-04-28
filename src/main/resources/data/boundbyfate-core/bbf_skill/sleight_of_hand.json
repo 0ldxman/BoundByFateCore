@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:sleight_of_hand",
+  "linked_stat": "boundbyfate-core:dexterity",
+  "is_saving_throw": false
+}

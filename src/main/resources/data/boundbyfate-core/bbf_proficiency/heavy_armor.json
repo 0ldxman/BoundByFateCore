@@ -1,0 +1,19 @@
+{
+  "id": "boundbyfate-core:heavy_armor",
+  "tags": ["armor", "heavy"],
+  "matches": [
+    "#boundbyfate-core:proficiency/heavy_armor"
+  ],
+  "penalty": {
+    "effects": [
+      {
+        "id": "boundbyfate-core:stealth_disadvantage",
+        "data": { "skills": ["boundbyfate-core:stealth"] }
+      },
+      {
+        "id": "boundbyfate-core:armor_class_penalty",
+        "data": { "penalty": -2 }
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "boundbyfate-core:stunned",
+  "includes": ["boundbyfate-core:incapacitated"],
+  "effects": [
+    {"id": "boundbyfate-core:block_movement"},
+    {"id": "boundbyfate-core:block_speech_slurred"},
+    {"id": "boundbyfate-core:auto_fail_save", "data": {"stat": "boundbyfate-core:strength"}},
+    {"id": "boundbyfate-core:auto_fail_save", "data": {"stat": "boundbyfate-core:dexterity"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_against", "advantage": "advantage"}}
+  ]
+}

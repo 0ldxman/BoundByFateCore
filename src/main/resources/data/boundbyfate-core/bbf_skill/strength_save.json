@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:strength_save",
+  "linked_stat": "boundbyfate-core:strength",
+  "is_saving_throw": true
+}

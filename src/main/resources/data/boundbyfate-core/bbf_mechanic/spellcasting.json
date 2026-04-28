@@ -1,0 +1,12 @@
+{
+  "id": "boundbyfate-core:spellcasting",
+  "handler": "boundbyfate-core:spellcasting",
+  "default_config": {
+    "stat": "intelligence",
+    "type": "full",
+    "ritual_casting": false,
+    "spell_list": "boundbyfate-core:wizard"
+  },
+  "dependencies": [],
+  "tags": ["spellcasting", "magic"]
+}

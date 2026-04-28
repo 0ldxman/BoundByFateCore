@@ -1,7 +1,0 @@
-{
-  "displayName": "Владение инструментами",
-  "description": "Вы владеете ремесленными инструментами на ваш выбор: инструменты кузнеца, пивовара или каменщика.",
-  "effects": [
-    { "type": "boundbyfate-core:grant_item_proficiency", "proficiency": "boundbyfate-core:smithing_tools" }
-  ]
-}

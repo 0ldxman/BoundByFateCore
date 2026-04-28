@@ -1,16 +1,13 @@
 {
-  "displayName": "Человек",
-  "size": "MEDIUM",
-  "speedMultiplier": 1.0,
-  "statBonuses": {
-    "boundbyfate-core:strength": 1,
-    "boundbyfate-core:dexterity": 1,
-    "boundbyfate-core:constitution": 1,
-    "boundbyfate-core:intelligence": 1,
-    "boundbyfate-core:wisdom": 1,
-    "boundbyfate-core:charisma": 1
-  },
-  "abilities": [
-    "boundbyfate-core:human_versatility"
-  ]
+  "id": "boundbyfate-core:human",
+  "grants": [
+    { "type": "boundbyfate-core:size", "size": "medium" },
+    { "type": "boundbyfate-core:speed", "movement": "walk", "value": 30 },
+    { "type": "boundbyfate-core:language", "id": "boundbyfate-core:lang_common" }
+  ],
+  "choices": [
+    { "type": "stat_bonus", "count": 6, "from": [], "value": 1 },
+    { "type": "language", "count": 1, "from": [] }
+  ],
+  "tags": ["humanoid", "human"]
 }

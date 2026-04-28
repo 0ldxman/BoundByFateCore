@@ -1,0 +1,50 @@
+{
+  "grid_size": 6,
+  "alignments": [
+    {
+      "id": "boundbyfate-core:true_neutral",
+      "x_range": [-2, 2],
+      "y_range": [-2, 2]
+    },
+    {
+      "id": "boundbyfate-core:lawful_good",
+      "x_range": [-6, -3],
+      "y_range": [3, 6]
+    },
+    {
+      "id": "boundbyfate-core:neutral_good",
+      "x_range": [-2, 2],
+      "y_range": [3, 6]
+    },
+    {
+      "id": "boundbyfate-core:chaotic_good",
+      "x_range": [3, 6],
+      "y_range": [3, 6]
+    },
+    {
+      "id": "boundbyfate-core:lawful_neutral",
+      "x_range": [-6, -3],
+      "y_range": [-2, 2]
+    },
+    {
+      "id": "boundbyfate-core:chaotic_neutral",
+      "x_range": [3, 6],
+      "y_range": [-2, 2]
+    },
+    {
+      "id": "boundbyfate-core:lawful_evil",
+      "x_range": [-6, -3],
+      "y_range": [-6, -3]
+    },
+    {
+      "id": "boundbyfate-core:neutral_evil",
+      "x_range": [-2, 2],
+      "y_range": [-6, -3]
+    },
+    {
+      "id": "boundbyfate-core:chaotic_evil",
+      "x_range": [3, 6],
+      "y_range": [-6, -3]
+    }
+  ]
+}

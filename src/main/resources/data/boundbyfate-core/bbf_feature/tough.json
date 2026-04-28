@@ -1,0 +1,10 @@
+{
+  "id": "dnd:tough",
+  "tags": ["feat"],
+  "effects": [
+    {
+      "type": "max_hp_modifier",
+      "formula": "@level * 2"
+    }
+  ]
+}

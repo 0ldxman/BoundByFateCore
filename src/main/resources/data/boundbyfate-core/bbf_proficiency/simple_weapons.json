@@ -1,0 +1,19 @@
+{
+  "id": "boundbyfate-core:simple_weapons",
+  "tags": ["weapon", "simple", "group"],
+  "matcher": {
+    "type": "includes",
+    "proficiencies": [
+      "boundbyfate-core:clubs",
+      "boundbyfate-core:daggers",
+      "boundbyfate-core:javelins",
+      "boundbyfate-core:maces",
+      "boundbyfate-core:quarterstaffs",
+      "boundbyfate-core:light_crossbows"
+    ]
+  },
+  "penalty": {
+    "type": "attack_penalty",
+    "attack_penalty": -4
+  }
+}

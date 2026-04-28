@@ -1,0 +1,13 @@
+{
+  "item": "minecraft:iron_sword",
+  "properties": [
+    {
+      "id": "boundbyfate-core:melee_damage",
+      "data": { "dice": "1d8", "stat": "boundbyfate-core:strength" }
+    },
+    {
+      "id": "boundbyfate-core:versatile",
+      "data": { "one_hand": "1d8", "two_hand": "1d10" }
+    }
+  ]
+}

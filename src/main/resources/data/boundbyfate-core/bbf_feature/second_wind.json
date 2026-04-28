@@ -1,0 +1,15 @@
+{
+  "id": "boundbyfate-core:second_wind",
+  "grants": [
+    {
+      "grant_type": "ability",
+      "id": "boundbyfate-core:second_wind"
+    },
+    {
+      "grant_type": "resource",
+      "id": "boundbyfate-core:second_wind_uses",
+      "amount": 1
+    }
+  ],
+  "tags": ["combat", "healing", "self"]
+}

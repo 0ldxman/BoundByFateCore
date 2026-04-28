@@ -1,0 +1,11 @@
+{
+  "id": "boundbyfate-core:light_armor",
+  "tags": ["armor", "light"],
+  "matcher": {
+    "type": "tag",
+    "tag": "boundbyfate-core:proficiency/light_armor"
+  },
+  "penalty": {
+    "type": "none"
+  }
+}

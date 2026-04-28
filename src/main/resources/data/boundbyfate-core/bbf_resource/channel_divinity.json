@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:channel_divinity", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/short"}}

@@ -1,50 +1,63 @@
 package omc.boundbyfate.registry
 
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.feature.BbfStatusEffectDefinition
 import omc.boundbyfate.api.feature.FeatureDefinition
-import java.util.concurrent.ConcurrentHashMap
+import omc.boundbyfate.api.feature.FeatureGrant
+import omc.boundbyfate.registry.core.BbfRegistry
 
 /**
- * Central registry for feature and status effect definitions.
- * Populated by datapacks on server start/reload.
+ * Реестр особенностей классов.
+ *
+ * Хранит [FeatureDefinition] — определения особенностей.
+ * Загружаются из JSON датапаков через [omc.boundbyfate.config.loader.FeatureConfigLoader].
+ *
+ * ## Использование
+ *
+ * ```kotlin
+ * val secondWind = FeatureRegistry.get(Identifier.of("boundbyfate-core", "second_wind"))
+ * val spellcasting = FeatureRegistry.get(Identifier.of("boundbyfate-core", "wizard_spellcasting"))
+ * ```
+ *
+ * ## Структура файлов
+ *
+ * ```
+ * data/
+ *   boundbyfate-core/
+ *     bbf_feature/
+ *       second_wind.json
+ *       wizard_spellcasting.json
+ *       extra_attack.json
+ * ```
  */
-object FeatureRegistry {
-    private val features = ConcurrentHashMap<Identifier, FeatureDefinition>()
-    private val statusEffects = ConcurrentHashMap<Identifier, BbfStatusEffectDefinition>()
-
-    // ── Features ──────────────────────────────────────────────────────────────
-
-    fun registerFeature(definition: FeatureDefinition): FeatureDefinition {
-        val existing = features.putIfAbsent(definition.id, definition)
-        require(existing == null) { "Feature ${definition.id} is already registered" }
-        return definition
+object FeatureRegistry : BbfRegistry<FeatureDefinition>("features") {
+    
+    /**
+     * Получает особенности по тегу.
+     */
+    fun getByTag(tag: String): List<FeatureDefinition> {
+        return getAll().filter { it.hasTag(tag) }
     }
-
-    fun getFeature(id: Identifier): FeatureDefinition? = features[id]
-
-    fun getFeatureOrThrow(id: Identifier): FeatureDefinition =
-        getFeature(id) ?: throw IllegalArgumentException("Unknown feature ID: $id")
-
-    fun getAllFeatures(): Collection<FeatureDefinition> = features.values.toList()
-
-    // ── Status Effects ────────────────────────────────────────────────────────
-
-    fun registerStatus(definition: BbfStatusEffectDefinition): BbfStatusEffectDefinition {
-        val existing = statusEffects.putIfAbsent(definition.id, definition)
-        require(existing == null) { "Status effect ${definition.id} is already registered" }
-        return definition
+    
+    /**
+     * Получает особенности с грантами определённого типа.
+     */
+    inline fun <reified T : FeatureGrant> getFeaturesWithGrantType(): List<FeatureDefinition> {
+        return getAll().filter { feature ->
+            feature.grants.any { it is T }
+        }
     }
-
-    fun getStatus(id: Identifier): BbfStatusEffectDefinition? = statusEffects[id]
-
-    fun getAllStatuses(): Collection<BbfStatusEffectDefinition> = statusEffects.values.toList()
-
-    fun clearAll() {
-        features.clear()
-        statusEffects.clear()
+    
+    /**
+     * Получает все особенности с механиками.
+     */
+    fun getFeaturesWithMechanics(): List<FeatureDefinition> {
+        return getFeaturesWithGrantType<FeatureGrant.Mechanic>()
     }
-
-    val featureCount: Int get() = features.size
-    val statusCount: Int get() = statusEffects.size
+    
+    /**
+     * Получает все особенности со способностями.
+     */
+    fun getFeaturesWithAbilities(): List<FeatureDefinition> {
+        return getFeaturesWithGrantType<FeatureGrant.Ability>()
+    }
 }

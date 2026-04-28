@@ -39,6 +39,10 @@ dependencies {
 
 	// Satin API for custom post-process shaders with mod namespace support
 	modImplementation("org.ladysnake:satin:1.14.0")
+
+	// Kool — 3D engine used for NPC model rendering and animations
+	// Custom build (0mods) stripped of unnecessary dependencies for Minecraft mod use
+	implementation(files("libs/kool-core-desktop-0.18.0-0mods-SNAPSHOT.jar"))
 }
 
 tasks.processResources {

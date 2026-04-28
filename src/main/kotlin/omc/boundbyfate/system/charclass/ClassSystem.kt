@@ -2,140 +2,188 @@ package omc.boundbyfate.system.charclass
 
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
-import omc.boundbyfate.api.charclass.LevelGrant
-import omc.boundbyfate.api.skill.ProficiencyLevel
-import omc.boundbyfate.component.EntitySkillData
-import omc.boundbyfate.component.PlayerClassData
-import omc.boundbyfate.registry.BbfAttachments
-import omc.boundbyfate.registry.ClassRegistry
-import omc.boundbyfate.system.HitPointsSystem
-import omc.boundbyfate.system.resource.ResourceSystem
+import omc.boundbyfate.api.charclass.ClassDefinition
+import omc.boundbyfate.api.level.LevelGrant
+import omc.boundbyfate.component.components.EntityCharacterData
+import omc.boundbyfate.component.core.getOrCreate
+import omc.boundbyfate.data.world.BbfWorldData
+import omc.boundbyfate.data.world.sections.CharacterSection
+import omc.boundbyfate.system.feature.FeatureSystem
 import org.slf4j.LoggerFactory
 
 /**
- * Handles applying class grants (resources, proficiencies, abilities) to players.
+ * Система управления классами персонажей.
  *
- * Usage:
+ * Отвечает за:
+ * - Применение грантов класса при получении уровня
+ * - Выбор подкласса
+ * - Получение информации о классе персонажа
+ *
+ * ## Использование
+ *
  * ```kotlin
- * // Apply class on first join
- * ClassSystem.applyClass(player, classId, subclassId, level)
+ * // Применить гранты 1 уровня Fighter
+ * ClassSystem.applyLevelGrants(player, fighterClass, 1)
  *
- * // Level up
- * ClassSystem.applyLevelUp(player, newLevel)
+ * // Выбрать подкласс
+ * ClassSystem.selectSubclass(player, championSubclass)
+ *
+ * // Получить все гранты до уровня
+ * val grants = ClassSystem.getGrantsUpToLevel(fighterClass, 5)
  * ```
  */
 object ClassSystem {
-    private val logger = LoggerFactory.getLogger("boundbyfate-core")
-
+    
+    private val logger = LoggerFactory.getLogger(ClassSystem::class.java)
+    
     /**
-     * Applies a class to a player from scratch (first join or class assignment).
-     * Applies all grants from level 1 up to [level].
+     * Применяет гранты конкретного уровня класса.
+     *
+     * @param player игрок
+     * @param classDefinition класс
+     * @param level уровень
      */
-    fun applyClass(
+    fun applyLevelGrants(
         player: ServerPlayerEntity,
-        classId: Identifier,
-        subclassId: Identifier? = null,
-        level: Int = 1
+        classDefinition: ClassDefinition,
+        level: Int
     ) {
-        val classDef = ClassRegistry.getClass(classId) ?: run {
-            logger.warn("Unknown class ID: $classId for player ${player.name.string}")
+        val grants = classDefinition.getGrantsForLevel(level)
+        
+        if (grants.isEmpty()) {
+            logger.debug("No grants for ${classDefinition.id} level $level")
+            return
+        }
+        
+        logger.info("Applying ${grants.size} grants for ${classDefinition.id} level $level to ${player.name.string}")
+        
+        for (grant in grants) {
+            applyGrant(player, grant, classDefinition, level)
+        }
+    }
+    
+    /**
+     * Применяет один грант.
+     */
+    private fun applyGrant(
+        player: ServerPlayerEntity,
+        grant: LevelGrant,
+        classDefinition: ClassDefinition,
+        level: Int
+    ) {
+        when (grant) {
+            is LevelGrant.Feature -> {
+                FeatureSystem.applyFeature(player, grant.featureId, classDefinition.id, level)
+            }
+            
+            is LevelGrant.SubclassChoice -> {
+                logger.info("Player ${player.name.string} can now choose subclass for ${classDefinition.id}")
+                // TODO: открыть UI выбора подкласса
+                // Пока что просто логируем
+            }
+        }
+    }
+    
+    /**
+     * Выбирает подкласс для игрока.
+     */
+    fun selectSubclass(player: ServerPlayerEntity, subclass: ClassDefinition) {
+        if (!subclass.isSubclass) {
+            logger.error("Attempted to select non-subclass ${subclass.id} as subclass")
             return
         }
 
-        // Save class data
-        val classData = PlayerClassData(classId, subclassId, level)
-        player.setAttached(BbfAttachments.PLAYER_CLASS, classData)
-
-        // Apply all grants up to current level
-        val grants = classDef.getGrantsUpTo(level).toMutableList()
-
-        // Add subclass grants if applicable
-        if (subclassId != null) {
-            val subclassDef = ClassRegistry.getSubclass(subclassId)
-            if (subclassDef != null) {
-                grants.addAll(subclassDef.getGrantsUpTo(level))
-            } else {
-                logger.warn("Unknown subclass ID: $subclassId for player ${player.name.string}")
-            }
-        }
-
-        grants.forEach { applyGrant(player, it) }
-
-        // Apply D&D HP based on class and level
-        HitPointsSystem.applyHitPoints(player, classDef, level)
-
-        logger.info("Applied class ${classDef.displayName} (level $level) to ${player.name.string}")
-    }
-
-    /**
-     * Applies grants for a single level up.
-     * Call when a player gains a class level.
-     */
-    fun applyLevelUp(player: ServerPlayerEntity, newLevel: Int) {
-        val classData = player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null) ?: run {
-            logger.warn("Player ${player.name.string} has no class data for level up")
+        val parentClass = subclass.parentClass
+        if (parentClass == null) {
+            logger.error("Subclass ${subclass.id} has no parent class")
             return
         }
 
-        val classDef = ClassRegistry.getClass(classData.classId) ?: return
+        logger.info("Player ${player.name.string} selected subclass ${subclass.id} for $parentClass")
 
-        // Apply class grant for this level
-        classDef.getGrantAt(newLevel)?.let { applyGrant(player, it) }
-
-        // Apply subclass grant for this level
-        if (classData.subclassId != null) {
-            ClassRegistry.getSubclass(classData.subclassId)
-                ?.getGrantAt(newLevel)
-                ?.let { applyGrant(player, it) }
-        }
-
-        // Update stored level
-        player.setAttached(BbfAttachments.PLAYER_CLASS, classData.copy(classLevel = newLevel))
-
-        // Recalculate HP for new level
-        HitPointsSystem.applyHitPoints(player, classDef, newLevel)
-
-        logger.info("Applied level up to $newLevel for ${player.name.string} (${classDef.displayName})")
-    }
-
-    /**
-     * Applies a single LevelGrant to a player.
-     */
-    private fun applyGrant(player: ServerPlayerEntity, grant: LevelGrant) {
-        // Apply resources
-        for ((resourceId, maximum) in grant.resources) {
-            ResourceSystem.addPool(player, resourceId, maximum)
-        }
-
-        // Apply proficiencies (skill/save)
-        if (grant.proficiencies.isNotEmpty()) {
-            val skillData = player.getAttachedOrElse(BbfAttachments.ENTITY_SKILLS, EntitySkillData())
-            var updated = skillData
-            for (profId in grant.proficiencies) {
-                updated = updated.withProficiency(profId, ProficiencyLevel.PROFICIENT)
+        // Сохраняем выбор подкласса в WorldData
+        val characterId = player.getOrCreate(EntityCharacterData.TYPE).characterId
+        if (characterId != null) {
+            val section = BbfWorldData.get(player.server).getSection(CharacterSection.TYPE)
+            val character = section.characters[characterId]
+            if (character != null) {
+                section.characters[characterId] = character.copy(
+                    charClass = character.charClass.copy(subclassId = subclass.id)
+                )
             }
-            player.setAttached(BbfAttachments.ENTITY_SKILLS, updated)
         }
 
-        // Apply item/armor/tool proficiencies
-        for (profId in grant.itemProficiencies) {
-            omc.boundbyfate.system.proficiency.ProficiencySystem.addProficiency(player, profId)
-        }
+        // Применяем гранты подкласса с текущего уровня
+        val currentLevel = getClassLevel(player, parentClass)
+        val grants = subclass.getGrantsUpToLevel(currentLevel)
 
-        // Features (passive properties) — grant via FeatureSystem
-        for (featureId in grant.features) {
-            omc.boundbyfate.system.feature.FeatureSystem.grantFeature(player, featureId)
-        }
-
-        // Abilities (active actions) — TODO: add to player's ability hotbar
-        for (abilityId in grant.abilities) {
-            logger.debug("Granting ability $abilityId (hotbar TODO)")
+        for ((level, levelGrants) in grants) {
+            for (grant in levelGrants) {
+                applyGrant(player, grant, subclass, level)
+            }
         }
     }
 
     /**
-     * Returns the player's current class data, or null if no class assigned.
+     * Получает уровень персонажа из WorldData.
      */
-    fun getClassData(player: ServerPlayerEntity): PlayerClassData? =
-        player.getAttachedOrElse(BbfAttachments.PLAYER_CLASS, null)
+    private fun getClassLevel(player: ServerPlayerEntity, classId: Identifier): Int {
+        val characterId = player.getOrCreate(EntityCharacterData.TYPE).characterId
+            ?: return 1
+        val section = BbfWorldData.get(player.server).getSection(CharacterSection.TYPE)
+        return section.characters[characterId]?.progression?.level ?: 1
+    }
+    
+    /**
+     * Получает все гранты класса до указанного уровня.
+     */
+    fun getGrantsUpToLevel(
+        classDefinition: ClassDefinition,
+        targetLevel: Int
+    ): Map<Int, List<LevelGrant>> {
+        return classDefinition.getGrantsUpToLevel(targetLevel)
+    }
+    
+    /**
+     * Снимает все гранты класса (при смене класса или смерти).
+     *
+     * @param player игрок
+     * @param classDefinition класс
+     * @param level до какого уровня снимать
+     */
+    fun removeClassGrants(
+        player: ServerPlayerEntity,
+        classDefinition: ClassDefinition,
+        level: Int
+    ) {
+        val grants = classDefinition.getGrantsUpToLevel(level)
+        
+        logger.info("Removing grants for ${classDefinition.id} up to level $level from ${player.name.string}")
+        
+        for ((grantLevel, levelGrants) in grants) {
+            for (grant in levelGrants) {
+                removeGrant(player, grant, classDefinition, grantLevel)
+            }
+        }
+    }
+    
+    /**
+     * Снимает один грант.
+     */
+    private fun removeGrant(
+        player: ServerPlayerEntity,
+        grant: LevelGrant,
+        classDefinition: ClassDefinition,
+        level: Int
+    ) {
+        when (grant) {
+            is LevelGrant.Feature -> {
+                FeatureSystem.removeFeature(player, grant.featureId)
+            }
+            
+            is LevelGrant.SubclassChoice -> {
+                // Ничего не делаем
+            }
+        }
+    }
 }

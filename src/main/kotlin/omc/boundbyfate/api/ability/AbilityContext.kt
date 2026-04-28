@@ -2,73 +2,103 @@ package omc.boundbyfate.api.ability
 
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
-import omc.boundbyfate.component.EntityStatData
-import java.util.UUID
 
 /**
- * Контекст выполнения способности.
- * 
- * Содержит всю информацию, необходимую для выполнения эффектов способности.
- * Передаётся между эффектами и фазами выполнения.
+ * Контекст конкретного использования способности.
+ *
+ * Передаётся во все методы [AbilityHandler] и extension-функции.
+ * Содержит всё необходимое для выполнения логики способности.
+ *
+ * ## Жизненный цикл
+ *
+ * Создаётся [omc.boundbyfate.system.ability.AbilityExecutor] при попытке
+ * использовать способность. Живёт на протяжении всего выполнения.
+ *
+ * ## Передача данных между хуками
+ *
+ * Используй [stash] для передачи данных между [AbilityHandler.onPreparationStart],
+ * [AbilityHandler.onPreparationTick] и [AbilityHandler.execute]:
+ *
+ * ```kotlin
+ * override fun onPreparationTick(ctx: AbilityContext, ticksElapsed: Int) {
+ *     ctx.stash["charge_level"] = ticksElapsed.toFloat() / 60f
+ * }
+ *
+ * override fun execute(ctx: AbilityContext) {
+ *     val charge = ctx.stash["charge_level"] as? Float ?: 1f
+ *     val damage = (ctx.data.getInt("base_damage") * charge).toInt()
+ * }
+ * ```
+ *
+ * ## Dry-run
+ *
+ * При [isDryRun] = true extension-функции не применяют реальных изменений,
+ * но пишут в [results]. Используется для UI превью.
+ *
+ * @property caster кастер способности
+ * @property definition данные способности из JSON
+ * @property world серверный мир
+ * @property currentTick текущий игровой тик
+ * @property targets список целей (заполняется в execute через extension-функции)
+ * @property targetPos позиция цели для AoE (опционально)
+ * @property isDryRun режим превью — без реальных изменений
+ * @property stash хранилище данных между хуками
+ * @property results накопленные результаты выполнения
  */
 data class AbilityContext(
-    /** Кастер способности */
     val caster: LivingEntity,
-    
-    /** Список целей способности */
-    val targets: List<LivingEntity>,
-    
-    /** Позиция цели (для AoE и зональных способностей) */
-    val targetPos: Vec3d?,
-    
-    /** Мир, в котором выполняется способность */
+    val definition: AbilityDefinition,
     val world: ServerWorld,
-    
-    /** ID способности */
-    val abilityId: Identifier,
-    
-    /** Текущая фаза выполнения */
-    val phase: AbilityPhase,
-    
-    /** Уровень апкаста (для заклинаний) */
-    val upcastLevel: Int? = null,
-    
-    /** Уровень зарядки (0.0-1.0 для charged abilities) */
-    val chargeLevel: Float = 1.0f,
-    
-    /** Уровень персонажа кастера */
-    val casterLevel: Int,
-    
-    /** Статы кастера */
-    val casterStats: EntityStatData?,
-    
-    /** Дополнительные данные для передачи между эффектами */
-    val data: MutableMap<String, Any> = mutableMapOf(),
-    
-    /** Результаты спасбросков (UUID цели -> успех/провал) */
-    val savingThrowResults: Map<UUID, Boolean> = emptyMap()
+    val currentTick: Long,
+    val targets: MutableList<LivingEntity> = mutableListOf(),
+    val targetPos: Vec3d? = null,
+    val isDryRun: Boolean = false,
+    val stash: MutableMap<String, Any> = mutableMapOf(),
+    val results: MutableList<AbilityExecutionResult> = mutableListOf()
 ) {
+    // ── Удобные геттеры ───────────────────────────────────────────────────
+
     /**
-     * Получает первую цель из списка.
+     * Данные способности из JSON блока `data`.
      */
-    fun getTarget(): LivingEntity? = targets.firstOrNull()
-    
+    val data: AbilityData get() = definition.abilityData
+
     /**
-     * Проверяет, есть ли цели.
+     * Данные масштабирования из JSON блока `scaling`.
      */
-    fun hasTargets(): Boolean = targets.isNotEmpty()
-    
+    val scaling: AbilityData get() = definition.abilityScaling
+
     /**
-     * Проверяет, прошла ли цель спасбросок.
+     * Является ли способность заклинанием.
      */
-    fun didTargetSave(target: LivingEntity): Boolean = 
-        savingThrowResults[target.uuid] ?: false
-    
+    val isSpell: Boolean get() = definition.isSpell
+
     /**
-     * Проверяет, провалила ли цель спасбросок.
+     * Первая цель из списка или null.
      */
-    fun didTargetFail(target: LivingEntity): Boolean = 
-        !didTargetSave(target)
+    val primaryTarget: LivingEntity? get() = targets.firstOrNull()
+
+    /**
+     * Текущая обрабатываемая цель.
+     * Устанавливается в extension-функциях при итерации по целям.
+     * Используется модификаторами для проверки конкретной цели.
+     */
+    var currentTarget: LivingEntity? = null
+        internal set
+
+    // ── Stash helpers ─────────────────────────────────────────────────────
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> getStash(key: String): T? = stash[key] as? T
+
+    fun <T : Any> putStash(key: String, value: T) { stash[key] = value }
+
+    // ── Уровень кастера ───────────────────────────────────────────────────
+
+    /**
+     * Уровень персонажа кастера.
+     * TODO: получать из компонента персонажа
+     */
+    val casterLevel: Int get() = 1 // заглушка до реализации компонента уровня
 }

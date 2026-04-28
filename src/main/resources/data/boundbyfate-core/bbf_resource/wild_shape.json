@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:wild_shape", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/short"}}

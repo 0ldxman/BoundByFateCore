@@ -1,85 +1,119 @@
 package omc.boundbyfate.api.feature
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.core.Definition
+import omc.boundbyfate.api.core.Registrable
+import omc.boundbyfate.util.codec.CodecUtil
 
 /**
- * Immutable definition of a Feature (Особенность).
+ * Определение особенности класса.
  *
- * Features are PASSIVE properties of a character, item, or creature.
- * They are never manually activated by the player — they either:
- *   1. Apply immediately on grant (ALWAYS)
- *   2. Fire automatically when a game event matches their trigger condition (ON_EVENT)
+ * Feature — это список грантов (эффекты, способности, механики, ресурсы).
+ * Аналогично ClassDefinition, но для особенности.
  *
- * Features can also grant Abilities to the entity that has them.
+ * ## Философия
  *
- * Examples:
- *   - Тёмное зрение (ALWAYS — passive sense)
- *   - Адское сопротивление (ALWAYS — passive resistance)
- *   - Жестокая критика (ON_EVENT: on_critical_hit — extra damage dice)
- *   - Дьявольское наследие (ALWAYS — grants hellish_rebuke ability at level 3+)
+ * Feature НЕ содержит логику — только данные о том, что даётся.
+ * Логика живёт в:
+ * - EffectApplier (для эффектов)
+ * - AbilityHandler (для способностей)
+ * - ClassMechanic (для механик)
  *
- * Loaded from data/<namespace>/bbf_feature/<name>.json
+ * ## Примеры JSON
+ *
+ * ### Простая особенность (Second Wind)
+ * ```json
+ * {
+ *   "id": "boundbyfate-core:second_wind",
+ *   "grants": [
+ *     {"type": "ability", "id": "boundbyfate-core:second_wind"},
+ *     {"type": "resource", "id": "boundbyfate-core:second_wind_uses", "amount": 1}
+ *   ]
+ * }
+ * ```
+ *
+ * ### Особенность с эффектами (Darkvision)
+ * ```json
+ * {
+ *   "id": "boundbyfate-core:darkvision_60",
+ *   "grants": [
+ *     {"type": "effect", "type": "boundbyfate-core:darkvision", "range": 60}
+ *   ]
+ * }
+ * ```
+ *
+ * ### Особенность с механикой (Wizard Spellcasting)
+ * ```json
+ * {
+ *   "id": "boundbyfate-core:wizard_spellcasting",
+ *   "grants": [
+ *     {
+ *       "type": "mechanic",
+ *       "id": "boundbyfate-core:spellcasting",
+ *       "config": {
+ *         "stat": "intelligence",
+ *         "type": "full",
+ *         "ritual_casting": true
+ *       }
+ *     },
+ *     {
+ *       "type": "mechanic",
+ *       "id": "boundbyfate-core:wizard_spellbook",
+ *       "config": {
+ *         "starting_spells": 6
+ *       }
+ *     },
+ *     {"type": "ability", "id": "boundbyfate-core:cast_spell"}
+ *   ]
+ * }
+ * ```
  */
 data class FeatureDefinition(
-    val id: Identifier,
-    val displayName: String,
-    val description: String = "",
-    val icon: String = "item:minecraft:nether_star",
-
+    override val id: Identifier,
+    
     /**
-     * Trigger condition. Null means the feature applies immediately on grant (ALWAYS).
-     * If set, the feature fires when the specified game event occurs.
+     * Гранты особенности.
+     * Могут быть: эффекты, способности, механики, ресурсы, владения.
      */
-    val trigger: FeatureTrigger? = null,
-
+    val grants: List<FeatureGrant> = emptyList(),
+    
     /**
-     * Effects applied when this feature fires.
-     * For ALWAYS features: applied once on grant.
-     * For ON_EVENT features: applied each time the trigger condition is met.
+     * Теги для группировки и фильтрации.
+     * Примеры: "combat", "utility", "spellcasting", "passive"
      */
-    val effects: List<FeatureEffectConfig> = emptyList(),
-
+    val tags: List<String> = emptyList()
+) : Definition, Registrable {
+    
     /**
-     * Abilities granted by this feature, optionally gated by minimum level.
-     * Example: Дьявольское наследие grants hellish_rebuke at level 3.
+     * Проверяет наличие тега.
      */
-    val grantsAbilities: List<AbilityGrant> = emptyList()
-) {
-    init {
-        require(displayName.isNotBlank()) { "FeatureDefinition $id: displayName cannot be blank" }
+    fun hasTag(tag: String): Boolean = tag in tags
+    
+    /**
+     * Получает все гранты определённого типа.
+     */
+    inline fun <reified T : FeatureGrant> getGrantsOfType(): List<T> {
+        return grants.filterIsInstance<T>()
     }
-
-    /** True if this feature fires on a game event rather than on grant */
-    val isTriggered: Boolean get() = trigger != null
+    
+    override fun getTranslationKey(): String = "feature.${id.namespace}.${id.path}"
+    
+    override fun validate() {
+        // Проверяем что есть хотя бы один грант
+        if (grants.isEmpty()) {
+            throw IllegalStateException("Feature $id has no grants")
+        }
+    }
+    
+    companion object {
+        val CODEC: Codec<FeatureDefinition> = RecordCodecBuilder.create { instance ->
+            instance.group(
+                CodecUtil.IDENTIFIER.fieldOf("id").forGetter { it.id },
+                FeatureGrant.CODEC.listOf().fieldOf("grants").forGetter { it.grants },
+                Codec.STRING.listOf().optionalFieldOf("tags", emptyList()).forGetter { it.tags }
+            ).apply(instance, ::FeatureDefinition)
+        }
+    }
 }
-
-/**
- * Describes when a feature fires automatically.
- *
- * @property event Game event identifier (e.g. "on_critical_hit", "on_hit", "on_take_damage")
- * @property filter Optional key-value filters to narrow the condition
- *                  (e.g. {"damage_type": "boundbyfate-core:poison"} for poison saves only)
- */
-data class FeatureTrigger(
-    val event: String,
-    val filter: Map<String, String> = emptyMap()
-)
-
-/**
- * An ability granted by a feature, optionally gated by minimum character level.
- *
- * @property abilityId The ability to grant
- * @property minLevel Minimum character level required (0 = always granted)
- */
-data class AbilityGrant(
-    val abilityId: Identifier,
-    val minLevel: Int = 0
-)
-
-/**
- * Config entry for an effect inside a feature definition (loaded from JSON).
- */
-data class FeatureEffectConfig(
-    val type: Identifier,
-    val params: com.google.gson.JsonObject = com.google.gson.JsonObject()
-)

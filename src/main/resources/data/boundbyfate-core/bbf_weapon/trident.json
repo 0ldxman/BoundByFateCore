@@ -1,8 +1,0 @@
-{
-  "displayName": "Трезубец",
-  "items": ["minecraft:trident"],
-  "damage": "1d6",
-  "damageType": "boundbyfate-core:piercing",
-  "properties": ["thrown", "reach", "versatile"],
-  "versatileDamage": "1d8"
-}

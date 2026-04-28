@@ -1,0 +1,5 @@
+{
+  "id": "boundbyfate-core:charisma_save",
+  "linked_stat": "boundbyfate-core:charisma",
+  "is_saving_throw": true
+}

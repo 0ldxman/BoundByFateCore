@@ -1,0 +1,9 @@
+{
+  "item": "minecraft:chainmail_chestplate",
+  "properties": [
+    {
+      "id": "boundbyfate-core:armor_class",
+      "data": { "formula": "13 + min(@dex_modifier, 2)" }
+    }
+  ]
+}

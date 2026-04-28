@@ -1,8 +1,16 @@
 {
-  "displayName": "Небесное сопротивление",
-  "description": "Сопротивление к некротическому урону и урону излучением",
+  "id": "dnd:celestial_resistance",
+  "tags": ["racial", "aasimar", "resistance"],
   "effects": [
-    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:necrotic", "level": -1 },
-    { "type": "boundbyfate-core:add_resistance", "damageType": "boundbyfate-core:radiant", "level": -1 }
+    {
+      "type": "damage_resistance",
+      "damage_type": "dnd:necrotic",
+      "level": "resistance"
+    },
+    {
+      "type": "damage_resistance",
+      "damage_type": "dnd:radiant",
+      "level": "resistance"
+    }
   ]
 }

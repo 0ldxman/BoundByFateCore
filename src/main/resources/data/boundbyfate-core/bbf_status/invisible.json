@@ -1,0 +1,8 @@
+{
+  "id": "boundbyfate-core:invisible",
+  "effects": [
+    {"id": "boundbyfate-core:set_invisible"},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_against", "advantage": "disadvantage"}},
+    {"id": "boundbyfate-core:advantage", "data": {"on": "attack_roll", "advantage": "advantage"}}
+  ]
+}

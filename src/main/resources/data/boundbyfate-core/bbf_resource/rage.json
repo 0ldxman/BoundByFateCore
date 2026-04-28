@@ -1,0 +1,1 @@
+{"id": "boundbyfate-core:rage", "recovery": {"type": "on_event", "event": "boundbyfate-core:rest/long"}}

@@ -1,7 +1,0 @@
-{
-  "displayName": "Владение спасброском Телосложения",
-  "description": "Вы владеете спасброском Телосложения.",
-  "effects": [
-    { "type": "boundbyfate-core:grant_skill_proficiency", "proficiency": "boundbyfate-core:save_constitution" }
-  ]
-}

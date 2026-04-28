@@ -1,0 +1,11 @@
+{
+  "id": "dnd:environmental_immunity",
+  "tags": ["monster", "immunity"],
+  "effects": [
+    {
+      "type": "damage_resistance",
+      "source": "environmental",
+      "level": "immunity"
+    }
+  ]
+}
