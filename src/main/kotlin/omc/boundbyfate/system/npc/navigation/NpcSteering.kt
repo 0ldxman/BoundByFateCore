@@ -1,111 +1,90 @@
 ﻿package omc.boundbyfate.system.npc.navigation
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import net.minecraft.util.Mth
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.entity.Mob
-import net.minecraft.world.entity.PathfinderMob
-import net.minecraft.world.phys.Vec3
-import kotlin.coroutines.coroutineContext
+import net.minecraft.entity.Entity
+import net.minecraft.entity.LivingEntity
+import net.minecraft.entity.mob.PathAwareEntity
+import net.minecraft.util.math.MathHelper
+import net.minecraft.util.math.Vec3d
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.sqrt
 
+/**
+ * Yarn-compatible steering helpers for NPC movement and facing.
+ */
 fun LivingEntity.faceTowards(
-    target: Vec3,
+    target: Vec3d,
     maxAngularSpeed: Float = 360f,
     updateIntervalMs: Long = 50L,
 ): Boolean {
-    val currentPos = position()
-    val eyePos = Vec3(currentPos.x, currentPos.y + eyeHeight, currentPos.z)
-    val dx = target.x - eyePos.x
-    val dy = target.y - eyePos.y
-    val dz = target.z - eyePos.z
+    val eye = eyePos
+    val dx = target.x - eye.x
+    val dy = target.y - eye.y
+    val dz = target.z - eye.z
     if (dx * dx + dy * dy + dz * dz < 1.0e-6) return true
 
     val maxAnglePerUpdate = maxAngularSpeed * (updateIntervalMs / 1000f)
     val targetYaw = Math.toDegrees(atan2(dz, dx)).toFloat() - 90f
-    val horizontalDistance = sqrt(dx * dx + dz * dz)
-    val targetPitch = -Math.toDegrees(atan2(dy, horizontalDistance)).toFloat().coerceIn(-90f, 90f)
+    val horizontal = sqrt(dx * dx + dz * dz)
+    val targetPitch = -Math.toDegrees(atan2(dy, horizontal)).toFloat().coerceIn(-90f, 90f)
 
-    val currentYaw = normalizeAngle(yRot)
-    val normalizedTargetYaw = normalizeAngle(targetYaw)
-    var yawDifference = normalizedTargetYaw - currentYaw
-    while (yawDifference < -180f) yawDifference += 360f
-    while (yawDifference >= 180f) yawDifference -= 360f
+    val yawDiff = MathHelper.wrapDegrees(targetYaw - yaw)
+    val pitchDiff = targetPitch - pitch
+    yaw += yawDiff.coerceIn(-maxAnglePerUpdate, maxAnglePerUpdate)
+    pitch = MathHelper.clamp(pitch + pitchDiff.coerceIn(-maxAnglePerUpdate, maxAnglePerUpdate), -90f, 90f)
+    bodyYaw = yaw
+    headYaw = yaw
 
-    val pitchDifference = targetPitch - xRot
-    val limitedYawDiff = yawDifference.coerceIn(-maxAnglePerUpdate, maxAnglePerUpdate)
-    val limitedPitchDiff = pitchDifference.coerceIn(-maxAnglePerUpdate, maxAnglePerUpdate)
-
-    yRot = currentYaw + limitedYawDiff
-    xRot = Mth.clamp(xRot + limitedPitchDiff, -90f, 90f)
-    yHeadRot = yRot
-    yBodyRot = yRot
-    yRotO = yRot
-    yHeadRotO = yHeadRot
-    yBodyRotO = yBodyRot
-    xRotO = xRot
-    if (this is Mob) {
-        lookControl.setLookAt(target.x, target.y, target.z, 360f, 360f)
-    }
-
-    return abs(yawDifference) <= 1f && abs(pitchDifference) <= 1f
+    return abs(yawDiff) <= 1f && abs(pitchDiff) <= 1f
 }
 
 fun LivingEntity.faceTowards(
     target: Entity,
     maxAngularSpeed: Float = 360f,
     updateIntervalMs: Long = 50L,
-): Boolean = faceTowards(target.lookTargetPosition(), maxAngularSpeed, updateIntervalMs)
+): Boolean = faceTowards(target.pos.add(0.0, target.standingEyeHeight.toDouble(), 0.0), maxAngularSpeed, updateIntervalMs)
 
-fun PathfinderMob.moveTowards(
-    target: Vec3,
+fun PathAwareEntity.moveTowards(
+    target: Vec3d,
     speed: Double,
     arrivalRadius: Double = 1.5,
 ): Boolean {
-    if (distanceToSqr(target) <= arrivalRadius * arrivalRadius) {
+    if (squaredDistanceTo(target) <= arrivalRadius * arrivalRadius) {
         navigation.stop()
-        zza = 0f
-        xxa = 0f
-        this.speed = 0f
+        forwardSpeed = 0f
+        sidewaysSpeed = 0f
         return true
     }
 
     faceTowards(target)
-
-    val closeRange = max(arrivalRadius, 1.0)
-    if (distanceToSqr(target) <= closeRange * closeRange) {
-        moveControl.setWantedPosition(target.x, target.y, target.z, speed)
-        if (target.y - y > maxUpStep()) jumpControl.jump()
+    val close = max(arrivalRadius, 1.0)
+    if (squaredDistanceTo(target) <= close * close) {
+        moveControl.moveTo(target.x, target.y, target.z, speed)
     } else {
-        navigation.moveTo(target.x, target.y, target.z, speed)
+        navigation.startMovingTo(target.x, target.y, target.z, speed)
     }
     return false
 }
 
-fun PathfinderMob.moveTowards(
+fun PathAwareEntity.moveTowards(
     target: Entity,
     speed: Double,
     arrivalRadius: Double = 1.5,
-): Boolean = moveTowards(target.lookTargetPosition(), speed, arrivalRadius)
+): Boolean = moveTowards(target.pos.add(0.0, target.standingEyeHeight.toDouble(), 0.0), speed, arrivalRadius)
 
 suspend fun LivingEntity.rotate(
-    targetProvider: suspend () -> Vec3,
+    targetProvider: suspend () -> Vec3d,
     durationMs: Long,
     updateIntervalMs: Long = 50L,
     maxAngularSpeed: Float = 360f,
 ) {
-    val startTime = System.currentTimeMillis()
-    val endTime = startTime + durationMs
-    while (System.currentTimeMillis() < endTime && coroutineContext.isActive) {
+    val end = System.currentTimeMillis() + durationMs
+    while (System.currentTimeMillis() < end) {
         faceTowards(targetProvider(), maxAngularSpeed, updateIntervalMs)
         delay(updateIntervalMs)
     }
-    faceTowards(targetProvider(), maxAngularSpeed, updateIntervalMs)
 }
 
 suspend fun LivingEntity.rotate(
@@ -113,14 +92,5 @@ suspend fun LivingEntity.rotate(
     durationMs: Long,
     updateIntervalMs: Long = 50L,
     maxAngularSpeed: Float = 360f,
-) = rotate({ targetEntity.lookTargetPosition() }, durationMs, updateIntervalMs, maxAngularSpeed)
-
-private fun Entity.lookTargetPosition(): Vec3 = Vec3(x, eyeY, z)
-
-private fun normalizeAngle(angle: Float): Float {
-    var normalized = angle % 360f
-    if (normalized < -180f) normalized += 360f
-    if (normalized >= 180f) normalized -= 360f
-    return normalized
-}
+) = rotate({ targetEntity.pos.add(0.0, targetEntity.standingEyeHeight.toDouble(), 0.0) }, durationMs, updateIntervalMs, maxAngularSpeed)
 

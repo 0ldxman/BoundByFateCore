@@ -1,15 +1,14 @@
 package omc.boundbyfate.client.render
 
-import com.mojang.blaze3d.vertex.PoseStack
+import net.minecraft.client.util.math.MatrixStack
 import de.fabmax.kool.util.Time
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
-import net.minecraft.client.renderer.LevelRenderer
-import net.minecraft.client.renderer.MultiBufferSource
-import net.minecraft.client.renderer.texture.OverlayTexture
-import net.minecraft.util.Mth
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.LivingEntity
+import net.minecraft.client.render.OverlayTexture
+import net.minecraft.client.render.VertexConsumerProvider
+import net.minecraft.entity.Entity
+import net.minecraft.entity.LivingEntity
+import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
@@ -46,8 +45,8 @@ object NpcModelRenderer {
         entity: Entity,
         entityYaw: Float,
         partialTick: Float,
-        poseStack: PoseStack,
-        buffer: MultiBufferSource,
+        poseStack: MatrixStack,
+        buffer: VertexConsumerProvider,
         packedLight: Int
     ): Boolean {
         // Только для наших НПС
@@ -84,27 +83,27 @@ object NpcModelRenderer {
         entity: Entity,
         entityYaw: Float,
         partialTick: Float,
-        poseStack: PoseStack,
-        buffer: MultiBufferSource,
+        poseStack: MatrixStack,
+        buffer: VertexConsumerProvider,
         packedLight: Int,
         scale: Float
     ) {
         val overlay = if (entity is LivingEntity) {
             OverlayTexture.pack(
-                OverlayTexture.u(0f),
-                OverlayTexture.v(entity.hurtTime > 0 || entity.deathTime > 0)
+                OverlayTexture.getU(0f),
+                OverlayTexture.getV(entity.hurtTime > 0 || entity.deathTime > 0)
             )
         } else {
-            OverlayTexture.NO_OVERLAY
+            OverlayTexture.DEFAULT_UV
         }
 
-        poseStack.pushPose()
+        poseStack.push()
 
         // Поворачиваем модель по направлению тела сущности
         if (entity is LivingEntity) {
-            val bodyYaw = Mth.rotLerp(partialTick, entity.yBodyRotO, entity.yBodyRot)
-            poseStack.mulPose(
-                Quaternionf().rotateY(-bodyYaw * Mth.DEG_TO_RAD)
+            val bodyYaw = MathHelper.lerpAngleDegrees(partialTick, entity.prevBodyYaw, entity.bodyYaw)
+            poseStack.multiply(
+                Quaternionf().rotateY(-bodyYaw * MathHelper.RADIANS_PER_DEGREE)
             )
         }
 
@@ -122,7 +121,7 @@ object NpcModelRenderer {
             )
         )
 
-        poseStack.popPose()
+        poseStack.pop()
     }
 
     private fun getOrCreateAttachment(

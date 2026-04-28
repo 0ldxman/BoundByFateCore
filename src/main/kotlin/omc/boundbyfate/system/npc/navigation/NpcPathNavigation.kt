@@ -1,50 +1,40 @@
 ﻿package omc.boundbyfate.system.npc.navigation
 
-import net.minecraft.world.entity.Mob
-import net.minecraft.world.entity.ai.attributes.Attributes
-import net.minecraft.world.entity.ai.navigation.GroundPathNavigation
-import net.minecraft.world.level.Level
-import net.minecraft.world.level.block.DoorBlock
-import net.minecraft.world.level.pathfinder.PathFinder
-import net.minecraft.world.phys.Vec3
-import kotlin.math.sqrt
-import net.minecraft.world.level.pathfinder.PathType as BlockPathTypes
+import net.minecraft.block.DoorBlock
+import net.minecraft.entity.ai.pathing.MobNavigation
+import net.minecraft.entity.ai.pathing.PathNodeNavigator
+import net.minecraft.entity.ai.pathing.PathNodeType
+import net.minecraft.entity.mob.MobEntity
+import net.minecraft.util.math.Vec3d
+import net.minecraft.world.World
 
-class NpcPathNavigation(level: Level, mob: Mob) : GroundPathNavigation(mob, level) {
-    override fun createPathFinder(maxVisitedNodes: Int): PathFinder {
-        val evaluator = NpcNodeEvaluator()
-        nodeEvaluator = evaluator
-        return NpcPathFinder(evaluator)
+/**
+ * Yarn-compatible NPC path navigation with basic door handling.
+ */
+class NpcPathNavigation(mob: MobEntity, world: World) : MobNavigation(mob, world) {
+
+    override fun createPathNodeNavigator(range: Int): PathNodeNavigator {
+        val maker = NpcNodeEvaluator()
+        nodeMaker = maker
+        return NpcPathFinder(maker, range)
     }
 
     override fun tick() {
         super.tick()
-        if (path?.isDone == true) return
+        val path = currentPath ?: return
+        if (path.isFinished) return
 
-        val node = path?.nextNode ?: return
-
-        if (node.type == BlockPathTypes.WALKABLE_DOOR) {
-            val state = level.getBlockState(node.asBlockPos())
-            if (DoorBlock.isWoodenDoor(state)) {
-                val door = state.block as DoorBlock
-                door.setOpen(mob, level, state, node.asBlockPos(), true)
+        val node = path.currentNode
+        if (node.type == PathNodeType.WALKABLE_DOOR) {
+            val pos = node.blockPos
+            val state = world.getBlockState(pos)
+            if (state.block is DoorBlock) {
+                world.setBlockState(pos, state.with(DoorBlock.OPEN, true))
             }
         }
+    }
 
-        val pos = node as? JumpNode ?: return
-
-        val dx: Double = pos.x + 0.5 - mob.x
-        val dy: Double = pos.y - mob.y
-        val dz: Double = pos.z + 0.5 - mob.z
-        val distance = sqrt(dx * dx + dz * dz)
-        val gravity = 0.08
-        val horizontalSpeed = mob.attributes.getValue(Attributes.MOVEMENT_SPEED)
-        val velocityX = (dx / distance) * horizontalSpeed
-        val velocityZ = (dz / distance) * horizontalSpeed
-        val time = distance / horizontalSpeed
-        val velocityY = (dy / time) + 0.5 * gravity * time
-
-        // Устанавливаем deltaMovement
-        mob.deltaMovement = Vec3(velocityX, velocityY, velocityZ)
+    fun setVelocity(velocity: Vec3d) {
+        entity.velocity = velocity
     }
 }

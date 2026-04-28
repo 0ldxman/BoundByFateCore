@@ -3,8 +3,8 @@
 import net.minecraft.client.render.entity.EntityRenderer
 import net.minecraft.client.render.entity.EntityRendererFactory
 import net.minecraft.client.texture.MissingSprite
+import net.minecraft.entity.Entity
 import net.minecraft.util.Identifier
-import net.minecraft.world.entity.Entity
 
 /**
  * Пустой рендерер сущности — не рисует ничего стандартного.

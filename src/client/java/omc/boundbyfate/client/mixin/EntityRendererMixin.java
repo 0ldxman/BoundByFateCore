@@ -1,9 +1,9 @@
 package omc.boundbyfate.client.mixin;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
 import omc.boundbyfate.client.render.NpcModelRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,8 +29,8 @@ public class EntityRendererMixin<T extends Entity> {
         T entity,
         float entityYaw,
         float partialTick,
-        PoseStack poseStack,
-        MultiBufferSource buffer,
+        MatrixStack poseStack,
+        VertexConsumerProvider buffer,
         int packedLight,
         CallbackInfo ci
     ) {

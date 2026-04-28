@@ -1,11 +1,14 @@
 package omc.boundbyfate.system.npc.navigation
 
-import net.minecraft.world.level.pathfinder.WalkNodeEvaluator
+import net.minecraft.entity.ai.pathing.LandPathNodeMaker
 
-class NpcNodeEvaluator : WalkNodeEvaluator() {
+/**
+ * Custom node evaluator for NPC pathing on Yarn mappings.
+ */
+class NpcNodeEvaluator : LandPathNodeMaker() {
     init {
-        setCanFloat(true)
-        setCanOpenDoors(true)
-        setCanPassDoors(true)
+        canEnterOpenDoors = true
+        canOpenDoors = true
+        canSwim = true
     }
 }

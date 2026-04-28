@@ -1,10 +1,8 @@
 package omc.boundbyfate.system.npc.navigation
 
-import net.minecraft.world.level.pathfinder.Node
-import net.minecraft.world.level.pathfinder.PathFinder
+import net.minecraft.entity.ai.pathing.PathNodeNavigator
 
-class NpcPathFinder(evaluator: NpcNodeEvaluator) : PathFinder(evaluator, 640) {
-    init {
-        neighbors = arrayOfNulls<Node>(72)
-    }
-}
+/**
+ * Thin wrapper around Yarn path navigator for NPC tuning.
+ */
+class NpcPathFinder(nodeMaker: NpcNodeEvaluator, range: Int = 640) : PathNodeNavigator(nodeMaker, range)
