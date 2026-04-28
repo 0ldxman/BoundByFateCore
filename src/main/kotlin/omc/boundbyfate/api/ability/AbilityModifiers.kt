@@ -159,12 +159,12 @@ object AbilityModifiers {
 
     // ── Внутренние классы ─────────────────────────────────────────────────
 
-    internal data class ModifierEntry(
+    data class ModifierEntry(
         val key: String,
         val modifier: (Int, AbilityContext) -> Int
     )
 
-    internal data class FloatModifierEntry(
+    data class FloatModifierEntry(
         val key: String,
         val modifier: (Float, AbilityContext) -> Float
     )

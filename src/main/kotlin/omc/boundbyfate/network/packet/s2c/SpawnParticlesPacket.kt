@@ -1,5 +1,7 @@
 package omc.boundbyfate.network.packet.s2c
 
+import com.google.gson.JsonParser
+import com.mojang.serialization.JsonOps
 import net.fabricmc.fabric.api.networking.v1.PacketType
 import net.minecraft.network.PacketByteBuf
 import net.minecraft.particle.ParticleEffect
@@ -37,12 +39,15 @@ class SpawnParticlesPacket(
         val TYPE: PacketType<SpawnParticlesPacket> = PacketType.create(
             BbfPackets.SPAWN_PARTICLES_S2C
         ) { buf ->
-            // Десериализуем ParticleEffect
+            // Десериализуем ParticleEffect через Identifier + JSON codec
             @Suppress("UNCHECKED_CAST")
             val type = Registries.PARTICLE_TYPE.get(buf.readIdentifier())
                     as? ParticleType<ParticleEffect>
                     ?: throw IllegalStateException("Unknown particle type")
-            val particle = type.parametersCodec.decode(buf)
+            val particle = type.getCodec().decode(
+                com.mojang.serialization.JsonOps.INSTANCE,
+                com.google.gson.JsonParser.parseString(buf.readString())
+            ).result().orElseThrow { IllegalStateException("Failed to decode particle") }.first
 
             // Список позиций
             val count = buf.readVarInt()
@@ -70,7 +75,10 @@ class SpawnParticlesPacket(
         @Suppress("UNCHECKED_CAST")
         val type = particle.type as ParticleType<ParticleEffect>
         buf.writeIdentifier(Registries.PARTICLE_TYPE.getId(type))
-        type.parametersCodec.encode(buf, particle)
+        val encoded = type.getCodec().encodeStart(
+            com.mojang.serialization.JsonOps.INSTANCE, particle
+        ).result().orElseThrow { IllegalStateException("Failed to encode particle") }
+        buf.writeString(encoded.toString())
 
         // Список позиций
         buf.writeVarInt(positions.size)

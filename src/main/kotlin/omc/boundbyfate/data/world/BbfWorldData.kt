@@ -82,12 +82,12 @@ class BbfWorldData private constructor(
      */
     private fun <T : WorldDataSection> loadSection(entry: SectionEntry<T>): T {
         val persistentState = stateManager.getOrCreate(
-            { SectionPersistentState(entry.factory()) },
-            { nbt, registries ->
+            { nbt ->
                 val section = entry.factory()
                 section.fromNbt(nbt)
                 SectionPersistentState(section)
             },
+            { SectionPersistentState(entry.factory()) },
             entry.fileName
         )
         logger.debug("Loaded section '${entry.id}' from '${entry.fileName}'")

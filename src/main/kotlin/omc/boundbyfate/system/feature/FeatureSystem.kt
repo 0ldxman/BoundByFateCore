@@ -6,6 +6,7 @@ import omc.boundbyfate.api.effect.EffectContext
 import omc.boundbyfate.api.feature.FeatureGrant
 import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.registry.EffectRegistry
+import omc.boundbyfate.registry.FeatureRegistry
 import omc.boundbyfate.system.effect.EffectApplier
 import omc.boundbyfate.system.mechanic.ClassMechanicManager
 import omc.boundbyfate.util.source.SourceReference

@@ -47,7 +47,7 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
     }
 
     override fun isInvulnerable() = true
-    override fun shouldDespawnInPeaceful() = false
+    override fun isDisallowedInPeaceful() = false
     override fun canPickUpLoot() = true
     override fun canGather(stack: ItemStack) = false
 

@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener
 import net.minecraft.resource.ResourceManager
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.mechanic.MechanicDefinition
-import omc.boundbyfate.system.mechanic.MechanicRegistry
+import omc.boundbyfate.registry.MechanicRegistry
 import org.slf4j.LoggerFactory
 
 /**

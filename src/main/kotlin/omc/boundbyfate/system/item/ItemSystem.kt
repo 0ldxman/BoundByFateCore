@@ -6,7 +6,7 @@ import net.minecraft.entity.EquipmentSlot
 import net.minecraft.entity.LivingEntity
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
-import net.minecraft.registries.Registries
+import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.item.ItemDefinition
 import omc.boundbyfate.api.item.ItemPropertyContext
@@ -72,8 +72,8 @@ object ItemSystem {
         for (propDef in properties) {
             val handler = ItemPropertyRegistry.getHandler(propDef.id) ?: run {
                 logger.warn("Item property handler '${propDef.id}' not found for item '$itemId'")
-                return@run
-            }
+                null
+            } ?: continue
 
             val ctx = ItemPropertyContext(
                 entity = entity,
@@ -380,7 +380,7 @@ object ItemSystem {
         // Сериализуем через Gson
         val json = com.google.gson.JsonObject().apply {
             addProperty("id", property.id.toString())
-            if (!property.data.isEmpty) {
+            if (!property.data.entrySet().isEmpty()) {
                 add("data", property.data)
             }
         }

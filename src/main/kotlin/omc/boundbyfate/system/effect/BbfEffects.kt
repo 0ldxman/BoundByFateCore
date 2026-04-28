@@ -2,7 +2,6 @@ package omc.boundbyfate.system.effect
 
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.effect.EffectContext
-import omc.boundbyfate.api.effect.EffectContextExtensions
 import omc.boundbyfate.api.effect.EffectHandler
 import omc.boundbyfate.api.effect.addArmorClassModifier
 import omc.boundbyfate.api.effect.addAttackModifier
@@ -19,6 +18,7 @@ import omc.boundbyfate.api.effect.removeDisadvantage
 import omc.boundbyfate.api.effect.removeStatModifier
 import omc.boundbyfate.api.effect.revokeAbility
 import omc.boundbyfate.api.effect.revokeProficiency
+import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.registry.EffectRegistry
 import org.slf4j.LoggerFactory
 
@@ -267,20 +267,17 @@ object BbfEffects {
             val value = ctx.data.getInt("value", 0)
             val params = ctx.entity.getOrCreate(omc.boundbyfate.component.components.EntityParamsData.TYPE)
             params.maxHits += value
-            // Синхронизируем с Minecraft
-            if (ctx.entity is net.minecraft.entity.attribute.EntityAttributeInstance) return
-            ctx.entity.setAttached(
-                omc.boundbyfate.component.components.EntityParamsData.TYPE,
-                params
-            )
-            ctx.entity.maxHealth = params.maxHits
+            // Синхронизируем с Minecraft через атрибут
+            val maxHealthAttr = ctx.entity.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH)
+            maxHealthAttr?.baseValue = params.maxHits.toDouble()
         }
 
         override fun remove(ctx: EffectContext) {
             val value = ctx.data.getInt("value", 0)
             val params = ctx.entity.getOrCreate(omc.boundbyfate.component.components.EntityParamsData.TYPE)
             params.maxHits = maxOf(1f, params.maxHits - value)
-            ctx.entity.maxHealth = params.maxHits
+            val maxHealthAttr = ctx.entity.getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH)
+            maxHealthAttr?.baseValue = params.maxHits.toDouble()
             // Ограничиваем текущее HP новым максимумом
             if (ctx.entity.health > params.maxHits) {
                 ctx.entity.health = params.maxHits

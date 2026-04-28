@@ -221,6 +221,6 @@ fun BbfComponent.toBytes(registries: RegistryWrapper.WrapperLookup): ByteArray {
  * Десериализует компонент из ByteArray полученного по сети.
  */
 fun BbfComponent.fromBytes(bytes: ByteArray, registries: RegistryWrapper.WrapperLookup) {
-    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtTagSizeTracker.ofUnlimitedBytes())
+    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtTagSizeTracker(Long.MAX_VALUE))
     fromNbt(nbt, registries)
 }

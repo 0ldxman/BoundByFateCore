@@ -91,8 +91,7 @@ class VisualBuilder(val ctx: VisualContext) {
 
     internal fun getDelayedActions(): List<DelayedAction> = delayedActions
 
-    @PublishedApi
-    internal data class DelayedAction(
+    data class DelayedAction(
         val delayTicks: Int,
         val block: VisualBuilder.() -> Unit
     )

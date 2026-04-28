@@ -9,6 +9,7 @@ import omc.boundbyfate.api.ability.AbilityHandler
 import omc.boundbyfate.api.ability.AbilityUseResult
 import omc.boundbyfate.api.ability.CanUseResult
 import omc.boundbyfate.api.ability.event.*
+import omc.boundbyfate.registry.AbilityRegistry
 import org.slf4j.LoggerFactory
 
 /**

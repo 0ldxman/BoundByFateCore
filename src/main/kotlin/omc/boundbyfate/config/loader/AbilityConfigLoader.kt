@@ -6,7 +6,7 @@ import net.minecraft.resource.ResourceManager
 import net.minecraft.util.Identifier
 import com.mojang.serialization.JsonOps
 import omc.boundbyfate.api.ability.AbilityDefinition
-import omc.boundbyfate.system.ability.AbilityRegistry
+import omc.boundbyfate.registry.AbilityRegistry
 import org.slf4j.LoggerFactory
 
 /**

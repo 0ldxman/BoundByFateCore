@@ -144,7 +144,7 @@ abstract class AbilityHandler {
      * ```
      */
     open fun buildDescription(definition: AbilityDefinition): Text =
-        Text.translatable(definition.getDescriptionKey())
+        Text.translatable("${definition.getTranslationKey()}.description")
 
     override fun toString(): String = "AbilityHandler($id)"
 }

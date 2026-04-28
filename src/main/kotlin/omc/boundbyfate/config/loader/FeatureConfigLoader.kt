@@ -1,7 +1,7 @@
 package omc.boundbyfate.config.loader
 
 import omc.boundbyfate.api.feature.FeatureDefinition
-import omc.boundbyfate.system.feature.FeatureRegistry
+import omc.boundbyfate.registry.FeatureRegistry
 
 /**
  * Загрузчик [FeatureDefinition] из датапаков.

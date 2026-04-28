@@ -6,6 +6,7 @@ import net.minecraft.util.Identifier
 import omc.boundbyfate.api.mechanic.MechanicConfig
 import omc.boundbyfate.component.components.EntityStatsData
 import omc.boundbyfate.component.core.getOrCreate
+import omc.boundbyfate.registry.MechanicRegistry
 import org.slf4j.LoggerFactory
 
 /**

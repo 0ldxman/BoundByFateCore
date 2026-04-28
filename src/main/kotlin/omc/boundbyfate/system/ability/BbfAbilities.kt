@@ -1,5 +1,6 @@
 package omc.boundbyfate.system.ability
 
+import omc.boundbyfate.registry.AbilityRegistry
 import org.slf4j.LoggerFactory
 
 /**

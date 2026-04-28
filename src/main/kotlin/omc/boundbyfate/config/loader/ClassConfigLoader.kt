@@ -1,7 +1,7 @@
 package omc.boundbyfate.config.loader
 
 import omc.boundbyfate.api.charclass.ClassDefinition
-import omc.boundbyfate.system.charclass.ClassRegistry
+import omc.boundbyfate.registry.ClassRegistry
 
 /**
  * Загрузчик [ClassDefinition] из датапаков.

@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.entity.LivingEntity
 import net.minecraft.registry.RegistryKeys
-import net.minecraft.registry.tag.EntityTypeTags
 import net.minecraft.registry.tag.TagKey
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.condition.ConditionType
@@ -227,7 +226,7 @@ object BbfConditionTypes {
     val TARGET_IS_UNDEAD = ConditionType.register(
         id = "boundbyfate-core:target_is_undead",
         codec = Codec.unit(Unit),
-        evaluate = { _, ctx -> ctx.target?.type?.isIn(EntityTypeTags.UNDEAD) ?: false }
+        evaluate = { _, ctx -> ctx.target?.isUndead ?: false }
     )
 }
 

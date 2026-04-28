@@ -3,16 +3,18 @@ package omc.boundbyfate.system.item
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.item.ItemPropertyContext
 import omc.boundbyfate.api.item.ItemPropertyHandler
-import omc.boundbyfate.api.item.addArmorClassFormula
 import omc.boundbyfate.api.item.addStatModifier
 import omc.boundbyfate.api.item.grantAbility
 import omc.boundbyfate.api.item.grantProficiency
 import omc.boundbyfate.api.item.grantResource
-import omc.boundbyfate.api.item.removeArmorClassFormula
 import omc.boundbyfate.api.item.removeStatModifier
 import omc.boundbyfate.api.item.revokeAbility
 import omc.boundbyfate.api.item.revokeProficiency
 import omc.boundbyfate.api.item.revokeResource
+import omc.boundbyfate.api.item.setArmorClassFormula
+import omc.boundbyfate.api.item.removeArmorClassFormula
+import omc.boundbyfate.api.item.addDisadvantage
+import omc.boundbyfate.api.item.removeDisadvantage
 import omc.boundbyfate.registry.ItemPropertyRegistry
 import org.slf4j.LoggerFactory
 

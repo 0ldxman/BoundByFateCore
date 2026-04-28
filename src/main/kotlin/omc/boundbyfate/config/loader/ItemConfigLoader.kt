@@ -6,7 +6,7 @@ import omc.boundbyfate.registry.ItemPropertyRegistry
 /**
  * Загрузчик [ItemDefinition] из датапаков.
  *
- * Загружает JSON файлы из `data/<namespace>/bbf_item/**\/*.json`
+ * Загружает JSON файлы из `data/<namespace>/bbf_item/**/*.json`
  * и регистрирует их в [ItemPropertyRegistry].
  *
  * ## Структура файлов
