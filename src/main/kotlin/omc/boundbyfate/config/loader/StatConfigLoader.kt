@@ -4,32 +4,24 @@ import omc.boundbyfate.api.stat.StatDefinition
 import omc.boundbyfate.registry.StatRegistry
 
 /**
- * Загрузчик конфигураций для характеристик (Stats).
- * 
- * Загружает StatDefinition из JSON файлов в datapack:
- * `data/<namespace>/bbf_stat/*.json`
+ * Загрузчик [StatDefinition] из датапаков.
+ *
+ * Загружает JSON файлы из data/namespace/bbf_stat/ и регистрирует их в [StatRegistry].
  */
 object StatConfigLoader : ConfigLoader<StatDefinition>(
     typeName = "stat",
     codec = StatDefinition.CODEC,
     registry = StatRegistry
 ) {
-    
+
     override fun onAfterLoad(loadedCount: Int) {
         super.onAfterLoad(loadedCount)
-        
-        // Можно добавить дополнительную логику после загрузки
-        // Например, валидацию что загружены все обязательные статы
         validateRequiredStats()
     }
-    
-    /**
-     * Проверяет что загружены все обязательные D&D статы.
-     */
+
     private fun validateRequiredStats() {
         val requiredStats = listOf("strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma")
         val namespace = "boundbyfate-core"
-        
         for (statName in requiredStats) {
             val id = net.minecraft.util.Identifier(namespace, statName)
             if (!registry.contains(id)) {
@@ -38,4 +30,3 @@ object StatConfigLoader : ConfigLoader<StatDefinition>(
         }
     }
 }
-

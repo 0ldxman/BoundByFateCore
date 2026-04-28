@@ -9,24 +9,21 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Реестр свойств предметов.
  *
- * Аналог [AbilityRegistry] — хранит два независимых хранилища:
+ * Хранит два независимых хранилища:
  * - [ItemPropertyHandler] — логика, регистрируется в коде
  * - [ItemDefinition] — данные, загружаются из JSON датапаков
  *
- * ## Регистрация хендлера
+ * Регистрация хендлера:
  *
  * ```kotlin
- * // В BbfItemProperties.register():
  * ItemPropertyRegistry.register(MeleeDamage)
  * ItemPropertyRegistry.register(StatBonus)
  * ItemPropertyRegistry.register(ArmorClass)
  * ```
  *
- * ## Загрузка Definition
+ * Definition загружаются из datapacks через ItemConfigLoader.
  *
- * Definition загружаются из `data/<namespace>/bbf_item/*.json`.
- *
- * ## Получение
+ * Получение:
  *
  * ```kotlin
  * val handler = ItemPropertyRegistry.getHandler(propertyId)
@@ -37,13 +34,11 @@ object ItemPropertyRegistry {
 
     private val logger = LoggerFactory.getLogger(ItemPropertyRegistry::class.java)
 
-    /** Хендлеры свойств: propertyId → handler */
+    // Хендлеры свойств: propertyId -> handler
     private val handlers: ConcurrentHashMap<Identifier, ItemPropertyHandler> = ConcurrentHashMap()
 
-    /** Определения предметов: itemId → ItemDefinition */
+    // Определения предметов: itemId -> ItemDefinition
     private val itemDefinitions: ConcurrentHashMap<Identifier, ItemDefinition> = ConcurrentHashMap()
-
-    // ── Регистрация хендлеров ─────────────────────────────────────────────
 
     fun register(handler: ItemPropertyHandler) {
         if (handlers.containsKey(handler.id)) {
@@ -60,8 +55,6 @@ object ItemPropertyRegistry {
         handlers[handler.id] = handler
     }
 
-    // ── Регистрация ItemDefinition ────────────────────────────────────────
-
     fun registerItemDefinition(definition: ItemDefinition) {
         itemDefinitions[definition.item] = definition
         logger.debug("Registered item definition: ${definition.item}")
@@ -72,8 +65,6 @@ object ItemPropertyRegistry {
         logger.info("Cleared all item definitions")
     }
 
-    // ── Получение ─────────────────────────────────────────────────────────
-
     fun getHandler(propertyId: Identifier): ItemPropertyHandler? = handlers[propertyId]
 
     fun getItemDefinition(itemId: Identifier): ItemDefinition? = itemDefinitions[itemId]
@@ -82,9 +73,6 @@ object ItemPropertyRegistry {
 
     fun getAllItemDefinitions(): Collection<ItemDefinition> = itemDefinitions.values
 
-    /**
-     * Возвращает все тикующие хендлеры.
-     */
     fun getTickingHandlers(): Collection<ItemPropertyHandler> =
         handlers.values.filter { it.isTicking }
 

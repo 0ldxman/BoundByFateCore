@@ -12,8 +12,7 @@ import org.slf4j.LoggerFactory
 /**
  * Загрузчик [ItemDefinition] из датапаков.
  *
- * Загружает JSON файлы из `data/<namespace>/bbf_item/*.json`
- * и регистрирует их в [ItemPropertyRegistry].
+ * Загружает JSON файлы из data/namespace/bbf_item/ и регистрирует их в [ItemPropertyRegistry].
  */
 object ItemConfigLoader : SimpleSynchronousResourceReloadListener {
 
