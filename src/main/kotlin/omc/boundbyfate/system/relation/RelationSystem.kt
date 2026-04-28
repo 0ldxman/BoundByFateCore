@@ -37,7 +37,7 @@ object RelationSystem {
 
     fun get(world: ServerWorld, from: RelationParty, to: RelationParty): Relation {
         val key = RelationKey(from, to)
-        return getWorldData(world).relations[key] ?: Relation()
+        return BbfWorldData.get(world).getSection<RelationSection>().relations[key] ?: Relation()
     }
 
     fun getValue(world: ServerWorld, from: RelationParty, to: RelationParty): Int =

@@ -1,5 +1,6 @@
 package omc.boundbyfate.system.visual.builder
 
+import net.minecraft.registry.Registries
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
@@ -35,7 +36,7 @@ class SoundBuilder(
         pitch: Float = 1.0f
     ) {
         actions += {
-            SoundSystem.playAt(ctx.world, soundId, pos, volume, pitch)
+            SoundSystem.playAt(ctx.world, soundId, pos, SoundCategory.MASTER, volume, pitch)
         }
     }
 
@@ -48,7 +49,7 @@ class SoundBuilder(
         pitch: Float = 1.0f
     ) {
         actions += {
-            SoundSystem.playTo(player, soundId, volume, pitch)
+            SoundSystem.playGui(player, soundId, volume, pitch)
         }
     }
 
@@ -57,7 +58,10 @@ class SoundBuilder(
      */
     fun toAll(volume: Float = 1.0f, pitch: Float = 1.0f) {
         actions += {
-            SoundSystem.playToAll(ctx.world.server, soundId, volume, pitch)
+            val sound = Registries.SOUND_EVENT.get(soundId)
+            if (sound != null) {
+                SoundSystem.playGuiToAll(ctx.world.server, sound, volume, pitch)
+            }
         }
     }
 

@@ -41,7 +41,7 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
         return super.interactMob(player, hand)
     }
 
-    override fun registerGoals() {
+    override fun initGoals() {
         goalSelector.add(1, SwimGoal(this))
         goalSelector.add(2, MeleeAttackGoal(this, 1.0, false))
     }
@@ -49,18 +49,18 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
     override fun isInvulnerable() = true
     override fun shouldDespawnInPeaceful() = false
     override fun canPickUpLoot() = true
-    override fun wantsToPickUp(pStack: ItemStack) = false
+    override fun canGather(stack: ItemStack) = false
 
-    override fun doPush(pEntity: Entity) {
-        super.doPush(pEntity)
+    override fun pushAway(entity: Entity) {
+        super.pushAway(entity)
     }
 
     override fun isPushable(): Boolean = super.isPushable()
 
-    override fun canBeCollidedWith(): Boolean = false
+    override fun isCollidable(): Boolean = false
 
-    override fun removeWhenFarAway(dist: Double) = false
-    override fun isPersistenceRequired() = true
+    override fun canImmediatelyDespawn(distanceSquared: Double) = false
+    override fun isPersistent() = true
 
     var npcName: String
         get() = displayName.string
@@ -76,10 +76,12 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
     fun setAttributes(attributes: Map<String, Float>) {
         attributes.forEach { (attributeName, value) ->
             val key = attributeName.toIdentifier()
-            val attribute: EntityAttribute = Registries.ATTRIBUTE.get(key)
-            val instance = getAttributeInstance(attribute)
-            if (instance != null) {
-                instance.baseValue = value.toDouble()
+            val attribute: EntityAttribute? = Registries.ATTRIBUTE.get(key)
+            if (attribute != null) {
+                val instance = getAttributeInstance(attribute)
+                if (instance != null) {
+                    instance.baseValue = value.toDouble()
+                }
             }
         }
     }

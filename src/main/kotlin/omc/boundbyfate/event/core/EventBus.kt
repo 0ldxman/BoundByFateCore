@@ -31,6 +31,7 @@ class EventBus<T : Any>(
      * Зарегистрированные обработчики с приоритетами.
      * Используем ConcurrentHashMap для thread-safety.
      */
+    @PublishedApi
     internal val handlers: MutableMap<EventPriority, MutableList<T>> = ConcurrentHashMap()
     
     /**

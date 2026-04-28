@@ -42,7 +42,7 @@ class SpawnParticlesPacket(
             val type = Registries.PARTICLE_TYPE.get(buf.readIdentifier())
                     as? ParticleType<ParticleEffect>
                     ?: throw IllegalStateException("Unknown particle type")
-            val particle = type.parametersFactory.codec().decode(buf)
+            val particle = type.parametersCodec.decode(buf)
 
             // Список позиций
             val count = buf.readVarInt()
@@ -70,7 +70,7 @@ class SpawnParticlesPacket(
         @Suppress("UNCHECKED_CAST")
         val type = particle.type as ParticleType<ParticleEffect>
         buf.writeIdentifier(Registries.PARTICLE_TYPE.getId(type))
-        type.parametersFactory.codec().encode(buf, particle)
+        type.parametersCodec.encode(buf, particle)
 
         // Список позиций
         buf.writeVarInt(positions.size)

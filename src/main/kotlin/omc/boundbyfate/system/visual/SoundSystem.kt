@@ -60,12 +60,12 @@ object SoundSystem {
         radius: Double = DEFAULT_RADIUS
     ) {
         val packet = PlaySoundPacket(
-            sound = RegistryEntry.of(sound),
-            category = category,
-            x = pos.x, y = pos.y, z = pos.z,
-            volume = volume,
-            pitch = pitch,
-            positional = true
+            sound.registryEntry,
+            category,
+            pos.x, pos.y, pos.z,
+            volume,
+            pitch,
+            0L
         )
         world.broadcastPacketInRadius(pos.x, pos.y, pos.z, radius, packet)
     }
@@ -108,12 +108,12 @@ object SoundSystem {
         pitch: Float = 1.0f
     ) {
         val packet = PlaySoundPacket(
-            sound = RegistryEntry.of(sound),
-            category = SoundCategory.MASTER,
-            x = player.x, y = player.y, z = player.z,
-            volume = volume,
-            pitch = pitch,
-            positional = false
+            sound.registryEntry,
+            SoundCategory.MASTER,
+            player.x, player.y, player.z,
+            volume,
+            pitch,
+            0L
         )
         player.sendPacket(packet)
     }

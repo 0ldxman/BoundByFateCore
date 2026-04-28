@@ -1,10 +1,10 @@
 package omc.boundbyfate.util
 
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 
 /**
- * Converts a string to a Minecraft ResourceLocation.
+ * Converts a string to a Minecraft Identifier.
  * Format: "namespace:path" or just "path" (uses "minecraft" namespace).
  */
-val String.rl: ResourceLocation
-    get() = ResourceLocation.tryParse(this) ?: error("Invalid ResourceLocation: $this")
+val String.rl: Identifier
+    get() = Identifier.tryParse(this) ?: error("Invalid Identifier: $this")

@@ -174,10 +174,10 @@ object AbilityModifiers {
  * Handle для удаления Int модификатора.
  */
 @JvmInline
-internal value class ModifierHandle(internal val entry: AbilityModifiers.ModifierEntry)
+value class ModifierHandle(internal val entry: AbilityModifiers.ModifierEntry)
 
 /**
  * Handle для удаления Float модификатора.
  */
 @JvmInline
-internal value class FloatModifierHandle(internal val entry: AbilityModifiers.FloatModifierEntry)
+value class FloatModifierHandle(internal val entry: AbilityModifiers.FloatModifierEntry)

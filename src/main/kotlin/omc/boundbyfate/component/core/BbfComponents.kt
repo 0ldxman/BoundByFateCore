@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentType
 import net.minecraft.entity.Entity
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtIo
-import net.minecraft.nbt.NbtSizeTracker
+import net.minecraft.nbt.NbtTagSizeTracker
 import net.minecraft.registry.RegistryWrapper
 import net.minecraft.util.Identifier
 import org.slf4j.LoggerFactory
@@ -221,6 +221,6 @@ fun BbfComponent.toBytes(registries: RegistryWrapper.WrapperLookup): ByteArray {
  * Десериализует компонент из ByteArray полученного по сети.
  */
 fun BbfComponent.fromBytes(bytes: ByteArray, registries: RegistryWrapper.WrapperLookup) {
-    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtSizeTracker.ofUnlimitedBytes())
+    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtTagSizeTracker.ofUnlimitedBytes())
     fromNbt(nbt, registries)
 }

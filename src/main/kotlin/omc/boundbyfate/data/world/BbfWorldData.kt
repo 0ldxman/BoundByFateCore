@@ -82,14 +82,12 @@ class BbfWorldData private constructor(
      */
     private fun <T : WorldDataSection> loadSection(entry: SectionEntry<T>): T {
         val persistentState = stateManager.getOrCreate(
-            net.minecraft.world.PersistentState.Type(
-                { SectionPersistentState(entry.factory()) },
-                { nbt, registries ->
-                    val section = entry.factory()
-                    section.fromNbt(nbt)
-                    SectionPersistentState(section)
-                }
-            ),
+            { SectionPersistentState(entry.factory()) },
+            { nbt, registries ->
+                val section = entry.factory()
+                section.fromNbt(nbt)
+                SectionPersistentState(section)
+            },
             entry.fileName
         )
         logger.debug("Loaded section '${entry.id}' from '${entry.fileName}'")
