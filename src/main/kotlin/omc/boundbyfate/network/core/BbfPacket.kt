@@ -1,19 +1,14 @@
 package omc.boundbyfate.network.core
 
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.FabricPacket
+import net.minecraft.util.Identifier
 
 /**
  * Базовый интерфейс для всех пакетов мода.
- * 
- * Расширяет Fabric CustomPayload для интеграции с сетевой системой.
+ *
+ * Расширяет Fabric FabricPacket для интеграции с сетевой системой (1.20.1).
  */
-interface BbfPacket : CustomPayload {
-    /**
-     * Уникальный ID пакета (из getId()).
-     */
-    val id: CustomPayload.Id<out CustomPayload>
-        get() = getId()
-}
+interface BbfPacket : FabricPacket
 
 /**
  * Направление пакета.
@@ -23,12 +18,12 @@ enum class PacketDirection {
      * Сервер → Клиент.
      */
     S2C,
-    
+
     /**
      * Клиент → Сервер.
      */
     C2S,
-    
+
     /**
      * Двунаправленный (редко используется).
      */
@@ -37,9 +32,9 @@ enum class PacketDirection {
 
 /**
  * Аннотация для автоматической регистрации пакета.
- * 
+ *
  * Используется PacketRegistry для сканирования и регистрации пакетов.
- * 
+ *
  * Пример:
  * ```kotlin
  * @RegisterPacket(
@@ -56,7 +51,7 @@ annotation class RegisterPacket(
      * ID пакета (без namespace, он добавится автоматически).
      */
     val id: String,
-    
+
     /**
      * Направление пакета.
      */

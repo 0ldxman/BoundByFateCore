@@ -83,12 +83,12 @@ sealed class RaceGrant {
             "type",
             { grant ->
                 when (grant) {
-                    is Size     -> Identifier.of("boundbyfate-core", "size")
-                    is Speed    -> Identifier.of("boundbyfate-core", "speed")
-                    is StatBonus -> Identifier.of("boundbyfate-core", "stat_bonus")
-                    is Feature  -> Identifier.of("boundbyfate-core", "feature")
-                    is Language -> Identifier.of("boundbyfate-core", "language")
-                    is Ability  -> Identifier.of("boundbyfate-core", "ability")
+                    is Size      -> Identifier("boundbyfate-core", "size")
+                    is Speed     -> Identifier("boundbyfate-core", "speed")
+                    is StatBonus -> Identifier("boundbyfate-core", "stat_bonus")
+                    is Feature   -> Identifier("boundbyfate-core", "feature")
+                    is Language  -> Identifier("boundbyfate-core", "language")
+                    is Ability   -> Identifier("boundbyfate-core", "ability")
                 }
             },
             { id ->

@@ -82,15 +82,12 @@ class BbfWorldData private constructor(
      */
     private fun <T : WorldDataSection> loadSection(entry: SectionEntry<T>): T {
         val persistentState = stateManager.getOrCreate(
-            PersistentState.Type(
-                { SectionPersistentState(entry.factory()) },
-                { nbt, _ ->
-                    val section = entry.factory()
-                    section.fromNbt(nbt)
-                    SectionPersistentState(section)
-                },
-                null
-            ),
+            { SectionPersistentState(entry.factory()) },
+            { nbt ->
+                val section = entry.factory()
+                section.fromNbt(nbt)
+                SectionPersistentState(section)
+            },
             entry.fileName
         )
         logger.debug("Loaded section '${entry.id}' from '${entry.fileName}'")
@@ -276,10 +273,7 @@ private class SectionPersistentState<T : WorldDataSection>(
     val section: T
 ) : PersistentState() {
 
-    override fun writeNbt(
-        nbt: net.minecraft.nbt.NbtCompound,
-        registryLookup: net.minecraft.registry.RegistryWrapper.WrapperLookup
-    ): net.minecraft.nbt.NbtCompound {
+    override fun writeNbt(nbt: net.minecraft.nbt.NbtCompound): net.minecraft.nbt.NbtCompound {
         val sectionNbt = section.toNbt()
         sectionNbt.keys.forEach { key -> nbt.put(key, sectionNbt.get(key)!!) }
         section.markClean()

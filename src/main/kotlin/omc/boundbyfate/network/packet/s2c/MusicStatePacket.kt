@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import omc.boundbyfate.system.visual.sound.MusicState
@@ -17,51 +16,51 @@ import omc.boundbyfate.system.visual.sound.MusicState
  *
  * @param state текущее состояние музыкальной системы
  */
-data class MusicStatePacket(
+class MusicStatePacket(
     val state: MusicState
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<MusicStatePacket> =
-            CustomPayload.Id(BbfPackets.MUSIC_STATE_S2C)
+        val TYPE: PacketType<MusicStatePacket> = PacketType.create(
+            BbfPackets.MUSIC_STATE_S2C
+        ) { buf ->
+            MusicStatePacket(MusicState(
+                trackA = readNullableString(buf),
+                trackB = readNullableString(buf),
+                trackC = readNullableString(buf),
+                u = buf.readFloat(),
+                v = buf.readFloat(),
+                w = buf.readFloat(),
+                sliderSpeed = buf.readFloat()
+            ))
+        }
 
-        val CODEC: PacketCodec<RegistryByteBuf, MusicStatePacket> = PacketCodec.of(
-            { buf, packet ->
-                val s = packet.state
-                // Треки (nullable string)
-                writeNullableString(buf, s.trackA)
-                writeNullableString(buf, s.trackB)
-                writeNullableString(buf, s.trackC)
-                // Позиция ползунка
-                buf.writeFloat(s.u)
-                buf.writeFloat(s.v)
-                buf.writeFloat(s.w)
-                // Скорость ползунка
-                buf.writeFloat(s.sliderSpeed)
-            },
-            { buf ->
-                MusicStatePacket(MusicState(
-                    trackA = readNullableString(buf),
-                    trackB = readNullableString(buf),
-                    trackC = readNullableString(buf),
-                    u = buf.readFloat(),
-                    v = buf.readFloat(),
-                    w = buf.readFloat(),
-                    sliderSpeed = buf.readFloat()
-                ))
-            }
-        )
-
-        private fun writeNullableString(buf: RegistryByteBuf, value: String?) {
+        private fun writeNullableString(buf: PacketByteBuf, value: String?) {
             buf.writeBoolean(value != null)
             if (value != null) buf.writeString(value)
         }
 
-        private fun readNullableString(buf: RegistryByteBuf): String? {
+        private fun readNullableString(buf: PacketByteBuf): String? {
             val hasValue = buf.readBoolean()
             return if (hasValue) buf.readString() else null
         }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<MusicStatePacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        val s = state
+        writeNullableString(buf, s.trackA)
+        writeNullableString(buf, s.trackB)
+        writeNullableString(buf, s.trackC)
+        buf.writeFloat(s.u)
+        buf.writeFloat(s.v)
+        buf.writeFloat(s.w)
+        buf.writeFloat(s.sliderSpeed)
+    }
+
+    private fun writeNullableString(buf: PacketByteBuf, value: String?) {
+        buf.writeBoolean(value != null)
+        if (value != null) buf.writeString(value)
+    }
 }

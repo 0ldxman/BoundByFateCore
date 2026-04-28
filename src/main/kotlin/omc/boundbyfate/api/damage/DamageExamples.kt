@@ -119,18 +119,18 @@ object DamageExamples {
         )
         
         // Огненный урон
+        val fireDamageInstance = DamageInstance(type = fireType, amount = 20f)
         val fireDamage = DamageCalculator.calculate(
-            baseDamage = 20f,
-            damageType = fireType,
+            damage = fireDamageInstance,
             resistances = resistances
         )
         println("Огненный урон: 20 → $fireDamage")
         // Вывод: 10.0
         
         // Урон ядом
+        val poisonDamageInstance = DamageInstance(type = poisonType, amount = 15f)
         val poisonDamage = DamageCalculator.calculate(
-            baseDamage = 15f,
-            damageType = poisonType,
+            damage = poisonDamageInstance,
             resistances = resistances
         )
         println("Урон ядом: 15 → $poisonDamage")
@@ -161,16 +161,15 @@ object DamageExamples {
         )
         
         // Вычисляем итоговый урон
-        val baseDamage = 30f
+        val damageInstance = DamageInstance(type = fireType, amount = 30f)
         val finalDamage = DamageCalculator.calculateWithSources(
-            baseDamage = baseDamage,
-            damageType = fireType,
+            damage = damageInstance,
             sources = sources
         )
         
         val effectiveResistance = DamageCalculator.getEffectiveResistance(fireType, sources)
         
-        println("Базовый урон: $baseDamage")
+        println("Базовый урон: 30")
         println("Источники:")
         println("  - Раса (Тифлинг): -1 (сопротивление)")
         println("  - Заклинание: -1 (сопротивление)")
@@ -198,15 +197,14 @@ object DamageExamples {
         )
         
         // Ядовитая ловушка наносит 24 урона
-        val trapDamage = 24f
+        val damageInstance = DamageInstance(type = poisonType, amount = 24f)
         val finalDamage = DamageCalculator.calculateWithSources(
-            baseDamage = trapDamage,
-            damageType = poisonType,
+            damage = damageInstance,
             sources = sources
         )
         
         println("Ядовитая ловушка активирована!")
-        println("Базовый урон: $trapDamage")
+        println("Базовый урон: 24")
         println("Дварф имеет сопротивление к яду (Dwarven Resilience)")
         println("Итоговый урон: $finalDamage")
         // Вывод: 12.0
@@ -238,22 +236,20 @@ object DamageExamples {
         println()
         
         // Атака мечом (рубящий урон)
-        val swordDamage = 18f
+        val swordDamageInstance = DamageInstance(type = slashingType, amount = 18f)
         val finalSwordDamage = DamageCalculator.calculateWithSources(
-            baseDamage = swordDamage,
-            damageType = slashingType,
+            damage = swordDamageInstance,
             sources = sources
         )
-        println("Атака мечом: $swordDamage → $finalSwordDamage")
+        println("Атака мечом: 18 → $finalSwordDamage")
         
         // Огненный шар (огненный урон - нет сопротивления)
-        val fireballDamage = 28f
+        val fireballDamageInstance = DamageInstance(type = fireType, amount = 28f)
         val finalFireballDamage = DamageCalculator.calculateWithSources(
-            baseDamage = fireballDamage,
-            damageType = fireType,
+            damage = fireballDamageInstance,
             sources = sources
         )
-        println("Огненный шар: $fireballDamage → $finalFireballDamage")
+        println("Огненный шар: 28 → $finalFireballDamage")
         // Вывод: 9.0 (меч), 28.0 (огонь)
     }
     

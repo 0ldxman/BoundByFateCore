@@ -66,7 +66,7 @@ data class ItemDefinition(
      */
     override val id: Identifier get() = item
 
-    override fun getTranslationKey(): String =
+    fun getTranslationKey(): String =
         "item.${item.namespace}.${item.path}"
 
     override fun validate() {

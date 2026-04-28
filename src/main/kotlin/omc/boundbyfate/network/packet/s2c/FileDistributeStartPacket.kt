@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import omc.boundbyfate.system.transfer.FileCategory
@@ -21,7 +20,7 @@ import java.util.UUID
  * @param totalSize полный размер файла в байтах
  * @param totalChunks общее количество чанков
  */
-data class FileDistributeStartPacket(
+class FileDistributeStartPacket(
     val sessionId: UUID,
     val fileId: String,
     val category: FileCategory,
@@ -31,30 +30,28 @@ data class FileDistributeStartPacket(
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<FileDistributeStartPacket> =
-            CustomPayload.Id(BbfPackets.FILE_DISTRIBUTE_START_S2C)
-
-        val CODEC: PacketCodec<RegistryByteBuf, FileDistributeStartPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeUuid(packet.sessionId)
-                buf.writeString(packet.fileId)
-                buf.writeEnumConstant(packet.category)
-                buf.writeString(packet.extension)
-                buf.writeLong(packet.totalSize)
-                buf.writeVarInt(packet.totalChunks)
-            },
-            { buf ->
-                FileDistributeStartPacket(
-                    sessionId = buf.readUuid(),
-                    fileId = buf.readString(),
-                    category = buf.readEnumConstant(FileCategory::class.java),
-                    extension = buf.readString(),
-                    totalSize = buf.readLong(),
-                    totalChunks = buf.readVarInt()
-                )
-            }
-        )
+        val TYPE: PacketType<FileDistributeStartPacket> = PacketType.create(
+            BbfPackets.FILE_DISTRIBUTE_START_S2C
+        ) { buf ->
+            FileDistributeStartPacket(
+                sessionId = buf.readUuid(),
+                fileId = buf.readString(),
+                category = buf.readEnumConstant(FileCategory::class.java),
+                extension = buf.readString(),
+                totalSize = buf.readLong(),
+                totalChunks = buf.readVarInt()
+            )
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<FileDistributeStartPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeUuid(sessionId)
+        buf.writeString(fileId)
+        buf.writeEnumConstant(category)
+        buf.writeString(extension)
+        buf.writeLong(totalSize)
+        buf.writeVarInt(totalChunks)
+    }
 }

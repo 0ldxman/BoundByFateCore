@@ -1,10 +1,8 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import net.minecraft.registry.Registries
-import net.minecraft.registry.entry.RegistryEntry
 import net.minecraft.sound.SoundCategory
 import net.minecraft.sound.SoundEvent
 import omc.boundbyfate.network.BbfPackets
@@ -28,8 +26,8 @@ import omc.boundbyfate.network.core.BbfPacket
  * @param pitch высота тона (1.0 = стандартная)
  * @param positional если false — звук воспроизводится без позиционирования (GUI)
  */
-data class PlaySoundPacket(
-    val sound: RegistryEntry<SoundEvent>,
+class PlaySoundPacket(
+    val sound: SoundEvent,
     val category: SoundCategory,
     val x: Double,
     val y: Double,
@@ -40,34 +38,35 @@ data class PlaySoundPacket(
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<PlaySoundPacket> =
-            CustomPayload.Id(BbfPackets.PLAY_SOUND_S2C)
-
-        val CODEC: PacketCodec<RegistryByteBuf, PlaySoundPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeRegistryEntry(Registries.SOUND_EVENT, packet.sound)
-                buf.writeEnumConstant(packet.category)
-                buf.writeDouble(packet.x)
-                buf.writeDouble(packet.y)
-                buf.writeDouble(packet.z)
-                buf.writeFloat(packet.volume)
-                buf.writeFloat(packet.pitch)
-                buf.writeBoolean(packet.positional)
-            },
-            { buf ->
-                PlaySoundPacket(
-                    sound = buf.readRegistryEntry(Registries.SOUND_EVENT),
-                    category = buf.readEnumConstant(SoundCategory::class.java),
-                    x = buf.readDouble(),
-                    y = buf.readDouble(),
-                    z = buf.readDouble(),
-                    volume = buf.readFloat(),
-                    pitch = buf.readFloat(),
-                    positional = buf.readBoolean()
-                )
-            }
-        )
+        val TYPE: PacketType<PlaySoundPacket> = PacketType.create(
+            BbfPackets.PLAY_SOUND_S2C
+        ) { buf ->
+            val soundId = buf.readIdentifier()
+            val sound = Registries.SOUND_EVENT.get(soundId)
+                ?: throw IllegalStateException("Unknown sound event: $soundId")
+            PlaySoundPacket(
+                sound = sound,
+                category = buf.readEnumConstant(SoundCategory::class.java),
+                x = buf.readDouble(),
+                y = buf.readDouble(),
+                z = buf.readDouble(),
+                volume = buf.readFloat(),
+                pitch = buf.readFloat(),
+                positional = buf.readBoolean()
+            )
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<PlaySoundPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeIdentifier(Registries.SOUND_EVENT.getId(sound))
+        buf.writeEnumConstant(category)
+        buf.writeDouble(x)
+        buf.writeDouble(y)
+        buf.writeDouble(z)
+        buf.writeFloat(volume)
+        buf.writeFloat(pitch)
+        buf.writeBoolean(positional)
+    }
 }

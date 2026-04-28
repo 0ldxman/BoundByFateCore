@@ -15,9 +15,9 @@ import net.minecraft.util.Identifier
  */
 fun String.toIdentifier(defaultNamespace: String = "boundbyfate-core"): Identifier {
     return if (this.contains(':')) {
-        Identifier.of(this)
+        Identifier(this)
     } else {
-        Identifier.of(defaultNamespace, this)
+        Identifier(defaultNamespace, this)
     }
 }
 
@@ -36,4 +36,4 @@ fun Identifier.isBbf(): Boolean = this.namespace == "boundbyfate-core"
  * ```
  */
 fun Identifier.child(path: String): Identifier =
-    Identifier.of(this.namespace, "${this.path}/$path")
+    Identifier(this.namespace, "${this.path}/$path")

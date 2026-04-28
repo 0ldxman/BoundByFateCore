@@ -46,7 +46,7 @@ data class CharacterSavedState(
  * @property yaw, pitch поворот
  */
 data class WorldPosition(
-    val dimension: Identifier = Identifier.of("minecraft", "overworld"),
+    val dimension: Identifier = Identifier("minecraft", "overworld"),
     val x: Double = 0.0,
     val y: Double = 64.0,
     val z: Double = 0.0,

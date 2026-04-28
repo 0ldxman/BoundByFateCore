@@ -133,7 +133,7 @@ class BoundByFateCore : ModInitializer {
 
         // Регистрация встроенных способностей
         omc.boundbyfate.system.ability.BbfAbilities.register()
-        omc.boundbyfate.system.ability.AbilityRegistry.printStatistics()
+        omc.boundbyfate.registry.AbilityRegistry.printStatistics()
 
         // Регистрация слушателей событий организаций
         omc.boundbyfate.system.organization.OrganizationSystem.registerEventListeners()

@@ -92,6 +92,8 @@ data class DamageTypeDefinition(
     val tags: List<String> = emptyList()
 ) : Definition {
     
+    override fun getTranslationKey(): String = "damage_type.${id.namespace}.${id.path}"
+    
     companion object {
         /**
          * Codec для сериализации/десериализации.

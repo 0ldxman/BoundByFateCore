@@ -1,9 +1,7 @@
 package omc.boundbyfate.network.packet.c2s
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.codec.PacketCodecs
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import java.util.UUID
@@ -15,33 +13,31 @@ import java.util.UUID
  * @param chunkIndex порядковый номер чанка (0-based)
  * @param data байты чанка (до [FileTransferConfig.CHUNK_SIZE_BYTES])
  */
-data class FileUploadChunkPacket(
+class FileUploadChunkPacket(
     val sessionId: UUID,
     val chunkIndex: Int,
     val data: ByteArray
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<FileUploadChunkPacket> =
-            CustomPayload.Id(BbfPackets.FILE_UPLOAD_CHUNK_C2S)
-
-        val CODEC: PacketCodec<RegistryByteBuf, FileUploadChunkPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeUuid(packet.sessionId)
-                buf.writeVarInt(packet.chunkIndex)
-                buf.writeByteArray(packet.data)
-            },
-            { buf ->
-                FileUploadChunkPacket(
-                    sessionId = buf.readUuid(),
-                    chunkIndex = buf.readVarInt(),
-                    data = buf.readByteArray()
-                )
-            }
-        )
+        val TYPE: PacketType<FileUploadChunkPacket> = PacketType.create(
+            BbfPackets.FILE_UPLOAD_CHUNK_C2S
+        ) { buf ->
+            FileUploadChunkPacket(
+                sessionId = buf.readUuid(),
+                chunkIndex = buf.readVarInt(),
+                data = buf.readByteArray()
+            )
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<FileUploadChunkPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeUuid(sessionId)
+        buf.writeVarInt(chunkIndex)
+        buf.writeByteArray(data)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

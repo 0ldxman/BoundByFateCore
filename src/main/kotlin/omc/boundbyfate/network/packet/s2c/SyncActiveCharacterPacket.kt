@@ -1,38 +1,42 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.codec.PacketCodecs
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
-import java.util.*
+import omc.boundbyfate.network.core.BbfPacket
+import java.util.UUID
 
 /**
  * Пакет для синхронизации активного персонажа с клиентом.
- * 
+ *
  * Отправляется когда:
  * - Игрок переключает персонажа
  * - Игрок входит на сервер
- * 
+ *
  * Легковесный пакет для быстрого обновления активного персонажа.
  */
-data class SyncActiveCharacterPacket(
+class SyncActiveCharacterPacket(
     /**
      * UUID активного персонажа.
      * Null если нет активного персонажа.
      */
     val characterId: UUID?
-) : CustomPayload {
-    
+) : BbfPacket {
+
     companion object {
-        val ID: CustomPayload.Id<SyncActiveCharacterPacket> = 
-            CustomPayload.Id(BbfPackets.SYNC_ACTIVE_CHARACTER_S2C)
-        
-        val CODEC: PacketCodec<RegistryByteBuf, SyncActiveCharacterPacket> = PacketCodec.tuple(
-            PacketCodecs.optional(PacketCodecs.UUID), SyncActiveCharacterPacket::characterId,
-            ::SyncActiveCharacterPacket
-        )
+        val TYPE: PacketType<SyncActiveCharacterPacket> = PacketType.create(
+            BbfPackets.SYNC_ACTIVE_CHARACTER_S2C
+        ) { buf ->
+            val hasId = buf.readBoolean()
+            val characterId = if (hasId) buf.readUuid() else null
+            SyncActiveCharacterPacket(characterId)
+        }
     }
-    
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+
+    override fun getType(): PacketType<SyncActiveCharacterPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeBoolean(characterId != null)
+        if (characterId != null) buf.writeUuid(characterId)
+    }
 }

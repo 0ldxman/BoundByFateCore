@@ -84,7 +84,7 @@ class ConditionType<D> private constructor(
             codec: Codec<D>,
             evaluate: (D, ConditionContext) -> Boolean
         ): ConditionType<D> {
-            val identifier = Identifier.of(
+            val identifier = Identifier(
                 id.substringBefore(':'),
                 id.substringAfter(':')
             )

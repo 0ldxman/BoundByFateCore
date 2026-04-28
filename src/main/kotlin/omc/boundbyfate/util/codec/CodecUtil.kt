@@ -16,7 +16,7 @@ object CodecUtil {
      * Сериализует как строку "namespace:path".
      */
     val IDENTIFIER: Codec<Identifier> = Codec.STRING.xmap(
-        { Identifier.of(it) },
+        { Identifier(it) },
         { it.toString() }
     )
     

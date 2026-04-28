@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.c2s
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 
@@ -12,29 +11,27 @@ import omc.boundbyfate.network.core.BbfPacket
  * @param slot слот (0 = A, 1 = B, 2 = C)
  * @param trackId ID трека (null = очистить слот)
  */
-data class MusicTrackAssignPacket(
+class MusicTrackAssignPacket(
     val slot: Int,
     val trackId: String?
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<MusicTrackAssignPacket> =
-            CustomPayload.Id(BbfPackets.MUSIC_TRACK_ASSIGN_C2S)
-
-        val CODEC: PacketCodec<RegistryByteBuf, MusicTrackAssignPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeVarInt(packet.slot)
-                buf.writeBoolean(packet.trackId != null)
-                if (packet.trackId != null) buf.writeString(packet.trackId)
-            },
-            { buf ->
-                val slot = buf.readVarInt()
-                val hasTrack = buf.readBoolean()
-                val trackId = if (hasTrack) buf.readString() else null
-                MusicTrackAssignPacket(slot, trackId)
-            }
-        )
+        val TYPE: PacketType<MusicTrackAssignPacket> = PacketType.create(
+            BbfPackets.MUSIC_TRACK_ASSIGN_C2S
+        ) { buf ->
+            val slot = buf.readVarInt()
+            val hasTrack = buf.readBoolean()
+            val trackId = if (hasTrack) buf.readString() else null
+            MusicTrackAssignPacket(slot, trackId)
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<MusicTrackAssignPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeVarInt(slot)
+        buf.writeBoolean(trackId != null)
+        if (trackId != null) buf.writeString(trackId)
+    }
 }

@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.c2s
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import java.util.UUID
@@ -12,19 +11,21 @@ import java.util.UUID
  *
  * @param sessionId ID отменяемой сессии
  */
-data class FileUploadCancelPacket(
+class FileUploadCancelPacket(
     val sessionId: UUID
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<FileUploadCancelPacket> =
-            CustomPayload.Id(BbfPackets.FILE_UPLOAD_CANCEL_C2S)
-
-        val CODEC: PacketCodec<RegistryByteBuf, FileUploadCancelPacket> = PacketCodec.of(
-            { buf, packet -> buf.writeUuid(packet.sessionId) },
-            { buf -> FileUploadCancelPacket(buf.readUuid()) }
-        )
+        val TYPE: PacketType<FileUploadCancelPacket> = PacketType.create(
+            BbfPackets.FILE_UPLOAD_CANCEL_C2S
+        ) { buf ->
+            FileUploadCancelPacket(buf.readUuid())
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<FileUploadCancelPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeUuid(sessionId)
+    }
 }

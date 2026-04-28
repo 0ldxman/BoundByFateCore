@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import java.util.UUID
@@ -18,7 +17,7 @@ import java.util.UUID
  * @param success true если чанк принят, false если ошибка (сессия не найдена и т.д.)
  * @param errorMessage сообщение об ошибке если success == false
  */
-data class FileUploadAckPacket(
+class FileUploadAckPacket(
     val sessionId: UUID,
     val chunkIndex: Int,
     val success: Boolean = true,
@@ -26,26 +25,24 @@ data class FileUploadAckPacket(
 ) : BbfPacket {
 
     companion object {
-        val ID: CustomPayload.Id<FileUploadAckPacket> =
-            CustomPayload.Id(BbfPackets.FILE_UPLOAD_ACK_S2C)
-
-        val CODEC: PacketCodec<RegistryByteBuf, FileUploadAckPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeUuid(packet.sessionId)
-                buf.writeVarInt(packet.chunkIndex)
-                buf.writeBoolean(packet.success)
-                buf.writeString(packet.errorMessage)
-            },
-            { buf ->
-                FileUploadAckPacket(
-                    sessionId = buf.readUuid(),
-                    chunkIndex = buf.readVarInt(),
-                    success = buf.readBoolean(),
-                    errorMessage = buf.readString()
-                )
-            }
-        )
+        val TYPE: PacketType<FileUploadAckPacket> = PacketType.create(
+            BbfPackets.FILE_UPLOAD_ACK_S2C
+        ) { buf ->
+            FileUploadAckPacket(
+                sessionId = buf.readUuid(),
+                chunkIndex = buf.readVarInt(),
+                success = buf.readBoolean(),
+                errorMessage = buf.readString()
+            )
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<FileUploadAckPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeUuid(sessionId)
+        buf.writeVarInt(chunkIndex)
+        buf.writeBoolean(success)
+        buf.writeString(errorMessage)
+    }
 }

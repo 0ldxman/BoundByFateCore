@@ -6,6 +6,7 @@ import net.minecraft.entity.Entity
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtIo
 import net.minecraft.nbt.NbtSizeTracker
+// NbtSizeTracker.UNLIMITED used for deserialization
 import net.minecraft.registry.RegistryWrapper
 import net.minecraft.util.Identifier
 import org.slf4j.LoggerFactory
@@ -13,6 +14,20 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+
+/**
+ * Режим синхронизации компонента с клиентом.
+ */
+enum class SyncMode {
+    /** Не синхронизировать */
+    NONE,
+    /** Синхронизировать при изменении */
+    ON_CHANGE,
+    /** Синхронизировать при входе игрока */
+    ON_JOIN,
+    /** Синхронизировать каждый тик */
+    EVERY_TICK
+}
 
 /**
  * Центральный реестр компонентов персонажа.
@@ -60,7 +75,7 @@ object BbfComponents {
         syncMode: SyncMode,
         factory: () -> T
     ): AttachmentType<T> {
-        val identifier = Identifier.of(
+        val identifier = Identifier(
             id.substringBefore(':'),
             id.substringAfter(':')
         )
@@ -191,7 +206,7 @@ fun <T : BbfComponent> Entity.getOrCreate(type: AttachmentType<T>): T =
  * Получает компонент или null если не существует.
  */
 fun <T : BbfComponent> Entity.getComponent(type: AttachmentType<T>): T? =
-    this.getAttachedOrNull(type)
+    this.getAttached(type)
 
 /**
  * Сериализует компонент в ByteArray для отправки по сети.
@@ -207,6 +222,6 @@ fun BbfComponent.toBytes(registries: RegistryWrapper.WrapperLookup): ByteArray {
  * Десериализует компонент из ByteArray полученного по сети.
  */
 fun BbfComponent.fromBytes(bytes: ByteArray, registries: RegistryWrapper.WrapperLookup) {
-    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtSizeTracker.ofUnlimitedBytes())
+    val nbt = NbtIo.read(DataInputStream(ByteArrayInputStream(bytes)), NbtSizeTracker.UNLIMITED)
     fromNbt(nbt, registries)
 }

@@ -1,8 +1,7 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 import omc.boundbyfate.system.transfer.FileCategory
@@ -15,7 +14,7 @@ import omc.boundbyfate.system.transfer.FileCategory
  *
  * @param files список метаданных файлов
  */
-data class FileSyncListPacket(
+class FileSyncListPacket(
     val files: List<FileMetadata>
 ) : BbfPacket {
 
@@ -27,7 +26,7 @@ data class FileSyncListPacket(
      * @param extension расширение
      * @param totalSize размер в байтах
      */
-    data class FileMetadata(
+    class FileMetadata(
         val fileId: String,
         val category: FileCategory,
         val extension: String,
@@ -35,34 +34,32 @@ data class FileSyncListPacket(
     )
 
     companion object {
-        val ID: CustomPayload.Id<FileSyncListPacket> =
-            CustomPayload.Id(BbfPackets.FILE_SYNC_LIST_S2C)
-
-        val CODEC: PacketCodec<RegistryByteBuf, FileSyncListPacket> = PacketCodec.of(
-            { buf, packet ->
-                buf.writeVarInt(packet.files.size)
-                for (file in packet.files) {
-                    buf.writeString(file.fileId)
-                    buf.writeEnumConstant(file.category)
-                    buf.writeString(file.extension)
-                    buf.writeLong(file.totalSize)
-                }
-            },
-            { buf ->
-                val count = buf.readVarInt()
-                val files = ArrayList<FileMetadata>(count)
-                repeat(count) {
-                    files.add(FileMetadata(
-                        fileId = buf.readString(),
-                        category = buf.readEnumConstant(FileCategory::class.java),
-                        extension = buf.readString(),
-                        totalSize = buf.readLong()
-                    ))
-                }
-                FileSyncListPacket(files)
+        val TYPE: PacketType<FileSyncListPacket> = PacketType.create(
+            BbfPackets.FILE_SYNC_LIST_S2C
+        ) { buf ->
+            val count = buf.readVarInt()
+            val files = ArrayList<FileMetadata>(count)
+            repeat(count) {
+                files.add(FileMetadata(
+                    fileId = buf.readString(),
+                    category = buf.readEnumConstant(FileCategory::class.java),
+                    extension = buf.readString(),
+                    totalSize = buf.readLong()
+                ))
             }
-        )
+            FileSyncListPacket(files)
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<FileSyncListPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeVarInt(files.size)
+        for (file in files) {
+            buf.writeString(file.fileId)
+            buf.writeEnumConstant(file.category)
+            buf.writeString(file.extension)
+            buf.writeLong(file.totalSize)
+        }
+    }
 }

@@ -109,10 +109,10 @@ sealed class ResourceRecovery {
 
         /** Восстановление на коротком отдыхе. */
         fun onShortRest(): ResourceRecovery =
-            OnEvent(Identifier.of("boundbyfate-core", "rest/short"))
+            OnEvent(Identifier("boundbyfate-core", "rest/short"))
 
         /** Восстановление на длинном отдыхе. */
         fun onLongRest(): ResourceRecovery =
-            OnEvent(Identifier.of("boundbyfate-core", "rest/long"))
+            OnEvent(Identifier("boundbyfate-core", "rest/long"))
     }
 }

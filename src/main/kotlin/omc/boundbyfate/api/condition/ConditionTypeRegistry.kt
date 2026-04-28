@@ -60,10 +60,11 @@ object ConditionTypeRegistry {
      * Lazy — вычисляется после регистрации всех типов.
      */
     val CODEC: Codec<Condition<*>> by lazy {
-        buildCodec()
+        @Suppress("UNCHECKED_CAST")
+        buildCodec() as Codec<Condition<*>>
     }
 
-    private fun buildCodec(): Codec<Condition<*>> {
+    private fun buildCodec(): Codec<Condition<Any>> {
         // Логические операторы регистрируем здесь, они встроены
         val logicalCodec = Identifier.CODEC.dispatch(
             "type",

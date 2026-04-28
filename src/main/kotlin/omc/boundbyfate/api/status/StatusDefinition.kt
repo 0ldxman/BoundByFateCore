@@ -90,7 +90,7 @@ data class StatusDefinition(
      * Снимаются автоматически при деактивации состояния.
      */
     val effects: List<EffectDefinition> = emptyList()
-) : Definition {
+) : Definition, omc.boundbyfate.api.core.Registrable {
 
     override fun getTranslationKey(): String = "status.${id.namespace}.${id.path}"
 

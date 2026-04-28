@@ -1,10 +1,9 @@
 package omc.boundbyfate.network.packet.s2c
 
-import net.minecraft.network.RegistryByteBuf
-import net.minecraft.network.codec.PacketCodec
-import net.minecraft.network.codec.PacketCodecs
-import net.minecraft.network.packet.CustomPayload
+import net.fabricmc.fabric.api.networking.v1.PacketType
+import net.minecraft.network.PacketByteBuf
 import net.minecraft.util.Identifier
+import omc.boundbyfate.network.BbfPackets
 import omc.boundbyfate.network.core.BbfPacket
 
 /**
@@ -15,23 +14,28 @@ import omc.boundbyfate.network.core.BbfPacket
  * @param sectionId идентификатор секции
  * @param data сериализованные данные секции (NBT в байтах)
  */
-data class SyncSectionPacket(
+class SyncSectionPacket(
     val sectionId: Identifier,
     val data: ByteArray
 ) : BbfPacket {
 
     companion object {
-        val PACKET_ID = Identifier.of("boundbyfate-core", "sync_section")
-        val ID: CustomPayload.Id<SyncSectionPacket> = CustomPayload.Id(PACKET_ID)
-
-        val CODEC: PacketCodec<RegistryByteBuf, SyncSectionPacket> = PacketCodec.tuple(
-            Identifier.PACKET_CODEC, SyncSectionPacket::sectionId,
-            PacketCodecs.BYTE_ARRAY, SyncSectionPacket::data,
-            ::SyncSectionPacket
-        )
+        val TYPE: PacketType<SyncSectionPacket> = PacketType.create(
+            BbfPackets.SYNC_SECTION_S2C
+        ) { buf ->
+            SyncSectionPacket(
+                sectionId = buf.readIdentifier(),
+                data = buf.readByteArray()
+            )
+        }
     }
 
-    override fun getId(): CustomPayload.Id<out CustomPayload> = ID
+    override fun getType(): PacketType<SyncSectionPacket> = TYPE
+
+    override fun write(buf: PacketByteBuf) {
+        buf.writeIdentifier(sectionId)
+        buf.writeByteArray(data)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

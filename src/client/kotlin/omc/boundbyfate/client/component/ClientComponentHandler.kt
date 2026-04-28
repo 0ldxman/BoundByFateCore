@@ -1,4 +1,4 @@
-package omc.boundbyfate.component.sync
+package omc.boundbyfate.client.component
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.entity.LivingEntity
@@ -26,9 +26,10 @@ object ClientComponentHandler {
     private val logger = LoggerFactory.getLogger(ClientComponentHandler::class.java)
 
     fun register() {
-        ClientPlayNetworking.registerGlobalReceiver(SyncComponentPacket.ID) { payload, context ->
-            context.client().execute {
-                handleSyncPacket(payload, context)
+        ClientPlayNetworking.registerGlobalReceiver(SyncComponentPacket.TYPE) { packet, player, _ ->
+            val client = player.client
+            client.execute {
+                handleSyncPacket(packet, client)
             }
         }
 
@@ -37,9 +38,8 @@ object ClientComponentHandler {
 
     private fun handleSyncPacket(
         payload: SyncComponentPacket,
-        context: ClientPlayNetworking.Context
+        client: net.minecraft.client.MinecraftClient
     ) {
-        val client = context.client()
         val world = client.world ?: return
 
         // Находим сущность
