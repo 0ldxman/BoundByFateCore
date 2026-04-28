@@ -12,8 +12,9 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import net.minecraft.client.renderer.texture.TextureManager
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.Material
+import omc.boundbyfate.client.util.rl
 import omc.boundbyfate.client.util.SnakeAsUpperCaseSerializer
 
 @Serializable

@@ -4,7 +4,7 @@ import de.fabmax.kool.math.Vec2f
 import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.math.deg
 import de.fabmax.kool.scene.TrsTransformF
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.*
 import omc.boundbyfate.client.models.internal.animations.AnimationData
 import omc.boundbyfate.client.models.internal.manager.ModelLoader
@@ -20,7 +20,7 @@ object BedrockModelLoader : ModelLoader {
 
     private var index = 0
 
-    override suspend fun load(location: ResourceLocation, side: ModelSide): AnimatedModel {
+    override suspend fun load(location: Identifier, side: ModelSide): AnimatedModel {
         val modelData = JsonFormat.decodeFromStream<BedrockFile>(location.stream)
         val parsedModel = convertGeometry(modelData, location)
 
@@ -41,7 +41,7 @@ object BedrockModelLoader : ModelLoader {
         return AnimatedModel(modelWithAnim)
     }
 
-    private fun convertGeometry(file: BedrockFile, location: ResourceLocation): Model {
+    private fun convertGeometry(file: BedrockFile, location: Identifier): Model {
         val scenes = file.geometries.map { geometry ->
             Scene(
                 listOf(
@@ -58,11 +58,11 @@ object BedrockModelLoader : ModelLoader {
         }
     }
 
-    private fun BedrockFile.Geometry.convertNodes(location: ResourceLocation): List<NodeDefinition> {
+    private fun BedrockFile.Geometry.convertNodes(location: Identifier): List<NodeDefinition> {
         val material = Material(
             description.color,
             location.withPath(location.path.removeSuffix("geo.json") + "png")
-                ?.takeIf { it.exists() } ?: description.texture.rl,
+                .takeIf { it.exists() } ?: description.texture.rl,
             blend = if (description.textureTranslucent) Material.Blend.BLEND else Material.Blend.OPAQUE,
             doubleSided = true
         )
@@ -70,12 +70,12 @@ object BedrockModelLoader : ModelLoader {
         val rootBones = bones.filter { it.parent == null }
 
         return rootBones.map { bone ->
-            convertNodeRecursive(bone, Vec3f.ZERO, material, bones)
+            convertNodeRecursive(this, bone, Vec3f.ZERO, material, bones)
         }
     }
 
-    context(geometry: BedrockFile.Geometry)
     private fun convertNodeRecursive(
+        geometry: BedrockFile.Geometry,
         bone: BedrockFile.Bone,
         parentPivot: Vec3f,
         material: Material,
@@ -91,13 +91,11 @@ object BedrockModelLoader : ModelLoader {
         }
 
         val primitives = bone.cubes.map { cube ->
-
             val meshData = cube.toMeshData(
                 bone.pivot,
                 geometry.description.textureWidth,
                 geometry.description.textureHeight
             )
-
             Primitive(
                 positions = meshData.vertices.toTypedArray(),
                 normals = meshData.normals.toTypedArray(),
@@ -109,7 +107,7 @@ object BedrockModelLoader : ModelLoader {
         val nodeMesh = if (primitives.isNotEmpty()) Mesh(primitives, floatArrayOf()) else null
 
         val children = allBones.filter { it.parent == bone.name }
-            .map { child -> convertNodeRecursive(child, bone.pivot, material, allBones) }
+            .map { child -> convertNodeRecursive(geometry, child, bone.pivot, material, allBones) }
             .toMutableList()
 
         val nodeDef = NodeDefinition(

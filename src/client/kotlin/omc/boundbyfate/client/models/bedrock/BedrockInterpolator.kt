@@ -7,7 +7,7 @@ import de.fabmax.kool.math.deg
 import omc.boundbyfate.client.models.internal.animations.interpolations.Interpolator
 import omc.boundbyfate.client.util.Interpolation
 import omc.boundbyfate.client.util.molang.MolangContext
-// TreeMap import removed
+import java.util.TreeMap
 
 class BedrockInterpolator<T>(
     val keys: TreeMap<Float, Keyframe>,

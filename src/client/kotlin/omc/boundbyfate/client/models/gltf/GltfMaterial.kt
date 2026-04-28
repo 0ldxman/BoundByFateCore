@@ -2,7 +2,7 @@
 
 import de.fabmax.kool.util.Color
 import kotlinx.serialization.Serializable
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.Material
 
 @Serializable
@@ -25,7 +25,7 @@ data class GltfMaterial(
     val doubleSided: Boolean = false,
 ) {
 
-    fun toMaterial(file: GltfFile, location: ResourceLocation): Material {
+    fun toMaterial(file: GltfFile, location: Identifier): Material {
         val material = Material()
         val colorList = pbrMetallicRoughness.baseColorFactor
         material.color = Color(colorList[0], colorList[1], colorList[2], colorList[3])

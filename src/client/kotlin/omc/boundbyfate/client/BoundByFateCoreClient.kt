@@ -2,18 +2,11 @@
 
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.minecraft.client.Minecraft
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper
+import net.minecraft.client.MinecraftClient
+import net.minecraft.resource.ResourceType
 import org.slf4j.LoggerFactory
 
-/**
- * Клиентская часть мода BoundByFate Core.
- *
- * Отвечает за инициализацию клиентских систем:
- * - Kool 3D движок (рендеринг моделей НПС)
- * - Рендереры сущностей
- * - GUI
- * - Keybindings
- */
 class BoundByFateCoreClient : ClientModInitializer {
 
     companion object {
@@ -30,20 +23,16 @@ class BoundByFateCoreClient : ClientModInitializer {
         omc.boundbyfate.client.render.NpcRenderEventHandler.register()
 
         // Регистрация HollowModelManager как reload listener
-        net.fabricmc.fabric.api.resource.ResourceManagerHelper
-            .get(net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
             .registerReloadListener(omc.boundbyfate.client.models.internal.manager.HollowModelManager)
 
-        // KoolManager и HollowModelManager инициализируются при первом тике
-        // когда OpenGL контекст Minecraft уже полностью готов
+        // KoolManager инициализируется при первом тике когда OpenGL контекст уже готов
         var koolInitialized = false
-        ClientTickEvents.START_CLIENT_TICK.register { client: Minecraft ->
+        ClientTickEvents.START_CLIENT_TICK.register { client: MinecraftClient ->
             if (!koolInitialized && client.world != null) {
                 koolInitialized = true
                 try {
-                    // Инициализируем kool контекст
                     omc.boundbyfate.client.kool.KoolManager
-                    // Инициализируем менеджер моделей (создаёт GL текстуры и шейдеры)
                     omc.boundbyfate.client.models.internal.manager.HollowModelManager.initialize()
                     logger.info("KoolManager and model system initialized")
                 } catch (e: Exception) {

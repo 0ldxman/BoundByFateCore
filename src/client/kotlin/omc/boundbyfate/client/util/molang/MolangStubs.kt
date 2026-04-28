@@ -83,3 +83,10 @@ object MolangCompiler {
 
 fun parseMolangExpression(expression: String): FloatExpr = MolangCompiler.compileFloat(expression)
 
+fun FloatExpr.eval(ctx: MolangContext): Float = getFloat(ctx.query, ctx.variables)
+
+fun FloatVec3Expr.eval(ctx: MolangContext): de.fabmax.kool.math.Vec3f {
+    val (x, y, z) = getVec3(ctx.query, ctx.variables)
+    return de.fabmax.kool.math.Vec3f(x, y, z)
+}
+

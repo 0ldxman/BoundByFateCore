@@ -7,13 +7,14 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import omc.boundbyfate.client.util.Interpolation
 import omc.boundbyfate.client.util.molang.FloatExpr
 import omc.boundbyfate.client.util.molang.FloatVec3Expr
 import omc.boundbyfate.client.util.molang.parseMolangExpression
 import omc.boundbyfate.client.util.ListOrSingle
-// TreeMap import removed
+import java.util.TreeMap
 
 
 
@@ -110,7 +111,9 @@ internal class KeyframesSerializer : KSerializer<Keyframes> {
     override fun deserialize(decoder: Decoder): Keyframes = Keyframes(InnerSerializer.deserialize(decoder))
     override fun serialize(encoder: Encoder, value: Keyframes) = InnerSerializer.serialize(encoder, value.frames)
 
-    private object InnerSerializer : JsonTransformingSerializer<TreeMap<Float, Keyframe>>(serializer()) {
+    private object InnerSerializer : JsonTransformingSerializer<Map<Float, Keyframe>>(
+        kotlinx.serialization.builtins.MapSerializer(Float.serializer(), KeyframeSerializer)
+    ) {
         override fun transformDeserialize(element: JsonElement): JsonElement =
             if (element is JsonObject) element else buildJsonObject { put("0", element) }
     }
@@ -124,16 +127,17 @@ internal object KeyframeSerializer : KSerializer<Keyframe> {
     private fun parse(json: JsonElement): Keyframe = with(json) {
         fun JsonElement.parseMolangVector(): FloatVec3Expr = if (this is JsonArray) {
             if (size == 3) {
-                FloatVec3Expr(
-                    (get(0) as JsonPrimitive).parseMolangExpression(),
-                    (get(1) as JsonPrimitive).parseMolangExpression(),
-                    (get(2) as JsonPrimitive).parseMolangExpression()
-                )
+                val e0 = (get(0) as JsonPrimitive).parseMolangExpression()
+                val e1 = (get(1) as JsonPrimitive).parseMolangExpression()
+                val e2 = (get(2) as JsonPrimitive).parseMolangExpression()
+                FloatVec3Expr { q, v -> Triple(e0.getFloat(q, v), e1.getFloat(q, v), e2.getFloat(q, v)) }
             } else {
-                (get(0) as JsonPrimitive).parseMolangExpression().let { FloatVec3Expr(it, it, it) }
+                val e = (get(0) as JsonPrimitive).parseMolangExpression()
+                FloatVec3Expr { q, v -> val f = e.getFloat(q, v); Triple(f, f, f) }
             }
         } else {
-            (this as JsonPrimitive).parseMolangExpression().let { FloatVec3Expr(it, it, it) }
+            val e = (this as JsonPrimitive).parseMolangExpression()
+            FloatVec3Expr { q, v -> val f = e.getFloat(q, v); Triple(f, f, f) }
         }
         if (this is JsonObject) {
             val pre = get("pre")?.parseMolangVector()

@@ -10,7 +10,7 @@ import de.fabmax.kool.platform.imageAtlasTextureData
 import de.fabmax.kool.util.Uint8BufferImpl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.util.stream
 import omc.boundbyfate.client.util.rl
 import java.io.ByteArrayInputStream
@@ -20,12 +20,12 @@ import java.io.InputStream
 import java.util.*
 
 /**
- * Resource Location adapter for Kool Asset Loader.
+ * Identifier adapter for Kool Asset Loader.
  * Allows to use resource paths like resource packs: `minecraft:textures/block/dirt.png`
  */
 object MCAssetLoader : AssetLoader() {
-    private fun resource(path: String) = if (path.contains(":")) path.rl
-    else "hollowengine:$path".rl
+    private fun resource(path: String): Identifier =
+        if (path.contains(":")) path.rl else "boundbyfate-core:$path".rl
 
     override suspend fun loadBlob(ref: AssetRef.Blob): LoadedAsset.Blob {
         val result = withContext(Dispatchers.IO) {
@@ -86,9 +86,9 @@ object MCAssetLoader : AssetLoader() {
     private fun openStream(assetRef: AssetRef): InputStream =
         if (assetRef.isHttp) openHttpStream(assetRef) else openLocalStream(assetRef)
 
-    private fun openLocalStream(assetRef: AssetRef) = resource(assetRef.path).stream
+    private fun openLocalStream(assetRef: AssetRef): InputStream = resource(assetRef.path).stream
 
-    private fun openHttpStream(assetRef: AssetRef) =
+    private fun openHttpStream(assetRef: AssetRef): InputStream =
         if (assetRef.path.startsWith("data:", true)) {
             ByteArrayInputStream(dataUriToByteArray(assetRef.path))
         } else {
@@ -96,11 +96,8 @@ object MCAssetLoader : AssetLoader() {
                 ?: throw FileNotFoundException("Failed loading HTTP asset: ${assetRef.path}")
         }
 
-
     private fun dataUriToByteArray(dataUri: String): ByteArray {
         val dataIdx = dataUri.indexOf(";base64,") + 8
         return Base64.getDecoder().decode(dataUri.substring(dataIdx))
     }
 }
-
-

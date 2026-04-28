@@ -6,7 +6,7 @@ import de.fabmax.kool.util.decodeToString
 import de.fabmax.kool.util.inflate
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 // HollowCore removed
 import omc.boundbyfate.client.util.stream
 import omc.boundbyfate.client.util.JsonFormat
@@ -14,7 +14,7 @@ import omc.boundbyfate.client.util.ListOrSingle
 import omc.boundbyfate.client.util.rl
 import java.util.*
 
-suspend fun loadGltf(location: ResourceLocation): Result<GltfFile> {
+suspend fun loadGltf(location: Identifier): Result<GltfFile> {
     val data = Uint8BufferImpl(location.stream.readBytes())
 
     return try {

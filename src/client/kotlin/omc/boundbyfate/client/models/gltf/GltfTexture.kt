@@ -1,12 +1,12 @@
 ﻿package omc.boundbyfate.client.models.gltf
 
 import com.mojang.blaze3d.systems.RenderSystem
-import com.mojang.blaze3d.platform.NativeImage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.texture.DynamicTexture
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.texture.NativeImage
+import net.minecraft.client.texture.NativeImageBackedTexture
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.util.stream
 import omc.boundbyfate.client.util.rl
 import java.io.ByteArrayInputStream
@@ -26,13 +26,13 @@ data class GltfTexture(
     var samplerRef: GltfSampler? = null
 
     @Transient
-    private lateinit var createdTex: DynamicTexture
+    private lateinit var createdTex: NativeImageBackedTexture
     @Transient
     private var isRegistered = false
 
-    fun makeTexture(location: ResourceLocation): ResourceLocation {
+    fun makeTexture(location: Identifier): Identifier {
         val uri = imageRef.uri
-        val name = if (uri != null && !uri.startsWith("data:", true)) {
+        val texName = if (uri != null && !uri.startsWith("data:", true)) {
             uri
         } else {
             val folderPath = location.path.substringBefore(".")
@@ -48,30 +48,24 @@ data class GltfTexture(
                     if (path.startsWith("data:image/png;base64,")) {
                         return Base64.getDecoder().wrap(path.substring(22).byteInputStream())
                     }
-
                     return path.rl.stream
                 }
-
-                createdTex = DynamicTexture(NativeImage.read(retrieveFile(uri)))
+                createdTex = NativeImageBackedTexture(NativeImage.read(retrieveFile(uri)))
             } else {
-                createdTex = DynamicTexture(
-                    NativeImage.read(
-                        ByteArrayInputStream(
-                            imageRef.bufferViewRef!!.getData().toArray()
-                        )
-                    )
+                createdTex = NativeImageBackedTexture(
+                    NativeImage.read(ByteArrayInputStream(imageRef.bufferViewRef!!.getData().toArray()))
                 )
             }
         }
 
-        val textureId = name.lowercase().rl
+        val textureId = texName.lowercase().rl
         if (!isRegistered) {
             isRegistered = true
-            if (RenderSystem.isOnRenderThreadOrInit()) {
-                Minecraft.getInstance().textureManager.register(textureId, createdTex)
+            if (RenderSystem.isOnRenderThread()) {
+                MinecraftClient.getInstance().textureManager.registerTexture(textureId, createdTex)
             } else {
                 RenderSystem.recordRenderCall {
-                    Minecraft.getInstance().textureManager.register(textureId, createdTex)
+                    MinecraftClient.getInstance().textureManager.registerTexture(textureId, createdTex)
                 }
             }
         }
@@ -86,12 +80,8 @@ data class GltfTexture(
         val texCoord: Int = 0,
         val scale: Float = 1f,
     ) {
-        fun getTexture(gltfFile: GltfFile, location: ResourceLocation): ResourceLocation {
+        fun getTexture(gltfFile: GltfFile, location: Identifier): Identifier {
             return gltfFile.textures[index].makeTexture(location)
         }
     }
 }
-
-
-
-

@@ -10,25 +10,29 @@ import de.fabmax.kool.pipeline.MipMapping
 import de.fabmax.kool.pipeline.SamplerSettings
 import de.fabmax.kool.pipeline.Texture2d
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.packs.resources.ResourceManager
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener
-import omc.boundbyfate.client.util.rl
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener
+import net.minecraft.resource.ResourceManager
+import net.minecraft.util.Identifier
+import omc.boundbyfate.client.util.stream
 
-object ImageManager : ResourceManagerReloadListener {
-    private val IMAGES = Object2ObjectOpenHashMap<ResourceLocation, Texture2d>()
+object ImageManager : SimpleSynchronousResourceReloadListener {
+    private val IMAGES = Object2ObjectOpenHashMap<Identifier, Texture2d>()
 
-    fun load(location: ResourceLocation, mode: SamplerMode): Texture2d = IMAGES.getOrPut(location) {
-        Texture2d(
-            mipMapping = MipMapping.Off, samplerSettings = SamplerSettings().let {
-                if (mode == SamplerMode.NEAREST && !location.path.endsWith(".svg")) it.nearest() else it.linear()
+    override fun getFabricId(): Identifier = Identifier("boundbyfate-core", "image_manager")
+
+    fun load(location: Identifier, mode: SamplerMode = SamplerMode.NEAREST): Texture2d =
+        IMAGES.getOrPut(location) {
+            Texture2d(
+                mipMapping = MipMapping.Off,
+                samplerSettings = SamplerSettings().let {
+                    if (mode == SamplerMode.NEAREST) it.nearest() else it.linear()
+                }
+            ) {
+                Assets.loadImage2d(location.toString()).getOrThrow()
             }
-        ) {
-            Assets.loadImage2d(location.toString()).getOrThrow()
         }
-    }
 
-    override fun onResourceManagerReload(resourceManager: ResourceManager) {
+    override fun reload(manager: ResourceManager) {
         IMAGES.forEach { location, image ->
             image.uploadLazy {
                 Assets.loadImage2d(location.toString()).getOrThrow()
@@ -37,18 +41,15 @@ object ImageManager : ResourceManagerReloadListener {
     }
 }
 
-fun UiScope.Image(location: ResourceLocation, mode: SamplerMode = SamplerMode.NEAREST, block: ImageScope.() -> Unit = {}) =
-    Image {
-        modifier.image(ImageManager.load(location, mode))
-
-        block()
-    }
-
-fun UiScope.Image(location: String, mode: SamplerMode = SamplerMode.NEAREST, block: ImageScope.() -> Unit = {}) = Image(location.rl, mode, block)
+fun UiScope.Image(
+    location: Identifier,
+    mode: SamplerMode = SamplerMode.NEAREST,
+    block: ImageScope.() -> Unit = {}
+) = Image {
+    modifier.image(ImageManager.load(location, mode))
+    block()
+}
 
 enum class SamplerMode {
     NEAREST, LINEAR
 }
-
-
-

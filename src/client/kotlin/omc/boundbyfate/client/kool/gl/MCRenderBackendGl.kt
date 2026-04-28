@@ -9,7 +9,6 @@ import de.fabmax.kool.pipeline.OffscreenPass2d
 import de.fabmax.kool.pipeline.OffscreenPassCube
 import de.fabmax.kool.pipeline.backend.BackendFeatures
 import de.fabmax.kool.pipeline.backend.DeviceCoordinates
-import de.fabmax.kool.pipeline.backend.gl.GlImpl
 import de.fabmax.kool.pipeline.backend.gl.GlslGenerator
 import de.fabmax.kool.pipeline.backend.gl.RenderBackendGl
 import de.fabmax.kool.pipeline.backend.gl.TimeQuery
@@ -17,13 +16,13 @@ import de.fabmax.kool.pipeline.backend.stats.BackendStats
 import de.fabmax.kool.scene.Scene
 import de.fabmax.kool.util.Color
 import omc.boundbyfate.client.kool.KoolHooks
-
-// Extension functions to call KoolHooks.impl from Kotlin
-private fun impl(pass: OffscreenPass2d) = KoolHooks.impl(pass)
-private fun impl(pass: OffscreenPassCube) = KoolHooks.impl(pass)
-private fun impl(pass: ComputePass) = KoolHooks.impl(pass)
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
+// Extension functions to call KoolHooks.impl from Kotlin
+private fun implPass(pass: OffscreenPass2d) = KoolHooks.impl(pass)
+private fun implPass(pass: OffscreenPassCube) = KoolHooks.impl(pass)
+private fun implPass(pass: ComputePass) = KoolHooks.impl(pass)
 
 class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm.numSamples, MCGlApi, ctx) {
     val gl = MCGlApi
@@ -89,9 +88,9 @@ class MCRenderBackendGl(ctx: KoolContext) : RenderBackendGl(KoolSystem.configJvm
     override fun GpuPass.execute() {
         when (this) {
             is Scene.ScreenPass -> mcSceneRenderer.draw(this)
-            is OffscreenPass2d -> impl(this).draw()
-            is OffscreenPassCube -> impl(this).draw()
-            is ComputePass -> impl(this).dispatch()
+            is OffscreenPass2d -> implPass(this).draw()
+            is OffscreenPassCube -> implPass(this).draw()
+            is ComputePass -> implPass(this).dispatch()
             else -> error("Gpu pass type not implemented: $this")
         }
     }

@@ -1,8 +1,7 @@
 ﻿package omc.boundbyfate.client.models.internal
 
-
-import com.mojang.blaze3d.vertex.PoseStack
-import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.util.math.MatrixStack
+import net.minecraft.client.render.VertexConsumerProvider
 // HollowCore removed
 import omc.boundbyfate.client.models.internal.animations.Animation
 import omc.boundbyfate.client.models.internal.controller.Controller
@@ -27,8 +26,8 @@ class AnimatedModel(val model: Model) {
     }
 
     fun render(
-        stack: PoseStack,
-        source: MultiBufferSource,
+        stack: MatrixStack,
+        source: VertexConsumerProvider,
         light: Int,
         overlay: Int,
     ) {

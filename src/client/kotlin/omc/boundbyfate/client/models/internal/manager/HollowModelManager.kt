@@ -6,19 +6,14 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
-import net.minecraft.client.Minecraft
-import com.mojang.blaze3d.systems.RenderSystem
-import net.minecraft.client.renderer.texture.AbstractTexture
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.packs.resources.SimplePreparableReloadListener
-import net.minecraft.server.packs.resources.ResourceManager
-import net.minecraft.util.profiling.ProfilerFiller
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener
+import net.minecraft.client.MinecraftClient
+import net.minecraft.resource.ResourceManager
+import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
-// HollowCore removed
-// HollowEngine removed
 import omc.boundbyfate.client.models.bedrock.BedrockModelLoader
 import omc.boundbyfate.client.models.fbx.FbxModelLoader
 import omc.boundbyfate.client.models.gltf.GltfModelLoader
@@ -27,27 +22,56 @@ import omc.boundbyfate.client.models.obj.ObjModelLoader
 import omc.boundbyfate.client.render.textures.GlTexture
 import omc.boundbyfate.client.util.stream
 import omc.boundbyfate.client.util.scopeAsync
-// ClientEvent removed
-// SubscribeEvent removed
-// post removed
 import omc.boundbyfate.client.util.rl
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
 
+object HollowModelManager : IdentifiableResourceReloadListener {
 
-object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation, PreparedModelUpdate<AnimatedModel>>>() {
-    lateinit var lightTexture: AbstractTexture
-    private val models = ConcurrentHashMap<ResourceLocation, MutableStateFlow<AnimatedModel>>()
-    private val indexedModels = ConcurrentHashMap.newKeySet<ResourceLocation>()
+    private val models = ConcurrentHashMap<Identifier, MutableStateFlow<AnimatedModel>>()
+    private val indexedModels = ConcurrentHashMap.newKeySet<Identifier>()
     var glProgramSkinning = -1
     var glProgramMorphing = -1
 
-    private val loaders = mutableListOf<ModelLoader>().apply {
-        RegisterModelLoaderEvent(this).post()
+    private val loaders: List<ModelLoader> = listOf(
+        GltfModelLoader,
+        ObjModelLoader,
+        FbxModelLoader,
+        BedrockModelLoader
+    )
+
+    override fun getFabricId(): Identifier = Identifier("boundbyfate-core", "model_manager")
+
+    override fun reload(
+        synchronizer: net.fabricmc.fabric.api.resource.ResourceReloadListener.Synchronizer,
+        manager: ResourceManager,
+        executor: Executor,
+        syncExecutor: Executor
+    ): CompletableFuture<Void> {
+        return CompletableFuture.supplyAsync({
+            val indexed = discoverIndexedModels(manager)
+            indexedModels.clear()
+            indexedModels.addAll(indexed)
+            val targets = ModelReloadCoordinator.reloadTargets(models.keys, indexed)
+
+            runBlocking(Dispatchers.IO) {
+                targets.map { location ->
+                    async { location to prepareModelUpdate(manager, location) }
+                }.awaitAll().toMap()
+            }
+        }, executor).thenCompose { prepared ->
+            synchronizer.whenPrepared(prepared)
+        }.thenAcceptAsync({ prepared ->
+            prepared.forEach { (location, update) ->
+                publish(location, models.computeIfAbsent(location) { MutableStateFlow(AnimatedModel.EMPTY) }, update)
+            }
+        }, syncExecutor)
     }
 
-    private fun loadIntoFlow(location: ResourceLocation, flow: MutableStateFlow<AnimatedModel>) {
+    private fun loadIntoFlow(location: Identifier, flow: MutableStateFlow<AnimatedModel>) {
         scopeAsync {
             try {
                 val loaded = loadModel(location)
@@ -58,7 +82,7 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
         }
     }
 
-    fun getOrCreate(location: ResourceLocation): StateFlow<AnimatedModel> {
+    fun getOrCreate(location: Identifier): StateFlow<AnimatedModel> {
         return models.computeIfAbsent(location) {
             val flow = MutableStateFlow(AnimatedModel.EMPTY)
             loadIntoFlow(location, flow)
@@ -66,45 +90,15 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
         }
     }
 
-    suspend fun loadModel(location: ResourceLocation): AnimatedModel {
+    suspend fun loadModel(location: Identifier): AnimatedModel {
         val extension = location.path.substringAfter('.', "")
-
         val loader = loaders.find { extension in it.supportedFormats }
             ?: error("No suitable model loader found for format .$extension")
-
         return loader.load(location)
     }
 
-    override fun prepare(
-        manager: ResourceManager,
-        profiler: ProfilerFiller,
-    ): Map<ResourceLocation, PreparedModelUpdate<AnimatedModel>> {
-        val indexed = discoverIndexedModels(manager)
-        indexedModels.clear()
-        indexedModels.addAll(indexed)
-        val targets = ModelReloadCoordinator.reloadTargets(models.keys, indexed)
-
-        return runBlocking(Dispatchers.IO) {
-            targets.map { location ->
-                async {
-                    location to prepareModelUpdate(manager, location)
-                }
-            }.awaitAll().toMap()
-        }
-    }
-
-    override fun apply(
-        prepared: Map<ResourceLocation, PreparedModelUpdate<AnimatedModel>>,
-        manager: ResourceManager,
-        profiler: ProfilerFiller,
-    ) {
-        prepared.forEach { (location, update) ->
-            publish(location, models.computeIfAbsent(location) { MutableStateFlow(AnimatedModel.EMPTY) }, update)
-        }
-    }
-
     private fun publish(
-        location: ResourceLocation,
+        location: Identifier,
         flow: MutableStateFlow<AnimatedModel>,
         update: PreparedModelUpdate<AnimatedModel>,
     ) {
@@ -119,12 +113,11 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
 
     private suspend fun prepareModelUpdate(
         manager: ResourceManager,
-        location: ResourceLocation,
+        location: Identifier,
     ): PreparedModelUpdate<AnimatedModel> {
         if (!manager.getResource(location).isPresent) {
             return PreparedModelUpdate(exists = false)
         }
-
         return PreparedModelUpdate(
             exists = true,
             loaded = runCatching { loadModel(location) }.onFailure {
@@ -133,18 +126,18 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
         )
     }
 
-    private fun discoverIndexedModels(manager: ResourceManager): Set<ResourceLocation> {
+    private fun discoverIndexedModels(manager: ResourceManager): Set<Identifier> {
         val supportedFormats = loaders.flatMap { it.supportedFormats }.toSet()
-        return manager.listResources("models") { path ->
+        return manager.findResources("models") { path ->
             path.path.substringAfter('.') in supportedFormats
-        }.keys.filter { manager.getResource(it.withSuffix(".hemeta")).isPresent }.toSet()
+        }.keys.filter { manager.getResource(it.withPath(it.path + ".hemeta")).isPresent }.toSet()
     }
 
     private fun destroyLater(model: AnimatedModel) {
-        if (RenderSystem.isOnRenderThreadOrInit()) {
+        if (net.minecraft.client.render.RenderSystem.isOnRenderThread()) {
             model.destroy()
         } else {
-            RenderSystem.recordRenderCall(model::destroy)
+            net.minecraft.client.render.RenderSystem.recordRenderCall(model::destroy)
         }
     }
 
@@ -164,7 +157,6 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
         )
         GL20.glLinkProgram(glProgramSkinning)
 
-
         glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
             glShader,
@@ -182,101 +174,54 @@ object HollowModelManager : SimplePreparableReloadListener<Map<ResourceLocation,
     }
 
     fun initialize() {
-        val textureManager = Minecraft.getInstance().textureManager
-
-        lightTexture = textureManager.getTexture("dynamic/light_map_1".rl)
+        val textureManager = MinecraftClient.getInstance().textureManager
 
         val currentTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
 
         val defaultColorMap = GL11.glGenTextures()
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, defaultColorMap)
-        GL11.glTexImage2D(
-            GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, create(
-                byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
-            )
-        )
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
+            create(byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)))
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0)
 
         val defaultNormalMap = GL11.glGenTextures()
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, defaultNormalMap)
-        GL11.glTexImage2D(
-            GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, create(
-                byteArrayOf(-128, -128, -1, -1, -128, -128, -1, -1, -128, -128, -1, -1, -128, -128, -1, -1)
-            )
-        )
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
+            create(byteArrayOf(-128, -128, -1, -1, -128, -128, -1, -1, -128, -128, -1, -1, -128, -128, -1, -1)))
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0)
 
         val defaultSpecularMap = GL11.glGenTextures()
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, defaultSpecularMap)
-        GL11.glTexImage2D(
-            GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, create(
-                byteArrayOf(
-                    0, 0, 0, 0, // Pixel 1: Black color, Max Roughness
-                    0, 0, 0, 0, // Pixel 2
-                    0, 0, 0, 0, // Pixel 3
-                    0, 0, 0, 0  // Pixel 4
-                )
-            )
-        )
-        Minecraft.getInstance().player?.random
-
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, 2, 2, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
+            create(byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)))
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0)
 
-
-
-        textureManager.register("${"boundbyfate-core"}:default_color_map".rl, GlTexture(defaultColorMap))
-        textureManager.register("${"boundbyfate-core"}:default_normal_map".rl, GlTexture(defaultNormalMap))
-        textureManager.register("${"boundbyfate-core"}:default_specular_map".rl, GlTexture(defaultSpecularMap))
+        textureManager.registerTexture("boundbyfate-core:default_color_map".rl, GlTexture(defaultColorMap))
+        textureManager.registerTexture("boundbyfate-core:default_normal_map".rl, GlTexture(defaultNormalMap))
+        textureManager.registerTexture("boundbyfate-core:default_specular_map".rl, GlTexture(defaultSpecularMap))
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, currentTexture)
 
         createSkinningProgramGL33()
     }
 
-    fun supports(location: ResourceLocation): Boolean {
+    fun supports(location: Identifier): Boolean {
         val extension = location.path.substringAfter('.', "")
-
         return loaders.any { extension in it.supportedFormats }
     }
 
     val allModels get() = indexedModels + models.keys
-
 }
 
 interface ModelLoader {
     val supportedFormats: Set<String>
-
-    suspend fun load(location: ResourceLocation, side: ModelSide = ModelSide.CLIENT): AnimatedModel
+    suspend fun load(location: Identifier, side: ModelSide = ModelSide.CLIENT): AnimatedModel
 }
 
-enum class ModelSide {
-    CLIENT, SERVER
-}
-
-class RegisterModelLoaderEvent(private val loaders: MutableList<ModelLoader>) : ClientEvent {
-    fun register(loader: ModelLoader) {
-        loaders.add(loader)
-    }
-
-    fun unregister(loader: ModelLoader) = loaders.removeIf { it == loader }
-
-    fun clear() {
-        loaders.clear()
-    }
-
-    fun getLoaders(): List<ModelLoader> = loaders.toList()
-}
-
-@SubscribeEvent
-fun registerModelLoaders(event: RegisterModelLoaderEvent) {
-    event.register(GltfModelLoader)
-    event.register(ObjModelLoader)
-    event.register(FbxModelLoader)
-    event.register(BedrockModelLoader)
-}
+enum class ModelSide { CLIENT, SERVER }
 
 fun create(data: ByteArray) = create(data, 0, data.size)
 
@@ -287,8 +232,3 @@ fun create(data: ByteArray?, offset: Int, length: Int): ByteBuffer {
     byteBuffer.position(0)
     return byteBuffer
 }
-
-
-
-
-

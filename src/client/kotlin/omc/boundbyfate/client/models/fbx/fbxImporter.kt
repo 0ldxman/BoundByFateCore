@@ -1,6 +1,6 @@
 ﻿package omc.boundbyfate.client.models.fbx
 
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.AnimatedModel
 import omc.boundbyfate.client.models.internal.manager.ModelLoader
 import omc.boundbyfate.client.models.internal.manager.ModelSide
@@ -12,11 +12,11 @@ import java.nio.ByteOrder
 object FbxModelLoader: ModelLoader {
     override val supportedFormats = setOf("fbx")
 
-    override suspend fun load(location: ResourceLocation, side: ModelSide): AnimatedModel {
+    override suspend fun load(location: Identifier, side: ModelSide): AnimatedModel {
         return AnimatedModel(import(location).convert(location))
     }
 
-    fun import(location: ResourceLocation): Document {
+    fun import(location: Identifier): Document {
         val bytes = ByteBuffer.wrap(location.stream.readBytes()).order(ByteOrder.nativeOrder())
 
         val tokens = ArrayList<Token>()

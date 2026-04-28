@@ -2,7 +2,7 @@
 
 import de.fabmax.kool.math.*
 import de.fabmax.kool.scene.TrsTransformF
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.*
 import omc.boundbyfate.client.models.internal.animations.AnimationLoader
 import omc.boundbyfate.client.models.internal.manager.ModelLoader
@@ -15,14 +15,14 @@ import omc.boundbyfate.client.models.internal.animations.Animation as InternalAn
 object GltfModelLoader : ModelLoader {
     override val supportedFormats = setOf("gltf", "glb")
 
-    override suspend fun load(model: ResourceLocation, side: ModelSide): AnimatedModel {
+    override suspend fun load(model: Identifier, side: ModelSide): AnimatedModel {
         val location = if (!model.exists()) "boundbyfate-core:models/error.gltf".rl else model
 
         val gltf = loadGltf(location)
         return load(gltf.getOrThrow(), location, side)
     }
 
-    suspend fun load(file: GltfFile, location: ResourceLocation, side: ModelSide): AnimatedModel {
+    suspend fun load(file: GltfFile, location: Identifier, side: ModelSide): AnimatedModel {
         val skins = if (side == ModelSide.SERVER) emptyList() else parseSkins(file)
         val materials = if (side == ModelSide.SERVER) emptyList() else {
             file.materials.map { material -> material.toMaterial(file, location) }
