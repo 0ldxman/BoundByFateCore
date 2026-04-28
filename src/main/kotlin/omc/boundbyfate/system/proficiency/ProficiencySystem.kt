@@ -62,8 +62,8 @@ object ProficiencySystem {
         for (effectDef in penalty.effects) {
             val handler = EffectRegistry.getHandler(effectDef.id) ?: run {
                 logger.warn("Penalty effect handler '${effectDef.id}' not found")
-                return@run
-            }
+                null
+            } ?: continue
             val ctx = EffectContext.passive(entity, effectDef, source)
             if (EffectApplier.apply(handler, ctx)) applied = true
         }
@@ -74,8 +74,8 @@ object ProficiencySystem {
         for (effectDef in penalty.effects) {
             val handler = EffectRegistry.getHandler(effectDef.id) ?: run {
                 logger.warn("Penalty effect handler '${effectDef.id}' not found")
-                return@run
-            }
+                null
+            } ?: continue
             val ctx = EffectContext.passive(entity, effectDef, source)
             EffectApplier.remove(handler, ctx)
         }

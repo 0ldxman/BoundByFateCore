@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * ## Загрузка Definition
  *
- * Definition загружаются из `data/<namespace>/bbf_item/**\/*.json`.
+ * Definition загружаются из `data/<namespace>/bbf_item/*.json`.
  *
  * ## Получение
  *

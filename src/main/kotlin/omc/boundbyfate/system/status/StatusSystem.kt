@@ -79,8 +79,8 @@ object StatusSystem {
         for (effectDef in definition.effects) {
             val handler = EffectRegistry.getHandler(effectDef.id) ?: run {
                 logger.warn("Effect handler '${effectDef.id}' not found for status '$statusId'")
-                return@run
-            }
+                null
+            } ?: continue
             val ctx = EffectContext.passive(entity, effectDef, effectSource)
             EffectApplier.apply(handler, ctx)
         }

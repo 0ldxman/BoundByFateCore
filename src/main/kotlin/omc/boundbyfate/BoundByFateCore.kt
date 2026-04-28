@@ -81,6 +81,11 @@ class BoundByFateCore : ModInitializer {
         net.fabricmc.fabric.api.resource.ResourceManagerHelper
             .get(net.minecraft.resource.ResourceType.SERVER_DATA)
             .registerReloadListener(omc.boundbyfate.config.loader.AlignmentConfigLoader)
+
+        // Регистрация загрузчика предметов
+        net.fabricmc.fabric.api.resource.ResourceManagerHelper
+            .get(net.minecraft.resource.ResourceType.SERVER_DATA)
+            .registerReloadListener(omc.boundbyfate.config.loader.ItemConfigLoader)
         
         // Финализация регистрации
         RegistryManager.finalizeRegistration()

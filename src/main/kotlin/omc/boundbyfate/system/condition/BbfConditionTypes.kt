@@ -12,30 +12,6 @@ import omc.boundbyfate.util.codec.CodecUtil
 
 /**
  * Все встроенные типы условий BoundByFate Core.
- *
- * Каждый тип — это [ConditionType], который регистрируется автоматически
- * при обращении к этому объекту.
- *
- * ## Инициализация
- *
- * ```kotlin
- * BbfConditionTypes  // все val инициализируются, все типы регистрируются
- * ```
- *
- * ## Добавление нового встроенного типа
- *
- * ```kotlin
- * val MY_CONDITION = ConditionType.register(
- *     id = "boundbyfate-core:my_condition",
- *     codec = ...,
- *     evaluate = { data, ctx -> ... }
- * )
- * ```
- *
- * ## Логические операторы
- *
- * `or`, `and`, `not` — встроены в [omc.boundbyfate.api.condition.Condition]
- * и обрабатываются в [ConditionSystem] рекурсивно. Регистрировать не нужно.
  */
 object BbfConditionTypes {
 
@@ -51,53 +27,38 @@ object BbfConditionTypes {
 
     // ── Условия оружия ─────────────────────────────────────────────────────
 
-    /**
-     * Проверяет свойство оружия (finesse, heavy, two_handed и т.д.).
-     * JSON: `{"type": "boundbyfate-core:weapon_property", "property": "finesse"}`
-     */
     val WEAPON_PROPERTY = ConditionType.register(
         id = "boundbyfate-core:weapon_property",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(Codec.STRING.fieldOf("property").forGetter { it.property })
+        codec = RecordCodecBuilder.create<WeaponPropertyData> { i ->
+            i.group(Codec.STRING.fieldOf("property").forGetter(WeaponPropertyData::property))
              .apply(i, ::WeaponPropertyData)
         },
         evaluate = { data, ctx ->
             val weapon = ctx.weapon ?: return@register false
-            // TODO: WeaponRegistry.hasProperty(weapon, data.property)
             false
         }
     )
 
-    /**
-     * Проверяет тип оружия.
-     * JSON: `{"type": "boundbyfate-core:weapon_type", "weapon_type": "boundbyfate-core:sword"}`
-     */
     val WEAPON_TYPE = ConditionType.register(
         id = "boundbyfate-core:weapon_type",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(CodecUtil.IDENTIFIER.fieldOf("weapon_type").forGetter { it.weaponType })
+        codec = RecordCodecBuilder.create<WeaponTypeData> { i ->
+            i.group(CodecUtil.IDENTIFIER.fieldOf("weapon_type").forGetter(WeaponTypeData::weaponType))
              .apply(i, ::WeaponTypeData)
         },
         evaluate = { data, ctx ->
             val weapon = ctx.weapon ?: return@register false
-            // TODO: WeaponRegistry.isType(weapon, data.weaponType)
             false
         }
     )
 
     // ── Условия экипировки ─────────────────────────────────────────────────
 
-    /**
-     * Проверяет, носит ли персонаж броню (опционально — конкретного типа).
-     * JSON: `{"type": "boundbyfate-core:wearing_armor"}` или
-     *       `{"type": "boundbyfate-core:wearing_armor", "armor_type": "heavy"}`
-     */
     val WEARING_ARMOR = ConditionType.register(
         id = "boundbyfate-core:wearing_armor",
-        codec = RecordCodecBuilder.create { i ->
+        codec = RecordCodecBuilder.create<WearingArmorData> { i ->
             i.group(
                 Codec.STRING.optionalFieldOf("armor_type")
-                    .forGetter { java.util.Optional.ofNullable(it.armorType) }
+                    .forGetter { d: WearingArmorData -> java.util.Optional.ofNullable(d.armorType) }
             ).apply(i) { opt -> WearingArmorData(opt.orElse(null)) }
         },
         evaluate = { data, ctx ->
@@ -112,25 +73,16 @@ object BbfConditionTypes {
         }
     )
 
-    /**
-     * Проверяет, НЕ носит ли персонаж броню.
-     * JSON: `{"type": "boundbyfate-core:not_wearing_armor"}`
-     */
     val NOT_WEARING_ARMOR = ConditionType.register(
         id = "boundbyfate-core:not_wearing_armor",
         codec = Codec.unit(Unit),
         evaluate = { _, ctx -> ctx.entity.armorItems.all { it.isEmpty } }
     )
 
-    /**
-     * Проверяет, использует ли персонаж щит.
-     * JSON: `{"type": "boundbyfate-core:using_shield"}` или
-     *       `{"type": "boundbyfate-core:using_shield", "using": false}`
-     */
     val USING_SHIELD = ConditionType.register(
         id = "boundbyfate-core:using_shield",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(Codec.BOOL.optionalFieldOf("using", true).forGetter { it.using })
+        codec = RecordCodecBuilder.create<UsingShieldData> { i ->
+            i.group(Codec.BOOL.optionalFieldOf("using", true).forGetter(UsingShieldData::using))
              .apply(i, ::UsingShieldData)
         },
         evaluate = { data, ctx ->
@@ -144,34 +96,22 @@ object BbfConditionTypes {
 
     // ── Условия персонажа ──────────────────────────────────────────────────
 
-    /**
-     * Проверяет, есть ли преимущество на текущий бросок.
-     * JSON: `{"type": "boundbyfate-core:has_advantage"}`
-     */
     val HAS_ADVANTAGE = ConditionType.register(
         id = "boundbyfate-core:has_advantage",
         codec = Codec.unit(Unit),
         evaluate = { _, ctx -> ctx.advantageType == AdvantageType.ADVANTAGE }
     )
 
-    /**
-     * Проверяет, есть ли помеха на текущий бросок.
-     * JSON: `{"type": "boundbyfate-core:has_disadvantage"}`
-     */
     val HAS_DISADVANTAGE = ConditionType.register(
         id = "boundbyfate-core:has_disadvantage",
         codec = Codec.unit(Unit),
         evaluate = { _, ctx -> ctx.advantageType == AdvantageType.DISADVANTAGE }
     )
 
-    /**
-     * Проверяет, ниже ли HP определённого процента.
-     * JSON: `{"type": "boundbyfate-core:hp_below", "percent": 50}`
-     */
     val HP_BELOW = ConditionType.register(
         id = "boundbyfate-core:hp_below",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(Codec.INT.fieldOf("percent").forGetter { it.percent })
+        codec = RecordCodecBuilder.create<HpBelowData> { i ->
+            i.group(Codec.INT.fieldOf("percent").forGetter(HpBelowData::percent))
              .apply(i, ::HpBelowData)
         },
         evaluate = { data, ctx ->
@@ -181,14 +121,10 @@ object BbfConditionTypes {
         }
     )
 
-    /**
-     * Проверяет, есть ли союзник в пределах дистанции (в блоках).
-     * JSON: `{"type": "boundbyfate-core:ally_within", "distance": 5.0}`
-     */
     val ALLY_WITHIN = ConditionType.register(
         id = "boundbyfate-core:ally_within",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(Codec.DOUBLE.fieldOf("distance").forGetter { it.distance })
+        codec = RecordCodecBuilder.create<AllyWithinData> { i ->
+            i.group(Codec.DOUBLE.fieldOf("distance").forGetter(AllyWithinData::distance))
              .apply(i, ::AllyWithinData)
         },
         evaluate = { data, ctx ->
@@ -204,14 +140,10 @@ object BbfConditionTypes {
         }
     )
 
-    /**
-     * Проверяет, есть ли у персонажа определённое состояние.
-     * JSON: `{"type": "boundbyfate-core:has_condition", "condition": "dnd:poisoned"}`
-     */
     val HAS_CONDITION = ConditionType.register(
         id = "boundbyfate-core:has_condition",
-        codec = RecordCodecBuilder.create { i ->
-            i.group(CodecUtil.IDENTIFIER.fieldOf("condition").forGetter { it.condition })
+        codec = RecordCodecBuilder.create<HasConditionData> { i ->
+            i.group(CodecUtil.IDENTIFIER.fieldOf("condition").forGetter(HasConditionData::condition))
              .apply(i, ::HasConditionData)
         },
         evaluate = { data, ctx ->
@@ -219,14 +151,9 @@ object BbfConditionTypes {
         }
     )
 
-    /**
-     * Проверяет, является ли цель нежитью.
-     * JSON: `{"type": "boundbyfate-core:target_is_undead"}`
-     */
     val TARGET_IS_UNDEAD = ConditionType.register(
         id = "boundbyfate-core:target_is_undead",
         codec = Codec.unit(Unit),
         evaluate = { _, ctx -> ctx.target?.isUndead ?: false }
     )
 }
-

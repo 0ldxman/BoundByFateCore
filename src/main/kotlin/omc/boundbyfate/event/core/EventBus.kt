@@ -25,7 +25,8 @@ class EventBus<T : Any>(
      */
     private val handlerClass: Class<T>
 ) {
-    private val logger = LoggerFactory.getLogger("EventBus[$name]")
+    @PublishedApi
+    internal val logger = LoggerFactory.getLogger("EventBus[$name]")
     
     /**
      * Зарегистрированные обработчики с приоритетами.
