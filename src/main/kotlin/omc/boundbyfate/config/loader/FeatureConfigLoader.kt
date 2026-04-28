@@ -51,3 +51,4 @@ object FeatureConfigLoader : ConfigLoader<FeatureDefinition>(
         logger.info("  Features with abilities: $withAbilities")
     }
 }
+

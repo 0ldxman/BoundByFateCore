@@ -23,20 +23,20 @@ import omc.boundbyfate.util.codec.CodecUtil
  * // Бонус от расы Dwarf
  * val raceBonus = SourceReference(
  *     type = SourceType.RACE,
- *     id = Identifier.of("boundbyfate-core", "dwarf")
+ *     id = Identifier("boundbyfate-core", "dwarf")
  * )
  * 
  * // Бонус от заклинания Bull's Strength
  * val spellBonus = SourceReference(
  *     type = SourceType.SPELL,
- *     id = Identifier.of("boundbyfate-core", "bulls_strength"),
+ *     id = Identifier("boundbyfate-core", "bulls_strength"),
  *     metadata = mapOf("caster" to casterUuid.toString())
  * )
  * 
  * // Бонус от предмета Belt of Giant Strength
  * val itemBonus = SourceReference(
  *     type = SourceType.ITEM,
- *     id = Identifier.of("minecraft", "leather_chestplate"),
+ *     id = Identifier("minecraft", "leather_chestplate"),
  *     metadata = mapOf("slot" to "chest")
  * )
  * ```
@@ -134,7 +134,7 @@ data class SourceReference(
         fun level(level: Int, asiIndex: Int = 0): SourceReference {
             return SourceReference(
                 SourceType.LEVEL,
-                Identifier.of("boundbyfate-core", "level_$level"),
+                Identifier("boundbyfate-core", "level_$level"),
                 mapOf("level" to level.toString(), "asi_index" to asiIndex.toString())
             )
         }
@@ -145,7 +145,7 @@ data class SourceReference(
         fun admin(reason: String = "admin_command"): SourceReference {
             return SourceReference(
                 SourceType.ADMIN,
-                Identifier.of("boundbyfate-core", "admin"),
+                Identifier("boundbyfate-core", "admin"),
                 mapOf("reason" to reason)
             )
         }
@@ -184,3 +184,4 @@ data class SourceReference(
         }
     }
 }
+

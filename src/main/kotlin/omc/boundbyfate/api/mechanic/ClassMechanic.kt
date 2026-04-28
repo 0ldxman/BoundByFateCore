@@ -14,7 +14,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object SpellcastingMechanic : ClassMechanic {
- *     override val id = Identifier.of("boundbyfate-core", "spellcasting")
+ *     override val id = Identifier("boundbyfate-core", "spellcasting")
  *
  *     override fun onActivate(player: ServerPlayerEntity, config: MechanicConfig) {
  *         val stat = config.getString("stat") ?: "intelligence"
@@ -137,3 +137,4 @@ interface ClassMechanic {
 fun ServerPlayerEntity.hasMechanic(mechanicId: Identifier): Boolean {
     return omc.boundbyfate.system.mechanic.ClassMechanicManager.hasMechanic(this, mechanicId)
 }
+

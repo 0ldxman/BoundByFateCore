@@ -84,7 +84,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:darkvision", "data": {"range": 60}}`
      */
     object Darkvision : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "darkvision")
+        override val id = Identifier("boundbyfate-core", "darkvision")
 
         override fun apply(ctx: EffectContext) {
             // Darkvision хранится как активный эффект в EntityEffectsData.
@@ -105,7 +105,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:stat_modifier", "data": {"stat": "boundbyfate-core:strength", "value": 2}}`
      */
     object StatModifier : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "stat_modifier")
+        override val id = Identifier("boundbyfate-core", "stat_modifier")
 
         override fun apply(ctx: EffectContext) {
             val stat = ctx.data.requireId("stat")
@@ -125,7 +125,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:skill_modifier", "data": {"skill": "boundbyfate-core:stealth", "value": 5}}`
      */
     object SkillModifier : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "skill_modifier")
+        override val id = Identifier("boundbyfate-core", "skill_modifier")
 
         // Факт активности в EntityEffectsData — система навыков читает параметры skill/value.
         override fun apply(ctx: EffectContext) {}
@@ -138,7 +138,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:grant_proficiency", "data": {"proficiency": "boundbyfate-core:simple_weapons"}}`
      */
     object GrantProficiency : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "grant_proficiency")
+        override val id = Identifier("boundbyfate-core", "grant_proficiency")
 
         override fun apply(ctx: EffectContext) {
             val proficiency = ctx.data.requireId("proficiency")
@@ -167,7 +167,7 @@ object BbfEffects {
      * Уровни: "resistance" (половина), "immunity" (ноль), "vulnerability" (двойной)
      */
     object DamageResistance : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "damage_resistance")
+        override val id = Identifier("boundbyfate-core", "damage_resistance")
 
         override fun apply(ctx: EffectContext) {
             val damageType = ctx.data.getId("damage_type") ?: return
@@ -189,7 +189,7 @@ object BbfEffects {
      * Факт активности хранится в EntityEffectsData — система атаки проверяет hasEffect().
      */
     object CriticalRange : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "critical_range")
+        override val id = Identifier("boundbyfate-core", "critical_range")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -199,7 +199,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система атаки читает параметр "attacks".
      */
     object ExtraAttack : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "extra_attack")
+        override val id = Identifier("boundbyfate-core", "extra_attack")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -209,7 +209,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система атаки читает formula/damage_type/trigger.
      */
     object ConditionalDamage : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "conditional_damage")
+        override val id = Identifier("boundbyfate-core", "conditional_damage")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -219,7 +219,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система AC пересчитывает armorClass.
      */
     object ArmorClassFormula : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "armor_class_formula")
+        override val id = Identifier("boundbyfate-core", "armor_class_formula")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -229,7 +229,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система бросков читает параметр "on".
      */
     object Advantage : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "advantage")
+        override val id = Identifier("boundbyfate-core", "advantage")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -240,7 +240,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:condition_immunity", "data": {"condition": "dnd:magical_sleep"}}`
      */
     object ConditionImmunity : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "condition_immunity")
+        override val id = Identifier("boundbyfate-core", "condition_immunity")
 
         override fun apply(ctx: EffectContext) {
             val condition = ctx.data.requireId("condition")
@@ -261,7 +261,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:max_hp_modifier", "data": {"formula": "@level * 2"}}`
      */
     object MaxHpModifier : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "max_hp_modifier")
+        override val id = Identifier("boundbyfate-core", "max_hp_modifier")
 
         override fun apply(ctx: EffectContext) {
             val value = ctx.data.getInt("value", 0)
@@ -294,7 +294,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:grant_ability", "data": {"ability": "dnd:second_wind"}}`
      */
     object GrantAbility : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "grant_ability")
+        override val id = Identifier("boundbyfate-core", "grant_ability")
 
         override fun apply(ctx: EffectContext) {
             val ability = ctx.data.requireId("ability")
@@ -317,7 +317,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:attack_penalty", "data": {"penalty": -4}}`
      */
     object AttackPenalty : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "attack_penalty")
+        override val id = Identifier("boundbyfate-core", "attack_penalty")
 
         override fun apply(ctx: EffectContext) {
             val penalty = ctx.data.requireInt("penalty")
@@ -335,7 +335,7 @@ object BbfEffects {
      * JSON: `{"id": "boundbyfate-core:armor_class_penalty", "data": {"penalty": -2}}`
      */
     object ArmorClassPenalty : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "armor_class_penalty")
+        override val id = Identifier("boundbyfate-core", "armor_class_penalty")
 
         override fun apply(ctx: EffectContext) {
             val penalty = ctx.data.requireInt("penalty")
@@ -361,7 +361,7 @@ object BbfEffects {
      * ```
      */
     object StealthDisadvantage : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "stealth_disadvantage")
+        override val id = Identifier("boundbyfate-core", "stealth_disadvantage")
 
         override fun apply(ctx: EffectContext) {
             val skills = ctx.data.getIds("skills")
@@ -383,7 +383,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система движения проверяет hasEffect(id).
      */
     object BlockMovement : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "block_movement")
+        override val id = Identifier("boundbyfate-core", "block_movement")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -393,7 +393,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData.
      */
     object BlockSpeech : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "block_speech")
+        override val id = Identifier("boundbyfate-core", "block_speech")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -403,7 +403,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData.
      */
     object BlockSpeechSlurred : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "block_speech_slurred")
+        override val id = Identifier("boundbyfate-core", "block_speech_slurred")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -414,7 +414,7 @@ object BbfEffects {
      * и читает параметр "stat".
      */
     object AutoFailSave : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "auto_fail_save")
+        override val id = Identifier("boundbyfate-core", "auto_fail_save")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -424,7 +424,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData.
      */
     object AutoFailSightChecks : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "auto_fail_sight_checks")
+        override val id = Identifier("boundbyfate-core", "auto_fail_sight_checks")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -434,7 +434,7 @@ object BbfEffects {
      * Факт активности в EntityEffectsData — система атаки проверяет hasEffect(id).
      */
     object MeleeCritAuto : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "melee_crit_auto")
+        override val id = Identifier("boundbyfate-core", "melee_crit_auto")
         override fun apply(ctx: EffectContext) {}
         override fun remove(ctx: EffectContext) {}
     }
@@ -454,7 +454,7 @@ object BbfEffects {
      * ```
      */
     object Poison : EffectHandler() {
-        override val id = Identifier.of("boundbyfate-core", "poison")
+        override val id = Identifier("boundbyfate-core", "poison")
 
         // Тикует раз в секунду
         override val tickInterval: Int = 20
@@ -463,7 +463,7 @@ object BbfEffects {
             // Сохраняем параметры в stash для использования в tick
             ctx.putStash("damage", ctx.data.getInt("damage_per_tick", 1))
             ctx.putStash("damage_type", ctx.data.getId("damage_type")
-                ?: Identifier.of("boundbyfate-core", "poison"))
+                ?: Identifier("boundbyfate-core", "poison"))
         }
 
         override fun tick(ctx: EffectContext) {
@@ -477,3 +477,4 @@ object BbfEffects {
         }
     }
 }
+

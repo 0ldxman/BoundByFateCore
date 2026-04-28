@@ -36,7 +36,7 @@ import omc.boundbyfate.api.action.ActionSlotType
  */
 object SecondWind : AbilityHandler() {
 
-    override val id: Identifier = Identifier.of("boundbyfate-core", "second_wind")
+    override val id: Identifier = Identifier("boundbyfate-core", "second_wind")
 
     override fun canUse(ctx: AbilityContext): CanUseResult {
         if (!ctx.hasAction(ActionSlotType.BONUS_ACTION))
@@ -66,3 +66,4 @@ object SecondWind : AbilityHandler() {
         return Text.translatable("ability.boundbyfate-core.second_wind.description", dice)
     }
 }
+

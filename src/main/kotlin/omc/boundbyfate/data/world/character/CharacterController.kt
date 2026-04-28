@@ -42,7 +42,7 @@ data class CharacterController(
 
     /** ID скрипта если тип SCRIPT, иначе null. */
     fun asScriptId(): net.minecraft.util.Identifier? =
-        if (type == ControllerType.SCRIPT) net.minecraft.util.Identifier.of(
+        if (type == ControllerType.SCRIPT) net.minecraft.util.Identifier(
             value.substringBefore(':'),
             value.substringAfter(':')
         ) else null
@@ -57,3 +57,4 @@ enum class ControllerType {
     /** Персонаж под управлением скрипта или AI. */
     SCRIPT
 }
+

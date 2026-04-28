@@ -58,7 +58,7 @@ object AbilityConfigLoader : SimpleSynchronousResourceReloadListener {
     private const val DIRECTORY = "bbf_ability"
 
     override fun getFabricId(): Identifier =
-        Identifier.of("boundbyfate-core", "ability_loader")
+        Identifier("boundbyfate-core", "ability_loader")
 
     override fun reload(manager: ResourceManager) {
         logger.info("Loading ability definitions from datapacks...")
@@ -109,3 +109,5 @@ object AbilityConfigLoader : SimpleSynchronousResourceReloadListener {
         }
     }
 }
+
+

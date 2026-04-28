@@ -107,7 +107,7 @@ object BbfConditionTypes {
             val armorType = data.armorType ?: return@register true
             armorSlots.any { armor ->
                 if (armor.isEmpty) return@any false
-                val tag = TagKey.of(RegistryKeys.ITEM, Identifier.of("boundbyfate-core", "armor_type/$armorType"))
+                val tag = TagKey.of(RegistryKeys.ITEM, Identifier("boundbyfate-core", "armor_type/$armorType"))
                 armor.isIn(tag)
             }
         }
@@ -137,7 +137,7 @@ object BbfConditionTypes {
         evaluate = { data, ctx ->
             val offhand = ctx.entity.offHandStack
             val hasShield = !offhand.isEmpty && offhand.isIn(
-                TagKey.of(RegistryKeys.ITEM, Identifier.of("minecraft", "shields"))
+                TagKey.of(RegistryKeys.ITEM, Identifier("minecraft", "shields"))
             )
             if (data.using) hasShield else !hasShield
         }
@@ -230,3 +230,4 @@ object BbfConditionTypes {
         evaluate = { _, ctx -> ctx.target?.type?.isIn(EntityTypeTags.UNDEAD) ?: false }
     )
 }
+

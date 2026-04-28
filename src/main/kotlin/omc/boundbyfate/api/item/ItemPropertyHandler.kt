@@ -15,7 +15,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object StatBonus : ItemPropertyHandler() {
- *     override val id = Identifier.of("boundbyfate-core", "stat_bonus")
+ *     override val id = Identifier("boundbyfate-core", "stat_bonus")
  *
  *     override fun onEquip(ctx: ItemPropertyContext) {
  *         val stat  = ctx.data.requireId("stat")
@@ -34,7 +34,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object PoisonedBlade : ItemPropertyHandler() {
- *     override val id = Identifier.of("boundbyfate-core", "poisoned_blade")
+ *     override val id = Identifier("boundbyfate-core", "poisoned_blade")
  *     override val ticksInMainHand = true
  *     override val tickInterval = 20
  *
@@ -209,3 +209,4 @@ abstract class ItemPropertyHandler {
 
     override fun toString(): String = "ItemPropertyHandler($id)"
 }
+

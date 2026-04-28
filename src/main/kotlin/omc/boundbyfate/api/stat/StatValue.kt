@@ -45,6 +45,19 @@ data class StatValue(
 ) {
     companion object {
         /**
+         * Codec для сериализации StatValue.
+         */
+        val CODEC: com.mojang.serialization.Codec<StatValue> = 
+            com.mojang.serialization.codecs.RecordCodecBuilder.create { instance ->
+                instance.group(
+                    com.mojang.serialization.Codec.INT.fieldOf("base").forGetter { it.base },
+                    com.mojang.serialization.Codec.INT.fieldOf("total").forGetter { it.total },
+                    com.mojang.serialization.Codec.INT.fieldOf("modifier").forGetter { it.modifier },
+                    StatModifier.CODEC.listOf().optionalFieldOf("appliedModifiers", emptyList()).forGetter { it.appliedModifiers }
+                ).apply(instance, ::StatValue)
+            }
+        
+        /**
          * Вычисляет значение характеристики с учётом модификаторов.
          * 
          * Порядок применения:

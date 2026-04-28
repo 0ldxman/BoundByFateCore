@@ -48,13 +48,13 @@ object RestEvents {
      * Идентификатор события короткого отдыха.
      * Используется в [omc.boundbyfate.util.time.Duration.UntilEvent].
      */
-    val SHORT: Identifier = Identifier.of("boundbyfate-core", "rest/short")
+    val SHORT: Identifier = Identifier("boundbyfate-core", "rest/short")
 
     /**
      * Идентификатор события длинного отдыха (сна).
      * Используется в [omc.boundbyfate.util.time.Duration.UntilEvent].
      */
-    val LONG: Identifier = Identifier.of("boundbyfate-core", "rest/long")
+    val LONG: Identifier = Identifier("boundbyfate-core", "rest/long")
 
     /**
      * Вызывается перед началом короткого отдыха.
@@ -112,3 +112,4 @@ class ShortRestEvent(
 class LongRestEvent(
     val player: ServerPlayerEntity
 ) : BaseCancellableEvent()
+

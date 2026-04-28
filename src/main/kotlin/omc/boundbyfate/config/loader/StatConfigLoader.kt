@@ -31,10 +31,11 @@ object StatConfigLoader : ConfigLoader<StatDefinition>(
         val namespace = "boundbyfate-core"
         
         for (statName in requiredStats) {
-            val id = net.minecraft.util.Identifier.of(namespace, statName)
+            val id = net.minecraft.util.Identifier(namespace, statName)
             if (!registry.contains(id)) {
                 logger.warn("Required stat not found: $id")
             }
         }
     }
 }
+

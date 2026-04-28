@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory
 object AlignmentConfigLoader : SimpleSynchronousResourceReloadListener {
 
     private val logger = LoggerFactory.getLogger(AlignmentConfigLoader::class.java)
-    private val RESOURCE_ID = Identifier.of("boundbyfate-core", "alignment_config_loader")
+    private val RESOURCE_ID = Identifier("boundbyfate-core", "alignment_config_loader")
     private const val FILE_PATH = "alignment_config.json"
 
     override fun getFabricId(): Identifier = RESOURCE_ID
@@ -73,3 +73,4 @@ object AlignmentConfigLoader : SimpleSynchronousResourceReloadListener {
         }
     }
 }
+

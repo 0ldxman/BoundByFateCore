@@ -43,7 +43,7 @@ class DatapackLoader<T : Registrable>(
     /**
      * ID для регистрации в Resource Manager.
      */
-    private val listenerId = Identifier.of("boundbyfate-core", "${configLoader.typeName}_loader")
+    private val listenerId = Identifier("boundbyfate-core", "${configLoader.typeName}_loader")
     
     override fun getFabricId(): Identifier = listenerId
     
@@ -110,6 +110,7 @@ class DatapackLoader<T : Registrable>(
             .substringAfterLast('/')  // Берём всё после последнего /
             .removeSuffix(".json")
         
-        return Identifier.of(resourceId.namespace, fileName)
+        return Identifier(resourceId.namespace, fileName)
     }
 }
+

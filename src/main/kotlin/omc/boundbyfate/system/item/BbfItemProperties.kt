@@ -73,7 +73,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:stat_bonus", "data": {"stat": "boundbyfate-core:charisma", "value": 2}}`
      */
     object StatBonus : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "stat_bonus")
+        override val id = Identifier("boundbyfate-core", "stat_bonus")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val stat = ctx.data.requireId("stat")
@@ -103,7 +103,7 @@ object BbfItemProperties {
      * ```
      */
     object GrantAbility : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "grants_ability")
+        override val id = Identifier("boundbyfate-core", "grants_ability")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val ability = ctx.data.requireId("ability")
@@ -112,7 +112,7 @@ object BbfItemProperties {
             val uses = ctx.data.getInt("uses", 0)
             if (uses > 0) {
                 val recoveryStr = ctx.data.getString("recovery", "long_rest")
-                val resourceId = Identifier.of(ability.namespace, "${ability.path}_uses")
+                val resourceId = Identifier(ability.namespace, "${ability.path}_uses")
                 ctx.grantResource(resourceId, uses)
             }
         }
@@ -129,7 +129,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:grants_resource", "data": {"resource": "boundbyfate-core:ki_points", "amount": 2}}`
      */
     object GrantResource : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "grants_resource")
+        override val id = Identifier("boundbyfate-core", "grants_resource")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val resource = ctx.data.requireId("resource")
@@ -149,7 +149,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:grants_proficiency", "data": {"proficiency": "boundbyfate-core:simple_weapons"}}`
      */
     object GrantProficiency : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "grants_proficiency")
+        override val id = Identifier("boundbyfate-core", "grants_proficiency")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val proficiency = ctx.data.requireId("proficiency")
@@ -172,7 +172,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:melee_damage", "data": {"dice": "1d8", "stat": "boundbyfate-core:strength"}}`
      */
     object MeleeDamage : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "melee_damage")
+        override val id = Identifier("boundbyfate-core", "melee_damage")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // Регистрируем формулу урона для этого оружия
@@ -190,7 +190,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:ranged_damage", "data": {"dice": "1d6", "stat": "boundbyfate-core:dexterity", "normal": 80, "long": 320}}`
      */
     object RangedDamage : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "ranged_damage")
+        override val id = Identifier("boundbyfate-core", "ranged_damage")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: CombatSystem.setRangedDamage(ctx.entity, ctx.item, dice, stat, normalRange, longRange, ctx.source)
@@ -207,7 +207,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:finesse"}`
      */
     object Finesse : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "finesse")
+        override val id = Identifier("boundbyfate-core", "finesse")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: CombatSystem.addWeaponFlag(ctx.entity, ctx.item, "finesse", ctx.source)
@@ -224,7 +224,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:versatile", "data": {"one_hand": "1d8", "two_hand": "1d10"}}`
      */
     object Versatile : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "versatile")
+        override val id = Identifier("boundbyfate-core", "versatile")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val oneHand = ctx.data.getString("one_hand", "1d8")
@@ -243,7 +243,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:thrown", "data": {"normal": 20, "long": 60}}`
      */
     object Thrown : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "thrown")
+        override val id = Identifier("boundbyfate-core", "thrown")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val normal = ctx.data.getInt("normal", 20)
@@ -262,7 +262,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:two_handed"}`
      */
     object TwoHanded : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "two_handed")
+        override val id = Identifier("boundbyfate-core", "two_handed")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: CombatSystem.addWeaponFlag(ctx.entity, ctx.item, "two_handed", ctx.source)
@@ -279,7 +279,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:light"}`
      */
     object Light : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "light")
+        override val id = Identifier("boundbyfate-core", "light")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: CombatSystem.addWeaponFlag(ctx.entity, ctx.item, "light", ctx.source)
@@ -296,7 +296,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:reach"}`
      */
     object Reach : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "reach")
+        override val id = Identifier("boundbyfate-core", "reach")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: CombatSystem.addReach(ctx.entity, ctx.item, 5, ctx.source)
@@ -313,7 +313,7 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:heavy"}`
      */
     object Heavy : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "heavy")
+        override val id = Identifier("boundbyfate-core", "heavy")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             // TODO: если существо Small или меньше — добавить помеху на атаки
@@ -339,7 +339,7 @@ object BbfItemProperties {
      * ```
      */
     object ArmorClass : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "armor_class")
+        override val id = Identifier("boundbyfate-core", "armor_class")
 
         override fun onEquip(ctx: ItemPropertyContext) {
             val formula = ctx.data.requireString("formula")
@@ -357,14 +357,15 @@ object BbfItemProperties {
      * JSON: `{"id": "boundbyfate-core:stealth_disadvantage"}`
      */
     object StealthDisadvantage : ItemPropertyHandler() {
-        override val id = Identifier.of("boundbyfate-core", "stealth_disadvantage")
+        override val id = Identifier("boundbyfate-core", "stealth_disadvantage")
 
         override fun onEquip(ctx: ItemPropertyContext) {
-            ctx.addDisadvantage(listOf(Identifier.of("boundbyfate-core", "stealth")))
+            ctx.addDisadvantage(listOf(Identifier("boundbyfate-core", "stealth")))
         }
 
         override fun onUnequip(ctx: ItemPropertyContext) {
-            ctx.removeDisadvantage(listOf(Identifier.of("boundbyfate-core", "stealth")))
+            ctx.removeDisadvantage(listOf(Identifier("boundbyfate-core", "stealth")))
         }
     }
 }
+

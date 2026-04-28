@@ -57,17 +57,17 @@ class BoundByFateCore : ModInitializer {
         RegistryManager.registerRegistry(omc.boundbyfate.registry.StatRegistry)
         
         // Регистрация загрузчиков конфигураций
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.stat.StatDefinition>(
             omc.boundbyfate.config.loader.StatConfigLoader,
             "bbf_stat"
         )
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.race.RaceDefinition>(
             omc.boundbyfate.config.loader.RaceConfigLoader,
             "bbf_race"
         )
 
         // Регистрация загрузчика состояний
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.status.StatusDefinition>(
             omc.boundbyfate.config.loader.StatusConfigLoader,
             "bbf_status"
         )

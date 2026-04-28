@@ -33,3 +33,4 @@ object RaceConfigLoader : ConfigLoader<RaceDefinition>(
     codec = RaceDefinition.CODEC,
     registry = RaceRegistry
 )
+

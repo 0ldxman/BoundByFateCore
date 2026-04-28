@@ -13,7 +13,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object SecondWind : AbilityHandler() {
- *     override val id = Identifier.of("boundbyfate-core", "second_wind")
+ *     override val id = Identifier("boundbyfate-core", "second_wind")
  *
  *     override fun canUse(ctx: AbilityContext): CanUseResult {
  *         if (!ctx.hasAction(ActionSlotType.BONUS_ACTION))
@@ -148,3 +148,4 @@ abstract class AbilityHandler {
 
     override fun toString(): String = "AbilityHandler($id)"
 }
+

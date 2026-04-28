@@ -64,6 +64,15 @@ enum class DiceType(val sides: Int) {
     
     companion object {
         /**
+         * Codec для сериализации DiceType.
+         */
+        val CODEC: com.mojang.serialization.Codec<DiceType> = 
+            com.mojang.serialization.Codec.STRING.xmap(
+                { str -> parse(str) ?: throw IllegalArgumentException("Unknown dice type: $str") },
+                { it.toString() }
+            )
+        
+        /**
          * Получает тип кубика по количеству граней.
          * 
          * @param sides количество граней

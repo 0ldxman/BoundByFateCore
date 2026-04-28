@@ -24,7 +24,7 @@ object NpcEntityRegistry {
      */
     val NPC: EntityType<NpcEntity> = Registry.register(
         Registries.ENTITY_TYPE,
-        Identifier.of(BoundByFateCore.MOD_ID, "npc"),
+        Identifier(BoundByFateCore.MOD_ID, "npc"),
         FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ::NpcEntity)
             .dimensions(EntityDimensions.fixed(0.6f, 1.8f))
             .build()
@@ -51,3 +51,4 @@ object NpcEntityRegistry {
         logger.info("NPC entity type registered: ${NPC.translationKey}")
     }
 }
+

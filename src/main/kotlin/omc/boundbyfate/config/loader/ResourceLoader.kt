@@ -99,9 +99,10 @@ class ResourceLoader<T : Registrable>(
     fun loadResources(namespace: String, fileNames: List<String>): Int {
         val resources = fileNames.associateWith { fileName ->
             val name = fileName.removeSuffix(".json")
-            Identifier.of(namespace, name)
+            Identifier(namespace, name)
         }
         
         return loadResources(resources)
     }
 }
+

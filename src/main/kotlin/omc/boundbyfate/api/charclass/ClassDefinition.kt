@@ -78,7 +78,7 @@ data class ClassDefinition(
     /**
      * Начальные владения класса (даются на 1 уровне).
      */
-    val startingProficiencies: ClassProficiencies,
+    val startingProficiencies: ProficiencyGrants,
     
     /**
      * На каком уровне выбирается подкласс.

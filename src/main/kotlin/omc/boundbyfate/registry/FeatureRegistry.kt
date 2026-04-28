@@ -14,8 +14,8 @@ import omc.boundbyfate.registry.core.BbfRegistry
  * ## Использование
  *
  * ```kotlin
- * val secondWind = FeatureRegistry.get(Identifier.of("boundbyfate-core", "second_wind"))
- * val spellcasting = FeatureRegistry.get(Identifier.of("boundbyfate-core", "wizard_spellcasting"))
+ * val secondWind = FeatureRegistry.get(Identifier("boundbyfate-core", "second_wind"))
+ * val spellcasting = FeatureRegistry.get(Identifier("boundbyfate-core", "wizard_spellcasting"))
  * ```
  *
  * ## Структура файлов
@@ -61,3 +61,4 @@ object FeatureRegistry : BbfRegistry<FeatureDefinition>("features") {
         return getFeaturesWithGrantType<FeatureGrant.Ability>()
     }
 }
+

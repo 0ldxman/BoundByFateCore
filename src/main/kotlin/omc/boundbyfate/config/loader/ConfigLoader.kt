@@ -159,3 +159,4 @@ abstract class ConfigLoader<T : Registrable>(
         logger.info("Finished loading $typeName: $loadedCount definitions")
     }
 }
+

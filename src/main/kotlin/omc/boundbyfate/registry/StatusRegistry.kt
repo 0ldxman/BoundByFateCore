@@ -13,7 +13,7 @@ import omc.boundbyfate.registry.core.BbfRegistry
  * ## Использование
  *
  * ```kotlin
- * val paralyzed = StatusRegistry.get(Identifier.of("boundbyfate-core", "paralyzed"))
+ * val paralyzed = StatusRegistry.get(Identifier("boundbyfate-core", "paralyzed"))
  * val allStatuses = StatusRegistry.getAll()
  * ```
  *
@@ -63,3 +63,4 @@ object StatusRegistry : BbfRegistry<StatusDefinition>("statuses") {
         return result
     }
 }
+

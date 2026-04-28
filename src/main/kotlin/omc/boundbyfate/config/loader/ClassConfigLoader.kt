@@ -54,3 +54,4 @@ object ClassConfigLoader : ConfigLoader<ClassDefinition>(
         logger.info("  Subclasses: $subclasses")
     }
 }
+

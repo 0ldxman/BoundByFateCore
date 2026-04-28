@@ -13,7 +13,7 @@ package omc.boundbyfate.util.source
  * 
  * Пример:
  * ```kotlin
- * val source = SourceReference(SourceType.RACE, Identifier.of("boundbyfate-core", "dwarf"))
+ * val source = SourceReference(SourceType.RACE, Identifier("boundbyfate-core", "dwarf"))
  * // Этот бонус пришёл от расы Dwarf
  * ```
  */
@@ -101,3 +101,4 @@ enum class SourceType {
      */
     OTHER
 }
+

@@ -139,7 +139,7 @@ sealed class Duration {
 
         /** До наступления события по строковому ID. */
         fun untilEvent(id: String): Duration = UntilEvent(
-            Identifier.of(id.substringBefore(':'), id.substringAfter(':'))
+            Identifier(id.substringBefore(':'), id.substringAfter(':'))
         )
 
         /**
@@ -250,3 +250,4 @@ sealed class SaveTrigger {
         fun everySeconds(n: Int): SaveTrigger = EveryTicks(TimeUtil.secondsToTicks(n))
     }
 }
+

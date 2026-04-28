@@ -70,9 +70,9 @@ object ConditionTypeRegistry {
             "type",
             { condition ->
                 when (condition) {
-                    is Condition.Or -> Identifier.of("boundbyfate-core", "or")
-                    is Condition.And -> Identifier.of("boundbyfate-core", "and")
-                    is Condition.Not -> Identifier.of("boundbyfate-core", "not")
+                    is Condition.Or -> Identifier("boundbyfate-core", "or")
+                    is Condition.And -> Identifier("boundbyfate-core", "and")
+                    is Condition.Not -> Identifier("boundbyfate-core", "not")
                     is Condition.Typed<*> -> condition.type.id
                 }
             },
@@ -102,3 +102,4 @@ object ConditionTypeRegistry {
         return logicalCodec
     }
 }
+

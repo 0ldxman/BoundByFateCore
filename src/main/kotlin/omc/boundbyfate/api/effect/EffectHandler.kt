@@ -12,7 +12,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object Darkvision : EffectHandler() {
- *     override val id = Identifier.of("boundbyfate-core", "darkvision")
+ *     override val id = Identifier("boundbyfate-core", "darkvision")
  *
  *     override fun apply(ctx: EffectContext) {
  *         val range = ctx.data.getInt("range", 60)
@@ -30,7 +30,7 @@ import net.minecraft.util.Identifier
  *
  * ```kotlin
  * object Poison : EffectHandler() {
- *     override val id = Identifier.of("boundbyfate-core", "poison")
+ *     override val id = Identifier("boundbyfate-core", "poison")
  *
  *     // Тикует каждые 20 тиков (1 секунда)
  *     override val tickInterval: Int = 20
@@ -134,3 +134,4 @@ abstract class EffectHandler {
 
     override fun toString(): String = "EffectHandler($id)"
 }
+

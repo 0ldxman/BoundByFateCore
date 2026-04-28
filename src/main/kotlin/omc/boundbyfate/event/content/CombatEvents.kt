@@ -64,16 +64,16 @@ fun interface CalculateAC {
 data class DamageEvent(
     val target: LivingEntity,
     val source: SourceReference?,
-    amount: Float
+    val amount: Float
 ) : CancellableResultEvent<Float>(amount)
 
 data class AttackRollEvent(
     val attacker: LivingEntity,
     val target: LivingEntity,
-    rollResult: Int
+    val rollResult: Int
 ) : BaseResultEvent<Int>(rollResult)
 
 data class ACCalculationEvent(
     val entity: LivingEntity,
-    armorClass: Int
+    val armorClass: Int
 ) : BaseResultEvent<Int>(armorClass)

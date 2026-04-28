@@ -39,7 +39,11 @@ sealed class RelationParty {
         val CODEC: Codec<RelationParty> = Codec.STRING.xmap(
             { str ->
                 when {
-                    str.startsWith("org:") -> Organization(Identifier(str.removePrefix("org:")))
+                    str.startsWith("org:") -> {
+                        val idStr = str.removePrefix("org:")
+                        val parts = idStr.split(":")
+                        Organization(Identifier(parts[0], parts[1]))
+                    }
                     str.startsWith("char:") -> Character(UUID.fromString(str.removePrefix("char:")))
                     else -> throw IllegalArgumentException("Unknown RelationParty format: $str")
                 }

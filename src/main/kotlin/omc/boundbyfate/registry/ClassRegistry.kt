@@ -13,8 +13,8 @@ import omc.boundbyfate.registry.core.BbfRegistry
  * ## Использование
  *
  * ```kotlin
- * val fighter = ClassRegistry.get(Identifier.of("boundbyfate-core", "fighter"))
- * val champion = ClassRegistry.get(Identifier.of("boundbyfate-core", "champion"))
+ * val fighter = ClassRegistry.get(Identifier("boundbyfate-core", "fighter"))
+ * val champion = ClassRegistry.get(Identifier("boundbyfate-core", "champion"))
  * ```
  *
  * ## Структура файлов
@@ -58,3 +58,4 @@ object ClassRegistry : BbfRegistry<ClassDefinition>("classes") {
         return getAll().filter { it.hasTag(tag) }
     }
 }
+

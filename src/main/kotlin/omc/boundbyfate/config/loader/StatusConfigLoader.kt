@@ -33,3 +33,4 @@ object StatusConfigLoader : ConfigLoader<StatusDefinition>(
     codec = StatusDefinition.CODEC,
     registry = StatusRegistry
 )
+

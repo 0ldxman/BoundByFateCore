@@ -20,7 +20,7 @@ abstract class BbfRegistry<T : Registrable>(
      */
     val name: String
 ) {
-    private val logger: Logger = LoggerFactory.getLogger("BbfRegistry[$name]")
+    protected val logger: Logger = LoggerFactory.getLogger("BbfRegistry[$name]")
     
     /**
      * Внутреннее хранилище зарегистрированных объектов.

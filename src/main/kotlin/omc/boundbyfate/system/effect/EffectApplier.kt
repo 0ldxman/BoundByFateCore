@@ -52,14 +52,14 @@ import org.slf4j.LoggerFactory
  *
  * ```kotlin
  * // Применить по ID
- * EffectApplier.apply(entity, Identifier.of("boundbyfate-core", "darkvision"), source)
+ * EffectApplier.apply(entity, Identifier("boundbyfate-core", "darkvision"), source)
  *
  * // Применить с готовым контекстом
  * val ctx = EffectContext.passive(entity, definition, source)
  * EffectApplier.apply(handler, ctx)
  *
  * // Снять
- * EffectApplier.remove(entity, Identifier.of("boundbyfate-core", "darkvision"), source)
+ * EffectApplier.remove(entity, Identifier("boundbyfate-core", "darkvision"), source)
  * ```
  */
 object EffectApplier {
@@ -277,3 +277,4 @@ object EffectApplier {
         }
     }
 }
+

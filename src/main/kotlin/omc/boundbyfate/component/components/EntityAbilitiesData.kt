@@ -169,9 +169,10 @@ data class AbilityCooldown(
 
     /** Возвращает ID события если тип ON_EVENT. */
     fun asEventId(): Identifier? = if (type == CooldownType.ON_EVENT)
-        Identifier.of(value.substringBefore(':'), value.substringAfter(':'))
+        Identifier(value.substringBefore(':'), value.substringAfter(':'))
     else null
 
     /** Возвращает тик восстановления если тип TICKS. */
     fun asTick(): Long? = if (type == CooldownType.TICKS) value.toLongOrNull() else null
 }
+

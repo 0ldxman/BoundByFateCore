@@ -87,7 +87,7 @@ object EventExamples {
         // Публикуем событие
         val event = DamageEvent(
             target = mockEntity(),
-            source = SourceReference.ability(Identifier.of("boundbyfate-core", "fireball")),
+            source = SourceReference.ability(Identifier("boundbyfate-core", "fireball")),
             amount = 10f
         )
         
@@ -120,7 +120,7 @@ object EventExamples {
         // Публикуем событие
         val event = DamageEvent(
             target = mockEntity().apply { isInvulnerable = true },
-            source = SourceReference.spell(Identifier.of("boundbyfate-core", "magic_missile")),
+            source = SourceReference.spell(Identifier("boundbyfate-core", "magic_missile")),
             amount = 10f
         )
         
@@ -197,3 +197,4 @@ object EventExamples {
         throw NotImplementedError("Mock for examples")
     }
 }
+

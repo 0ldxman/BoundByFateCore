@@ -40,7 +40,7 @@ class EntityStatsData : BbfComponent() {
      * Итоговые значения характеристик с учётом всех модификаторов.
      * Ключ — ID стата (например "boundbyfate-core:strength").
      */
-    val calculatedStats by syncedMap(
+    val calculatedStats by syncedMap<Identifier, StatValue>(
         Identifier.CODEC,
         StatValue.CODEC
     )

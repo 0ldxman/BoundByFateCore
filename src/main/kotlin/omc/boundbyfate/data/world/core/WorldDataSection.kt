@@ -487,7 +487,11 @@ internal fun <T> decodeFromNbt(tag: NbtElement, codec: Codec<T>?, fallback: T): 
         is String     -> (tag as? NbtString)?.asString() as? T
         is Byte       -> (tag as? AbstractNbtNumber)?.byteValue() as? T
         is Short      -> (tag as? AbstractNbtNumber)?.shortValue() as? T
-        is Identifier -> (tag as? NbtString)?.asString()?.let { Identifier.of(it) } as? T
+        is Identifier -> (tag as? NbtString)?.asString()?.let { 
+            val parts = it.split(":")
+            if (parts.size == 2) Identifier(parts[0], parts[1]) else null
+        } as? T
         else          -> null
     }
 }
+

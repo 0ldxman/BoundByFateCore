@@ -53,7 +53,7 @@ object MechanicConfigLoader : SimpleSynchronousResourceReloadListener {
     private const val DIRECTORY = "bbf_mechanic"
     
     override fun getFabricId(): Identifier =
-        Identifier.of("boundbyfate-core", "mechanic_loader")
+        Identifier("boundbyfate-core", "mechanic_loader")
     
     override fun reload(manager: ResourceManager) {
         logger.info("Loading mechanic definitions from datapacks...")
@@ -104,3 +104,4 @@ object MechanicConfigLoader : SimpleSynchronousResourceReloadListener {
         }
     }
 }
+

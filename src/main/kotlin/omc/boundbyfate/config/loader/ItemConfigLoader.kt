@@ -56,3 +56,4 @@ object ItemConfigLoader : ConfigLoader<ItemDefinition>(
         ItemPropertyRegistry.printStatistics()
     }
 }
+

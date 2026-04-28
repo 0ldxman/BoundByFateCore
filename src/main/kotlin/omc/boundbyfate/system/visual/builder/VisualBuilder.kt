@@ -65,7 +65,7 @@ class VisualBuilder(val ctx: VisualContext) {
      * ```
      */
     fun sound(id: String, block: SoundBuilder.() -> Unit) {
-        sound(Identifier.of("boundbyfate-core", id), block)
+        sound(Identifier("boundbyfate-core", id), block)
     }
 
     fun sound(id: Identifier, block: SoundBuilder.() -> Unit) {
@@ -96,3 +96,4 @@ class VisualBuilder(val ctx: VisualContext) {
         val block: VisualBuilder.() -> Unit
     )
 }
+

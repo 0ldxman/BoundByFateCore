@@ -82,12 +82,14 @@ class BbfWorldData private constructor(
      */
     private fun <T : WorldDataSection> loadSection(entry: SectionEntry<T>): T {
         val persistentState = stateManager.getOrCreate(
-            { SectionPersistentState(entry.factory()) },
-            { nbt ->
-                val section = entry.factory()
-                section.fromNbt(nbt)
-                SectionPersistentState(section)
-            },
+            net.minecraft.world.PersistentState.Type(
+                { SectionPersistentState(entry.factory()) },
+                { nbt, registries ->
+                    val section = entry.factory()
+                    section.fromNbt(nbt)
+                    SectionPersistentState(section)
+                }
+            ),
             entry.fileName
         )
         logger.debug("Loaded section '${entry.id}' from '${entry.fileName}'")
@@ -189,7 +191,7 @@ class BbfWorldData private constructor(
             syncStrategy: SyncStrategy = SyncStrategy.None,
             factory: () -> T
         ): SectionEntry<T> {
-            val identifier = Identifier.of(
+            val identifier = Identifier(
                 id.substringBefore(':'),
                 id.substringAfter(':')
             )
@@ -282,3 +284,4 @@ private class SectionPersistentState<T : WorldDataSection>(
 
     override fun isDirty(): Boolean = section.isDirty
 }
+

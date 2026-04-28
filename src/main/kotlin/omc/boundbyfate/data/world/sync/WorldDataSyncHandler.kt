@@ -111,7 +111,7 @@ object WorldDataSyncHandler {
             val bytes = baos.toByteArray()
 
             val packet = SyncSectionPacket(
-                sectionId = net.minecraft.util.Identifier.of(
+                sectionId = net.minecraft.util.Identifier(
                     sectionId.substringBefore(':'),
                     sectionId.substringAfter(':')
                 ),
@@ -123,3 +123,4 @@ object WorldDataSyncHandler {
         }
     }
 }
+

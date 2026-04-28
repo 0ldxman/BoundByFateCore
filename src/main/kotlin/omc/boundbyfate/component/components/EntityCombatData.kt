@@ -55,7 +55,10 @@ class EntityCombatData : BbfComponent() {
     )
 
     /** Открытое окно атак для Extra Attack. null если нет. */
-    var attackWindow by synced<AttackWindow?>(null, AttackWindow.CODEC)
+    var attackWindow by synced<AttackWindow?>(null, AttackWindow.CODEC.optionalFieldOf("value").xmap(
+        { it.orElse(null) },
+        { java.util.Optional.ofNullable(it) }
+    ).codec())
 
     // ── Сопротивления ─────────────────────────────────────────────────────
 

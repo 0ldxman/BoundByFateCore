@@ -134,7 +134,7 @@ object DamageExamples {
             resistances = resistances
         )
         println("Урон ядом: 15 → $poisonDamage")
-        println("Иммунен к яду: ${DamageCalculator.isImmune(poisonType, resistances)}")
+        println("Иммунен к яду: ${DamageCalculator.isImmune(poisonDamageInstance, resistances)}")
         // Вывод: 0.0, true
     }
     
@@ -167,7 +167,7 @@ object DamageExamples {
             sources = sources
         )
         
-        val effectiveResistance = DamageCalculator.getEffectiveResistance(fireType, sources)
+        val effectiveResistance = DamageCalculator.getEffectiveResistance(damageInstance, sources)
         
         println("Базовый урон: 30")
         println("Источники:")

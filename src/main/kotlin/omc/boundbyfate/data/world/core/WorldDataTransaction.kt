@@ -62,7 +62,7 @@ class WorldDataTransaction(
     /**
      * Откатывает все изменения к снимкам.
      */
-    internal fun rollback() {
+    fun rollback() {
         for ((section, snapshot) in snapshots) {
             try {
                 section.fromNbt(snapshot)
@@ -77,7 +77,7 @@ class WorldDataTransaction(
     /**
      * Фиксирует транзакцию — помечает затронутые секции dirty.
      */
-    internal fun commit() {
+    fun commit() {
         touchedSections.forEach { it.markDirty() }
     }
 }

@@ -84,7 +84,12 @@ class MechanicConfig(private val json: JsonObject) {
     fun getIdentifier(key: String): Identifier? {
         val str = getString(key) ?: return null
         return try {
-            Identifier.of(str)
+            val parts = str.split(":")
+            if (parts.size == 2) {
+                Identifier(parts[0], parts[1])
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }
@@ -120,7 +125,12 @@ class MechanicConfig(private val json: JsonObject) {
         val strings = getStringList(key) ?: return null
         return strings.mapNotNull { 
             try {
-                Identifier.of(it)
+                val parts = it.split(":")
+                if (parts.size == 2) {
+                    Identifier(parts[0], parts[1])
+                } else {
+                    null
+                }
             } catch (e: Exception) {
                 null
             }
@@ -186,3 +196,4 @@ class MechanicConfig(private val json: JsonObject) {
         val EMPTY = MechanicConfig(JsonObject())
     }
 }
+

@@ -31,7 +31,7 @@ class EventBus<T : Any>(
      * Зарегистрированные обработчики с приоритетами.
      * Используем ConcurrentHashMap для thread-safety.
      */
-    private val handlers: MutableMap<EventPriority, MutableList<T>> = ConcurrentHashMap()
+    internal val handlers: MutableMap<EventPriority, MutableList<T>> = ConcurrentHashMap()
     
     /**
      * Кэшированный отсортированный список обработчиков.
