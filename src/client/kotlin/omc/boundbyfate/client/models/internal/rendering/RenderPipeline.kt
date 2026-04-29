@@ -121,8 +121,8 @@ class ListRenderPipeline : RenderPipeline {
 
         RenderSystem.activeTexture(activeTexture)
 
-        RenderSystem.glBindVertexArray(currentVAO)
-        RenderSystem.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer)
+        RenderSystem.glBindVertexArray { currentVAO }
+        RenderSystem.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, java.util.function.IntSupplier { currentElementArrayBuffer })
 
         GlStateManager._glUseProgram(0)
     }
@@ -159,8 +159,8 @@ class ListRenderPipeline : RenderPipeline {
         RenderSystem.bindTexture(texture)
         RenderSystem.activeTexture(activeTexture)
 
-        RenderSystem.glBindVertexArray(currentVAO)
-        RenderSystem.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer)
+        RenderSystem.glBindVertexArray { currentVAO }
+        RenderSystem.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, java.util.function.IntSupplier { currentElementArrayBuffer })
 
         GlStateManager._glUseProgram(0)
     }

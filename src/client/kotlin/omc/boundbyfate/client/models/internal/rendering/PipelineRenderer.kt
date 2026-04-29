@@ -412,7 +412,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         val binding = getInstancedBinding(shader, layoutMode)
         applyMaterial(shader, primitive.material, binding.colorLocation)
 
-        RenderSystem.glBindVertexArray(binding.vao)
+        RenderSystem.glBindVertexArray { binding.vao }
 
         indexBuffer?.bind()
 
@@ -432,7 +432,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         GL33.glVertexAttribI2i(3, instance.overlay and FFFF, instance.overlay shr 16 and FFFF)
         GL33.glVertexAttribI2i(4, instance.light and FFFF, instance.light shr 16 and FFFF)
 
-        RenderSystem.glBindVertexArray(vao)
+        RenderSystem.glBindVertexArray { vao }
 
         indexBuffer?.bind()
 
@@ -552,7 +552,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         applyMaterial(shader, primitive.material)
 
-        RenderSystem.glBindVertexArray(vao)
+        RenderSystem.glBindVertexArray { vao }
 
         indexBuffer?.bind()
 
