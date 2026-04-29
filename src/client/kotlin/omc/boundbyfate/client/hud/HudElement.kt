@@ -142,7 +142,7 @@ abstract class HudElement : AnimOwner() {
  *
  * Используется только внутри [HudElement.setup].
  */
-class HudContext(private val element: HudElement) {
+class HudContext(@PublishedApi internal val element: HudElement) {
 
     private val bindings = mutableListOf<omc.boundbyfate.client.gui.core.Binding<*>>()
 
