@@ -18,7 +18,6 @@ import de.fabmax.kool.pipeline.backend.gl.RenderBackendGl;
 import de.fabmax.kool.pipeline.backend.gl.ShaderManager;
 import de.fabmax.kool.util.RenderLoopCoroutineDispatcher;
 import de.fabmax.kool.util.Time;
-import de.fabmax.kool.util.TriggeredCoroutineDispatcher;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -152,10 +151,6 @@ public class KoolHooks {
 
     public static void executeCoroutineTasks() {
         RenderLoopCoroutineDispatcher.INSTANCE.executeDispatchedTasks$kool_core();
-    }
-
-    public static void executeCoroutineTasks(TriggeredCoroutineDispatcher dispatcher) {
-        dispatcher.executeDispatchedTasks$kool_core();
     }
 
     public static void resetShaders(MCKoolContext context) {
