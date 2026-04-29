@@ -54,14 +54,14 @@ inline fun withInstancingRenderState(body: () -> Unit) {
     RenderSystem.activeTexture(GL13.GL_TEXTURE2)
     val texture2 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
     RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
-    RenderSystem.setShaderTexture(2, java.util.function.IntSupplier { HollowModelManager.lightTexture.getGlId() })
+    RenderSystem.setShaderTexture(2, HollowModelManager.lightTexture.getGlId())
 
     RenderSystem.activeTexture(GL13.GL_TEXTURE1)
     val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
     MinecraftClient.getInstance().gameRenderer.overlayTexture.setupOverlayColor()
     val overlayTextureId = RenderSystem.getShaderTexture(1)
     RenderSystem.bindTexture(overlayTextureId)
-    RenderSystem.setShaderTexture(1, java.util.function.IntSupplier { overlayTextureId })
+    RenderSystem.setShaderTexture(1, overlayTextureId)
     MinecraftClient.getInstance().gameRenderer.overlayTexture.teardownOverlayColor()
 
     RenderSystem.activeTexture(GL13.GL_TEXTURE0)
@@ -70,9 +70,9 @@ inline fun withInstancingRenderState(body: () -> Unit) {
     try {
         body()
     } finally {
-        RenderSystem.setShaderTexture(0, java.util.function.IntSupplier { shaderTexture0 })
-        RenderSystem.setShaderTexture(1, java.util.function.IntSupplier { shaderTexture1 })
-        RenderSystem.setShaderTexture(2, java.util.function.IntSupplier { shaderTexture2 })
+        RenderSystem.setShaderTexture(0, shaderTexture0)
+        RenderSystem.setShaderTexture(1, shaderTexture1)
+        RenderSystem.setShaderTexture(2, shaderTexture2)
         RenderSystem.activeTexture(GL13.GL_TEXTURE2)
         RenderSystem.bindTexture(texture2)
         RenderSystem.activeTexture(GL13.GL_TEXTURE1)
