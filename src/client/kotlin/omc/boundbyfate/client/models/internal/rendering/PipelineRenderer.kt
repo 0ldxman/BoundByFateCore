@@ -239,7 +239,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
             return InstancedShaderBinding(instancedVao, 1)
         }
 
-        return runtimeInstancedBindings.getOrPut(shader.id) {
+        return runtimeInstancedBindings.getOrPut(shader.getProgramRef()) {
             createRuntimeInstancedBinding(shader)
         }
     }
@@ -256,7 +256,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         instanceModelViewBuffer?.bind()
         for (i in 0 until 4) {
-            val location = GL33.glGetAttribLocation(shader.id, "_he_InstanceModelView$i")
+            val location = GL33.glGetAttribLocation(shader.getProgramRef(), "_he_InstanceModelView$i")
             if (location == -1) continue
             GL33.glVertexAttribPointer(location, 4, GL33.GL_FLOAT, false, MODEL_VIEW_STRIDE_BYTES, (i * 16).toLong())
             GL33.glEnableVertexAttribArray(location)
@@ -265,7 +265,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         instanceNormalBuffer?.bind()
         for (i in 0 until 3) {
-            val location = GL33.glGetAttribLocation(shader.id, "_he_InstanceNormal$i")
+            val location = GL33.glGetAttribLocation(shader.getProgramRef(), "_he_InstanceNormal$i")
             if (location == -1) continue
             GL33.glVertexAttribPointer(location, 3, GL33.GL_FLOAT, false, NORMAL_STRIDE_BYTES, (i * 12).toLong())
             GL33.glEnableVertexAttribArray(location)

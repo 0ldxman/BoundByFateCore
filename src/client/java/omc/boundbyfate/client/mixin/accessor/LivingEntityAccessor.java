@@ -8,4 +8,12 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface LivingEntityAccessor {
     @Accessor("lastDamageTaken")
     float bbf_getLastDamageTaken();
+
+    /** yarn: prevStepBobbingAmount → lastStrideDistance */
+    @Accessor("lastStrideDistance")
+    float bbf_getLastStrideDistance();
+
+    /** yarn: stepBobbingAmount → strideDistance */
+    @Accessor("strideDistance")
+    float bbf_getStrideDistance();
 }

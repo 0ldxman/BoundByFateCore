@@ -93,9 +93,11 @@ private fun bobView(mat4f: MutableMat4f, partialTicks: Float) {
     val mc = MinecraftClient.getInstance()
     val cameraEntity = mc.cameraEntity
     if (cameraEntity is PlayerEntity) {
+        val entityAccessor = cameraEntity as LivingEntityAccessor
         val f = cameraEntity.distanceTraveled - cameraEntity.horizontalSpeed
         val g = -(cameraEntity.distanceTraveled + f * partialTicks)
-        val h = MathHelper.lerp(partialTicks, cameraEntity.prevStepBobbingAmount, cameraEntity.stepBobbingAmount)
+        // yarn 1.20.1: prevStepBobbingAmount → lastStrideDistance, stepBobbingAmount → strideDistance
+        val h = MathHelper.lerp(partialTicks, entityAccessor.bbf_getLastStrideDistance(), entityAccessor.bbf_getStrideDistance())
         mat4f.translate(
             (MathHelper.sin(g * MathHelper.PI) * h * 0.5f),
             -abs((MathHelper.cos(g * MathHelper.PI) * h)),
@@ -105,7 +107,5 @@ private fun bobView(mat4f: MutableMat4f, partialTicks: Float) {
         mat4f.rotate(QuatF((abs(MathHelper.cos(g * MathHelper.PI - 0.2f) * h) * 5.0f).deg, Vec3f.X_AXIS))
     }
 
-    val f = mc.options.distortionEffectScale.value.toFloat()
-    val player = mc.player ?: return
     // nauseaIntensity not available in 1.20.1 yarn — skip nausea bobbing
-    // val g = MathHelper.lerp(partialTicks, player.prevNauseaIntensity, player.nauseaIntensity) * f * f
+}

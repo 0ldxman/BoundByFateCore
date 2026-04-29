@@ -48,9 +48,9 @@ object MusicClientSystem {
 
     fun register() {
         // Получаем состояние музыки от сервера
-        ClientPlayNetworking.registerGlobalReceiver(MusicStatePacket.ID) { packet, context ->
-            context.client().execute {
-                onStateReceived(packet.state, context.client())
+        ClientPlayNetworking.registerGlobalReceiver(MusicStatePacket.TYPE) { client, player, packet, sender ->
+            client.execute {
+                onStateReceived(packet.state, client)
             }
         }
 

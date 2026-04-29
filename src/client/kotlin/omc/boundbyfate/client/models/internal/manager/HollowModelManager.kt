@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener
 import net.minecraft.client.MinecraftClient
+import net.minecraft.client.render.RenderSystem
 import net.minecraft.resource.ResourceManager
 import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL11
@@ -38,7 +39,9 @@ object HollowModelManager : IdentifiableResourceReloadListener {
 
     /** The lightmap texture used for entity rendering. */
     val lightTexture: net.minecraft.client.texture.AbstractTexture
-        get() = MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.texture
+        get() = MinecraftClient.getInstance().textureManager.getTexture(
+            net.minecraft.util.Identifier("minecraft", "dynamic/light_map_1")
+        )
 
     private val loaders: List<ModelLoader> = listOf(
         GltfModelLoader,
@@ -50,7 +53,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     override fun getFabricId(): Identifier = Identifier("boundbyfate-core", "model_manager")
 
     override fun reload(
-        synchronizer: net.fabricmc.fabric.api.resource.ResourceReloadListener.Synchronizer,
+        synchronizer: net.minecraft.resource.ResourceReloader.Synchronizer,
         manager: ResourceManager,
         executor: Executor,
         syncExecutor: Executor
@@ -67,7 +70,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
                 }.awaitAll().toMap()
             }
         }, executor).thenCompose { prepared ->
-            synchronizer.whenPrepared(prepared)
+            synchronizer.whenPrepared<Map<Identifier, PreparedModelUpdate<AnimatedModel>>>(prepared)
         }.thenAcceptAsync({ prepared ->
             prepared.forEach { (location, update) ->
                 publish(location, models.computeIfAbsent(location) { MutableStateFlow(AnimatedModel.EMPTY) }, update)
@@ -138,10 +141,10 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     }
 
     private fun destroyLater(model: AnimatedModel) {
-        if (net.minecraft.client.render.RenderSystem.isOnRenderThread()) {
+        if (RenderSystem.isOnRenderThread()) {
             model.destroy()
         } else {
-            net.minecraft.client.render.RenderSystem.recordRenderCall(model::destroy)
+            RenderSystem.recordRenderCall(model::destroy)
         }
     }
 

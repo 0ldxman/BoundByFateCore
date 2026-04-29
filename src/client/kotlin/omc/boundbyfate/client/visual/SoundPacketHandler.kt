@@ -16,9 +16,8 @@ import omc.boundbyfate.network.packet.s2c.PlaySoundPacket
 object SoundPacketHandler {
 
     fun register() {
-        ClientPlayNetworking.registerGlobalReceiver(PlaySoundPacket.ID) { packet, context ->
-            context.client().execute {
-                val client = context.client()
+        ClientPlayNetworking.registerGlobalReceiver(PlaySoundPacket.TYPE) { client, player, packet, sender ->
+            client.execute {
                 val world = client.world ?: return@execute
 
                 if (packet.positional) {

@@ -103,7 +103,7 @@ enum class Side(val displayName: String) {
     BACK("Back"),
     ;
 
-    object UpperCase : SnakeAsUpperCaseSerializer<Side>(Side.serializer())
+    object UpperCase : SnakeAsUpperCaseSerializer<Side>(serializer())
 
     companion object {
         @JvmStatic

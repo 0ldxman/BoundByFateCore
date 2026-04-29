@@ -46,10 +46,14 @@ class MusicPlayer(private val slotName: String) {
 
             // Создаём OpenAL буфер
             bufferId = alGenBuffers()
+            // alBufferData ожидает ShortBuffer для 16-bit PCM
+            val shortBuffer = java.nio.ByteBuffer.wrap(pcmData.data)
+                .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer()
             alBufferData(
                 bufferId,
                 if (pcmData.channels == 1) AL_FORMAT_MONO16 else AL_FORMAT_STEREO16,
-                pcmData.data,
+                shortBuffer,
                 pcmData.sampleRate
             )
 

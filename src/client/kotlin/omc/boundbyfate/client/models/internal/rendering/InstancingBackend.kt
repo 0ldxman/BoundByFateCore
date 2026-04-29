@@ -54,14 +54,15 @@ inline fun withInstancingRenderState(body: () -> Unit) {
     RenderSystem.activeTexture(GL13.GL_TEXTURE2)
     val texture2 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
     RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
-    RenderSystem.setShaderTexture(2, HollowModelManager.lightTexture.getGlId())
+    RenderSystem.setShaderTexture(2) { HollowModelManager.lightTexture.getGlId() }
 
     RenderSystem.activeTexture(GL13.GL_TEXTURE1)
     val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
-    MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
-    RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
-    RenderSystem.setShaderTexture(1, RenderSystem.getShaderTexture(1))
-    MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+    MinecraftClient.getInstance().gameRenderer.overlayTexture.setupOverlayColor()
+    val overlayTextureId = RenderSystem.getShaderTexture(1)
+    RenderSystem.bindTexture(overlayTextureId)
+    RenderSystem.setShaderTexture(1) { overlayTextureId }
+    MinecraftClient.getInstance().gameRenderer.overlayTexture.teardownOverlayColor()
 
     RenderSystem.activeTexture(GL13.GL_TEXTURE0)
     val texture0 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
@@ -69,9 +70,9 @@ inline fun withInstancingRenderState(body: () -> Unit) {
     try {
         body()
     } finally {
-        RenderSystem.setShaderTexture(0, shaderTexture0)
-        RenderSystem.setShaderTexture(1, shaderTexture1)
-        RenderSystem.setShaderTexture(2, shaderTexture2)
+        RenderSystem.setShaderTexture(0) { shaderTexture0 }
+        RenderSystem.setShaderTexture(1) { shaderTexture1 }
+        RenderSystem.setShaderTexture(2) { shaderTexture2 }
         RenderSystem.activeTexture(GL13.GL_TEXTURE2)
         RenderSystem.bindTexture(texture2)
         RenderSystem.activeTexture(GL13.GL_TEXTURE1)
@@ -113,11 +114,12 @@ inline fun renderTranslucent(
 fun fallbackToCapturedDraws(
     renderer: PipelineRenderer,
     instances: List<SubmittedInstance>,
-    shader: ShaderProgram = SHADER ?: return,
+    shader: ShaderProgram? = SHADER,
 ) {
+    val s = shader ?: return
     val drawInstances = if (renderer.isTranslucent) instances.sortedByDescending(SubmittedInstance::sortKey) else instances
     for (instance in drawInstances) {
-        renderer.renderCapturedInstance(instance, shader)
+        renderer.renderCapturedInstance(instance, s)
     }
 }
 

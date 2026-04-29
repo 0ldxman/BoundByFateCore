@@ -99,9 +99,9 @@ class ListRenderPipeline : RenderPipeline {
         RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
         RenderSystem.activeTexture(GL13.GL_TEXTURE1)
         val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
-        MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture.setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
-        MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture.teardownOverlayColor()
         RenderSystem.activeTexture(GL13.GL_TEXTURE0)
 
         val texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
@@ -140,9 +140,9 @@ class ListRenderPipeline : RenderPipeline {
         RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
         RenderSystem.activeTexture(GL13.GL_TEXTURE1)
         val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
-        MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture.setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
-        MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
+        MinecraftClient.getInstance().gameRenderer.overlayTexture.teardownOverlayColor()
         RenderSystem.activeTexture(GL13.GL_TEXTURE0)
 
         val texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
