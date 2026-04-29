@@ -40,7 +40,7 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
      * Компонент синхронизируется с клиентом через ComponentSyncHandler.
      */
     override fun initialize(
-        world: net.minecraft.server.world.ServerWorld,
+        world: net.minecraft.world.ServerWorldAccess,
         difficulty: net.minecraft.world.LocalDifficulty,
         spawnReason: net.minecraft.entity.SpawnReason,
         entityData: net.minecraft.entity.EntityData?,

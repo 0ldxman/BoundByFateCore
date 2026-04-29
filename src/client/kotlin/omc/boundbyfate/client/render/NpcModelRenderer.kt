@@ -4,15 +4,18 @@ import net.minecraft.client.util.math.MatrixStack
 import de.fabmax.kool.util.Time
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
+import net.minecraft.client.MinecraftClient
 import net.minecraft.client.render.OverlayTexture
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.entity.Entity
 import net.minecraft.entity.LivingEntity
+import net.minecraft.util.math.Box
 import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
 import omc.boundbyfate.client.models.internal.controller.WrapMode
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
+import omc.boundbyfate.client.models.internal.v2.calculateBounds
 import omc.boundbyfate.component.components.NpcModelComponent
 import omc.boundbyfate.entity.NpcEntity
 import org.joml.Quaternionf
@@ -58,6 +61,28 @@ object NpcModelRenderer {
 
         // Получаем или создаём ModelAttachment
         val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
+
+        // Frustum culling по реальным bounds модели.
+        // MC culling использует hitbox сущности (0.6×1.8), модель может быть крупнее.
+        val frustum = MinecraftClient.getInstance().worldRenderer?.let {
+            try {
+                val field = it.javaClass.getDeclaredField("frustum")
+                field.isAccessible = true
+                field.get(it) as? net.minecraft.client.render.Frustum
+            } catch (_: Exception) { null }
+        }
+        if (frustum != null) {
+            val modelBounds = cached.attachment.calculateBounds()
+            if (modelBounds != null) {
+                val (min, max) = modelBounds
+                val pos = entity.getLerpedPos(partialTick)
+                val worldBox = Box(
+                    pos.x + min.x, pos.y + min.y, pos.z + min.z,
+                    pos.x + max.x, pos.y + max.y, pos.z + max.z
+                )
+                if (!frustum.isVisible(worldBox)) return true // отменяем стандартный рендер, но не рисуем
+            }
+        }
 
         // Обновляем анимации (NpcEntity всегда LivingEntity)
         cached.animationSystem?.update(Time.deltaT)

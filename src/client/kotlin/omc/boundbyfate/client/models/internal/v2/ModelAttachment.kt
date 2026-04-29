@@ -17,7 +17,6 @@ import omc.boundbyfate.client.models.internal.rendering.ListRenderPipeline
 import omc.boundbyfate.client.models.internal.rendering.RenderPipeline
 import omc.boundbyfate.client.util.coroutineScope
 import omc.boundbyfate.client.util.rl
-// IrisHelper removed - shadow rendering check replaced with false
 
 fun ModelAttachment(model: String) = ModelAttachment(HollowModelManager.getOrCreate(model.rl), null)
 class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) : Attachment(parent) {
@@ -137,7 +136,7 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
     override fun collectCommands(pipeline: RenderPipeline) {
         super.collectCommands(pipeline)
-        pipeline.onUpdate { update(if (false) 0f else Time.deltaT) }
+        pipeline.onUpdate { update(if (ShadowRenderingDetector.isShadowRendering()) 0f else Time.deltaT) }
         runtimeNodes.forEach { it.collectCommands(pipeline) }
     }
 
