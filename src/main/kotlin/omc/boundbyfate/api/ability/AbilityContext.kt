@@ -3,6 +3,10 @@ package omc.boundbyfate.api.ability
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.Vec3d
+import omc.boundbyfate.component.components.EntityCharacterData
+import omc.boundbyfate.component.core.getComponent
+import omc.boundbyfate.data.world.BbfWorldData
+import omc.boundbyfate.data.world.sections.CharacterSection
 
 /**
  * Контекст конкретного использования способности.
@@ -98,7 +102,21 @@ data class AbilityContext(
 
     /**
      * Уровень персонажа кастера.
-     * TODO: получать из компонента персонажа
+     *
+     * Читается из [CharacterSection] через [EntityCharacterData] компонент.
+     * Возвращает 1 если персонаж не привязан к entity (НПС без CharacterData).
      */
-    val casterLevel: Int get() = 1 // заглушка до реализации компонента уровня
+    val casterLevel: Int get() {
+        val characterId = caster.getComponent(EntityCharacterData.TYPE)?.characterId
+            ?: return 1
+        return try {
+            BbfWorldData.get(world.server)
+                .getSection(CharacterSection.TYPE)
+                .characters[characterId]
+                ?.progression?.level
+                ?: 1
+        } catch (_: Exception) {
+            1
+        }
+    }
 }

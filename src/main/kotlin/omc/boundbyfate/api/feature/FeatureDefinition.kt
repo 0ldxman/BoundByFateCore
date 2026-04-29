@@ -101,10 +101,7 @@ data class FeatureDefinition(
     override fun getTranslationKey(): String = "feature.${id.namespace}.${id.path}"
     
     override fun validate() {
-        // Проверяем что есть хотя бы один грант
-        if (grants.isEmpty()) {
-            throw IllegalStateException("Feature $id has no grants")
-        }
+        // Пустые фичи допустимы — могут быть маркерами или плейсхолдерами
     }
     
     companion object {

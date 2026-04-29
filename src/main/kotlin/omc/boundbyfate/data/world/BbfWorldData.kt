@@ -1,5 +1,6 @@
 package omc.boundbyfate.data.world
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.Identifier
@@ -12,6 +13,7 @@ import omc.boundbyfate.data.world.core.WorldDataSection
 import omc.boundbyfate.data.world.core.WorldDataTransaction
 import omc.boundbyfate.data.world.core.execute
 import org.slf4j.LoggerFactory
+import java.util.WeakHashMap
 
 /**
  * Центральный фасад системы глобальных данных мира.
@@ -162,8 +164,22 @@ class BbfWorldData private constructor(
 
         /**
          * Кэш экземпляров BbfWorldData по серверу.
+         *
+         * WeakHashMap — сервер является ключом, при его GC запись удаляется автоматически.
+         * Дополнительно очищается через [ServerLifecycleEvents.SERVER_STOPPING].
          */
-        private var instance: BbfWorldData? = null
+        private val instances = WeakHashMap<MinecraftServer, BbfWorldData>()
+
+        /**
+         * Регистрирует автоматическую инвалидацию при остановке сервера.
+         * Вызывается один раз при инициализации мода.
+         */
+        fun registerLifecycle() {
+            ServerLifecycleEvents.SERVER_STOPPING.register { server ->
+                instances.remove(server)
+                logger.debug("BbfWorldData invalidated for stopping server")
+            }
+        }
 
         /**
          * Регистрирует секцию WorldData.
@@ -226,6 +242,7 @@ class BbfWorldData private constructor(
          * Получает или создаёт экземпляр BbfWorldData для сервера.
          *
          * Использует Overworld как хранилище PersistentState.
+         * Каждый экземпляр [MinecraftServer] получает свой изолированный [BbfWorldData].
          *
          * ```kotlin
          * val worldData = BbfWorldData.get(server)
@@ -233,32 +250,19 @@ class BbfWorldData private constructor(
          * ```
          */
         fun get(server: MinecraftServer): BbfWorldData {
-            // Пересоздаём если сервер перезапустился
-            val current = instance
-            if (current != null) return current
-
-            val overworld = server.getWorld(World.OVERWORLD)
-                ?: throw IllegalStateException("Overworld not found — cannot initialize BbfWorldData")
-
-            val newInstance = BbfWorldData(overworld.persistentStateManager)
-            instance = newInstance
-            logger.debug("BbfWorldData initialized for server")
-            return newInstance
+            return instances.getOrPut(server) {
+                val overworld = server.getWorld(World.OVERWORLD)
+                    ?: throw IllegalStateException("Overworld not found — cannot initialize BbfWorldData")
+                val instance = BbfWorldData(overworld.persistentStateManager)
+                logger.debug("BbfWorldData created for server instance")
+                instance
+            }
         }
 
         /**
          * Получает экземпляр BbfWorldData для мира.
          */
         fun get(world: ServerWorld): BbfWorldData = get(world.server)
-
-        /**
-         * Сбрасывает кэш экземпляра.
-         * Вызывается при остановке сервера.
-         */
-        internal fun invalidate() {
-            instance = null
-            logger.debug("BbfWorldData instance invalidated")
-        }
     }
 }
 

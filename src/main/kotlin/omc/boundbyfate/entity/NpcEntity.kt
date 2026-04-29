@@ -1,4 +1,4 @@
-﻿package omc.boundbyfate.system.npc.entity
+﻿package omc.boundbyfate.entity
 
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType

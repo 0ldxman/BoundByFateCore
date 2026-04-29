@@ -127,6 +127,9 @@ class BoundByFateCore : ModInitializer {
     private fun initializeSystems() {
         logger.info("Initializing systems...")
 
+        // Регистрация lifecycle для BbfWorldData (автоматическая инвалидация при остановке сервера)
+        omc.boundbyfate.data.world.BbfWorldData.registerLifecycle()
+
         // Инициализация систем эффектов и условий
         omc.boundbyfate.system.effect.BbfEffects.register()
         omc.boundbyfate.system.condition.BbfConditionTypes

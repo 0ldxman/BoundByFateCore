@@ -13,7 +13,7 @@ import omc.boundbyfate.client.models.internal.controller.AnimationSystem
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 import omc.boundbyfate.component.components.NpcModelComponent
-import omc.boundbyfate.system.npc.entity.NpcEntity
+import omc.boundbyfate.entity.NpcEntity
 import org.joml.Quaternionf
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap

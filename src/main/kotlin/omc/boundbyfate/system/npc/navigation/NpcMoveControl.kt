@@ -3,7 +3,7 @@
 import net.minecraft.entity.ai.control.MoveControl
 import net.minecraft.entity.attribute.EntityAttributes
 import net.minecraft.util.math.MathHelper
-import omc.boundbyfate.system.npc.entity.NpcEntity
+import omc.boundbyfate.entity.NpcEntity
 import kotlin.math.atan2
 import kotlin.math.sqrt
 

@@ -3,7 +3,7 @@ package omc.boundbyfate.client.render
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents
-import omc.boundbyfate.system.npc.entity.NpcEntity
+import omc.boundbyfate.entity.NpcEntity
 
 /**
  * Обработчик событий сущностей для системы рендеринга НПС.

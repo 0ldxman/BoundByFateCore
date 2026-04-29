@@ -8,7 +8,7 @@ import net.minecraft.registry.Registries
 import net.minecraft.registry.Registry
 import net.minecraft.util.Identifier
 import omc.boundbyfate.BoundByFateCore
-import omc.boundbyfate.system.npc.entity.NpcEntity
+import omc.boundbyfate.entity.NpcEntity
 import org.slf4j.LoggerFactory
 
 /**
