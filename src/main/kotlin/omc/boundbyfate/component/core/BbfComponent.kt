@@ -9,7 +9,6 @@ import net.minecraft.registry.RegistryWrapper
 import net.minecraft.util.Identifier
 import omc.boundbyfate.util.sync.decodeFromNbt
 import omc.boundbyfate.util.sync.encodeToNbt
-import net.minecraft.util.Identifier
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 

@@ -47,7 +47,7 @@ object WorldDataSyncHandler {
 
         // При остановке сервера — инвалидировать кэш
         ServerLifecycleEvents.SERVER_STOPPED.register {
-            BbfWorldData.invalidate()
+            // Кэш инвалидируется автоматически через BbfWorldData.registerLifecycle()
         }
 
         logger.info("WorldDataSyncHandler registered")
