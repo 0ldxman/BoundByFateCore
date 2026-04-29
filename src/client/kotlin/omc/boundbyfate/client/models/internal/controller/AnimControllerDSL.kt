@@ -660,7 +660,7 @@ data class ClipNode(
             data.rotation?.compute(sampleTime)?.let { rotation.set(it) }
             data.scale?.compute(sampleTime)?.let { scale.set(it) }
         }
-    }    }
+    }
 
     fun transferFrom(old: ClipNode) {
         pausedAnimTime = old.pausedAnimTime

@@ -15,6 +15,7 @@ import omc.boundbyfate.client.models.internal.controller.AnimationInstance
 import omc.boundbyfate.client.models.internal.manager.HollowModelManager
 import omc.boundbyfate.client.models.internal.rendering.ListRenderPipeline
 import omc.boundbyfate.client.models.internal.rendering.RenderPipeline
+import omc.boundbyfate.client.util.ShadowRenderingDetector
 import omc.boundbyfate.client.util.coroutineScope
 import omc.boundbyfate.client.util.rl
 
