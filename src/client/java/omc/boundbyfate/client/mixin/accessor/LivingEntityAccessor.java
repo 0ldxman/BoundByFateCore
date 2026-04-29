@@ -9,11 +9,11 @@ public interface LivingEntityAccessor {
     @Accessor("lastDamageTaken")
     float bbf_getLastDamageTaken();
 
-    /** yarn: prevStepBobbingAmount → lastStrideDistance */
-    @Accessor("lastStrideDistance")
+    /** yarn 1.20.1: prevStepBobbingAmount */
+    @Accessor("prevStepBobbingAmount")
     float bbf_getLastStrideDistance();
 
-    /** yarn: stepBobbingAmount → strideDistance */
-    @Accessor("strideDistance")
+    /** yarn 1.20.1: stepBobbingAmount */
+    @Accessor("stepBobbingAmount")
     float bbf_getStrideDistance();
 }

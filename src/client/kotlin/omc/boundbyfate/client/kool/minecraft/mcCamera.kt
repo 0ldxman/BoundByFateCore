@@ -96,7 +96,7 @@ private fun bobView(mat4f: MutableMat4f, partialTicks: Float) {
         val entityAccessor = cameraEntity as LivingEntityAccessor
         val f = cameraEntity.distanceTraveled - cameraEntity.horizontalSpeed
         val g = -(cameraEntity.distanceTraveled + f * partialTicks)
-        // yarn 1.20.1: prevStepBobbingAmount → lastStrideDistance, stepBobbingAmount → strideDistance
+        // yarn 1.20.1: prevStepBobbingAmount, stepBobbingAmount
         val h = MathHelper.lerp(partialTicks, entityAccessor.bbf_getLastStrideDistance(), entityAccessor.bbf_getStrideDistance())
         mat4f.translate(
             (MathHelper.sin(g * MathHelper.PI) * h * 0.5f),
