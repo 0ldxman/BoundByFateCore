@@ -1,0 +1,92 @@
+{
+  "ui.hover": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/hover", "volume": 0.3, "pitch": 1.2 }
+    ]
+  },
+  "ui.click": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/click", "volume": 0.4, "pitch": 1.0 }
+    ]
+  },
+  "ui.screen.open": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/screen_open", "volume": 0.5, "pitch": 1.0 }
+    ]
+  },
+  "ui.screen.close": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/screen_close", "volume": 0.4, "pitch": 1.0 }
+    ]
+  },
+  "ui.overlay.open": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/overlay_open", "volume": 0.4, "pitch": 1.1 }
+    ]
+  },
+  "ui.overlay.close": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/overlay_close", "volume": 0.3, "pitch": 1.1 }
+    ]
+  },
+  "ui.error": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/error", "volume": 0.5, "pitch": 0.9 }
+    ]
+  },
+  "ui.success": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/success", "volume": 0.5, "pitch": 1.0 }
+    ]
+  },
+  "ui.notification": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/notification", "volume": 0.4, "pitch": 1.0 }
+    ]
+  },
+  "ui.mystical.hover": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/hover", "volume": 0.3, "pitch": 1.3 }
+    ]
+  },
+  "ui.mystical.click": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/click", "volume": 0.4, "pitch": 1.1 }
+    ]
+  },
+  "ui.mystical.open": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/open", "volume": 0.5, "pitch": 0.9 }
+    ]
+  },
+  "ui.mystical.close": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/close", "volume": 0.4, "pitch": 0.9 }
+    ]
+  },
+  "ui.mystical.overlay_open": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/overlay_open", "volume": 0.4, "pitch": 1.0 }
+    ]
+  },
+  "ui.mystical.overlay_close": {
+    "subtitle": "",
+    "sounds": [
+      { "name": "boundbyfate-core:ui/mystical/overlay_close", "volume": 0.3, "pitch": 1.0 }
+    ]
+  }
+}

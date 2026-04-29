@@ -22,6 +22,12 @@ class BoundByFateCoreClient : ClientModInitializer {
         omc.boundbyfate.client.render.NpcEntityRendererRegistry.register()
         omc.boundbyfate.client.render.NpcRenderEventHandler.register()
 
+        // Кейбиндинги
+        omc.boundbyfate.client.keybind.BbfKeybinds.register()
+
+        // HUD система
+        omc.boundbyfate.client.hud.HudSystem.register()
+
         // Регистрация HollowModelManager как reload listener
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
             .registerReloadListener(omc.boundbyfate.client.models.internal.manager.HollowModelManager)
