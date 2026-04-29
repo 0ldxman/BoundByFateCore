@@ -119,7 +119,8 @@ data class DirtyState(
 inline fun <T : DirtyTrackable, R> T.computeIfDirty(compute: (T) -> Pair<R, T>): Pair<R, T> {
     return if (isDirty()) {
         val (result, cleaned) = compute(this)
-        result to cleaned.markClean() as T
+        @Suppress("UNCHECKED_CAST")
+        result to (cleaned.markClean() as T)
     } else {
         throw IllegalStateException("Cannot compute on clean object - value should be cached")
     }

@@ -58,10 +58,8 @@ object NpcModelRenderer {
         // Получаем или создаём ModelAttachment
         val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
 
-        // Обновляем анимации
-        if (entity is LivingEntity) {
-            cached.animationSystem?.update(Time.deltaT)
-        }
+        // Обновляем анимации (NpcEntity всегда LivingEntity)
+        cached.animationSystem?.update(Time.deltaT)
 
         // Рендерим модель
         renderModel(
@@ -88,10 +86,10 @@ object NpcModelRenderer {
         packedLight: Int,
         scale: Float
     ) {
-        val overlay = if (entity is LivingEntity) {
+        val overlay = if (entity.hurtTime > 0 || entity.deathTime > 0) {
             OverlayTexture.packUv(
                 OverlayTexture.getU(0f),
-                OverlayTexture.getV(entity.hurtTime > 0 || entity.deathTime > 0)
+                OverlayTexture.getV(true)
             )
         } else {
             OverlayTexture.DEFAULT_UV

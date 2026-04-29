@@ -91,6 +91,7 @@ class BbfWorldData private constructor(
             entry.fileName
         )
         logger.debug("Loaded section '${entry.id}' from '${entry.fileName}'")
+        @Suppress("UNCHECKED_CAST")
         return persistentState.section as T
     }
 
