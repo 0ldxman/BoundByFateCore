@@ -193,19 +193,39 @@ private class BbfComponentCodec<T : BbfComponent>(
 
 /**
  * Получает компонент или создаёт новый если не существует.
+ * Автоматически подключает [DirtyEntityTracker] если сущность — [LivingEntity].
  *
  * ```kotlin
  * val alignment = player.getOrCreate(EntityAlignmentData.TYPE)
  * ```
  */
-fun <T : BbfComponent> Entity.getOrCreate(type: AttachmentType<T>): T =
-    this.getAttachedOrCreate(type)
+fun <T : BbfComponent> Entity.getOrCreate(type: AttachmentType<T>): T {
+    val component = this.getAttachedOrCreate(type)
+    attachDirtyCallback(this, component)
+    return component
+}
 
 /**
  * Получает компонент или null если не существует.
+ * Автоматически подключает [DirtyEntityTracker] если сущность — [LivingEntity].
  */
-fun <T : BbfComponent> Entity.getComponent(type: AttachmentType<T>): T? =
-    this.getAttached(type)
+fun <T : BbfComponent> Entity.getComponent(type: AttachmentType<T>): T? {
+    val component = this.getAttached(type) ?: return null
+    attachDirtyCallback(this, component)
+    return component
+}
+
+/**
+ * Подключает callback к компоненту если он ещё не подключён.
+ * Идемпотентно — повторные вызовы безопасны.
+ */
+private fun <T : BbfComponent> attachDirtyCallback(entity: Entity, component: T) {
+    if (component.entityDirtyCallback != null) return
+    if (entity !is net.minecraft.entity.LivingEntity) return
+    component.entityDirtyCallback = {
+        omc.boundbyfate.component.sync.DirtyEntityTracker.markDirty(entity)
+    }
+}
 
 /**
  * Сериализует компонент в ByteArray для отправки по сети.

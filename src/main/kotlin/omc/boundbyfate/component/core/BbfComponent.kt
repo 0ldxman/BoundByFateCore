@@ -18,6 +18,7 @@ import kotlin.reflect.KProperty
  * Предоставляет:
  * - Автоматический dirty tracking через делегаты [synced], [syncedList], [syncedMap]
  * - Автоматическую сериализацию/десериализацию — писать [toNbt]/[fromNbt] вручную не нужно
+ * - Уведомление [DirtyEntityTracker] при изменении (через [entityDirtyCallback])
  *
  * ## Создание компонента
  *
@@ -67,8 +68,22 @@ abstract class BbfComponent {
      */
     internal val syncedProperties = mutableListOf<SyncedSerializable>()
 
+    /**
+     * Callback для уведомления [omc.boundbyfate.component.sync.DirtyEntityTracker].
+     *
+     * Устанавливается автоматически в extension-функции [getOrCreate]/[getComponent]
+     * при первом получении компонента от сущности.
+     *
+     * Не трогай вручную — управляется инфраструктурой.
+     */
+    internal var entityDirtyCallback: (() -> Unit)? = null
+
     fun markClean() { isDirty = false }
-    fun markDirty() { isDirty = true }
+
+    fun markDirty() {
+        isDirty = true
+        entityDirtyCallback?.invoke()
+    }
 
     // ── Делегаты ──────────────────────────────────────────────────────────
 
@@ -84,7 +99,7 @@ abstract class BbfComponent {
      * ```
      */
     protected fun <T> synced(initial: T): SyncedProperty<T> =
-        SyncedProperty(initial, codec = null) { isDirty = true }
+        SyncedProperty(initial, codec = null) { markDirty() }
             .also { syncedProperties += it }
 
     /**
@@ -95,7 +110,7 @@ abstract class BbfComponent {
      * ```
      */
     protected fun <T> synced(initial: T, codec: Codec<T>): SyncedProperty<T> =
-        SyncedProperty(initial, codec) { isDirty = true }
+        SyncedProperty(initial, codec) { markDirty() }
             .also { syncedProperties += it }
 
     /**
@@ -108,7 +123,7 @@ abstract class BbfComponent {
     protected fun <T : Any> syncedList(
         elementCodec: Codec<T>,
         initial: MutableList<T> = mutableListOf()
-    ): SyncedList<T> = SyncedList(initial, elementCodec) { isDirty = true }
+    ): SyncedList<T> = SyncedList(initial, elementCodec) { markDirty() }
         .also { syncedProperties += it }
 
     /**
@@ -122,7 +137,7 @@ abstract class BbfComponent {
         keyCodec: Codec<K>,
         valueCodec: Codec<V>,
         initial: MutableMap<K, V> = mutableMapOf()
-    ): SyncedMap<K, V> = SyncedMap(initial, keyCodec, valueCodec) { isDirty = true }
+    ): SyncedMap<K, V> = SyncedMap(initial, keyCodec, valueCodec) { markDirty() }
         .also { syncedProperties += it }
 
     // ── Сериализация ──────────────────────────────────────────────────────

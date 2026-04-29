@@ -19,6 +19,12 @@ import omc.boundbyfate.data.world.sections.CharacterSection
  * Создаётся [omc.boundbyfate.system.ability.AbilityExecutor] при попытке
  * использовать способность. Живёт на протяжении всего выполнения.
  *
+ * ## Кэширование
+ *
+ * [casterLevel] вычисляется один раз при первом обращении (`lazy`) и кэшируется
+ * на всё время жизни контекста. Инвалидация не нужна — контекст создаётся
+ * заново при каждом использовании способности.
+ *
  * ## Передача данных между хуками
  *
  * Используй [stash] для передачи данных между [AbilityHandler.onPreparationStart],
@@ -50,7 +56,7 @@ import omc.boundbyfate.data.world.sections.CharacterSection
  * @property stash хранилище данных между хуками
  * @property results накопленные результаты выполнения
  */
-data class AbilityContext(
+class AbilityContext(
     val caster: LivingEntity,
     val definition: AbilityDefinition,
     val world: ServerWorld,
@@ -103,13 +109,19 @@ data class AbilityContext(
     /**
      * Уровень персонажа кастера.
      *
+     * Вычисляется один раз при первом обращении и кэшируется на всё время
+     * жизни контекста (одно выполнение способности).
+     *
+     * Инвалидация не нужна — контекст создаётся заново при каждом использовании
+     * способности, поэтому кэш всегда актуален.
+     *
      * Читается из [CharacterSection] через [EntityCharacterData] компонент.
      * Возвращает 1 если персонаж не привязан к entity (НПС без CharacterData).
      */
-    val casterLevel: Int get() {
+    val casterLevel: Int by lazy {
         val characterId = caster.getComponent(EntityCharacterData.TYPE)?.characterId
-            ?: return 1
-        return try {
+            ?: return@lazy 1
+        try {
             BbfWorldData.get(world.server)
                 .getSection(CharacterSection.TYPE)
                 .characters[characterId]

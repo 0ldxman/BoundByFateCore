@@ -1,193 +1,117 @@
 package omc.boundbyfate
 
 import net.fabricmc.api.ModInitializer
+import omc.boundbyfate.component.core.BbfComponents
 import omc.boundbyfate.event.core.BbfEvents
 import omc.boundbyfate.registry.core.RegistryManager
-import omc.boundbyfate.component.core.BbfComponents
+import omc.boundbyfate.system.core.BuiltinSystems
+import omc.boundbyfate.system.core.SystemRegistry
 import org.slf4j.LoggerFactory
 
 /**
  * Главный класс мода BoundByFate Core.
- * 
+ *
  * Отвечает за инициализацию всех систем в правильном порядке:
- * 1. Регистры (Registries)
- * 2. Компоненты (Attachments)
- * 3. События (Events)
- * 4. Системы (Systems)
+ * 1. Регистры (Registries) — загрузчики JSON датапаков
+ * 2. Компоненты (Attachments) — регистрация entity компонентов
+ * 3. Системы (Systems) — через [SystemRegistry] с топологической сортировкой
+ *
+ * ## Добавление новой системы
+ *
+ * Создай `object MySystem : BbfSystem` и добавь в [BuiltinSystems.registerAll].
+ * Порядок инициализации определяется [BbfSystem.dependencies], не позицией в списке.
  */
 class BoundByFateCore : ModInitializer {
-    
+
     companion object {
         const val MOD_ID = "boundbyfate-core"
         private val logger = LoggerFactory.getLogger(BoundByFateCore::class.java)
     }
-    
+
     override fun onInitialize() {
         logger.info("=".repeat(50))
         logger.info("Initializing BoundByFate Core...")
         logger.info("=".repeat(50))
-        
-        // Этап 1: Инициализация регистров
+
         initializeRegistries()
-        
-        // Этап 2: Инициализация компонентов
         initializeComponents()
-        
-        // Этап 3: Инициализация событий
-        initializeEvents()
-        
-        // Этап 4: Инициализация систем
         initializeSystems()
-        
+
         logger.info("=".repeat(50))
         logger.info("BoundByFate Core initialized successfully!")
         logger.info("=".repeat(50))
-        
-        // Вывод статистики
+
         printStatistics()
     }
-    
-    /**
-     * Инициализирует все регистры.
-     */
+
+    // ── Этап 1: Регистры ──────────────────────────────────────────────────
+
     private fun initializeRegistries() {
         logger.info("Initializing registries...")
-        
-        // Регистрация регистров
+
         RegistryManager.registerRegistry(omc.boundbyfate.registry.StatRegistry)
-        
-        // Регистрация загрузчиков конфигураций
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.stat.StatDefinition>(
+
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
             omc.boundbyfate.config.loader.StatConfigLoader,
             "bbf_stat"
         )
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.race.RaceDefinition>(
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
             omc.boundbyfate.config.loader.RaceConfigLoader,
             "bbf_race"
         )
-
-        // Регистрация загрузчика состояний
-        omc.boundbyfate.config.ConfigManager.registerDatapackLoader<omc.boundbyfate.api.status.StatusDefinition>(
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
             omc.boundbyfate.config.loader.StatusConfigLoader,
             "bbf_status"
         )
 
-        // Регистрация загрузчика способностей
         net.fabricmc.fabric.api.resource.ResourceManagerHelper
             .get(net.minecraft.resource.ResourceType.SERVER_DATA)
             .registerReloadListener(omc.boundbyfate.config.loader.AbilityConfigLoader)
 
-        // Регистрация загрузчика конфига мировоззрений
         net.fabricmc.fabric.api.resource.ResourceManagerHelper
             .get(net.minecraft.resource.ResourceType.SERVER_DATA)
             .registerReloadListener(omc.boundbyfate.config.loader.AlignmentConfigLoader)
 
-        // Регистрация загрузчика предметов
         net.fabricmc.fabric.api.resource.ResourceManagerHelper
             .get(net.minecraft.resource.ResourceType.SERVER_DATA)
             .registerReloadListener(omc.boundbyfate.config.loader.ItemConfigLoader)
-        
-        // Финализация регистрации
+
         RegistryManager.finalizeRegistration()
-        
-        // Публикация события
         BbfEvents.Lifecycle.REGISTRIES_INITIALIZED.invoker().onRegistriesInitialized()
-        
+
         logger.info("Registries initialized")
     }
-    
-    /**
-     * Инициализирует все компоненты.
-     */
+
+    // ── Этап 2: Компоненты ────────────────────────────────────────────────
+
     private fun initializeComponents() {
         logger.info("Initializing components...")
-        
-        // Публикация события
         BbfEvents.Lifecycle.COMPONENTS_INITIALIZED.invoker().onComponentsInitialized()
-
         logger.info("Components initialized")
     }
-    
-    /**
-     * Инициализирует систему событий.
-     */
-    private fun initializeEvents() {
-        logger.info("Initializing events...")
-        
-        // TODO: Регистрация обработчиков событий
-        // ServerLifecycleEvents.SERVER_STARTED.register { ... }
-        // PlayerEvent.PLAYER_JOIN.register { ... }
-        
-        logger.info("Events initialized")
-    }
-    
-    /**
-     * Инициализирует игровые системы.
-     */
+
+    // ── Этап 3: Системы ───────────────────────────────────────────────────
+
     private fun initializeSystems() {
         logger.info("Initializing systems...")
 
-        // Регистрация lifecycle для BbfWorldData (автоматическая инвалидация при остановке сервера)
-        omc.boundbyfate.data.world.BbfWorldData.registerLifecycle()
+        // Регистрируем все встроенные системы
+        BuiltinSystems.registerAll()
 
-        // Инициализация систем эффектов и условий
-        omc.boundbyfate.system.effect.BbfEffects.register()
-        omc.boundbyfate.system.condition.BbfConditionTypes
-        omc.boundbyfate.registry.EffectRegistry.printStatistics()
-
-        logger.info(
-            "${omc.boundbyfate.api.condition.ConditionTypeRegistry.size()} condition types registered"
-        )
-
-        // Регистрация встроенных способностей
-        omc.boundbyfate.system.ability.BbfAbilities.register()
-        omc.boundbyfate.registry.AbilityRegistry.printStatistics()
-
-        // Регистрация слушателей событий организаций
-        omc.boundbyfate.system.organization.OrganizationSystem.registerEventListeners()
-
-        // Инициализация компонентов — обращение к объектам запускает регистрацию
-        omc.boundbyfate.component.BbfBuiltinComponents
-
-        // Регистрация синхронизации компонентов
-        omc.boundbyfate.component.sync.ComponentSyncHandler.register()
-
-        // Регистрация синхронизации WorldData секций
-        omc.boundbyfate.data.world.sync.WorldDataSyncHandler.register()
-
-        // Инициализация системы визуала
-        omc.boundbyfate.system.visual.VisualOrchestrator.register()
-
-        // Инициализация системы передачи файлов
-        omc.boundbyfate.system.transfer.FileTransferSystem.register()
-
-        // Инициализация музыкальной системы
-        omc.boundbyfate.system.visual.sound.MusicSystem.register()
-
-        // Регистрация НПС сущностей
-        omc.boundbyfate.registry.NpcEntityRegistry.register()
-
-        // Инициализация секций WorldData (регистрация через companion object)
-        omc.boundbyfate.data.world.sections.CharacterSection.TYPE
-        omc.boundbyfate.data.world.sections.RelationSection.TYPE
-        omc.boundbyfate.data.world.sections.OrganizationSection.TYPE
-        omc.boundbyfate.data.world.sections.WorldSection.TYPE
-
-        omc.boundbyfate.component.core.BbfComponents.printStatistics()
+        // Инициализируем в порядке зависимостей
+        SystemRegistry.initialize()
 
         logger.info("Systems initialized")
     }
-    
-    /**
-     * Выводит статистику инициализации.
-     */
+
+    // ── Статистика ────────────────────────────────────────────────────────
+
     private fun printStatistics() {
         logger.info("")
         logger.info("=== Initialization Statistics ===")
-        
         RegistryManager.printStatistics()
         BbfComponents.printStatistics()
-        
+        SystemRegistry.printStatistics()
         logger.info("=================================")
         logger.info("")
     }
