@@ -54,6 +54,7 @@ fun <T> processSimpleConnection(con: Connection, isObjectPropertyConn: Boolean, 
         return null
     }
 
+    @Suppress("UNCHECKED_CAST")
     return ob as T
 }
 

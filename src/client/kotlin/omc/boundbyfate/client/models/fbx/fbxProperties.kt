@@ -39,9 +39,11 @@ class PropertyTable(val element: Element? = null, val templateProps: PropertyTab
     }
 
     /** PropertyGet */
+    @Suppress("UNCHECKED_CAST")
     operator fun <T> invoke(name: String, defaultValue: T) = (get(name) as? TypedProperty<T>)?.value ?: defaultValue
 
     /** PropertyGet */
+    @Suppress("UNCHECKED_CAST")
     operator fun <T> invoke(name: String, useTemplate: Boolean = false): T? {
         var prop = get(name)
         if (null == prop) {

@@ -17,6 +17,7 @@ private val json = Json {
 }
 
 fun main() {
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     val model: BlockBenchModel = json.decodeFromStream("hollowengine:models/example.bbmodel".rl.stream)
 
     println(model)

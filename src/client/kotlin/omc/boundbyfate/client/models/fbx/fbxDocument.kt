@@ -19,7 +19,7 @@ class LazyObject(val id: Long, val element: Element, val doc: Document) {
     infix fun Int.wo(other: Flags) = and(other.ordinal.inv())
     infix fun Int.or(f: LazyObject.Flags) = or(f.ordinal)
 
-    fun <T> get(dieOnError: Boolean = false) = get(dieOnError) as? T
+    fun <T> get(dieOnError: Boolean = false) = @Suppress("UNCHECKED_CAST") (get(dieOnError) as? T)
 
     fun get(dieOnError: Boolean = false): Object? {
 
