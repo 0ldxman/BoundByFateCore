@@ -8,9 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.render.RenderSystem
 import net.minecraft.resource.ResourceManager
 import net.minecraft.util.Identifier
+import net.minecraft.util.profiler.Profiler
+import com.mojang.blaze3d.systems.RenderSystem
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL20
@@ -55,6 +56,8 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     override fun reload(
         synchronizer: net.minecraft.resource.ResourceReloader.Synchronizer,
         manager: ResourceManager,
+        prepareProfiler: Profiler,
+        applyProfiler: Profiler,
         executor: Executor,
         syncExecutor: Executor
     ): CompletableFuture<Void> {

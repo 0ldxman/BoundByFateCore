@@ -12,6 +12,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.serializer
 import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.Material
 import omc.boundbyfate.client.util.rl
@@ -139,8 +140,8 @@ private class ColorSerializer: KSerializer<Color> {
 private class UvsSerializer : JsonContentPolymorphicSerializer<BedrockFile.Uvs>(BedrockFile.Uvs::class) {
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out BedrockFile.Uvs> =
         when (element) {
-            is JsonObject -> BedrockFile.Uvs.PerFace.serializer()
-            else -> BedrockFile.Uvs.Box.serializer()
+            is JsonObject -> serializer<BedrockFile.Uvs.PerFace>()
+            else -> serializer<BedrockFile.Uvs.Box>()
         }
 }
 

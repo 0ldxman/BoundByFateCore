@@ -24,6 +24,7 @@ class ItemNode(val entity: LivingEntity, val slot: EquipmentSlot, parent: Attach
             stack.multiply(Quaternionf().rotateX(-90 * MathHelper.RADIANS_PER_DEGREE))
 
             MinecraftClient.getInstance().itemRenderer.renderItem(
+                entity,
                 entity.getEquippedStack(slot),
                 when (slot) {
                     EquipmentSlot.MAINHAND -> ModelTransformationMode.THIRD_PERSON_RIGHT_HAND
@@ -34,7 +35,10 @@ class ItemNode(val entity: LivingEntity, val slot: EquipmentSlot, parent: Attach
                 slot == EquipmentSlot.OFFHAND,
                 stack,
                 source,
-                light, overlay
+                entity.world,
+                light,
+                overlay,
+                entity.id
             )
 
             stack.pop()

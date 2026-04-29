@@ -16,30 +16,26 @@ import omc.boundbyfate.network.packet.s2c.PlaySoundPacket
 object SoundPacketHandler {
 
     fun register() {
-        ClientPlayNetworking.registerGlobalReceiver(PlaySoundPacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                val world = client.world ?: return@execute
+        ClientPlayNetworking.registerGlobalReceiver(PlaySoundPacket.TYPE) { packet, player, sender ->
+            val world = player.world
 
-                if (packet.positional) {
-                    // Environment звук — позиционный
-                    world.playSound(
-                        client.player,
-                        packet.x, packet.y, packet.z,
+            if (packet.positional) {
+                world.playSound(
+                    player,
+                    packet.x, packet.y, packet.z,
+                    packet.sound,
+                    packet.category,
+                    packet.volume,
+                    packet.pitch
+                )
+            } else {
+                MinecraftClient.getInstance().soundManager.play(
+                    net.minecraft.client.sound.PositionedSoundInstance.master(
                         packet.sound,
-                        packet.category,
-                        packet.volume,
-                        packet.pitch
+                        packet.pitch,
+                        packet.volume
                     )
-                } else {
-                    // GUI звук — без позиционирования, прямо у игрока
-                    client.soundManager.play(
-                        net.minecraft.client.sound.PositionedSoundInstance.master(
-                            packet.sound,
-                            packet.pitch,
-                            packet.volume
-                        )
-                    )
-                }
+                )
             }
         }
     }

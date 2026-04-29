@@ -40,24 +40,18 @@ object FileTransferClientSystem {
 
     fun register() {
         // Список файлов от сервера при подключении
-        ClientPlayNetworking.registerGlobalReceiver(FileSyncListPacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                onSyncListReceived(packet, client)
-            }
+        ClientPlayNetworking.registerGlobalReceiver(FileSyncListPacket.TYPE) { packet, player, sender ->
+            onSyncListReceived(packet, MinecraftClient.getInstance())
         }
 
         // Начало получения файла
-        ClientPlayNetworking.registerGlobalReceiver(FileDistributeStartPacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                onDistributeStart(packet)
-            }
+        ClientPlayNetworking.registerGlobalReceiver(FileDistributeStartPacket.TYPE) { packet, player, sender ->
+            onDistributeStart(packet)
         }
 
         // Чанк файла
-        ClientPlayNetworking.registerGlobalReceiver(FileDistributeChunkPacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                onDistributeChunk(packet)
-            }
+        ClientPlayNetworking.registerGlobalReceiver(FileDistributeChunkPacket.TYPE) { packet, player, sender ->
+            onDistributeChunk(packet)
         }
 
         startSessionCleanup()

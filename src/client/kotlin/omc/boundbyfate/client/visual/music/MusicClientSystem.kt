@@ -48,10 +48,8 @@ object MusicClientSystem {
 
     fun register() {
         // Получаем состояние музыки от сервера
-        ClientPlayNetworking.registerGlobalReceiver(MusicStatePacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                onStateReceived(packet.state, client)
-            }
+        ClientPlayNetworking.registerGlobalReceiver(MusicStatePacket.TYPE) { packet, player, sender ->
+            onStateReceived(packet.state, MinecraftClient.getInstance())
         }
 
         // Подписываемся на получение музыкальных файлов

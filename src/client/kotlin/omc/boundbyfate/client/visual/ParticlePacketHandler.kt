@@ -15,21 +15,19 @@ import omc.boundbyfate.network.packet.s2c.SpawnParticlesPacket
 object ParticlePacketHandler {
 
     fun register() {
-        ClientPlayNetworking.registerGlobalReceiver(SpawnParticlesPacket.TYPE) { client, player, packet, sender ->
-            client.execute {
-                val world = client.world ?: return@execute
-                for (pos in packet.positions) {
-                    world.addParticle(
-                        packet.particle,
-                        packet.force,
-                        pos.x,
-                        pos.y,
-                        pos.z,
-                        packet.velocityX,
-                        packet.velocityY,
-                        packet.velocityZ
-                    )
-                }
+        ClientPlayNetworking.registerGlobalReceiver(SpawnParticlesPacket.TYPE) { packet, player, sender ->
+            val world = player.world
+            for (pos in packet.positions) {
+                world.addParticle(
+                    packet.particle,
+                    packet.force,
+                    pos.x,
+                    pos.y,
+                    pos.z,
+                    packet.velocityX,
+                    packet.velocityY,
+                    packet.velocityZ
+                )
             }
         }
     }
