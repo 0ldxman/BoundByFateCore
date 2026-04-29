@@ -48,6 +48,11 @@ class AnimState<T>(
     }
 
     /**
+     * Мгновенно устанавливает current = target (без star-projection проблем).
+     */
+    fun snapToTarget() = snap(target)
+
+    /**
      * Сбрасывает к начальному значению.
      */
     fun reset(value: T) = snap(value)

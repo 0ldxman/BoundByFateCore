@@ -40,10 +40,10 @@ open class UiSoundTheme(
  * Центральный объект управления звуком UI.
  */
 object UiSounds {
+    val DEFAULT = UiSoundTheme()
+
     /** Активная тема — устанавливается экраном при открытии. */
     var current: UiSoundTheme = DEFAULT
-
-    val DEFAULT = UiSoundTheme()
 
     val MYSTICAL = UiSoundTheme(
         hover        = bbfSound("ui.mystical.hover"),

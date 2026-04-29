@@ -129,6 +129,10 @@ abstract class HudElement : AnimOwner() {
 
     /** Мгновенно скрыть без анимации. */
     fun snapHide() { visibility.snap(0f) }
+
+    /** Внутренний метод для HudContext — создаёт AnimState зарегистрированный в этом элементе. */
+    internal fun createAnimFloat(initial: Float, speed: Float): omc.boundbyfate.client.gui.core.AnimState<Float> =
+        animFloat(initial, speed)
 }
 
 // ── HudContext ────────────────────────────────────────────────────────────
@@ -206,6 +210,6 @@ class HudContext(private val element: HudElement) {
     internal fun tickBindings() = bindings.forEach { it.check() }
 
     // Делегируем animFloat к AnimOwner элемента
-    fun animFloat(initial: Float, speed: Float = 0.15f) =
-        element.run { animFloat(initial, speed) }
+    fun animFloat(initial: Float, speed: Float = 0.15f): omc.boundbyfate.client.gui.core.AnimState<Float> =
+        element.createAnimFloat(initial, speed)
 }

@@ -128,7 +128,7 @@ abstract class BbfScreen(
     override fun shouldPause() = false
 
     /** Закрывает экран. */
-    fun close() {
+    override fun close() {
         MinecraftClient.getInstance().setScreen(null)
     }
 

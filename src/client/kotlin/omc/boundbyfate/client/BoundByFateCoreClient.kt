@@ -22,8 +22,8 @@ class BoundByFateCoreClient : ClientModInitializer {
         omc.boundbyfate.client.render.NpcEntityRendererRegistry.register()
         omc.boundbyfate.client.render.NpcRenderEventHandler.register()
 
-        // Кейбиндинги
-        omc.boundbyfate.client.keybind.BbfKeybinds.register()
+        // Кейбиндинги — инициализируем объект, чтобы зарегистрировать все кейбиндинги
+        omc.boundbyfate.client.keybind.BbfKeybinds.let { }
 
         // HUD система
         omc.boundbyfate.client.hud.HudSystem.register()

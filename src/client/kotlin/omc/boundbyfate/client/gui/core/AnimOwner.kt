@@ -45,11 +45,11 @@ abstract class AnimOwner {
      * Тикает все зарегистрированные [AnimState].
      * Вызывай один раз в конце [tick].
      */
-    fun tickAll(delta: Float) = states.forEach { it.tick(delta) }
+    open fun tickAll(delta: Float) = states.forEach { it.tick(delta) }
 
     /**
      * Мгновенно сбрасывает все [AnimState] к их текущим target значениям.
      * Полезно при `init()` экрана.
      */
-    fun snapAll() = states.forEach { it.snap(it.target) }
+    fun snapAll() = states.forEach { it.snapToTarget() }
 }
