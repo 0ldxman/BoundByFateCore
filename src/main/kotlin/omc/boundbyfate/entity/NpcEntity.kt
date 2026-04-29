@@ -39,12 +39,15 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
      * Инициализирует компонент модели при первом спавне.
      * Компонент синхронизируется с клиентом через ComponentSyncHandler.
      */
-    override fun onSpawn() {
-        super.onSpawn()
-        if (!world.isClient) {
-            // Создаём компонент с дефолтными значениями если его ещё нет
-            getOrCreate(NpcModelComponent.TYPE)
-        }
+    override fun initialize(
+        world: net.minecraft.server.world.ServerWorld,
+        difficulty: net.minecraft.world.LocalDifficulty,
+        spawnReason: net.minecraft.entity.SpawnReason,
+        entityData: net.minecraft.entity.EntityData?,
+        entityNbt: net.minecraft.nbt.NbtCompound?
+    ): net.minecraft.entity.EntityData? {
+        getOrCreate(NpcModelComponent.TYPE)
+        return super.initialize(world, difficulty, spawnReason, entityData, entityNbt)
     }
 
     override fun interactMob(player: PlayerEntity, hand: Hand): ActionResult {
