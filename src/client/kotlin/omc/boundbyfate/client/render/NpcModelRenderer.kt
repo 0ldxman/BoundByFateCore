@@ -89,7 +89,7 @@ object NpcModelRenderer {
         scale: Float
     ) {
         val overlay = if (entity is LivingEntity) {
-            OverlayTexture.pack(
+            OverlayTexture.packUv(
                 OverlayTexture.getU(0f),
                 OverlayTexture.getV(entity.hurtTime > 0 || entity.deathTime > 0)
             )

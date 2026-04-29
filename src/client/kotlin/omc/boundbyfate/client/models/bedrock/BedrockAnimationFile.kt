@@ -108,7 +108,7 @@ data class Keyframe(
 
 internal class KeyframesSerializer : KSerializer<Keyframes> {
     override val descriptor: SerialDescriptor = InnerSerializer.descriptor
-    override fun deserialize(decoder: Decoder): Keyframes = Keyframes(InnerSerializer.deserialize(decoder))
+    override fun deserialize(decoder: Decoder): Keyframes = Keyframes(TreeMap(InnerSerializer.deserialize(decoder)))
     override fun serialize(encoder: Encoder, value: Keyframes) = InnerSerializer.serialize(encoder, value.frames)
 
     private object InnerSerializer : JsonTransformingSerializer<Map<Float, Keyframe>>(

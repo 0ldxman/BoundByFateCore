@@ -12,10 +12,12 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL33
 import omc.boundbyfate.client.models.internal.*
+import omc.boundbyfate.client.models.internal.getProgramRef
 import omc.boundbyfate.client.models.internal.utils.VboWrapper
 import omc.boundbyfate.client.models.internal.utils.toFloatBuffer
 // false removed
 import omc.boundbyfate.client.util.InstancingEntityInfo
+import omc.boundbyfate.client.util.instancingEntityInfo
 import omc.boundbyfate.client.util.asMatrix3f
 import omc.boundbyfate.client.util.asMatrix4f
 import omc.boundbyfate.client.util.toTexture
@@ -278,7 +280,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         indexBuffer?.bind()
         GL33.glBindVertexArray(0)
 
-        return InstancedShaderBinding(runtimeVao, firstAttribLocation(shader.id, "Color", "iris_Color"))
+        return InstancedShaderBinding(runtimeVao, firstAttribLocation(shader.getProgramRef(), "Color", "iris_Color"))
     }
 
     private fun firstAttribLocation(program: Int, vararg names: String): Int {
@@ -298,7 +300,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         stride: Int = 0,
         offset: Long = 0L,
     ) {
-        val location = GL33.glGetAttribLocation(shader.id, name)
+        val location = GL33.glGetAttribLocation(shader.getProgramRef(), name)
         if (location == -1 || buffer == null) return
 
         buffer.bind()
@@ -307,7 +309,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     }
 
     private fun bindIntegerAsFloatAttribute(shader: ShaderProgram, name: String, buffer: VboWrapper?) {
-        val location = GL33.glGetAttribLocation(shader.id, name)
+        val location = GL33.glGetAttribLocation(shader.getProgramRef(), name)
         if (location == -1 || buffer == null) return
 
         buffer.bind()
@@ -326,7 +328,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         divisor: Int = 0,
         offset: Long = 0L,
     ) {
-        val location = GL33.glGetAttribLocation(shader.id, name)
+        val location = GL33.glGetAttribLocation(shader.getProgramRef(), name)
         if (location == -1 || buffer == null) return
 
         buffer.bind()
@@ -434,11 +436,20 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         indexBuffer?.bind()
 
-        shader.MODEL_VIEW_MATRIX?.set(instance.modelView)
-        shader.MODEL_VIEW_MATRIX?.upload()
+        shader.modelViewMat?.set(
+            instance.modelView.m00(), instance.modelView.m01(), instance.modelView.m02(), instance.modelView.m03(),
+            instance.modelView.m10(), instance.modelView.m11(), instance.modelView.m12(), instance.modelView.m13(),
+            instance.modelView.m20(), instance.modelView.m21(), instance.modelView.m22(), instance.modelView.m23(),
+            instance.modelView.m30(), instance.modelView.m31(), instance.modelView.m32(), instance.modelView.m33()
+        )
+        shader.modelViewMat?.upload()
 
         shader.getUniform("NormalMat")?.let {
-            it.set(instance.normal)
+            it.set(
+                instance.normal.m00(), instance.normal.m01(), instance.normal.m02(),
+                instance.normal.m10(), instance.normal.m11(), instance.normal.m12(),
+                instance.normal.m20(), instance.normal.m21(), instance.normal.m22()
+            )
             it.upload()
         }
 
@@ -547,13 +558,22 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         val modelView = Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().positionMatrix)
         modelView.mul(matrix.asMatrix4f())
-        shader.MODEL_VIEW_MATRIX?.set(modelView)
-        shader.MODEL_VIEW_MATRIX?.upload()
+        shader.modelViewMat?.set(
+            modelView.m00(), modelView.m01(), modelView.m02(), modelView.m03(),
+            modelView.m10(), modelView.m11(), modelView.m12(), modelView.m13(),
+            modelView.m20(), modelView.m21(), modelView.m22(), modelView.m23(),
+            modelView.m30(), modelView.m31(), modelView.m32(), modelView.m33()
+        )
+        shader.modelViewMat?.upload()
 
         shader.getUniform("NormalMat")?.let {
             val normal = Matrix3f(stack.peek().normalMatrix)
             normal.mul(matrix.getUpperLeft(MutableMat3f()).asMatrix3f())
-            it.set(normal)
+            it.set(
+                normal.m00(), normal.m01(), normal.m02(),
+                normal.m10(), normal.m11(), normal.m12(),
+                normal.m20(), normal.m21(), normal.m22()
+            )
             it.upload()
         }
 
@@ -576,20 +596,20 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         var specular = 0
 
         if (false) {
-            GL33.glGetUniformLocation(shader.id, "normals").takeIf { it != -1 }?.let {
-                RenderSystem.activeTexture(COLOR_MAP_INDEX + GL33.glGetUniformi(shader.id, it))
+            GL33.glGetUniformLocation(shader.getProgramRef(), "normals").takeIf { it != -1 }?.let {
+                RenderSystem.activeTexture(COLOR_MAP_INDEX + GL33.glGetUniformi(shader.getProgramRef(), it))
                 normal = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
-                RenderSystem.bindTexture(material.normalTexture.toTexture().id)
+                RenderSystem.bindTexture(material.normalTexture.toTexture().getGlId())
             }
-            GL33.glGetUniformLocation(shader.id, "specular").takeIf { it != -1 }?.let {
-                RenderSystem.activeTexture(COLOR_MAP_INDEX + GL33.glGetUniformi(shader.id, it))
+            GL33.glGetUniformLocation(shader.getProgramRef(), "specular").takeIf { it != -1 }?.let {
+                RenderSystem.activeTexture(COLOR_MAP_INDEX + GL33.glGetUniformi(shader.getProgramRef(), it))
                 specular = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
-                RenderSystem.bindTexture(material.specularTexture.toTexture().id)
+                RenderSystem.bindTexture(material.specularTexture.toTexture().getGlId())
             }
         }
 
         RenderSystem.activeTexture(COLOR_MAP_INDEX)
-        RenderSystem.bindTexture(MinecraftClient.getInstance().textureManager.getTexture(material.texture).id)
+        RenderSystem.bindTexture(MinecraftClient.getInstance().textureManager.getTexture(material.texture).getGlId())
 
         if (material.doubleSided) RenderSystem.disableCull()
         else RenderSystem.enableCull()

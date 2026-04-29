@@ -2,10 +2,14 @@
 
 import com.mojang.blaze3d.platform.GlStateManager
 import com.mojang.blaze3d.systems.RenderSystem
+import de.fabmax.kool.math.MutableMat3f
+import de.fabmax.kool.math.Vec3f
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.RenderLayer
 import net.minecraft.client.util.math.MatrixStack
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL33
 import omc.boundbyfate.client.models.internal.drawWithShader
 import omc.boundbyfate.client.models.internal.manager.HollowModelManager
@@ -79,7 +83,7 @@ class ListRenderPipeline : RenderPipeline {
     }
 
     fun renderVAO(context: RenderContext) {
-        val activeTexture = GlStateManager._getActiveTexture()
+        val activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE)
 
         //Получение текущих VAO и IBO
         val currentVAO = GL33.glGetInteger(GL33.GL_VERTEX_ARRAY_BINDING)
@@ -90,29 +94,29 @@ class ListRenderPipeline : RenderPipeline {
         GL33.glVertexAttribI2i(3, context.overlay and FFFF, context.overlay shr 16 and FFFF) // Оверлей при ударе
         GL33.glVertexAttribI2i(4, context.light and FFFF, context.light shr 16 and FFFF) // Освещение
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE2)
-        val texture2 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
-        RenderSystem.bindTexture(HollowModelManager.lightTexture.id)
-        RenderSystem.activeTexture(GL33.GL_TEXTURE1)
-        val texture1 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
+        RenderSystem.activeTexture(GL13.GL_TEXTURE2)
+        val texture2 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
+        RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1)
+        val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
         MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
         MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
-        RenderSystem.activeTexture(GL33.GL_TEXTURE0)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0)
 
-        val texture = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
+        val texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
 
         drawWithShader {
-            for (draw in vaoCommands) context.draw()
+            for (draw in vaoCommands) draw(context)
         }
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE2)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE2)
         RenderSystem.bindTexture(texture2)
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE1)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1)
         RenderSystem.bindTexture(texture1)
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE0)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0)
         RenderSystem.bindTexture(texture)
 
         RenderSystem.activeTexture(activeTexture)
@@ -124,34 +128,34 @@ class ListRenderPipeline : RenderPipeline {
     }
 
     fun renderInstanced(context: RenderContext) {
-        val activeTexture = GlStateManager._getActiveTexture()
+        val activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE)
         val currentVAO = GL33.glGetInteger(GL33.GL_VERTEX_ARRAY_BINDING)
         val currentElementArrayBuffer = GL33.glGetInteger(GL33.GL_ELEMENT_ARRAY_BUFFER_BINDING)
 
         GL33.glVertexAttribI2i(3, context.overlay and FFFF, context.overlay shr 16 and FFFF)
         GL33.glVertexAttribI2i(4, context.light and FFFF, context.light shr 16 and FFFF)
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE2)
-        val texture2 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
-        RenderSystem.bindTexture(HollowModelManager.lightTexture.id)
-        RenderSystem.activeTexture(GL33.GL_TEXTURE1)
-        val texture1 = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
+        RenderSystem.activeTexture(GL13.GL_TEXTURE2)
+        val texture2 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
+        RenderSystem.bindTexture(HollowModelManager.lightTexture.getGlId())
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1)
+        val texture1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
         MinecraftClient.getInstance().gameRenderer.overlayTexture().setupOverlayColor()
         RenderSystem.bindTexture(RenderSystem.getShaderTexture(1))
         MinecraftClient.getInstance().gameRenderer.overlayTexture().teardownOverlayColor()
-        RenderSystem.activeTexture(GL33.GL_TEXTURE0)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0)
 
-        val texture = GlStateManager.TEXTURES[GlStateManager.activeTexture].binding
+        val texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
 
         drawWithShader {
-            for (draw in instancedCommands) context.draw()
+            for (draw in instancedCommands) draw(context)
         }
 
-        RenderSystem.activeTexture(GL33.GL_TEXTURE2)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE2)
         RenderSystem.bindTexture(texture2)
-        RenderSystem.activeTexture(GL33.GL_TEXTURE1)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1)
         RenderSystem.bindTexture(texture1)
-        RenderSystem.activeTexture(GL33.GL_TEXTURE0)
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0)
         RenderSystem.bindTexture(texture)
         RenderSystem.activeTexture(activeTexture)
 

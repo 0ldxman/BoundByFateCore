@@ -1,7 +1,5 @@
 ﻿package omc.boundbyfate.client.models.internal.controller
 
-import de.fabmax.kool.math.Easing
-import de.fabmax.kool.modules.ui2.AnimatableFloat
 import kotlinx.coroutines.*
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 
@@ -25,12 +23,15 @@ class AnimationSystem(val model: ModelAttachment) {
         }
     }
 
+    /**
+     * Transitions from one animation to another over [duration] seconds.
+     * Uses a simple linear blend.
+     */
     suspend fun transition(
         from: String? = null,
         to: String? = null,
         duration: Float = 0.33f,
         wrapMode: WrapMode = WrapMode.Loop,
-        easing: Easing.Easing = Easing.smooth,
     ) {
         val original = from?.let { model.animations[it] }
         val target = to?.let { model.animations[it] }
@@ -38,21 +39,20 @@ class AnimationSystem(val model: ModelAttachment) {
         val key = "${from ?: ""}->${to ?: ""}"
         transitionJobs.remove(key)?.cancel()
 
-        val animatable = AnimatableFloat(0f)
-
         target?.time = 0f
         target?.wrapMode = wrapMode
 
-        animatable.onChange { old, new ->
-            target?.weight = new
-            original?.weight = 1f - new
-        }
-
         val job = scope.launch {
-            animatable.animateTo(1f, duration, easing)
+            val steps = (duration * 60f).toInt().coerceAtLeast(1)
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                target?.weight = t
+                original?.weight = 1f - t
+                dispatcher.awaitNextFrame()
+            }
+            target?.weight = 1f
+            original?.weight = 0f
         }
         transitionJobs[key] = job
     }
 }
-
-

@@ -2,10 +2,10 @@
 
 import de.fabmax.kool.math.MutableMat3f
 import net.minecraft.client.MinecraftClient
-import net.minecraft.util.MathHelper
+import net.minecraft.util.math.MathHelper
 import net.minecraft.entity.EquipmentSlot
 import net.minecraft.entity.LivingEntity
-import net.minecraft.item.ModelTransformationMode
+import net.minecraft.client.render.model.json.ModelTransformation
 import org.joml.Quaternionf
 import omc.boundbyfate.client.models.internal.rendering.RenderPipeline
 import omc.boundbyfate.client.util.asMatrix3f
@@ -26,10 +26,10 @@ class ItemNode(val entity: LivingEntity, val slot: EquipmentSlot, parent: Attach
             MinecraftClient.getInstance().itemRenderer.renderItem(
                 entity.getEquippedStack(slot),
                 when (slot) {
-                    EquipmentSlot.MAINHAND -> ModelTransformationMode.THIRD_PERSON_RIGHT_HAND
-                    EquipmentSlot.OFFHAND -> ModelTransformationMode.THIRD_PERSON_LEFT_HAND
-                    EquipmentSlot.HEAD -> ModelTransformationMode.HEAD
-                    else -> ModelTransformationMode.FIXED
+                    EquipmentSlot.MAINHAND -> ModelTransformation.Mode.THIRD_PERSON_RIGHT_HAND
+                    EquipmentSlot.OFFHAND -> ModelTransformation.Mode.THIRD_PERSON_LEFT_HAND
+                    EquipmentSlot.HEAD -> ModelTransformation.Mode.HEAD
+                    else -> ModelTransformation.Mode.FIXED
                 },
                 slot == EquipmentSlot.OFFHAND,
                 stack,

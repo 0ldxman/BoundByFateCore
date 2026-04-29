@@ -40,21 +40,21 @@ object FileTransferClientSystem {
 
     fun register() {
         // Список файлов от сервера при подключении
-        ClientPlayNetworking.registerGlobalReceiver(FileSyncListPacket.ID) { packet, context ->
+        ClientPlayNetworking.registerGlobalReceiver(FileSyncListPacket.TYPE) { packet, context ->
             context.client().execute {
                 onSyncListReceived(packet, context.client())
             }
         }
 
         // Начало получения файла
-        ClientPlayNetworking.registerGlobalReceiver(FileDistributeStartPacket.ID) { packet, context ->
+        ClientPlayNetworking.registerGlobalReceiver(FileDistributeStartPacket.TYPE) { packet, context ->
             context.client().execute {
                 onDistributeStart(packet)
             }
         }
 
         // Чанк файла
-        ClientPlayNetworking.registerGlobalReceiver(FileDistributeChunkPacket.ID) { packet, context ->
+        ClientPlayNetworking.registerGlobalReceiver(FileDistributeChunkPacket.TYPE) { packet, context ->
             context.client().execute {
                 onDistributeChunk(packet)
             }

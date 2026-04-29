@@ -6,10 +6,17 @@ import net.minecraft.client.gl.ShaderProgram
 import net.minecraft.client.render.RenderLayer
 import net.minecraft.util.Identifier
 import org.lwjgl.opengl.GL13
+import omc.boundbyfate.client.mixin.accessor.ShaderProgramAccessor
 import omc.boundbyfate.client.util.rl
 import java.util.function.Function
 
 // Shader utilities for NPC model rendering
+
+/**
+ * Returns the OpenGL program reference (glRef) for this shader.
+ * Uses mixin accessor since glRef is private in yarn 1.20.1.
+ */
+fun ShaderProgram.getProgramRef(): Int = (this as ShaderProgramAccessor).bbf_getGlRef()
 
 inline fun drawWithShader(
     body: () -> Unit,

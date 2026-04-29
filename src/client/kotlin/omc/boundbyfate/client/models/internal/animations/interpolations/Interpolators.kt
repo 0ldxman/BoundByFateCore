@@ -8,6 +8,7 @@ import omc.boundbyfate.client.util.conjugate
 // molang Math.cos removed
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 

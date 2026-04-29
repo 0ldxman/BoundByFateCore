@@ -305,7 +305,7 @@ fun generateTransformationNodeChain(model: Model): TrsTransformF {
     }
 }
 
-fun Document.getSkinForModel(model: Model): Skin? {
+fun Document.getSkinForModel(model: Model): omc.boundbyfate.client.models.internal.Skin? {
     val skinConnections = getConnectionsBySourceSequenced(model.id, "Deformer")
     for (conn in skinConnections) {
         val skinObj = conn.destinationObject as? Skin
@@ -655,7 +655,7 @@ fun Document.convertAnimations() {
     val fps = globals?.timeMode ?: FileGlobalSettings.FrameRate._30
     val custom = globals?.customFrameRate ?: -1f
     val frameRate = frameRateToDouble(fps, custom.toDouble())
-    animationStacks().forEach { convertAnimationStack(it) }
+    animationStacks().forEach { convertAnimationStack(this, it) }
 }
 
 fun frameRateToDouble(fp: FileGlobalSettings.FrameRate, customFPSVal: Double = -1.0) = when (fp) {

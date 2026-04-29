@@ -1,7 +1,7 @@
 package omc.boundbyfate.client.models.internal
 
 import kotlinx.serialization.Serializable
-import net.minecraft.util.MathHelper
+import net.minecraft.util.math.MathHelper
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Quaternionf

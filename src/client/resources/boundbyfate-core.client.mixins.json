@@ -3,7 +3,11 @@
 	"package": "omc.boundbyfate.client.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
-		"EntityRendererMixin"
+		"EntityRendererMixin",
+		"accessor.MinecraftClientAccessor",
+		"accessor.GameRendererAccessor",
+		"accessor.LivingEntityAccessor",
+		"accessor.ShaderProgramAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

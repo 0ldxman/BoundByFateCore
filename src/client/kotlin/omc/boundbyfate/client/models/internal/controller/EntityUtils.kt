@@ -1,7 +1,7 @@
 ﻿package omc.boundbyfate.client.models.internal.controller
 
 import net.minecraft.client.MinecraftClient
-import net.minecraft.util.MathHelper
+import net.minecraft.util.math.MathHelper
 import net.minecraft.entity.LivingEntity
 import kotlin.math.abs
 import kotlin.math.sign
