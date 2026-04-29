@@ -4,6 +4,7 @@ import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.math.MutableVec3f
 import de.fabmax.kool.math.deg
 import de.fabmax.kool.util.Time
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -151,6 +152,23 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
         return runtimeNodes.asSequence().flatMap { it.walk().asSequence() }.firstOrNull { it.name == name }
     }
 
+    /**
+     * Suspend-функция: ждёт пока модель загрузится и в ней появятся анимации.
+     *
+     * Используется в [omc.boundbyfate.client.models.internal.controller.AnimationSystem]
+     * для безопасного запуска анимаций сразу после создания attachment —
+     * когда модель ещё может быть [AnimatedModel.EMPTY].
+     *
+     * Поллинг с шагом 50мс — модели обычно грузятся за 1-3 кадра.
+     * Таймаут 10 секунд — защита от бесконечного ожидания если модель не найдена.
+     */
+    suspend fun awaitAnimations(timeoutMs: Long = 10_000L) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (runtimeAnimations.isEmpty() && System.currentTimeMillis() < deadline) {
+            delay(50)
+        }
+    }
+
     fun calculateBoundsCached(frame: Int = Time.frameCount): Pair<Vec3f, Vec3f>? {
         if (cachedBoundsFrame == frame) return cachedBounds
 
@@ -212,15 +230,42 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 }
 
 class Animations(private val map: Map<String, AnimationInstance>) : Collection<AnimationInstance> {
-    operator fun get(name: String): AnimationInstance = map[name] ?: error("Animation $name not found")
+
+    /**
+     * Возвращает анимацию по точному имени.
+     * @throws IllegalStateException если анимация не найдена
+     */
+    operator fun get(name: String): AnimationInstance =
+        map[name] ?: error("Animation '$name' not found. Available: ${map.keys}")
+
+    /**
+     * Возвращает анимацию по точному имени или null.
+     */
+    fun getOrNull(name: String): AnimationInstance? = map[name]
+
+    /**
+     * Ищет анимацию по имени: сначала точное совпадение, потом case-insensitive.
+     * Возвращает точное имя анимации (как оно хранится в модели) или null.
+     */
+    fun findName(name: String): String? {
+        if (map.containsKey(name)) return name
+        return map.keys.firstOrNull { it.equals(name, ignoreCase = true) }
+    }
+
+    /**
+     * Возвращает имя первой анимации или null если анимаций нет.
+     */
+    fun firstName(): String? = map.keys.firstOrNull()
+
+    /**
+     * Возвращает список имён всех анимаций (для логирования).
+     */
+    fun names(): List<String> = map.keys.toList()
+
     override val size: Int = map.size
-
     override fun isEmpty(): Boolean = map.isEmpty()
-
     override fun contains(element: AnimationInstance) = element in map.values
-
     override fun iterator(): Iterator<AnimationInstance> = map.values.iterator()
-
     override fun containsAll(elements: Collection<AnimationInstance>) = map.values.containsAll(elements)
 }
 

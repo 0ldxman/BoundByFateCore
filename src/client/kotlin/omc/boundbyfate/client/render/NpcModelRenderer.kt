@@ -1,18 +1,17 @@
 package omc.boundbyfate.client.render
 
-import net.minecraft.client.util.math.MatrixStack
 import de.fabmax.kool.util.Time
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.render.OverlayTexture
 import net.minecraft.client.render.VertexConsumerProvider
+import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.Entity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.util.math.Box
 import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
-import omc.boundbyfate.client.models.internal.controller.WrapMode
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 import omc.boundbyfate.client.models.internal.v2.calculateBounds
@@ -28,17 +27,29 @@ import java.util.concurrent.ConcurrentHashMap
  * Вызывается из [EntityRendererMixin] при рендере сущности.
  * Если у сущности есть [NpcModelComponent] — рисует GLTF модель
  * через kool пайплайн и возвращает true (отменяет стандартный рендер).
+ *
+ * ## Жизненный цикл
+ *
+ * - Создание: [getOrCreateAttachment] при первом рендере НПС
+ * - Обновление: [onRenderPre] каждый кадр
+ * - Удаление: [onEntityRemoved] при выгрузке сущности из мира
+ *
+ * ## Управление анимациями
+ *
+ * ```kotlin
+ * // Получить AnimationSystem НПС и переключить анимацию:
+ * NpcModelRenderer.getAnimationSystem(entity)?.play("attack", duration = 0.2f)
+ * ```
  */
 @Environment(EnvType.CLIENT)
 object NpcModelRenderer {
 
     private val logger = LoggerFactory.getLogger(NpcModelRenderer::class.java)
 
-    /**
-     * Кеш ModelAttachment для каждой сущности.
-     * Ключ — UUID сущности в виде строки.
-     */
+    /** Кеш моделей. Ключ — UUID сущности. */
     private val attachments = ConcurrentHashMap<String, CachedModel>()
+
+    // ── Рендер ────────────────────────────────────────────────────────────
 
     /**
      * Вызывается перед стандартным рендером сущности.
@@ -53,41 +64,18 @@ object NpcModelRenderer {
         buffer: VertexConsumerProvider,
         packedLight: Int
     ): Boolean {
-        // Только для наших НПС
         if (entity !is NpcEntity) return false
 
-        // Получаем компонент модели
         val modelComponent = entity.getAttached(NpcModelComponent.TYPE) ?: return false
-
-        // Получаем или создаём ModelAttachment
         val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
 
         // Frustum culling по реальным bounds модели.
         // MC culling использует hitbox сущности (0.6×1.8), модель может быть крупнее.
-        val frustum = MinecraftClient.getInstance().worldRenderer?.let {
-            try {
-                val field = it.javaClass.getDeclaredField("frustum")
-                field.isAccessible = true
-                field.get(it) as? net.minecraft.client.render.Frustum
-            } catch (_: Exception) { null }
-        }
-        if (frustum != null) {
-            val modelBounds = cached.attachment.calculateBounds()
-            if (modelBounds != null) {
-                val (min, max) = modelBounds
-                val pos = entity.getLerpedPos(partialTick)
-                val worldBox = Box(
-                    pos.x + min.x, pos.y + min.y, pos.z + min.z,
-                    pos.x + max.x, pos.y + max.y, pos.z + max.z
-                )
-                if (!frustum.isVisible(worldBox)) return true // отменяем стандартный рендер, но не рисуем
-            }
-        }
+        if (isCulled(cached.attachment, entity, partialTick)) return true
 
-        // Обновляем анимации (NpcEntity всегда LivingEntity)
+        // Прокручиваем корутины анимационной системы
         cached.animationSystem?.update(Time.deltaT)
 
-        // Рендерим модель
         renderModel(
             attachment = cached.attachment,
             entity = entity,
@@ -102,6 +90,25 @@ object NpcModelRenderer {
         return true
     }
 
+    private fun isCulled(attachment: ModelAttachment, entity: Entity, partialTick: Float): Boolean {
+        val frustum = MinecraftClient.getInstance().worldRenderer?.let {
+            try {
+                val field = it.javaClass.getDeclaredField("frustum")
+                field.isAccessible = true
+                field.get(it) as? net.minecraft.client.render.Frustum
+            } catch (_: Exception) { null }
+        } ?: return false
+
+        val modelBounds = attachment.calculateBounds() ?: return false
+        val (min, max) = modelBounds
+        val pos = entity.getLerpedPos(partialTick)
+        val worldBox = Box(
+            pos.x + min.x, pos.y + min.y, pos.z + min.z,
+            pos.x + max.x, pos.y + max.y, pos.z + max.z
+        )
+        return !frustum.isVisible(worldBox)
+    }
+
     private fun renderModel(
         attachment: ModelAttachment,
         entity: Entity,
@@ -113,28 +120,20 @@ object NpcModelRenderer {
         scale: Float
     ) {
         val overlay = if (entity is LivingEntity && (entity.hurtTime > 0 || entity.deathTime > 0)) {
-            OverlayTexture.packUv(
-                OverlayTexture.getU(0f),
-                OverlayTexture.getV(true)
-            )
+            OverlayTexture.packUv(OverlayTexture.getU(0f), OverlayTexture.getV(true))
         } else {
             OverlayTexture.DEFAULT_UV
         }
 
         poseStack.push()
 
-        // Поворачиваем модель по направлению тела сущности
         if (entity is LivingEntity) {
             val bodyYaw = MathHelper.lerpAngleDegrees(partialTick, entity.prevBodyYaw, entity.bodyYaw)
-            poseStack.multiply(
-                Quaternionf().rotateY(-bodyYaw * MathHelper.RADIANS_PER_DEGREE)
-            )
+            poseStack.multiply(Quaternionf().rotateY(-bodyYaw * MathHelper.RADIANS_PER_DEGREE))
         }
 
-        // Масштаб
         poseStack.scale(scale, scale, scale)
 
-        // Рендерим через kool пайплайн
         attachment.pipeline.render(
             RenderContext(
                 stack = poseStack,
@@ -148,6 +147,8 @@ object NpcModelRenderer {
         poseStack.pop()
     }
 
+    // ── Кеш ──────────────────────────────────────────────────────────────
+
     private fun getOrCreateAttachment(
         entity: NpcEntity,
         component: NpcModelComponent
@@ -160,22 +161,21 @@ object NpcModelRenderer {
             return existing
         }
 
-        // Создаём новый attachment
+        // Если модель сменилась — уничтожаем старую
+        if (existing != null) {
+            existing.animationSystem?.destroy()
+            attachments.remove(key)
+        }
+
         return try {
             val attachment = ModelAttachment(component.modelPath)
+
             val animSystem = if (component.animationsEnabled) {
                 AnimationSystem(attachment).also { sys ->
-                    // Запускаем первую доступную анимацию как idle при создании
-                    sys.onUpdate {
-                        val idleName = attachment.animations
-                            .firstOrNull { it.name.equals("idle", ignoreCase = true) }?.name
-                            ?: attachment.animations.firstOrNull()?.name
-                        if (idleName != null) {
-                            sys.transition(to = idleName, duration = 0f, wrapMode = WrapMode.Loop)
-                        }
-                        // onUpdate вызывается один раз — запустили анимацию и выходим
-                        return@onUpdate
-                    }
+                    // Запускаем idle когда модель загрузится.
+                    // playIdleWhenReady() ждёт загрузки асинхронно — не блокирует рендер,
+                    // не создаёт мусор каждый кадр, не падает если анимаций ещё нет.
+                    sys.playIdleWhenReady()
                 }
             } else null
 
@@ -192,12 +192,31 @@ object NpcModelRenderer {
         }
     }
 
+    // ── Публичный API ─────────────────────────────────────────────────────
+
     /**
-     * Очищает кеш для сущности когда она удаляется из мира.
+     * Возвращает [AnimationSystem] для сущности или null если модель не загружена.
+     *
+     * Используй для переключения анимаций из игровой логики:
+     * ```kotlin
+     * NpcModelRenderer.getAnimationSystem(entity)?.play("attack", duration = 0.2f)
+     * ```
+     */
+    fun getAnimationSystem(entity: Entity): AnimationSystem? =
+        attachments[entity.uuid.toString()]?.animationSystem
+
+    /**
+     * Очищает кеш и уничтожает [AnimationSystem] при удалении сущности из мира.
+     *
+     * Вызывается из [NpcRenderEventHandler] при выгрузке сущности.
+     * Без этого — утечка корутин на каждый удалённый НПС.
      */
     fun onEntityRemoved(entity: Entity) {
-        attachments.remove(entity.uuid.toString())
+        val cached = attachments.remove(entity.uuid.toString()) ?: return
+        cached.animationSystem?.destroy()
     }
+
+    // ── Внутренние типы ───────────────────────────────────────────────────
 
     private data class CachedModel(
         val modelPath: String,
