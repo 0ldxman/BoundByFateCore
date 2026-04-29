@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.Identifier
 import omc.boundbyfate.component.core.BbfComponent
 import omc.boundbyfate.component.core.BbfComponents
@@ -48,6 +49,25 @@ object ComponentSyncHandler {
         ServerTickEvents.END_SERVER_TICK.register { server ->
             for (player in server.playerManager.playerList) {
                 syncDirtyComponents(player)
+            }
+            // Синхронизировать dirty компоненты всех живых сущностей в мирах
+            for (world in server.worlds) {
+                for (entity in world.iterateEntities()) {
+                    if (entity !is LivingEntity || entity is ServerPlayerEntity) continue
+                    val dirtyEntries = BbfComponents.getSyncableEntries().filter { entry ->
+                        entity.getComponent(entry.attachmentType)?.isDirty == true
+                    }
+                    if (dirtyEntries.isEmpty()) continue
+                    val registries = server.registryManager
+                    val watchers = world.players.filterIsInstance<ServerPlayerEntity>()
+                    for (entry in dirtyEntries) {
+                        val component = entity.getComponent(entry.attachmentType) ?: continue
+                        for (watcher in watchers) {
+                            sendComponentPacket(entity, entry, component, watcher, registries)
+                        }
+                        component.markClean()
+                    }
+                }
             }
         }
 

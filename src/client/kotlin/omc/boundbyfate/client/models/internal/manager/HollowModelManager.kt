@@ -155,7 +155,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
         var glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
             glShader,
-            "hollowengine:shaders/core/gltf_skinning.vsh".rl.stream.readBytes().decodeToString()
+            "boundbyfate-core:shaders/core/gltf_skinning.vsh".rl.stream.readBytes().decodeToString()
         )
         GL20.glCompileShader(glShader)
 
@@ -170,7 +170,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
         glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
             glShader,
-            "hollowengine:shaders/core/gltf_morphing.vsh".rl.stream.readBytes().decodeToString()
+            "boundbyfate-core:shaders/core/gltf_morphing.vsh".rl.stream.readBytes().decodeToString()
         )
         GL20.glCompileShader(glShader)
 

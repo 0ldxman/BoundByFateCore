@@ -10,6 +10,7 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
+import omc.boundbyfate.client.models.internal.controller.WrapMode
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 import omc.boundbyfate.component.components.NpcModelComponent
@@ -138,7 +139,19 @@ object NpcModelRenderer {
         return try {
             val attachment = ModelAttachment(component.modelPath)
             val animSystem = if (component.animationsEnabled) {
-                AnimationSystem(attachment)
+                AnimationSystem(attachment).also { sys ->
+                    // Запускаем первую доступную анимацию как idle при создании
+                    sys.onUpdate {
+                        val idleName = attachment.animations
+                            .firstOrNull { it.name.equals("idle", ignoreCase = true) }?.name
+                            ?: attachment.animations.firstOrNull()?.name
+                        if (idleName != null) {
+                            sys.transition(to = idleName, duration = 0f, wrapMode = WrapMode.Loop)
+                        }
+                        // onUpdate вызывается один раз — запустили анимацию и выходим
+                        return@onUpdate
+                    }
+                }
             } else null
 
             val cached = CachedModel(

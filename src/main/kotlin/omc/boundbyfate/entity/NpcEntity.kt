@@ -17,6 +17,8 @@ import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.world.World
+import omc.boundbyfate.component.components.NpcModelComponent
+import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.system.npc.navigation.NpcMoveControl
 import omc.boundbyfate.system.npc.navigation.NpcPathNavigation
 import omc.boundbyfate.util.extension.toIdentifier
@@ -32,6 +34,18 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
     }
 
     override fun createNavigation(world: World): EntityNavigation = NpcPathNavigation(this, world)
+
+    /**
+     * Инициализирует компонент модели при первом спавне.
+     * Компонент синхронизируется с клиентом через ComponentSyncHandler.
+     */
+    override fun onSpawn() {
+        super.onSpawn()
+        if (!world.isClient) {
+            // Создаём компонент с дефолтными значениями если его ещё нет
+            getOrCreate(NpcModelComponent.TYPE)
+        }
+    }
 
     override fun interactMob(player: PlayerEntity, hand: Hand): ActionResult {
         if (hand == Hand.MAIN_HAND && world.isClient) {

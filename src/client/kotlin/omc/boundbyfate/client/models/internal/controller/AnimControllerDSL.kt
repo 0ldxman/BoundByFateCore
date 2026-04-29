@@ -651,14 +651,16 @@ data class ClipNode(
         val animation = animations[name] ?: return null
 
         val sampleTime = wrap.wrapTime(animation, rawTime)
-        TODO()
-//        animation.computeWeights(node, sampleTime)?.let { weights ->
-//            node.mesh?.weights?.let { nodeWeights ->
-//                weights.copyInto(nodeWeights)
-//            }
-//        }
-//        return animation.compute(node.index, sampleTime)
-    }
+
+        // Сэмплируем трансформ для данного узла в данный момент времени
+        val data = animation.nodes[node.index] ?: return null
+
+        return TrsTransformF().apply {
+            data.translation?.compute(sampleTime)?.let { translation.set(it) }
+            data.rotation?.compute(sampleTime)?.let { rotation.set(it) }
+            data.scale?.compute(sampleTime)?.let { scale.set(it) }
+        }
+    }    }
 
     fun transferFrom(old: ClipNode) {
         pausedAnimTime = old.pausedAnimTime
