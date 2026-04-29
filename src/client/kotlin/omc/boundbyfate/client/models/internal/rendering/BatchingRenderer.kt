@@ -9,6 +9,7 @@ import de.fabmax.kool.util.Color
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import omc.boundbyfate.client.models.internal.*
+import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.util.*
 
 class BatchingRenderer(
