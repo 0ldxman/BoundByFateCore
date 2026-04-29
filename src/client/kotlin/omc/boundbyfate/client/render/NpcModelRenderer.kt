@@ -86,7 +86,7 @@ object NpcModelRenderer {
         packedLight: Int,
         scale: Float
     ) {
-        val overlay = if (entity.hurtTime > 0 || entity.deathTime > 0) {
+        val overlay = if (entity is LivingEntity && (entity.hurtTime > 0 || entity.deathTime > 0)) {
             OverlayTexture.packUv(
                 OverlayTexture.getU(0f),
                 OverlayTexture.getV(true)
