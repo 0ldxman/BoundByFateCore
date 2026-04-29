@@ -38,7 +38,14 @@ class AnimationSystem(val model: ModelAttachment) {
     private val logger = LoggerFactory.getLogger(AnimationSystem::class.java)
 
     val dispatcher = AnimationDispatcher("AnimationSystem")
-    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
+    /**
+     * Coroutine scope для запуска анимационных задач.
+     *
+     * `internal` — доступен внутри пакета (в частности [AnimationController]),
+     * но не виден снаружи модуля.
+     */
+    internal val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     /** Активные задачи переходов. Ключ: "from->to". */
     private val transitionJobs = HashMap<String, Job>()
