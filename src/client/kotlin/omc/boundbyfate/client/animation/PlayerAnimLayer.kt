@@ -68,7 +68,10 @@ class PlayerAnimLayer(player: AbstractClientPlayerEntity) {
     fun play(animId: Identifier, looping: Boolean = false, layerName: String? = null) {
         val keyframes = loadKeyframes(animId) ?: return
         val animation = if (looping) {
-            KeyframeAnimationPlayer(keyframes.copy(isLooping = true))
+            val builder = keyframes.mutableCopy()
+            builder.isLooped = true
+            if (builder.returnTick <= 0) builder.returnTick = keyframes.beginTick
+            KeyframeAnimationPlayer(builder.build())
         } else {
             KeyframeAnimationPlayer(keyframes)
         }
