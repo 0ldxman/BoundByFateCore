@@ -18,6 +18,10 @@ repositories {
 		name = "Modrinth Maven"
 		url = uri("https://api.modrinth.com/maven")
 	}
+	maven {
+		name = "KosmX Maven"
+		url = uri("https://maven.kosmx.dev/")
+	}
 }
 
 loom {
@@ -50,7 +54,7 @@ dependencies {
 
 	// playerAnimator — player animation library for custom ability/interaction animations
 	// Packed into the jar so players don't need to install it separately
-	include(modImplementation("dev.kosmx.player-anim:player-animation-lib-fabric:1.0.2-rc1+1.20-fabric")!!)
+	include(modImplementation("dev.kosmx.player-anim:player-animation-lib-fabric:1.0.2-rc1+1.20")!!)
 
 	// ETF — Entity Texture Features (required by EMF)
 	modImplementation("maven.modrinth:entitytexturefeatures:7.1-fabric-1.20.1")
