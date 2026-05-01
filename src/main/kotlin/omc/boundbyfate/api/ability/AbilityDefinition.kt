@@ -110,7 +110,7 @@ data class AbilityDefinition(
      * Примеры полей: "damage_dice_count", "damage_per_ki", "radius_per_level"
      */
     val scaling: JsonObject = JsonObject()
-) : Definition {
+) : Definition, omc.boundbyfate.api.core.Registrable {
 
     /**
      * Эффективные теги — включают автоматически добавленные.

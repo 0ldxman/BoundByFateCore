@@ -73,7 +73,7 @@ object ClassSystem {
     ) {
         when (grant) {
             is LevelGrant.Feature -> {
-                FeatureSystem.applyFeature(player, grant.featureId, classDefinition.id, level)
+                FeatureSystem.applyFeature(player, grant.featureId, classDefinition.id)
             }
             
             is LevelGrant.SubclassChoice -> {

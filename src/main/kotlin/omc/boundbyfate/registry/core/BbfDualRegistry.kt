@@ -138,8 +138,8 @@ abstract class BbfDualRegistry<H : Any, D : Registrable>(val name: String) {
      */
     fun printStatistics() {
         logger.info("=== $name ===")
-        logger.info("  Handlers:    $handlerCount()")
-        logger.info("  Definitions: $definitionCount()")
+        logger.info("  Handlers:    ${handlerCount()}")
+        logger.info("  Definitions: ${definitionCount()}")
         val missing = handlers.keys.filter { !definitions.containsKey(it) }
         if (missing.isNotEmpty()) {
             logger.warn("  Handlers without definitions: $missing")

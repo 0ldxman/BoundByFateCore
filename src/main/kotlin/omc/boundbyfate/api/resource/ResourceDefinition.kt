@@ -54,7 +54,7 @@ import omc.boundbyfate.util.codec.CodecUtil
 data class ResourceDefinition(
     override val id: Identifier,
     val recovery: ResourceRecovery
-) : Definition {
+) : Definition, omc.boundbyfate.api.core.Registrable {
 
     override fun getTranslationKey(): String = "resource.${id.namespace}.${id.path}"
 

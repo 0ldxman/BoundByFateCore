@@ -76,7 +76,7 @@ data class EffectDefinition(
      * Читается через [EffectData] в коде хендлера.
      */
     val data: JsonObject = JsonObject()
-) : Definition {
+) : Definition, omc.boundbyfate.api.core.Registrable {
 
     /**
      * Удобный доступ к data через EffectData.

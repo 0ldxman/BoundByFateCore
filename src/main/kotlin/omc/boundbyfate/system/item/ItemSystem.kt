@@ -453,7 +453,7 @@ object ItemSystem {
         val itemId = getItemId(item) ?: return emptyList()
 
         // Базовые свойства из датапака
-        val base = ItemPropertyRegistry.getItemDefinition(itemId)?.properties ?: emptyList()
+        val base = ItemPropertyRegistry.getDefinition(itemId)?.properties ?: emptyList()
 
         // Runtime свойства из NBT
         val runtime = getRuntimeProperties(item)
