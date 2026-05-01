@@ -14,6 +14,10 @@ repositories {
 		name = "Ladysnake Mods"
 		url = uri("https://maven.ladysnake.org/releases")
 	}
+	maven {
+		name = "Modrinth Maven"
+		url = uri("https://api.modrinth.com/maven")
+	}
 }
 
 loom {
@@ -43,6 +47,16 @@ dependencies {
 	// Kool — 3D engine used for NPC model rendering and animations
 	// Custom build (0mods) stripped of unnecessary dependencies for Minecraft mod use
 	implementation(files("libs/kool-core-desktop-0.18.0-0mods-SNAPSHOT.jar"))
+
+	// playerAnimator — player animation library for custom ability/interaction animations
+	// Packed into the jar so players don't need to install it separately
+	include(modImplementation("dev.kosmx.player-anim:player-animation-lib-fabric:1.0.2-rc1+1.20"))
+
+	// ETF — Entity Texture Features (required by EMF)
+	modImplementation("maven.modrinth:entitytexturefeatures:7.1-fabric-1.20.1")
+
+	// EMF — Entity Model Features (reads JEM/JPM files for player animations)
+	modImplementation("maven.modrinth:entity-model-features:3.2.2-fabric-1.20.1")
 }
 
 tasks.processResources {

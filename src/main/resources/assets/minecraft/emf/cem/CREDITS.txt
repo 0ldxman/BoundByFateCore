@@ -1,0 +1,8 @@
+Player body animations are based on Fresh Animations: Player Extension by FreshLX
+https://modrinth.com/resourcepack/fa-player-extension
+
+Eye animations (Just Expressions) by Traben, BoZo_Xo2, CoolRanchChris, Ithan
+Based on Fresh Animations eye animations by FreshLX
+https://modrinth.com/resourcepack/just-expressions
+
+Files have been adapted for use with Entity Model Features (EMF) mod.

@@ -50,6 +50,9 @@ class AnimationSystem(val model: ModelAttachment) {
     /** Активные задачи переходов. Ключ: "from->to". */
     private val transitionJobs = HashMap<String, Job>()
 
+    /** Активные задачи переходов для именованных слоёв. Ключ: layerName. */
+    private val layerTransitionJobs = HashMap<String, Job>()
+
     /** Имя текущей активной анимации (для логики переключений). */
     var currentAnimation: String? = null
         private set
@@ -213,6 +216,100 @@ class AnimationSystem(val model: ModelAttachment) {
         }
     }
 
+    // ── Слоевые анимации ──────────────────────────────────────────────────
+
+    /**
+     * Активные слои. Ключ — имя слоя, значение — имя текущей анимации.
+     * Используется для diff-сравнения в [NpcModelRenderer].
+     */
+    private val activeLayers = HashMap<String, String>()
+
+    /**
+     * Запускает анимацию на именованном слое с transition.
+     *
+     * Если на этом слое уже играет другая анимация — плавно убирает её вес
+     * пока нарастает вес новой (cross-fade).
+     *
+     * Если слой уже играет эту же анимацию — ничего не делает.
+     *
+     * @param layerName  Имя слоя (произвольная строка)
+     * @param animation  Имя анимации из модели
+     * @param blendIn    Время cross-fade в секундах
+     * @param wrapMode   Режим воспроизведения
+     */
+    fun playLayer(
+        layerName: String,
+        animation: String,
+        blendIn: Float = 0.2f,
+        wrapMode: WrapMode = WrapMode.Loop
+    ) {
+        if (destroyed) return
+        if (activeLayers[layerName] == animation) return
+
+        val previousAnimation = activeLayers[layerName]
+        activeLayers[layerName] = animation
+
+        scope.launch {
+            model.awaitAnimations()
+
+            val resolvedName = model.animations.findName(animation)
+            if (resolvedName == null) {
+                logger.warn("playLayer(): animation '$animation' not found. Available: ${model.animations.names()}")
+                activeLayers.remove(layerName)
+                return@launch
+            }
+
+            val target = model.animations.getOrNull(resolvedName) ?: return@launch
+            val previous = previousAnimation?.let { model.animations.findName(it) }
+                ?.let { model.animations.getOrNull(it) }
+
+            // Отменяем предыдущий transition на этом слое если был
+            layerTransitionJobs.remove(layerName)?.cancel()
+
+            target.time = 0f
+            target.wrapMode = wrapMode
+
+            val job = scope.launch {
+                val steps = (blendIn * 60f).toInt().coerceAtLeast(1)
+                val prevStartWeight = previous?.weight ?: 0f
+                for (i in 0..steps) {
+                    val t = i.toFloat() / steps
+                    target.weight = t
+                    previous?.weight = prevStartWeight * (1f - t)
+                    dispatcher.awaitNextFrame()
+                }
+                target.weight = 1f
+                previous?.weight = 0f
+            }
+            layerTransitionJobs[layerName] = job
+        }
+    }
+
+    /**
+     * Останавливает анимацию на именованном слое с плавным blendOut.
+     *
+     * @param layerName  Имя слоя
+     * @param blendOut   Время плавного исчезновения в секундах
+     */
+    fun stopLayer(layerName: String, blendOut: Float = 0.2f) {
+        if (destroyed) return
+        val animation = activeLayers.remove(layerName) ?: return
+        layerTransitionJobs.remove(layerName)?.cancel()
+
+        scope.launch {
+            model.awaitAnimations()
+            val resolvedName = model.animations.findName(animation) ?: return@launch
+            val anim = model.animations.getOrNull(resolvedName) ?: return@launch
+            val startWeight = anim.weight
+            val steps = (blendOut * 60f).toInt().coerceAtLeast(1)
+            for (i in 0..steps) {
+                anim.weight = startWeight * (1f - i.toFloat() / steps)
+                dispatcher.awaitNextFrame()
+            }
+            anim.weight = 0f
+        }
+    }
+
     // ── Жизненный цикл ────────────────────────────────────────────────────
 
     /**
@@ -226,5 +323,7 @@ class AnimationSystem(val model: ModelAttachment) {
         destroyed = true
         scope.cancel()
         transitionJobs.clear()
+        layerTransitionJobs.clear()
+        activeLayers.clear()
     }
 }

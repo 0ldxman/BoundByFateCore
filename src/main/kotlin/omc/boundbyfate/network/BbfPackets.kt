@@ -60,6 +60,9 @@ object BbfPackets {
     val SWITCH_CHARACTER_C2S = Identifier("boundbyfate-core", "switch_character")
     val CREATE_CHARACTER_C2S = Identifier("boundbyfate-core", "create_character")
 
+    // Player Animations
+    val PLAY_PLAYER_ANIM_S2C = Identifier("boundbyfate-core", "play_player_anim")
+
     /**
      * Регистрирует все C2S пакеты на сервере.
      * S2C пакеты регистрируются через PacketType.create() автоматически.

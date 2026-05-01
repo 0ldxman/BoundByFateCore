@@ -59,6 +59,14 @@ class BoundByFateCoreClient : ClientModInitializer {
         // Музыкальная система
         omc.boundbyfate.client.visual.music.MusicClientSystem.register()
 
+        // Система анимаций игрока
+        omc.boundbyfate.client.animation.PlayerAnimPacketHandler.register()
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents.ENTITY_UNLOAD.register { entity, _ ->
+            if (entity is net.minecraft.entity.player.PlayerEntity) {
+                omc.boundbyfate.client.animation.PlayerAnimSystem.onPlayerRemoved(entity)
+            }
+        }
+
         logger.info("BoundByFate Core Client initialized successfully!")
         logger.info("=".repeat(50))
     }

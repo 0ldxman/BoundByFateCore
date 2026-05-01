@@ -12,9 +12,11 @@ import net.minecraft.entity.LivingEntity
 import net.minecraft.util.math.Box
 import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
+import omc.boundbyfate.client.models.internal.controller.WrapMode
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
 import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 import omc.boundbyfate.client.models.internal.v2.calculateBounds
+import omc.boundbyfate.component.components.AnimLayerState
 import omc.boundbyfate.component.components.NpcModelComponent
 import omc.boundbyfate.entity.NpcEntity
 import org.joml.Quaternionf
@@ -36,9 +38,14 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * ## Управление анимациями
  *
+ * Анимации управляются через [NpcModelComponent.animationLayers] на сервере.
+ * Компонент синхронизируется с клиентом автоматически через ComponentSyncHandler.
+ * Рендерер читает слои из компонента и применяет их к [AnimationSystem].
+ *
  * ```kotlin
- * // Получить AnimationSystem НПС и переключить анимацию:
- * NpcModelRenderer.getAnimationSystem(entity)?.play("attack", duration = 0.2f)
+ * // На сервере:
+ * npcEntity.getAttached(NpcModelComponent.TYPE)?.playAnimation("body", "walk")
+ * npcEntity.getAttached(NpcModelComponent.TYPE)?.playAnimation("emotion", "happy")
  * ```
  */
 @Environment(EnvType.CLIENT)
@@ -73,8 +80,14 @@ object NpcModelRenderer {
         // MC culling использует hitbox сущности (0.6×1.8), модель может быть крупнее.
         if (isCulled(cached.attachment, entity, partialTick)) return true
 
+        // Синхронизируем анимационные слои из компонента
+        val animSystem = cached.animationSystem
+        if (animSystem != null) {
+            syncAnimationLayers(animSystem, cached, modelComponent.animationLayers)
+        }
+
         // Прокручиваем корутины анимационной системы
-        cached.animationSystem?.update(Time.deltaT)
+        animSystem?.update(Time.deltaT)
 
         renderModel(
             attachment = cached.attachment,
@@ -88,6 +101,50 @@ object NpcModelRenderer {
         )
 
         return true
+    }
+
+    /**
+     * Синхронизирует анимационные слои из компонента с [AnimationSystem].
+     *
+     * Основной слой (`key = "__base__"`) — через transition (плавная замена).
+     * Именованные слои — аддитивно через playLayer/stopLayer.
+     */
+    private fun syncAnimationLayers(
+        animSystem: AnimationSystem,
+        cached: CachedModel,
+        layers: List<AnimLayerState>
+    ) {
+        val newLayerMap = layers.associateBy { it.key }
+        val oldLayerMap = cached.activeLayerStates
+
+        // Слои которые были удалены — останавливаем
+        for ((key, oldState) in oldLayerMap) {
+            if (key !in newLayerMap) {
+                if (key == AnimLayerState.BASE_LAYER_KEY) {
+                    // Основной слой остановлен — transition к пустоте
+                    animSystem.play("", duration = oldState.blendIn, wrapMode = WrapMode.Once)
+                } else {
+                    animSystem.stopLayer(key)
+                }
+            }
+        }
+
+        // Слои которые добавились или изменились — запускаем
+        for ((key, newState) in newLayerMap) {
+            val oldState = oldLayerMap[key]
+            if (oldState != newState) {
+                val wrapMode = if (newState.looping) WrapMode.Loop else WrapMode.Once
+                if (key == AnimLayerState.BASE_LAYER_KEY) {
+                    // Основной слой — transition
+                    animSystem.play(newState.animation, duration = newState.blendIn, wrapMode = wrapMode)
+                } else {
+                    // Именованный слой — аддитивно
+                    animSystem.playLayer(key, newState.animation, newState.blendIn, wrapMode)
+                }
+            }
+        }
+
+        cached.activeLayerStates = newLayerMap
     }
 
     private fun isCulled(attachment: ModelAttachment, entity: Entity, partialTick: Float): Boolean {
@@ -172,17 +229,18 @@ object NpcModelRenderer {
 
             val animSystem = if (component.animationsEnabled) {
                 AnimationSystem(attachment).also { sys ->
-                    // Запускаем idle когда модель загрузится.
-                    // playIdleWhenReady() ждёт загрузки асинхронно — не блокирует рендер,
-                    // не создаёт мусор каждый кадр, не падает если анимаций ещё нет.
-                    sys.playIdleWhenReady()
+                    // Если слоёв нет — запускаем idle как fallback
+                    if (component.animationLayers.isEmpty()) {
+                        sys.playIdleWhenReady()
+                    }
                 }
             } else null
 
             val cached = CachedModel(
                 modelPath = component.modelPath,
                 attachment = attachment,
-                animationSystem = animSystem
+                animationSystem = animSystem,
+                activeLayerStates = emptyMap()
             )
             attachments[key] = cached
             cached
@@ -196,11 +254,6 @@ object NpcModelRenderer {
 
     /**
      * Возвращает [AnimationSystem] для сущности или null если модель не загружена.
-     *
-     * Используй для переключения анимаций из игровой логики:
-     * ```kotlin
-     * NpcModelRenderer.getAnimationSystem(entity)?.play("attack", duration = 0.2f)
-     * ```
      */
     fun getAnimationSystem(entity: Entity): AnimationSystem? =
         attachments[entity.uuid.toString()]?.animationSystem
@@ -221,6 +274,8 @@ object NpcModelRenderer {
     private data class CachedModel(
         val modelPath: String,
         val attachment: ModelAttachment,
-        val animationSystem: AnimationSystem?
+        val animationSystem: AnimationSystem?,
+        /** Снимок слоёв из компонента на прошлом кадре — для diff-сравнения. Ключ = AnimLayerState.key */
+        var activeLayerStates: Map<String, AnimLayerState>
     )
 }
