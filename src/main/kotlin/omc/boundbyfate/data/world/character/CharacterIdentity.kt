@@ -32,17 +32,19 @@ data class CharacterIdentity(
 /**
  * Внешний вид персонажа.
  *
- * @property skinPath путь до PNG файла скина (загружается с клиента, хранится на сервере)
- * @property modelType тип модели (steve = широкие руки, alex = тонкие руки)
+ * @property skinId ID скина из FileTransferSystem (FileCategory.SKIN).
+ *   Пустая строка — скин не назначен, используется дефолтный Minecraft скин.
+ *   Соответствует имени файла без расширения (например "elio_skin" → "elio_skin.png").
+ * @property modelType тип модели (STEVE = широкие руки, ALEX = тонкие руки)
  */
 data class CharacterAppearance(
-    val skinPath: String = "",
+    val skinId: String = "",
     val modelType: ModelType = ModelType.STEVE
 ) {
     companion object {
         val CODEC: Codec<CharacterAppearance> = RecordCodecBuilder.create { instance ->
             instance.group(
-                Codec.STRING.fieldOf("skinPath").forGetter { it.skinPath },
+                Codec.STRING.fieldOf("skinId").forGetter { it.skinId },
                 Codec.STRING.xmap(
                     { ModelType.valueOf(it) },
                     { it.name }

@@ -1,6 +1,7 @@
 package omc.boundbyfate.component
 
 import omc.boundbyfate.component.components.EntityAbilitiesData
+import omc.boundbyfate.component.components.EntityAppearanceData
 import omc.boundbyfate.component.components.EntityCharacterData
 import omc.boundbyfate.component.components.EntityCombatData
 import omc.boundbyfate.component.components.EntityEffectsData
@@ -27,6 +28,7 @@ object BbfBuiltinComponents {
         EntityStatusesData.TYPE
         EntityCombatData.TYPE
         EntityAbilitiesData.TYPE
+        EntityAppearanceData.TYPE
         NpcModelComponent.TYPE
 
         logger.info("Built-in components registered")

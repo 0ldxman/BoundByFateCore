@@ -39,6 +39,12 @@ class NpcModelComponent : BbfComponent() {
     var modelPath by synced("boundbyfate-core:models/entity/player_model.gltf")
 
     /**
+     * ID скина из FileTransferSystem (FileCategory.SKIN).
+     * Пустая строка — скин не назначен, используется дефолтный.
+     */
+    var skinId by synced("")
+
+    /**
      * Масштаб модели (1.0 = стандартный).
      */
     var scale by synced(1.0f)

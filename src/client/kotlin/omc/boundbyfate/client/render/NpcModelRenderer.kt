@@ -11,6 +11,7 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.util.math.Box
 import net.minecraft.util.math.MathHelper
+import net.minecraft.util.Identifier
 import omc.boundbyfate.client.models.internal.controller.AnimationSystem
 import omc.boundbyfate.client.models.internal.controller.WrapMode
 import omc.boundbyfate.client.models.internal.rendering.RenderContext
@@ -89,6 +90,13 @@ object NpcModelRenderer {
         // Прокручиваем корутины анимационной системы
         animSystem?.update(Time.deltaT)
 
+        // Получаем текстуру скина если назначена
+        val skinTexture = if (modelComponent.skinId.isNotEmpty()) {
+            omc.boundbyfate.client.skin.ClientSkinManager.also {
+                it.ensureLoaded(modelComponent.skinId)
+            }.getTexture(modelComponent.skinId)
+        } else null
+
         renderModel(
             attachment = cached.attachment,
             entity = entity,
@@ -97,7 +105,8 @@ object NpcModelRenderer {
             poseStack = poseStack,
             buffer = buffer,
             packedLight = packedLight,
-            scale = modelComponent.scale
+            scale = modelComponent.scale,
+            skinTexture = skinTexture
         )
 
         return true
@@ -174,7 +183,8 @@ object NpcModelRenderer {
         poseStack: MatrixStack,
         buffer: VertexConsumerProvider,
         packedLight: Int,
-        scale: Float
+        scale: Float,
+        skinTexture: Identifier? = null
     ) {
         val overlay = if (entity is LivingEntity && (entity.hurtTime > 0 || entity.deathTime > 0)) {
             OverlayTexture.packUv(OverlayTexture.getU(0f), OverlayTexture.getV(true))
@@ -190,6 +200,14 @@ object NpcModelRenderer {
         }
 
         poseStack.scale(scale, scale, scale)
+
+        // Биндим кастомную текстуру скина если назначена.
+        // Пайплайн использует GL_TEXTURE0 для основной текстуры модели.
+        if (skinTexture != null) {
+            com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
+                MinecraftClient.getInstance().textureManager.getTexture(skinTexture).glId
+            )
+        }
 
         attachment.pipeline.render(
             RenderContext(

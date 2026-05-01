@@ -66,7 +66,7 @@ object FileTransferSystem {
             logger.info("FileTransferSystem started")
         }
 
-        // При подключении игрока — отправляем список файлов
+        // При подключении игрока — отправляем список файлов (клиент сам запросит нужные)
         ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
             sendFileListToPlayer(handler.player)
         }
@@ -199,6 +199,27 @@ object FileTransferSystem {
         val removed = uploadSessions.remove(packet.sessionId)
         if (removed != null) {
             logger.info("Upload cancelled: ${removed.fileId} by ${sender.name.string}")
+        }
+    }
+
+    // ── Запрос файлов от клиента ──────────────────────────────────────────
+
+    /**
+     * Клиент запрашивает конкретные файлы.
+     *
+     * Вызывается когда клиент получил [FileSyncListPacket], сравнил с кешем
+     * и сообщил что именно нужно скачать. Сервер раздаёт только запрошенные файлы.
+     */
+    fun onFileRequest(
+        packet: omc.boundbyfate.network.packet.c2s.FileRequestPacket,
+        player: ServerPlayerEntity
+    ) {
+        if (packet.files.isEmpty()) return
+
+        logger.info("Player ${player.name.string} requested ${packet.files.size} files")
+
+        for (request in packet.files) {
+            distributeFileToPlayer(player, request.fileId, request.category, request.extension)
         }
     }
 

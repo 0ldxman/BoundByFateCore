@@ -3,6 +3,7 @@ package omc.boundbyfate.network
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.util.Identifier
 import omc.boundbyfate.network.packet.c2s.CreateCharacterPacket
+import omc.boundbyfate.network.packet.c2s.FileRequestPacket
 import omc.boundbyfate.network.packet.c2s.FileUploadCancelPacket
 import omc.boundbyfate.network.packet.c2s.FileUploadChunkPacket
 import omc.boundbyfate.network.packet.c2s.FileUploadStartPacket
@@ -49,6 +50,7 @@ object BbfPackets {
     val FILE_DISTRIBUTE_START_S2C = Identifier("boundbyfate-core", "file_distribute_start")
     val FILE_DISTRIBUTE_CHUNK_S2C = Identifier("boundbyfate-core", "file_distribute_chunk")
     val FILE_SYNC_LIST_S2C = Identifier("boundbyfate-core", "file_sync_list")
+    val FILE_REQUEST_C2S = Identifier("boundbyfate-core", "file_request")
 
     // Sound & Music
     val PLAY_SOUND_S2C = Identifier("boundbyfate-core", "play_sound")
@@ -91,6 +93,11 @@ object BbfPackets {
 
         ServerPlayNetworking.registerGlobalReceiver(FileUploadCancelPacket.TYPE) { packet, player, _ ->
             logger.debug("Player ${player.name.string} cancelling upload ${packet.sessionId}")
+        }
+
+        ServerPlayNetworking.registerGlobalReceiver(FileRequestPacket.TYPE) { packet, player, _ ->
+            logger.debug("Player ${player.name.string} requesting ${packet.files.size} files")
+            omc.boundbyfate.system.transfer.FileTransferSystem.onFileRequest(packet, player)
         }
 
         ServerPlayNetworking.registerGlobalReceiver(MusicSliderUpdatePacket.TYPE) { packet, player, _ ->

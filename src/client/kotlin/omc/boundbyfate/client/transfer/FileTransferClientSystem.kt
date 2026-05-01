@@ -5,6 +5,7 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.client.MinecraftClient
+import omc.boundbyfate.network.packet.c2s.FileRequestPacket
 import omc.boundbyfate.network.packet.s2c.FileDistributeChunkPacket
 import omc.boundbyfate.network.packet.s2c.FileDistributeStartPacket
 import omc.boundbyfate.network.packet.s2c.FileSyncListPacket
@@ -86,17 +87,25 @@ object FileTransferClientSystem {
             }
 
             if (missing.isEmpty()) {
-                logger.info("All ${packet.files.size} server files already cached")
+                logger.info("All ${packet.files.size} server files already cached, nothing to request")
                 return@launch
             }
 
-            logger.info("Need to download ${missing.size}/${packet.files.size} files")
+            logger.info("Requesting ${missing.size}/${packet.files.size} files from server")
 
-            // Уведомляем сервер о том какие файлы нужны
-            // Сервер сам начнёт раздачу через FileDistributeStartPacket
-            // (сервер видит что игрок подключился и отправляет нужные файлы)
-            // Здесь просто логируем — реальный запрос идёт через сервер автоматически
+            val requests = missing.map { meta ->
+                FileRequestPacket.FileRequest(
+                    fileId = meta.fileId,
+                    category = meta.category,
+                    extension = meta.extension
+                )
+            }
+
+            withContext(Dispatchers.Main) {
+                ClientPlayNetworking.send(FileRequestPacket(requests))
+            }
         }
+    }
     }
 
     /**

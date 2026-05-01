@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_17",
 	"client": [
 		"EntityRendererMixin",
+		"PlayerSkinMixin",
 		"accessor.MinecraftClientAccessor",
 		"accessor.GameRendererAccessor",
 		"accessor.LivingEntityAccessor",

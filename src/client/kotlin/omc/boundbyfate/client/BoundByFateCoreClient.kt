@@ -50,6 +50,18 @@ class BoundByFateCoreClient : ClientModInitializer {
         // Система передачи файлов
         omc.boundbyfate.client.transfer.FileTransferClientSystem.register()
 
+        // Скины — подписываемся на получение файлов категории SKIN
+        omc.boundbyfate.client.transfer.FileTransferClientSystem.onFileReceived(
+            omc.boundbyfate.system.transfer.FileCategory.SKIN
+        ) { skinId, bytes, _ ->
+            omc.boundbyfate.client.skin.ClientSkinManager.onSkinFileReceived(skinId, bytes)
+        }
+
+        // Очищаем скины при отключении от сервера
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
+            omc.boundbyfate.client.skin.ClientSkinManager.clearAll()
+        }
+
         // Система партиклов
         omc.boundbyfate.client.visual.ParticlePacketHandler.register()
 
