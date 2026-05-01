@@ -3,6 +3,7 @@ package omc.boundbyfate.system.mechanic
 import com.google.gson.JsonObject
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
+import omc.boundbyfate.api.mechanic.Mechanic
 import omc.boundbyfate.api.mechanic.MechanicConfig
 import omc.boundbyfate.component.components.EntityStatsData
 import omc.boundbyfate.component.core.getOrCreate
@@ -10,27 +11,27 @@ import omc.boundbyfate.registry.MechanicRegistry
 import org.slf4j.LoggerFactory
 
 /**
- * Менеджер механик классов.
+ * Менеджер механик персонажа.
  *
+ * Механики могут быть получены из любого источника — класса, расы, черты, предмета.
  * Активные механики хранятся в [EntityStatsData.mechanics] на entity.
  * Конфигурация активных механик хранится в памяти (пересоздаётся при загрузке персонажа).
  */
-object ClassMechanicManager {
+object MechanicManager {
 
-    private val logger = LoggerFactory.getLogger(ClassMechanicManager::class.java)
+    private val logger = LoggerFactory.getLogger(MechanicManager::class.java)
 
     /**
      * Конфигурации активных механик — хранятся в памяти, пересоздаются при загрузке.
      * Key: UUID игрока, Value: Map<MechanicId, ActiveMechanic>
      */
     private val activeMechanicConfigs = mutableMapOf<String, MutableMap<Identifier, ActiveMechanic>>()
-    
+
     fun activateMechanic(
         player: ServerPlayerEntity,
         mechanicId: Identifier,
         config: JsonObject,
-        sourceFeature: Identifier,
-        sourceClass: Identifier
+        sourceFeature: Identifier
     ) {
         val handler = MechanicRegistry.getHandler(mechanicId)
         if (handler == null) {
@@ -76,8 +77,7 @@ object ClassMechanicManager {
             mechanicId = mechanicId,
             handler = handler,
             config = finalConfig,
-            sourceFeature = sourceFeature,
-            sourceClass = sourceClass
+            sourceFeature = sourceFeature
         )
 
         logger.debug("Mechanic $mechanicId activated successfully")
@@ -131,15 +131,22 @@ object ClassMechanicManager {
         }
     }
 
-    fun onLevelUp(player: ServerPlayerEntity, classId: Identifier, newLevel: Int) {
+    /**
+     * Уведомляет все активные механики о повышении уровня персонажа.
+     *
+     * Вызывается при любом лвл-апе — механики сами решают как реагировать.
+     * Нет фильтрации по источнику: механика от расы масштабируется так же как от класса.
+     *
+     * @param player игрок
+     * @param newLevel новый уровень персонажа
+     */
+    fun onLevelUp(player: ServerPlayerEntity, newLevel: Int) {
         val playerMechanics = activeMechanicConfigs[player.uuidAsString] ?: return
         for (activeMechanic in playerMechanics.values) {
-            if (activeMechanic.sourceClass == classId) {
-                try {
-                    activeMechanic.handler.onLevelUp(player, newLevel)
-                } catch (e: Exception) {
-                    logger.error("Error in mechanic ${activeMechanic.mechanicId} onLevelUp", e)
-                }
+            try {
+                activeMechanic.handler.onLevelUp(player, newLevel)
+            } catch (e: Exception) {
+                logger.error("Error in mechanic ${activeMechanic.mechanicId} onLevelUp", e)
             }
         }
     }
@@ -158,11 +165,15 @@ object ClassMechanicManager {
 
 /**
  * Данные активной механики.
+ *
+ * @property mechanicId ID механики
+ * @property handler хендлер механики
+ * @property config итоговая конфигурация (default_config + override из Feature grant)
+ * @property sourceFeature ID Feature которая активировала механику
  */
 data class ActiveMechanic(
     val mechanicId: Identifier,
-    val handler: omc.boundbyfate.api.mechanic.ClassMechanic,
+    val handler: Mechanic,
     val config: MechanicConfig,
-    val sourceFeature: Identifier,
-    val sourceClass: Identifier
+    val sourceFeature: Identifier
 )

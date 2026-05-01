@@ -38,7 +38,6 @@ object BuiltinSystems {
             ConditionTypesSystem,
             AbilitiesSystem,
             OrganizationEventSystem,
-            BuiltinComponentsSystem,
             ComponentSyncSystem,
             WorldDataSyncSystem,
             VisualOrchestratorSystem,
@@ -97,18 +96,8 @@ object BuiltinSystems {
         }
     }
 
-    object BuiltinComponentsSystem : BbfSystem {
-        override val systemId = "boundbyfate-core:builtin_components"
-
-        override fun register() {
-            // Обращение к объекту запускает регистрацию всех компонентов
-            omc.boundbyfate.component.BbfBuiltinComponents
-        }
-    }
-
     object ComponentSyncSystem : BbfSystem {
         override val systemId = "boundbyfate-core:component_sync"
-        override val dependencies = listOf("boundbyfate-core:builtin_components")
 
         override fun register() {
             ComponentSyncHandler.register()

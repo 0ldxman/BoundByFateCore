@@ -19,7 +19,7 @@ import omc.boundbyfate.util.codec.CodecUtil
  * Логика живёт в:
  * - EffectApplier (для эффектов)
  * - AbilityHandler (для способностей)
- * - ClassMechanic (для механик)
+ * - Mechanic (для механик)
  *
  * ## Примеры JSON
  *

@@ -3,17 +3,16 @@ package omc.boundbyfate.registry
 import net.minecraft.util.Identifier
 import omc.boundbyfate.api.item.ItemDefinition
 import omc.boundbyfate.api.item.ItemPropertyHandler
-import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentHashMap
+import omc.boundbyfate.registry.core.BbfDualRegistry
 
 /**
  * Реестр свойств предметов.
  *
  * Хранит два независимых хранилища:
- * - [ItemPropertyHandler] — логика, регистрируется в коде
- * - [ItemDefinition] — данные, загружаются из JSON датапаков
+ * - [ItemPropertyHandler] — логика свойства, регистрируется в коде при старте мода
+ * - [ItemDefinition] — привязка свойств к Minecraft item ID, загружается из JSON датапаков
  *
- * Регистрация хендлера:
+ * ## Регистрация хендлера
  *
  * ```kotlin
  * ItemPropertyRegistry.register(MeleeDamage)
@@ -21,71 +20,44 @@ import java.util.concurrent.ConcurrentHashMap
  * ItemPropertyRegistry.register(ArmorClass)
  * ```
  *
- * Definition загружаются из datapacks через ItemConfigLoader.
+ * ## Загрузка Definition
  *
- * Получение:
+ * Definition загружаются автоматически из датапаков через [omc.boundbyfate.config.loader.DualDatapackLoader].
+ * Путь: `data/<namespace>/bbf_item/<name>.json`
+ *
+ * ## Получение
  *
  * ```kotlin
- * val handler = ItemPropertyRegistry.getHandler(propertyId)
- * val definition = ItemPropertyRegistry.getItemDefinition(itemId)
+ * val handler    = ItemPropertyRegistry.getHandler(propertyId)
+ * val definition = ItemPropertyRegistry.getDefinition(itemId)
+ * ```
+ *
+ * ## Тикующие хендлеры
+ *
+ * ```kotlin
+ * val ticking = ItemPropertyRegistry.getTickingHandlers()
  * ```
  */
-object ItemPropertyRegistry {
+object ItemPropertyRegistry : BbfDualRegistry<ItemPropertyHandler, ItemDefinition>("item_properties") {
 
-    private val logger = LoggerFactory.getLogger(ItemPropertyRegistry::class.java)
+    /**
+     * Регистрирует хендлер свойства предмета.
+     * Удобная обёртка — берёт ID из самого хендлера.
+     *
+     * @throws IllegalStateException если хендлер с таким ID уже зарегистрирован
+     */
+    fun register(handler: ItemPropertyHandler) = registerHandler(handler.id, handler)
 
-    // Хендлеры свойств: propertyId -> handler
-    private val handlers: ConcurrentHashMap<Identifier, ItemPropertyHandler> = ConcurrentHashMap()
+    /**
+     * Регистрирует хендлер, перезаписывая существующий.
+     * Используй для переопределения встроенных свойств из другого мода.
+     */
+    fun registerOrReplace(handler: ItemPropertyHandler) = registerOrReplaceHandler(handler.id, handler)
 
-    // Определения предметов: itemId -> ItemDefinition
-    private val itemDefinitions: ConcurrentHashMap<Identifier, ItemDefinition> = ConcurrentHashMap()
-
-    fun register(handler: ItemPropertyHandler) {
-        if (handlers.containsKey(handler.id)) {
-            throw IllegalStateException("ItemPropertyHandler '${handler.id}' is already registered")
-        }
-        handlers[handler.id] = handler
-        logger.debug("Registered item property handler: ${handler.id}")
-    }
-
-    fun registerOrReplace(handler: ItemPropertyHandler) {
-        if (handlers.containsKey(handler.id)) {
-            logger.warn("Replacing item property handler: ${handler.id}")
-        }
-        handlers[handler.id] = handler
-    }
-
-    fun registerItemDefinition(definition: ItemDefinition) {
-        itemDefinitions[definition.item] = definition
-        logger.debug("Registered item definition: ${definition.item}")
-    }
-
-    fun clearItemDefinitions() {
-        itemDefinitions.clear()
-        logger.info("Cleared all item definitions")
-    }
-
-    fun getHandler(propertyId: Identifier): ItemPropertyHandler? = handlers[propertyId]
-
-    fun getItemDefinition(itemId: Identifier): ItemDefinition? = itemDefinitions[itemId]
-
-    fun getAllHandlers(): Collection<ItemPropertyHandler> = handlers.values
-
-    fun getAllItemDefinitions(): Collection<ItemDefinition> = itemDefinitions.values
-
+    /**
+     * Возвращает все тикующие хендлеры.
+     * Используется системой предметов для оптимизации тиков.
+     */
     fun getTickingHandlers(): Collection<ItemPropertyHandler> =
-        handlers.values.filter { it.isTicking }
-
-    fun hasHandler(id: Identifier): Boolean = handlers.containsKey(id)
-    fun hasItemDefinition(itemId: Identifier): Boolean = itemDefinitions.containsKey(itemId)
-    fun handlerCount(): Int = handlers.size
-    fun definitionCount(): Int = itemDefinitions.size
-
-    fun printStatistics() {
-        logger.info("=== Item Property Registry ===")
-        logger.info("  Handlers: ${handlerCount()}")
-        logger.info("  Item definitions: ${definitionCount()}")
-        logger.info("  Ticking handlers: ${getTickingHandlers().size}")
-        logger.info("==============================")
-    }
+        getAllHandlers().filter { it.isTicking }
 }

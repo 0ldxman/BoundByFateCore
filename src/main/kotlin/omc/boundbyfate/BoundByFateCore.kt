@@ -12,9 +12,15 @@ import org.slf4j.LoggerFactory
  * Главный класс мода BoundByFate Core.
  *
  * Отвечает за инициализацию всех систем в правильном порядке:
- * 1. Регистры (Registries) — загрузчики JSON датапаков
+ * 1. Регистры (Registries) — регистрация реестров и загрузчиков JSON датапаков
  * 2. Компоненты (Attachments) — регистрация entity компонентов
  * 3. Системы (Systems) — через [SystemRegistry] с топологической сортировкой
+ *
+ * ## Добавление нового реестра
+ *
+ * Если реестр наследует [omc.boundbyfate.registry.core.BbfRegistry]:
+ * - Добавь `RegistryManager.registerRegistry(MyRegistry)` в [initializeRegistries]
+ * - Добавь `ConfigManager.registerDatapackLoader(MyLoader, "bbf_my_type")` туда же
  *
  * ## Добавление новой системы
  *
@@ -49,7 +55,24 @@ class BoundByFateCore : ModInitializer {
     private fun initializeRegistries() {
         logger.info("Initializing registries...")
 
+        // ── BbfRegistry — регистрируем в RegistryManager для finalizeRegistration() ──
+
+        // StatRegistry — hardcoded stats (strength, dexterity, etc.)
         RegistryManager.registerRegistry(omc.boundbyfate.registry.StatRegistry)
+
+        // RaceRegistry — переопределяет onRegistrationComplete() для валидации подрас
+        RegistryManager.registerRegistry(omc.boundbyfate.registry.RaceRegistry)
+
+        // ClassRegistry — классы и подклассы
+        RegistryManager.registerRegistry(omc.boundbyfate.registry.ClassRegistry)
+
+        // FeatureRegistry — особенности классов (гранты: эффекты, способности, механики)
+        RegistryManager.registerRegistry(omc.boundbyfate.registry.FeatureRegistry)
+
+        // ResourceRegistry — именованные счётчики с правилами восстановления
+        RegistryManager.registerRegistry(omc.boundbyfate.registry.ResourceRegistry)
+
+        // ── Загрузчики датапаков (BbfRegistry через DatapackLoader) ──────────────────
 
         omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
             omc.boundbyfate.config.loader.StatConfigLoader,
@@ -63,18 +86,63 @@ class BoundByFateCore : ModInitializer {
             omc.boundbyfate.config.loader.StatusConfigLoader,
             "bbf_status"
         )
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+            omc.boundbyfate.config.loader.ClassConfigLoader,
+            "bbf_class"
+        )
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+            omc.boundbyfate.config.loader.FeatureConfigLoader,
+            "bbf_feature"
+        )
+        omc.boundbyfate.config.ConfigManager.registerDatapackLoader(
+            omc.boundbyfate.config.loader.ResourceConfigLoader,
+            "bbf_resource"
+        )
 
-        net.fabricmc.fabric.api.resource.ResourceManagerHelper
-            .get(net.minecraft.resource.ResourceType.SERVER_DATA)
-            .registerReloadListener(omc.boundbyfate.config.loader.AbilityConfigLoader)
+        // ── Загрузчики датапаков (BbfDualRegistry через DualDatapackLoader) ──────────
 
-        net.fabricmc.fabric.api.resource.ResourceManagerHelper
-            .get(net.minecraft.resource.ResourceType.SERVER_DATA)
-            .registerReloadListener(omc.boundbyfate.config.loader.AlignmentConfigLoader)
+        omc.boundbyfate.config.ConfigManager.registerLoader(
+            omc.boundbyfate.config.loader.DualDatapackLoader(
+                registry = omc.boundbyfate.registry.AbilityRegistry,
+                codec = omc.boundbyfate.api.ability.AbilityDefinition.CODEC,
+                directory = "bbf_ability",
+                onAfterLoad = { _, _ ->
+                    val missing = omc.boundbyfate.registry.AbilityRegistry.getAllHandlers()
+                        .filter { !omc.boundbyfate.registry.AbilityRegistry.hasDefinition(it.id) }
+                    if (missing.isNotEmpty()) {
+                        org.slf4j.LoggerFactory.getLogger("AbilityLoader")
+                            .warn("Ability handlers without definitions: ${missing.map { it.id }}")
+                    }
+                }
+            )
+        )
+        omc.boundbyfate.config.ConfigManager.registerLoader(
+            omc.boundbyfate.config.loader.DualDatapackLoader(
+                registry = omc.boundbyfate.registry.EffectRegistry,
+                codec = omc.boundbyfate.api.effect.EffectDefinition.CODEC,
+                directory = "bbf_effect"
+            )
+        )
+        omc.boundbyfate.config.ConfigManager.registerLoader(
+            omc.boundbyfate.config.loader.DualDatapackLoader(
+                registry = omc.boundbyfate.registry.ItemPropertyRegistry,
+                codec = omc.boundbyfate.api.item.ItemDefinition.CODEC,
+                directory = "bbf_item"
+            )
+        )
+        omc.boundbyfate.config.ConfigManager.registerLoader(
+            omc.boundbyfate.config.loader.DualDatapackLoader(
+                registry = omc.boundbyfate.registry.MechanicRegistry,
+                codec = omc.boundbyfate.api.mechanic.MechanicDefinition.CODEC,
+                directory = "bbf_mechanic"
+            )
+        )
 
-        net.fabricmc.fabric.api.resource.ResourceManagerHelper
-            .get(net.minecraft.resource.ResourceType.SERVER_DATA)
-            .registerReloadListener(omc.boundbyfate.config.loader.ItemConfigLoader)
+        // ── Нестандартные загрузчики ──────────────────────────────────────────────────
+
+        omc.boundbyfate.config.ConfigManager.registerLoader(
+            omc.boundbyfate.config.loader.AlignmentConfigLoader
+        )
 
         RegistryManager.finalizeRegistration()
         BbfEvents.Lifecycle.REGISTRIES_INITIALIZED.invoker().onRegistriesInitialized()
@@ -86,6 +154,11 @@ class BoundByFateCore : ModInitializer {
 
     private fun initializeComponents() {
         logger.info("Initializing components...")
+
+        // Регистрируем все встроенные компоненты здесь, на этапе 2,
+        // чтобы событие COMPONENTS_INITIALIZED стреляло после реальной регистрации.
+        omc.boundbyfate.component.BbfBuiltinComponents
+
         BbfEvents.Lifecycle.COMPONENTS_INITIALIZED.invoker().onComponentsInitialized()
         logger.info("Components initialized")
     }

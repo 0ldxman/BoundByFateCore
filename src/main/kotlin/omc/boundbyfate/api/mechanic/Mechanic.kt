@@ -1,32 +1,34 @@
 package omc.boundbyfate.api.mechanic
 
-import com.google.gson.JsonObject
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.util.Identifier
 
 /**
- * Базовый интерфейс для механик класса.
+ * Базовый интерфейс для механик персонажа.
  *
- * Каждая механика — это `object` реализующий [ClassMechanic].
- * Механика содержит логику которая влияет на геймплей персонажа.
+ * Механика — это сложная система с собственной логикой и состоянием.
+ * Может быть получена из любого источника: класса, расы, черты, предмета.
+ *
+ * Каждая механика — это `object` реализующий [Mechanic].
  *
  * ## Создание механики
  *
  * ```kotlin
- * object SpellcastingMechanic : ClassMechanic {
+ * object SpellcastingMechanic : Mechanic {
  *     override val id = Identifier("boundbyfate-core", "spellcasting")
  *
  *     override fun onActivate(player: ServerPlayerEntity, config: MechanicConfig) {
  *         val stat = config.getString("stat") ?: "intelligence"
  *         val type = config.getString("type") ?: "full"
- *         
  *         // Инициализация системы заклинаний
- *         val spellcasting = SpellcastingData(stat, type)
- *         player.setSpellcastingData(spellcasting)
  *     }
  *
  *     override fun onDeactivate(player: ServerPlayerEntity) {
- *         player.removeSpellcastingData()
+ *         // Очистка
+ *     }
+ *
+ *     override fun onLevelUp(player: ServerPlayerEntity, newLevel: Int) {
+ *         // Пересчитать слоты заклинаний для нового уровня персонажа
  *     }
  * }
  * ```
@@ -34,36 +36,36 @@ import net.minecraft.util.Identifier
  * ## Жизненный цикл
  *
  * ```
- * onActivate()     — механика активируется (Feature даёт Mechanic grant)
- * onLevelUp()      — персонаж получает уровень класса
- * onTick()         — каждый тик (опционально)
- * onDeactivate()   — механика деактивируется (смена класса, смерть)
+ * onActivate()   — механика активируется (Feature даёт Mechanic grant)
+ * onLevelUp()    — персонаж получает уровень (любой источник — класс, раса, черта)
+ * onTick()       — каждый тик (опционально, используй осторожно)
+ * onDeactivate() — механика деактивируется (смена класса/расы, снятие черты)
  * ```
  *
  * ## Взаимодействие с событиями
  *
  * Механики могут подписываться на события через EventBus:
- * - AbilityEvents (для модификации способностей)
- * - CombatEvents (для модификации боя)
- * - RestEvents (для восстановления ресурсов)
+ * - `AbilityEvents` — модификация способностей
+ * - `CombatEvents` — модификация боя
+ * - `RestEvents` — восстановление ресурсов
  *
  * ## Примеры механик
  *
  * - **Spellcasting** — базовая система магии (слоты, DC, атака)
- * - **Wizard Spellbook** — книга заклинаний волшебника
+ * - **WizardSpellbook** — книга заклинаний волшебника
  * - **Metamagic** — метамагия чародея
  * - **Rage** — ярость варвара
- * - **Sneak Attack** — скрытая атака плута
+ * - **SneakAttack** — скрытая атака плута
  * - **Ki** — система ки монаха
  */
-interface ClassMechanic {
-    
+interface Mechanic {
+
     /**
      * Уникальный идентификатор механики.
      * Должен совпадать с `handler` в MechanicDefinition.
      */
     val id: Identifier
-    
+
     /**
      * Вызывается при активации механики.
      *
@@ -76,7 +78,7 @@ interface ClassMechanic {
      * @param config конфигурация (из Feature grant или default_config)
      */
     fun onActivate(player: ServerPlayerEntity, config: MechanicConfig)
-    
+
     /**
      * Вызывается при деактивации механики.
      *
@@ -88,18 +90,20 @@ interface ClassMechanic {
      * @param player игрок у которого деактивируется механика
      */
     fun onDeactivate(player: ServerPlayerEntity)
-    
+
     /**
-     * Вызывается при получении уровня класса.
+     * Вызывается при повышении уровня персонажа.
      *
      * Опциональный хук для механик которые масштабируются с уровнем.
-     * Примеры: увеличение слотов заклинаний, урона Sneak Attack.
+     * Вызывается при любом лвл-апе независимо от источника механики.
+     *
+     * Примеры: пересчёт слотов заклинаний, урона Sneak Attack, очков Ki.
      *
      * @param player игрок
-     * @param newLevel новый уровень класса
+     * @param newLevel новый уровень персонажа
      */
     fun onLevelUp(player: ServerPlayerEntity, newLevel: Int) {}
-    
+
     /**
      * Вызывается каждый тик.
      *
@@ -109,7 +113,7 @@ interface ClassMechanic {
      * @param player игрок
      */
     fun onTick(player: ServerPlayerEntity) {}
-    
+
     /**
      * Проверяет зависимости механики.
      *
@@ -121,11 +125,8 @@ interface ClassMechanic {
      * @return true если зависимости выполнены
      */
     fun checkDependencies(player: ServerPlayerEntity, definition: MechanicDefinition): Boolean {
-        // Проверяем что все зависимости активны
         for (depId in definition.dependencies) {
-            if (!player.hasMechanic(depId)) {
-                return false
-            }
+            if (!player.hasMechanic(depId)) return false
         }
         return true
     }
@@ -134,7 +135,5 @@ interface ClassMechanic {
 /**
  * Extension для проверки наличия механики у игрока.
  */
-fun ServerPlayerEntity.hasMechanic(mechanicId: Identifier): Boolean {
-    return omc.boundbyfate.system.mechanic.ClassMechanicManager.hasMechanic(this, mechanicId)
-}
-
+fun ServerPlayerEntity.hasMechanic(mechanicId: Identifier): Boolean =
+    omc.boundbyfate.system.mechanic.MechanicManager.hasMechanic(this, mechanicId)

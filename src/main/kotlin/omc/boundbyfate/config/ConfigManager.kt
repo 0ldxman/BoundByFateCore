@@ -1,6 +1,7 @@
 package omc.boundbyfate.config
 
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener
 import net.minecraft.resource.ResourceType
 import omc.boundbyfate.api.core.Registrable
 import omc.boundbyfate.config.loader.ConfigLoader
@@ -48,6 +49,24 @@ object ConfigManager {
         return datapackLoader
     }
     
+    /**
+     * Регистрирует произвольный [SimpleSynchronousResourceReloadListener] в Fabric Resource Manager.
+     *
+     * Используется для загрузчиков с нестандартной логикой — например,
+     * [omc.boundbyfate.config.loader.DualDatapackLoader] или
+     * [omc.boundbyfate.config.loader.AlignmentConfigLoader].
+     *
+     * Единая точка регистрации — все загрузчики идут через [ConfigManager], а не напрямую
+     * через [ResourceManagerHelper].
+     *
+     * @param loader загрузчик для регистрации
+     */
+    fun registerLoader(loader: SimpleSynchronousResourceReloadListener) {
+        ResourceManagerHelper.get(ResourceType.SERVER_DATA)
+            .registerReloadListener(loader)
+        logger.info("Registered reload listener: ${loader.fabricId}")
+    }
+
     /**
      * Создаёт ResourceLoader для загрузки встроенных ресурсов.
      * 

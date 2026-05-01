@@ -8,57 +8,52 @@ import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.registry.EffectRegistry
 import omc.boundbyfate.registry.FeatureRegistry
 import omc.boundbyfate.system.effect.EffectApplier
-import omc.boundbyfate.system.mechanic.ClassMechanicManager
+import omc.boundbyfate.system.mechanic.MechanicManager
 import omc.boundbyfate.util.source.SourceReference
 import org.slf4j.LoggerFactory
 
 /**
- * Система управления особенностями классов.
+ * Система управления особенностями персонажа.
  *
- * Отвечает за:
- * - Применение грантов особенности
- * - Снятие грантов особенности
- * - Получение информации об особенностях персонажа
+ * Feature может быть получена из любого источника — класса, расы, черты.
+ * Отвечает за применение и снятие грантов особенности.
  *
  * ## Использование
  *
  * ```kotlin
  * // Применить особенность
- * FeatureSystem.applyFeature(player, featureId, sourceClassId, level)
+ * FeatureSystem.applyFeature(player, featureId, sourceId)
  *
  * // Снять особенность
  * FeatureSystem.removeFeature(player, featureId)
  * ```
  */
 object FeatureSystem {
-    
+
     private val logger = LoggerFactory.getLogger(FeatureSystem::class.java)
-    
+
     /**
      * Применяет особенность к игроку.
      *
      * @param player игрок
      * @param featureId ID особенности
-     * @param sourceClassId ID класса который даёт особенность
-     * @param level уровень на котором даётся особенность
+     * @param sourceId ID источника который даёт особенность (класс, раса, черта...)
      */
     fun applyFeature(
         player: ServerPlayerEntity,
         featureId: Identifier,
-        sourceClassId: Identifier,
-        level: Int
+        sourceId: Identifier
     ) {
         val feature = FeatureRegistry.get(featureId)
         if (feature == null) {
             logger.error("Feature $featureId not found in registry")
             return
         }
-        
-        logger.info("Applying feature ${feature.id} to ${player.name.string} (from $sourceClassId level $level)")
-        
-        // Применяем все гранты особенности
+
+        logger.info("Applying feature ${feature.id} to ${player.name.string} (from $sourceId)")
+
         for (grant in feature.grants) {
-            applyGrant(player, grant, feature.id, sourceClassId, level)
+            applyGrant(player, grant, feature.id)
         }
     }
     
@@ -68,9 +63,7 @@ object FeatureSystem {
     private fun applyGrant(
         player: ServerPlayerEntity,
         grant: FeatureGrant,
-        featureId: Identifier,
-        sourceClassId: Identifier,
-        level: Int
+        featureId: Identifier
     ) {
         when (grant) {
             is FeatureGrant.Effect -> {
@@ -104,13 +97,11 @@ object FeatureSystem {
             }
             
             is FeatureGrant.Mechanic -> {
-                // Активируем механику через ClassMechanicManager
-                ClassMechanicManager.activateMechanic(
+                MechanicManager.activateMechanic(
                     player = player,
                     mechanicId = grant.mechanicId,
                     config = grant.config,
-                    sourceFeature = featureId,
-                    sourceClass = sourceClassId
+                    sourceFeature = featureId
                 )
             }
             
@@ -185,7 +176,7 @@ object FeatureSystem {
             }
             
             is FeatureGrant.Mechanic -> {
-                ClassMechanicManager.deactivateMechanic(player, grant.mechanicId)
+                MechanicManager.deactivateMechanic(player, grant.mechanicId)
             }
             
             is FeatureGrant.Proficiency -> {

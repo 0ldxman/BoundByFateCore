@@ -98,8 +98,8 @@ class EntityStatsData : BbfComponent() {
     // ── Механики ──────────────────────────────────────────────────────────
 
     /**
-     * Активные механики класса (Spellcasting, Rage, Ki и т.д.).
-     * Заполняется ClassMechanicManager при активации механик.
+     * Активные механики персонажа (Spellcasting, Rage, Ki и т.д.).
+     * Заполняется [omc.boundbyfate.system.mechanic.MechanicManager] при активации механик.
      */
     val mechanics by syncedList(Identifier.CODEC)
 

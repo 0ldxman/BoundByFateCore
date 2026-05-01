@@ -69,7 +69,7 @@ data class MechanicDefinition(
     
     /**
      * ID хендлера механики.
-     * Хендлер — это Kotlin код (ClassMechanic) который реализует логику.
+     * Хендлер — это Kotlin код (объект реализующий [omc.boundbyfate.api.mechanic.Mechanic]) который реализует логику.
      */
     val handler: Identifier,
     
