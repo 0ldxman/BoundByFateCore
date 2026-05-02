@@ -44,10 +44,6 @@ class EntityAppearanceData : BbfComponent() {
      */
     var modelType by synced("steve")
 
-    // Java-совместимые геттеры для Mixin
-    fun getSkinId(): String = skinId
-    fun getModelType(): String = modelType
-
     companion object {
         val TYPE = BbfComponents.register(
             id = "boundbyfate-core:appearance",
