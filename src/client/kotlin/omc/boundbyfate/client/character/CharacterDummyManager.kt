@@ -86,11 +86,11 @@ object CharacterDummyManager {
         }
 
         val dummy = CharacterDummy(
-            world = world,
-            characterId = packet.characterId,
-            skinId = packet.skinId,
-            modelType = packet.modelType,
-            animationType = packet.animationType
+            world,
+            packet.characterId,
+            packet.skinId,
+            packet.modelType,
+            packet.animationType
         )
 
         // Устанавливаем позицию
