@@ -13,7 +13,6 @@ import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.util.math.MathHelper
 import omc.boundbyfate.client.mixin.accessor.GameRendererAccessor
 import omc.boundbyfate.client.mixin.accessor.LivingEntityAccessor
-import omc.boundbyfate.client.mixin.accessor.MinecraftClientAccessor
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -24,7 +23,7 @@ class MinecraftCamera : PerspectiveCamera() {
         val mc = MinecraftClient.getInstance()
         if (mc.player == null || mc.world == null) return
 
-        val partialTick = (mc as MinecraftClientAccessor).bbf_getRenderTickCounter().tickDelta
+        val partialTick = mc.tickDelta
         bobHurt(proj, partialTick)
         if (mc.options.bobView.value) {
             bobView(proj, partialTick)
@@ -46,7 +45,7 @@ fun MinecraftCamera.syncFromMinecraft() {
     if (mc.player == null || mc.world == null) return
 
     val gameRenderer = mc.gameRenderer
-    val partialTick = (mc as MinecraftClientAccessor).bbf_getRenderTickCounter().tickDelta
+    val partialTick = mc.tickDelta
 
     clipNear = 0.05f
     clipFar = gameRenderer.viewDistance.toFloat()

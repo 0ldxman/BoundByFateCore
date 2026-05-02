@@ -5,15 +5,11 @@
 	"client": [
 		"EntityRendererMixin",
 		"PlayerSkinMixin",
-		"accessor.MinecraftClientAccessor",
 		"accessor.GameRendererAccessor",
 		"accessor.LivingEntityAccessor",
 		"accessor.ShaderProgramAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
 	}
 }

@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
 import omc.boundbyfate.client.keybind.BbfKeybinds
-import omc.boundbyfate.client.mixin.accessor.MinecraftClientAccessor
 import kotlin.reflect.KClass
 
 /**
@@ -133,7 +132,7 @@ object HudSystem {
         // Тик — каждый клиентский тик
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             if (client.world != null && !client.isPaused) {
-                tick((client as MinecraftClientAccessor).bbf_getRenderTickCounter().tickDelta)
+                tick(client.tickDelta)
             }
 
             // Обработка toggle кейбиндингов — постим HudEvent
