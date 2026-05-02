@@ -101,8 +101,9 @@ tasks.jar {
 
 	// Bundle kool-core classes directly into the mod jar
 	from(zipTree(file("libs/kool-core-desktop-0.18.0-0mods-SNAPSHOT.jar"))) {
-		exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+		exclude("META-INF/MANIFEST.MF", "fabric.mod.json")
 	}
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // configure the maven publication
