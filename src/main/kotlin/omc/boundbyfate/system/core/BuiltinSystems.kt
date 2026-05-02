@@ -101,6 +101,19 @@ object BuiltinSystems {
 
         override fun register() {
             ComponentSyncHandler.register()
+
+            // Вход/выход игроков — система персонажей
+            net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
+                omc.boundbyfate.system.character.CharacterSystem.onPlayerJoin(handler.player)
+            }
+            net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
+                omc.boundbyfate.system.character.CharacterSystem.onPlayerLeave(handler.player)
+            }
+
+            // Старт сервера — очищаем зависшие PLAYER-контроллеры
+            net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register { server ->
+                omc.boundbyfate.system.character.CharacterSystem.onServerStart(server)
+            }
         }
     }
 

@@ -55,6 +55,14 @@ object PlayerAnimSystem {
     }
 
     /**
+     * Запускает анимацию напрямую по AbstractClientPlayerEntity.
+     * Используется для CharacterDummy которые не добавляются в world entity map.
+     */
+    fun play(player: AbstractClientPlayerEntity, animId: Identifier, looping: Boolean = false, layer: String? = null) {
+        getOrCreate(player).play(animId, looping, layer)
+    }
+
+    /**
      * Останавливает анимацию для игрока.
      *
      * @param entityId  Сетевой ID сущности
@@ -71,6 +79,15 @@ object PlayerAnimSystem {
     fun stopAll(entityId: Int) {
         val player = findPlayer(entityId) ?: return
         layers[player.uuid]?.stopAll()
+    }
+
+    /**
+     * Останавливает все анимации напрямую по UUID.
+     * Используется для CharacterDummy.
+     */
+    fun stopAll(playerUuid: UUID) {
+        val layer = layers.remove(playerUuid) ?: return
+        layer.destroy()
     }
 
     /**

@@ -3,6 +3,8 @@ package omc.boundbyfate.network
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.util.Identifier
 import omc.boundbyfate.network.packet.c2s.CreateCharacterPacket
+import omc.boundbyfate.network.packet.c2s.EnterCharacterPacket
+import omc.boundbyfate.network.packet.c2s.ExitCharacterPacket
 import omc.boundbyfate.network.packet.c2s.FileRequestPacket
 import omc.boundbyfate.network.packet.c2s.FileUploadCancelPacket
 import omc.boundbyfate.network.packet.c2s.FileUploadChunkPacket
@@ -61,6 +63,13 @@ object BbfPackets {
     // Client to Server
     val SWITCH_CHARACTER_C2S = Identifier("boundbyfate-core", "switch_character")
     val CREATE_CHARACTER_C2S = Identifier("boundbyfate-core", "create_character")
+    val ENTER_CHARACTER_C2S = Identifier("boundbyfate-core", "enter_character")
+    val EXIT_CHARACTER_C2S = Identifier("boundbyfate-core", "exit_character")
+
+    // Character Dummy (client-side presence)
+    val CHARACTER_DUMMY_SPAWN_S2C = Identifier("boundbyfate-core", "character_dummy_spawn")
+    val CHARACTER_DUMMY_DESPAWN_S2C = Identifier("boundbyfate-core", "character_dummy_despawn")
+    val CHARACTER_ENTER_RESPONSE_S2C = Identifier("boundbyfate-core", "character_enter_response")
 
     // Player Animations
     val PLAY_PLAYER_ANIM_S2C = Identifier("boundbyfate-core", "play_player_anim")
@@ -81,6 +90,16 @@ object BbfPackets {
         ServerPlayNetworking.registerGlobalReceiver(CreateCharacterPacket.TYPE) { packet, player, _ ->
             // Обработка создания персонажа
             logger.debug("Player ${player.name.string} creating character '${packet.name}'")
+        }
+
+        ServerPlayNetworking.registerGlobalReceiver(EnterCharacterPacket.TYPE) { packet, player, _ ->
+            logger.debug("Player ${player.name.string} entering character ${packet.characterId}")
+            omc.boundbyfate.system.character.CharacterSystem.enterCharacter(player, packet.characterId)
+        }
+
+        ServerPlayNetworking.registerGlobalReceiver(ExitCharacterPacket.TYPE) { packet, player, _ ->
+            logger.debug("Player ${player.name.string} exiting character")
+            omc.boundbyfate.system.character.CharacterSystem.exitCharacter(player)
         }
 
         ServerPlayNetworking.registerGlobalReceiver(FileUploadStartPacket.TYPE) { packet, player, _ ->

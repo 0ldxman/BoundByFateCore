@@ -79,6 +79,13 @@ class BoundByFateCoreClient : ClientModInitializer {
             }
         }
 
+        // Система манекенов персонажей
+        omc.boundbyfate.client.character.CharacterDummyManager.register()
+        omc.boundbyfate.client.character.CharacterDummyRenderer.register()
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
+            omc.boundbyfate.client.character.CharacterDummyManager.clearAll()
+        }
+
         logger.info("BoundByFate Core Client initialized successfully!")
         logger.info("=".repeat(50))
     }
