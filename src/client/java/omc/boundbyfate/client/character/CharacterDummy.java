@@ -107,11 +107,6 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
     // ── Физика отключена ──────────────────────────────────────────────────
 
     @Override
-    public void applyMovementInput(net.minecraft.util.math.Vec3d movementInput, float slipperiness) {
-        // Не двигаемся
-    }
-
-    @Override
     public void updateVelocity(float speed, net.minecraft.util.math.Vec3d movementInput) {
         // Не двигаемся
     }
