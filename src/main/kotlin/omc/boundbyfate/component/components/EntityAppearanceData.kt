@@ -45,6 +45,7 @@ class EntityAppearanceData : BbfComponent() {
     var modelType by synced("steve")
 
     companion object {
+        @JvmField
         val TYPE = BbfComponents.register(
             id = "boundbyfate-core:appearance",
             syncMode = SyncMode.ON_CHANGE,

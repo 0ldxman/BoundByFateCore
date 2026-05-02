@@ -1,10 +1,10 @@
 package omc.boundbyfate.client.mixin;
 
 import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.util.SkinTextures;
 import net.minecraft.util.Identifier;
 import omc.boundbyfate.client.skin.ClientSkinManager;
 import omc.boundbyfate.component.components.EntityAppearanceData;
+import omc.boundbyfate.data.world.character.ModelType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Подменяет текстуру скина игрока если назначен кастомный скин.
  *
- * Перехватывает {@link AbstractClientPlayerEntity#getSkinTextures()} и
+ * Перехватывает {@link AbstractClientPlayerEntity#getSkinTexture()} и
  * возвращает текстуру из {@link ClientSkinManager} если у игрока есть
  * компонент {@link EntityAppearanceData} с непустым skinId.
  *
@@ -23,11 +23,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class PlayerSkinMixin {
 
     @Inject(
-        method = "getSkinTextures",
+        method = "getSkinTexture",
         at = @At("RETURN"),
         cancellable = true
     )
-    private void bbf_overrideSkinTextures(CallbackInfoReturnable<SkinTextures> cir) {
+    private void bbf_overrideSkinTexture(CallbackInfoReturnable<Identifier> cir) {
         AbstractClientPlayerEntity self = (AbstractClientPlayerEntity) (Object) this;
 
         // Читаем компонент внешности
@@ -37,29 +37,36 @@ public class PlayerSkinMixin {
         String skinId = appearance.getSkinId();
         if (skinId == null || skinId.isEmpty()) return;
 
+        // Определяем тип модели для загрузки
+        String modelTypeStr = appearance.getModelType();
+        ModelType modelType = "alex".equalsIgnoreCase(modelTypeStr)
+            ? ModelType.ALEX
+            : ModelType.STEVE;
+
         // Убеждаемся что скин загружен из кеша
-        ClientSkinManager.INSTANCE.ensureLoaded(skinId);
+        ClientSkinManager.INSTANCE.ensureLoaded(skinId, modelType);
 
         Identifier customTexture = ClientSkinManager.INSTANCE.getTexture(skinId);
         if (customTexture == null) return;
 
-        // Определяем тип модели
-        String modelTypeStr = appearance.getModelType();
-        SkinTextures.Model model = "alex".equalsIgnoreCase(modelTypeStr)
-            ? SkinTextures.Model.SLIM
-            : SkinTextures.Model.WIDE;
+        cir.setReturnValue(customTexture);
+    }
 
-        // Берём оригинальные SkinTextures и подменяем только текстуру и модель
-        SkinTextures original = cir.getReturnValue();
-        SkinTextures custom = new SkinTextures(
-            customTexture,
-            original.textureUrl(),
-            original.capeTexture(),
-            original.elytraTexture(),
-            model,
-            original.secure()
-        );
+    @Inject(
+        method = "getModel",
+        at = @At("RETURN"),
+        cancellable = true
+    )
+    private void bbf_overrideModel(CallbackInfoReturnable<String> cir) {
+        AbstractClientPlayerEntity self = (AbstractClientPlayerEntity) (Object) this;
 
-        cir.setReturnValue(custom);
+        EntityAppearanceData appearance = self.getAttached(EntityAppearanceData.TYPE);
+        if (appearance == null) return;
+
+        String skinId = appearance.getSkinId();
+        if (skinId == null || skinId.isEmpty()) return;
+
+        // Возвращаем тип модели из компонента
+        cir.setReturnValue(appearance.getModelType());
     }
 }
