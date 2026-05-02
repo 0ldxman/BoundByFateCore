@@ -106,7 +106,6 @@ object FileTransferClientSystem {
             }
         }
     }
-    }
 
     /**
      * Сервер начинает раздачу файла.
