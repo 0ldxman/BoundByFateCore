@@ -50,6 +50,7 @@ dependencies {
 
 	// Kool — 3D engine used for NPC model rendering and animations
 	// Custom build (0mods) stripped of unnecessary dependencies for Minecraft mod use
+	// Must be included in the jar so the classes are available at runtime
 	implementation(files("libs/kool-core-desktop-0.18.0-0mods-SNAPSHOT.jar"))
 
 	// playerAnimator — player animation library for custom ability/interaction animations
@@ -96,6 +97,11 @@ tasks.jar {
 
 	from("LICENSE") {
 		rename { "${it}_${project.name}" }
+	}
+
+	// Bundle kool-core classes directly into the mod jar
+	from(zipTree(file("libs/kool-core-desktop-0.18.0-0mods-SNAPSHOT.jar"))) {
+		exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 	}
 }
 
