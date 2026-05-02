@@ -5,10 +5,10 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.util.SkinTextures;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.Identifier;
 import omc.boundbyfate.client.skin.ClientSkinManager;
+import omc.boundbyfate.data.world.character.ModelType;
 import omc.boundbyfate.network.packet.s2c.DummyAnimationType;
 
 import java.util.UUID;
@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * Отображается на месте персонажа когда игрок вышел из него или из игры.
  * Наследует {@link AbstractClientPlayerEntity} чтобы:
- * - Рендериться через стандартный {@link net.minecraft.client.render.entity.PlayerEntityRenderer}
+ * - Рендериться через стандартный PlayerEntityRenderer
  * - Поддерживать PlayerAnimator (он работает через Mixin на этот класс)
  * - Использовать кастомный скин через {@link ClientSkinManager}
  *
@@ -54,38 +54,38 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.animationType = animationType;
     }
 
-    // ── Скин ──────────────────────────────────────────────────────────────
+    // ── Скин (API 1.20.1) ─────────────────────────────────────────────────
 
+    /**
+     * Возвращает текстуру скина.
+     * В 1.20.1 PlayerEntityRenderer вызывает getSkinTexture() (без 's').
+     */
     @Override
-    public SkinTextures getSkinTextures() {
-        // Убеждаемся что скин загружен из кеша
+    public Identifier getSkinTexture() {
         if (!skinId.isEmpty()) {
-            ClientSkinManager.INSTANCE.ensureLoaded(skinId);
+            ModelType mt = "alex".equalsIgnoreCase(modelType) ? ModelType.ALEX : ModelType.STEVE;
+            ClientSkinManager.INSTANCE.ensureLoaded(skinId, mt);
+            Identifier custom = ClientSkinManager.INSTANCE.getTexture(skinId);
+            if (custom != null) return custom;
         }
+        return super.getSkinTexture();
+    }
 
-        Identifier customTexture = skinId.isEmpty()
-                ? null
-                : ClientSkinManager.INSTANCE.getTexture(skinId);
-
-        SkinTextures.Model model = "alex".equalsIgnoreCase(modelType)
-                ? SkinTextures.Model.SLIM
-                : SkinTextures.Model.WIDE;
-
-        if (customTexture != null) {
-            // Кастомный скин — используем нашу текстуру
-            return new SkinTextures(customTexture, null, null, null, model, true);
-        }
-
-        // Дефолтный скин Minecraft
-        return super.getSkinTextures();
+    /**
+     * Возвращает тип модели ("slim" для Alex, "default" для Steve).
+     * Используется PlayerEntityRenderer для выбора геометрии рук.
+     */
+    @Override
+    public String getModel() {
+        return "alex".equalsIgnoreCase(modelType) ? "slim" : "default";
     }
 
     // ── Заморозка — Dummy не двигается и не реагирует ────────────────────
 
     @Override
     public void tick() {
-        // Не вызываем super.tick() — Dummy полностью статичен
-        // Только обновляем возраст для корректного рендера
+        // Не вызываем super.tick() — Dummy полностью статичен.
+        // Только увеличиваем возраст для корректного рендера.
         age++;
     }
 
@@ -107,7 +107,7 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
     // ── Физика отключена ──────────────────────────────────────────────────
 
     @Override
-    protected void applyMovementInput(net.minecraft.util.math.Vec3d movementInput, float slipperiness) {
+    public void applyMovementInput(net.minecraft.util.math.Vec3d movementInput, float slipperiness) {
         // Не двигаемся
     }
 
