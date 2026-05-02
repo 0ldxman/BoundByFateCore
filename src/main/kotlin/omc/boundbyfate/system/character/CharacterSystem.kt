@@ -377,7 +377,7 @@ object CharacterSystem {
             player.equipStack(slot, ItemStack.fromNbt(nbt))
         }
 
-        equipment.offhand?.let { player.offHandStack = ItemStack.fromNbt(it) }
+        equipment.offhand?.let { player.setStackInHand(net.minecraft.util.Hand.OFF_HAND, ItemStack.fromNbt(it)) }
     }
 
     private fun captureComponentSnapshots(player: ServerPlayerEntity): Map<String, NbtCompound> {
@@ -423,9 +423,15 @@ object CharacterSystem {
         ) ?: player.serverWorld
 
         if (player.serverWorld != targetWorld) {
-            player.teleport(targetWorld, pos.x, pos.y, pos.z, pos.yaw, pos.pitch)
+            player.teleport(
+                targetWorld,
+                pos.x, pos.y, pos.z,
+                emptySet(),
+                pos.yaw, pos.pitch
+            )
         } else {
-            player.teleport(pos.x, pos.y, pos.z, pos.yaw, pos.pitch)
+            player.teleport(pos.x, pos.y, pos.z)
+            player.refreshPositionAndAngles(pos.x, pos.y, pos.z, pos.yaw, pos.pitch)
         }
     }
 
