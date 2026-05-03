@@ -84,9 +84,9 @@ class ScrollableList<T>(
 
     fun handleScroll(amount: Double): Boolean = scroll.handleScroll(amount)
 
-    fun handleClick(mouseX: Int, mouseY: Int, button: Int): Boolean {
+    fun handleClick(mouseX: Int, mouseY: Int, button: Int, viewHeight: Int): Boolean {
         val startIndex = (scroll.offset / (itemHeight + gap)).toInt().coerceAtLeast(0)
-        val endIndex = ((scroll.offset + ctx.height) / (itemHeight + gap)).toInt() + 1
+        val endIndex = ((scroll.offset + viewHeight) / (itemHeight + gap)).toInt() + 1
 
         items.subList(startIndex.coerceAtMost(items.size), endIndex.coerceAtMost(items.size))
             .forEach { item ->
@@ -95,7 +95,7 @@ class ScrollableList<T>(
                 val y = index * (itemHeight + gap) - scroll.offset.toInt()
                 
                 // Проверяем клик по виджету
-                if (widget is SkillRowWidget) {
+                if (widget is omc.boundbyfate.client.gui.widgets.character.SkillRowWidget) {
                     if (widget.handleClick(mouseX, mouseY - y, button)) return true
                 }
             }

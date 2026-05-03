@@ -19,13 +19,6 @@ package omc.boundbyfate.client.gui.core
  */
 object Theme {
 
-    /** Активная тема. */
-    var current: BbfTheme = DARK
-        set(value) {
-            field = value
-            onThemeChanged?.invoke(value)
-        }
-
     /** Колбек на смену темы. */
     var onThemeChanged: ((BbfTheme) -> Unit)? = null
 
@@ -186,6 +179,13 @@ object Theme {
     val health get() = current.health
     val spacing get() = current.spacing
     val sizing get() = current.sizing
+
+    /** Активная тема. */
+    var current: BbfTheme = DARK
+        set(value) {
+            field = value
+            onThemeChanged?.invoke(value)
+        }
 }
 
 // ── Тема ──────────────────────────────────────────────────────────────────
