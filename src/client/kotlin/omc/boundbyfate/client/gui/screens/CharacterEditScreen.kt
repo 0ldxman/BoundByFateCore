@@ -170,7 +170,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
             list.add(hbox(gap = gap) {
                 add(TextWidget(stat,  align = TextAlign.LEFT,  color = Theme.text.secondary, scale = 0.8f), width = nameW,  height = rowH)
                 add(TextWidget("+0", align = TextAlign.RIGHT, color = Theme.text.accent,    scale = 0.8f), width = bonusW, height = rowH)
-                add(CycleCheckbox(3, profStyles), width = cbW, height = rowH)
+                add(CycleCheckbox(profStyles), width = cbW, height = rowH)
             })
         }
 
@@ -222,7 +222,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                 add(TextWidget(stat,  align = TextAlign.LEFT,  color = Theme.text.disabled,  scale = 0.7f), width = statW,  height = rowH)
                 add(TextWidget(skill, align = TextAlign.LEFT,  color = Theme.text.secondary, scale = 0.7f), width = skillW, height = rowH)
                 add(TextWidget("+0", align = TextAlign.RIGHT, color = Theme.text.accent,    scale = 0.7f), width = bonusW, height = rowH)
-                add(CycleCheckbox(3, profStyles), width = cbW, height = rowH)
+                add(CycleCheckbox(profStyles), width = cbW, height = rowH)
             })
         }
 
