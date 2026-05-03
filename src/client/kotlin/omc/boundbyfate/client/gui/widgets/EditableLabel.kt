@@ -56,13 +56,15 @@ class EditableLabel(
 
     /**
      * Прогресс раскрытия divider (0 = схлопнут к центру, 1 = полностью раскрыт).
-     * Анимация: при появлении 0→1 (раскрытие от центра к краям).
-     *           при исчезновении 1→0 (схлопывание к центру).
      */
     private val revealProgress = animFloat(0f, speed = 0.18f)
 
-    /** Цвет divider — интерполируется между text.primary и accent. */
-    private val dividerColor = animColor(Theme.text.primary, speed = 0.15f)
+    /**
+     * Прогресс окрашивания в акцентный цвет (0 = весь белый, 1 = весь акцентный).
+     * Анимация идентична [revealProgress] — цвет "раскрывается" от центра к краям.
+     * При выходе из editing — схлопывается обратно к центру.
+     */
+    private val accentProgress = animFloat(0f, speed = 0.18f)
 
     init {
         click.onClick { enterEditing() }
@@ -96,8 +98,6 @@ class EditableLabel(
                 if (hover.isHovered) {
                     state = State.HOVERED
                     revealProgress.target = 1f
-                    // При hover divider белый (цвет текста)
-                    dividerColor.target = Theme.text.primary
                 }
             }
             State.HOVERED -> {
@@ -127,13 +127,14 @@ class EditableLabel(
         val resolvedAccent = if (accentColor == -1) Theme.text.accent else accentColor
 
         val displayText = when (state) {
-            State.EDITING -> editBuffer + if (cursorVisible) "|" else " "
+            State.EDITING -> if (cursorVisible) editBuffer + "|" else editBuffer
             else          -> text
         }
         val activeColor = if (state == State.EDITING) resolvedAccent else resolvedText
 
-        // Ширина текста в пикселях
-        val rawTextW = (tr.getWidth(displayText) * textScale).toInt()
+        // Ширина считается всегда от базового текста без курсора — иначе позиция прыгает при мигании
+        val baseText = if (state == State.EDITING) editBuffer else text
+        val rawTextW = (tr.getWidth(baseText) * textScale).toInt()
 
         // Позиция текста по X в зависимости от выравнивания
         val textX = when (align) {
@@ -167,31 +168,34 @@ class EditableLabel(
         // ── Divider — прямо под текстом ───────────────────────────────────
         val progress = revealProgress.current
         if (progress > 0.005f) {
-            // lineY = нижняя граница текста + 1px gap
             val lineY = textY + (8f * textScale).toInt() + 1
-            val lineColor = dividerColor.current
             val lineW = ctx.width
+            val resolvedAccent = if (accentColor == -1) Theme.text.accent else accentColor
+            val ap = accentProgress.current  // 0 = белый, 1 = акцентный
 
             for (i in 0 until lineW) {
                 val t = i.toFloat() / lineW.coerceAtLeast(1)
-                // Расстояние от ближайшего края (0 на краях, 0.5 в центре)
                 val edgeDist = minOf(t, 1f - t)
-                // Статичный градиент opacity: центр непрозрачный, края прозрачные
-                // fadeRatio = 0.35f — 35% с каждой стороны уходит в прозрачность
+
+                // Статичный градиент opacity
                 val staticFade = 0.35f
                 val staticAlpha = if (edgeDist < staticFade) edgeDist / staticFade else 1f
 
-                // Анимация раскрытия: пиксель виден только если он "раскрыт"
-                // При progress=0 виден только центральный пиксель (edgeDist=0.5)
-                // При progress=1 видна вся линия
-                // Порог видимости: edgeDist >= (0.5f - progress * 0.5f)
+                // Анимация раскрытия
                 val revealThreshold = 0.5f - progress * 0.5f
                 val revealAlpha = if (edgeDist < revealThreshold) 0f
                                   else ((edgeDist - revealThreshold) / (0.5f - revealThreshold).coerceAtLeast(0.001f)).coerceIn(0f, 1f)
 
                 val finalAlpha = staticAlpha * revealAlpha
                 if (finalAlpha > 0.01f) {
-                    ctx.drawContext.fillRect(ctx.x + i, lineY, 1, 1, lineColor.withAlpha(finalAlpha))
+                    // Анимация цвета: "раскрытие" акцентного цвета от центра к краям
+                    // accentThreshold: при ap=0 акцент нигде, при ap=1 акцент везде
+                    val accentThreshold = 0.5f - ap * 0.5f
+                    val accentRatio = if (edgeDist < accentThreshold) 0f
+                                     else ((edgeDist - accentThreshold) / (0.5f - accentThreshold).coerceAtLeast(0.001f)).coerceIn(0f, 1f)
+
+                    val pixelColor = lerpColor(Theme.text.primary, resolvedAccent, accentRatio)
+                    ctx.drawContext.fillRect(ctx.x + i, lineY, 1, 1, pixelColor.withAlpha(finalAlpha))
                 }
             }
         }
@@ -206,9 +210,8 @@ class EditableLabel(
         cursorTimer = 0f
         cursorVisible = true
         FocusManager.requestFocus(focus)
-        val resolvedAccent = if (accentColor == -1) Theme.text.accent else accentColor
-        dividerColor.target = resolvedAccent
         revealProgress.target = 1f
+        accentProgress.target = 1f   // цвет раскрывается от центра к краям
     }
 
     private fun confirmEditing() {
@@ -227,8 +230,7 @@ class EditableLabel(
         state = State.IDLE
         FocusManager.clearFocus()
         revealProgress.target = 0f
-        // Возвращаем цвет к белому перед исчезновением
-        dividerColor.target = Theme.text.primary
+        accentProgress.target = 0f   // цвет схлопывается к центру
         cursorVisible = false
     }
 
