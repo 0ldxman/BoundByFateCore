@@ -6,81 +6,119 @@ import omc.boundbyfate.client.gui.core.*
 /**
  * Экран создания/редактирования персонажа.
  *
- * Размеры рассчитаны под GUI Scale 3.
+ * Макет строится через Layout систему (HBoxLayout + VBoxLayout).
+ * Пропорции колонок выведены из эталонных размеров при GUI Scale 3:
+ *   Левая  = 218/610 ≈ 35.74%  от ширины макета
+ *   Центр  = 194/610 ≈ 31.80%  от ширины макета
+ *   Правая = остаток
  *
- * Структура колонок:
- *   Левая  (L): 218x343, сегменты: L1=218x67, L2=218x135, L3=218x135
- *   Центр  (C): 194x343, сегменты: C1=194x67, C2=194x135, C3=194x135
- *   Правая (R): 194x343, сегменты: R1=194x67, R2=194x135, R3=194x135
- *
- * Отступы между колонками и между сегментами — 2px.
+ * Пропорции сегментов по высоте:
+ *   S1 = 67/341  ≈ 19.65%
+ *   S2 = 135/341 ≈ 39.59%
+ *   S3 = остаток
  */
 class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
-    // ── Константы макета ──────────────────────────────────────────────────
+    private val SCREEN_PAD = 2
+    private val COL_GAP    = 2
+    private val SEG_GAP    = 2
 
-    private val COL_GAP   = 2   // отступ между колонками
-    private val SEG_GAP   = 2   // отступ между сегментами внутри колонки
+    // Пропорции колонок от ширины макета
+    private val LEFT_RATIO   = 218f / 610f
+    private val CENTER_RATIO = 194f / 610f
 
-    private val LEFT_W    = 218
-    private val CENTER_W  = 194
-    private val RIGHT_W   = 194
+    // Пропорции сегментов от высоты макета
+    private val SEG1_RATIO = 67f  / 341f
+    private val SEG2_RATIO = 135f / 341f
 
-    private val TOTAL_W   = LEFT_W + COL_GAP + CENTER_W + COL_GAP + RIGHT_W  // 610
-    private val TOTAL_H   = 343
-
-    // Высоты сегментов (одинаковы для всех колонок)
-    private val SEG1_H    = 67
-    private val SEG2_H    = 135
-    private val SEG3_H    = 135
-    // SEG1_H + SEG_GAP + SEG2_H + SEG_GAP + SEG3_H = 67+2+135+2+135 = 341 ≠ 343
-    // Добавляем 2px к последнему сегменту чтобы точно заполнить 343
-    private val SEG3_H_ADJ = TOTAL_H - SEG1_H - SEG_GAP - SEG2_H - SEG_GAP  // 135
-
-    // ── Цвета блоков (временные, для визуальной отладки) ──────────────────
-
+    // Цвета
     private val BG_PANEL   = 0xEE141420.toInt()
     private val BG_SEG     = 0xEE1e1e2e.toInt()
     private val BORDER_COL = 0xFF3a3a5a.toInt()
-    private val TEXT_LABEL = 0xFF888899.toInt()
+    private val TEXT_LABEL = 0xFFaaaacc.toInt()
+
+    // ── Корневой layout ───────────────────────────────────────────────────
+
+    /** Горизонтальный layout — три колонки. */
+    private lateinit var rootLayout: HBoxLayout
+
+    override fun onInit() {
+        buildLayout()
+    }
+
+    private fun buildLayout() {
+        val mw = width  - SCREEN_PAD * 2
+        val mh = height - SCREEN_PAD * 2
+
+        val lw = (mw * LEFT_RATIO).toInt()
+        val cw = (mw * CENTER_RATIO).toInt()
+        val rw = mw - lw - cw - COL_GAP * 2
+
+        val s1h = (mh * SEG1_RATIO).toInt()
+        val s2h = (mh * SEG2_RATIO).toInt()
+        val s3h = mh - s1h - s2h - SEG_GAP * 2
+
+        rootLayout = hbox(gap = COL_GAP) {
+            add(buildColumn("L", lw, s1h, s2h, s3h), width = lw, height = mh)
+            add(buildColumn("C", cw, s1h, s2h, s3h), width = cw, height = mh)
+            add(buildColumn("R", rw, s1h, s2h, s3h), width = rw, height = mh)
+        }
+    }
+
+    /** Строит вертикальную колонку из трёх сегментов. */
+    private fun buildColumn(
+        prefix: String,
+        colW: Int,
+        s1h: Int, s2h: Int, s3h: Int
+    ): VBoxLayout = vbox(gap = SEG_GAP) {
+        add(PanelWidget("${prefix}1", BG_SEG, BORDER_COL, TEXT_LABEL), height = s1h, width = colW)
+        add(PanelWidget("${prefix}2", BG_SEG, BORDER_COL, TEXT_LABEL), height = s2h, width = colW)
+        add(PanelWidget("${prefix}3", BG_SEG, BORDER_COL, TEXT_LABEL), height = s3h, width = colW)
+    }
 
     // ── Рендер ────────────────────────────────────────────────────────────
 
     override fun renderContent(ctx: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
-        // Центрируем весь макет на экране
-        val originX = (width  - TOTAL_W) / 2
-        val originY = (height - TOTAL_H) / 2
+        val ox = SCREEN_PAD
+        val oy = SCREEN_PAD
+        val mw = width  - SCREEN_PAD * 2
+        val mh = height - SCREEN_PAD * 2
 
-        // X-позиции колонок
-        val leftX   = originX
-        val centerX = originX + LEFT_W + COL_GAP
-        val rightX  = centerX + CENTER_W + COL_GAP
+        // Фон всего макета
+        ctx.fillRect(ox, oy, mw, mh, BG_PANEL)
 
-        // Фон всего окна
-        ctx.fillRect(originX, originY, TOTAL_W, TOTAL_H, BG_PANEL)
+        // Рендер через layout систему
+        val rctx = RenderContext(ctx, ox, oy, mw, mh, mouseX, mouseY, delta)
+        rootLayout.tick(rctx)
+        rootLayout.render(rctx)
+    }
+}
 
-        // ── Левая колонка ─────────────────────────────────────────────────
-        drawSegment(ctx, "L1", leftX, originY,                                    LEFT_W, SEG1_H)
-        drawSegment(ctx, "L2", leftX, originY + SEG1_H + SEG_GAP,                LEFT_W, SEG2_H)
-        drawSegment(ctx, "L3", leftX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, LEFT_W, SEG3_H_ADJ)
+// ── Временный виджет-заглушка для сегмента ────────────────────────────────
 
-        // ── Центральная колонка ───────────────────────────────────────────
-        drawSegment(ctx, "C1", centerX, originY,                                    CENTER_W, SEG1_H)
-        drawSegment(ctx, "C2", centerX, originY + SEG1_H + SEG_GAP,                CENTER_W, SEG2_H)
-        drawSegment(ctx, "C3", centerX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, CENTER_W, SEG3_H_ADJ)
+/**
+ * Простая панель с фоном, рамкой и меткой.
+ * Временная заглушка — будет заменена реальным содержимым.
+ */
+private class PanelWidget(
+    val label: String,
+    val bgColor: Int,
+    val borderColor: Int,
+    val textColor: Int
+) : BbfWidget() {
 
-        // ── Правая колонка ────────────────────────────────────────────────
-        drawSegment(ctx, "R1", rightX, originY,                                    RIGHT_W, SEG1_H)
-        drawSegment(ctx, "R2", rightX, originY + SEG1_H + SEG_GAP,                RIGHT_W, SEG2_H)
-        drawSegment(ctx, "R3", rightX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, RIGHT_W, SEG3_H_ADJ)
+    override fun tick(ctx: RenderContext) {
+        tickAll(ctx.delta)
     }
 
-    /**
-     * Рисует один сегмент с фоном, рамкой и меткой-номером в углу.
-     */
-    private fun drawSegment(ctx: DrawContext, label: String, x: Int, y: Int, w: Int, h: Int) {
-        ctx.fillRectWithBorder(x, y, w, h, bg = BG_SEG, border = BORDER_COL, thickness = 1)
-        // Метка в левом верхнем углу для ориентации
-        ctx.drawScaledText(label, x + 3, y + 3, color = TEXT_LABEL, shadow = false)
+    override fun render(ctx: RenderContext) {
+        ctx.drawContext.fillRectWithBorder(
+            ctx.x, ctx.y, ctx.width, ctx.height,
+            bg = bgColor, border = borderColor, thickness = 1
+        )
+        ctx.drawContext.drawScaledText(
+            label, ctx.x + 3, ctx.y + 3,
+            color = textColor, shadow = false
+        )
     }
 }
