@@ -143,7 +143,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     ): PanelWidget {
         val rowH  = 11
         val gap   = 1
-        val pad   = 2
+        val pad   = 3
         val innerW = w - pad * 2
 
         val savingThrows = listOf(
@@ -188,7 +188,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     ): PanelWidget {
         val rowH  = 11
         val gap   = 1
-        val pad   = 2
+        val pad   = 3
         val innerW = w - pad * 2
 
         val skills = listOf(
