@@ -2,6 +2,7 @@ package omc.boundbyfate.client.gui.screens
 
 import net.minecraft.client.gui.DrawContext
 import omc.boundbyfate.client.gui.core.*
+import omc.boundbyfate.client.gui.widgets.BbfButton
 import omc.boundbyfate.client.gui.widgets.character.StatBox
 
 /**
@@ -35,7 +36,6 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     // Пропорции подколонок левой колонки (от ширины левой колонки)
     // LL = 70px, LR = 146px, зазор 2px → 70 + 2 + 146 = 218
     private val LEFT_LEFT_RATIO = 70f / 218f   // 32.11%
-    // LEFT_RIGHT = остаток
 
     // Цвета
     private val BG_PANEL   = 0xEE141420.toInt()
@@ -45,7 +45,6 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
     // ── Корневой layout ───────────────────────────────────────────────────
 
-    /** Горизонтальный layout — три колонки. */
     private lateinit var rootLayout: HBoxLayout
 
     override fun onInit() {
@@ -65,13 +64,15 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         val s3h = mh - s1h - s2h - SEG_GAP * 2
 
         rootLayout = hbox(gap = COL_GAP) {
-            add(buildLeftColumn(lw, s1h, s2h, s3h), width = lw, height = mh)
-            add(buildColumn("C", cw, s1h, s2h, s3h), width = cw, height = mh)
-            add(buildColumn("R", rw, s1h, s2h, s3h), width = rw, height = mh)
+            add(buildLeftColumn(lw, s1h, s2h, s3h),   width = lw, height = mh)
+            add(buildColumn("C", cw, s1h, s2h, s3h),  width = cw, height = mh)
+            add(buildRightColumn(rw, s1h, s2h, s3h),  width = rw, height = mh)
         }
     }
 
-    /** Строит вертикальную колонку из трёх сегментов. */
+    // ── Колонки ───────────────────────────────────────────────────────────
+
+    /** Универсальная колонка из трёх заглушек (для C пока). */
     private fun buildColumn(
         prefix: String,
         colW: Int,
@@ -83,28 +84,22 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     }
 
     /**
-     * Строит левую колонку.
-     * L1 — цельный сегмент.
-     * L2, L3 — делятся горизонтально на LL (StatBox-ы) и LR (заглушка).
-     *
-     * LL содержит VBoxLayout из 3 StatBox:
+     * Левая колонка.
+     * L1 — цельный хедер.
+     * L2, L3 — делятся горизонтально: LL (StatBox-ы) + LR (заглушка).
      *   LL2: СИЛ, ЛОВ, ВЫН
      *   LL3: ИНТ, МУД, ХАР
-     * Каждый StatBox занимает треть высоты сегмента (с зазорами 2px).
      */
     private fun buildLeftColumn(colW: Int, s1h: Int, s2h: Int, s3h: Int): VBoxLayout {
         val llW = (colW * LEFT_LEFT_RATIO).toInt()
         val lrW = colW - llW - COL_GAP
 
-        // Высота одного StatBox = (высота сегмента - 2 зазора) / 3
         val statH2 = (s2h - SEG_GAP * 2) / 3
         val statH3 = (s3h - SEG_GAP * 2) / 3
 
         return vbox(gap = SEG_GAP) {
-            // L1 — цельный хедер
             add(PanelWidget("L1", BG_SEG, BORDER_COL, TEXT_LABEL), height = s1h, width = colW)
 
-            // L2 — LL2 (СИЛ/ЛОВ/ВЫН) + LR2
             add(
                 hbox(gap = COL_GAP) {
                     add(
@@ -120,7 +115,6 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                 height = s2h, width = colW
             )
 
-            // L3 — LL3 (ИНТ/МУД/ХАР) + LR3
             add(
                 hbox(gap = COL_GAP) {
                     add(
@@ -138,6 +132,40 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         }
     }
 
+    /**
+     * Правая колонка.
+     * R1 — заглушка.
+     * R2 — 4 кнопки навигации.
+     *   Пропорции: 4 кнопки + 3 зазора по 2px.
+     *   Высота кнопки = (s2h - SEG_GAP * 3) / 4
+     * R3 — заглушка.
+     */
+    private fun buildRightColumn(colW: Int, s1h: Int, s2h: Int, s3h: Int): VBoxLayout {
+        val btnH = (s2h - SEG_GAP * 3) / 4
+
+        val navLabels = listOf("Мировоззрение", "Внешность", "Способности", "Сохранённые")
+
+        return vbox(gap = SEG_GAP) {
+            add(PanelWidget("R1", BG_SEG, BORDER_COL, TEXT_LABEL), height = s1h, width = colW)
+
+            add(
+                vbox(gap = SEG_GAP) {
+                    navLabels.forEach { label ->
+                        add(
+                            BbfButton(label).also { btn ->
+                                btn.onClick { /* TODO: навигация на соответствующий экран */ }
+                            },
+                            height = btnH, width = colW
+                        )
+                    }
+                },
+                height = s2h, width = colW
+            )
+
+            add(PanelWidget("R3", BG_SEG, BORDER_COL, TEXT_LABEL), height = s3h, width = colW)
+        }
+    }
+
     // ── Рендер ────────────────────────────────────────────────────────────
 
     override fun renderContent(ctx: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
@@ -146,22 +174,16 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         val mw = width  - SCREEN_PAD * 2
         val mh = height - SCREEN_PAD * 2
 
-        // Фон всего макета
         ctx.fillRect(ox, oy, mw, mh, BG_PANEL)
 
-        // Рендер через layout систему
         val rctx = RenderContext(ctx, ox, oy, mw, mh, mouseX, mouseY, delta)
         rootLayout.tick(rctx)
         rootLayout.render(rctx)
     }
 }
 
-// ── Временный виджет-заглушка для сегмента ────────────────────────────────
+// ── Временный виджет-заглушка ─────────────────────────────────────────────
 
-/**
- * Простая панель с фоном, рамкой и меткой.
- * Временная заглушка — будет заменена реальным содержимым.
- */
 private class PanelWidget(
     val label: String,
     val bgColor: Int,
@@ -169,9 +191,7 @@ private class PanelWidget(
     val textColor: Int
 ) : BbfWidget() {
 
-    override fun tick(ctx: RenderContext) {
-        tickAll(ctx.delta)
-    }
+    override fun tick(ctx: RenderContext) { tickAll(ctx.delta) }
 
     override fun render(ctx: RenderContext) {
         ctx.drawContext.fillRectWithBorder(

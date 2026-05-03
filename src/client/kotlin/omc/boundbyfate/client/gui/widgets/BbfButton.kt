@@ -1,78 +1,85 @@
 package omc.boundbyfate.client.gui.widgets
 
-import net.minecraft.text.Text
 import omc.boundbyfate.client.gui.components.Clickable
 import omc.boundbyfate.client.gui.components.Hoverable
 import omc.boundbyfate.client.gui.core.*
 
 /**
- * Универсальная кнопка.
+ * Универсальная кнопка с лейблом.
+ *
+ * Размер полностью определяется [RenderContext] — виджет занимает весь ctx.width × ctx.height.
+ * Колбек [onClick] задаётся снаружи (в экране или layout-сборщике).
  *
  * ## Использование
- *
  * ```kotlin
- * val button = BbfButton(
- *     text = "Выбрать расу",
- *     width = 120,
- *     height = 24
- * )
- * button.onClick = { println("Clicked!") }
+ * val btn = BbfButton("Мировоззрение")
+ * btn.onClick { openAlignmentScreen() }
+ *
+ * // В VBoxLayout:
+ * vbox(gap = 2) {
+ *     add(btn, height = segH / 4)
+ * }
  * ```
  */
 class BbfButton(
-    var text: String,
-    var width: Int = 96,
-    var height: Int = 20,
+    var label: String,
     var enabled: Boolean = true
 ) : BbfWidget() {
 
-    private val hover = Hoverable()
-    private val click = Clickable(enabled = { enabled })
-    
-    private val scale = animFloat(1f, speed = 0.15f)
-    private val bgColor = animColor(Theme.button.normal, speed = 0.15f)
+    // ── Поведение ─────────────────────────────────────────────────────────
 
-    /** Колбек на клик. */
-    var onClick: (() -> Unit)? = null
+    val hover = Hoverable()
+    val click = Clickable(enabled = { enabled })
 
-    init {
-        click.onClick { onClick?.invoke() }
-    }
+    // ── Анимации ──────────────────────────────────────────────────────────
+
+    /** Лёгкое масштабирование при наведении. */
+    private val scale = animFloat(1f, speed = 0.2f)
+
+    // ── API ───────────────────────────────────────────────────────────────
+
+    /** Регистрирует колбек клика. */
+    fun onClick(block: () -> Unit) = click.onClick(block)
+
+    // ── Tick ──────────────────────────────────────────────────────────────
 
     override fun tick(ctx: RenderContext) {
         hover.update(ctx)
-        
         scale.target = when {
-            !enabled -> 1f
-            hover.isHovered -> 1.05f
-            else -> 1f
+            !enabled          -> 1f
+            hover.isHovered   -> 1.03f
+            else              -> 1f
         }
-
-        bgColor.target = when {
-            !enabled -> Theme.button.disabled
-            hover.isHovered -> Theme.button.hovered
-            else -> Theme.button.normal
-        }
-
         tickAll(ctx.delta)
     }
 
+    // ── Render ────────────────────────────────────────────────────────────
+
     override fun render(ctx: RenderContext) {
+        val bg = when {
+            !enabled          -> Theme.button.disabled
+            hover.isHovered   -> Theme.button.hovered
+            else              -> Theme.button.normal
+        }
+        val textColor = if (enabled) Theme.button.text else Theme.button.textDisabled
+
         ctx.drawContext.transform(
             pivotX = ctx.cx.toFloat(),
             pivotY = ctx.cy.toFloat(),
-            scale = scale.current
+            scale  = scale.current
         ) {
-            // Фон
-            fillRectWithBorder(ctx.x, ctx.y, width, height,
-                bgColor.current, Theme.panel.border)
-
-            // Текст
-            val textColor = if (enabled) Theme.button.text else Theme.button.textDisabled
-            drawScaledText(text, ctx.cx, ctx.cy - 4,
-                scale = 0.8f, color = textColor, align = TextAlign.CENTER)
+            fillRectWithBorder(ctx.x, ctx.y, ctx.width, ctx.height, bg, Theme.panel.border)
+            drawScaledText(
+                label,
+                ctx.cx, ctx.cy - 3,
+                color  = textColor,
+                align  = TextAlign.CENTER,
+                shadow = false
+            )
         }
     }
+
+    // ── Клики (пробрасываются из экрана) ──────────────────────────────────
 
     fun handleClick(mouseX: Int, mouseY: Int, button: Int): Boolean =
         click.handle(mouseX, mouseY, button, hover.isHovered)
