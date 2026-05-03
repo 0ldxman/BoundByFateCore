@@ -48,38 +48,50 @@ class CycleCheckbox(
     // ── Рисование кружка ──────────────────────────────────────────────────
 
     /**
-     * Заполненный кружок через пиксельную аппроксимацию (вертикальные полосы).
+     * Заполненный кружок через попиксельную проверку расстояния от центра.
+     * Надёжно работает при любом размере включая маленькие (4-8px).
      */
     private fun drawCircleFilled(ctx: RenderContext, x: Int, y: Int, size: Int, fill: Int, border: Int) {
-        val r = size / 2f
-        val cx = x + r
-        val cy = y + r
+        val cx = x + size / 2f - 0.5f
+        val cy = y + size / 2f - 0.5f
+        val r  = size / 2f
+        val r2 = r * r
+        val rb = (r - 1f).coerceAtLeast(0f)
+        val rb2 = rb * rb
 
-        for (px in x until x + size) {
-            val dx = px - cx + 0.5f
-            val halfH = Math.sqrt((r * r - dx * dx).toDouble().coerceAtLeast(0.0)).toFloat()
-            val top    = (cy - halfH).toInt()
-            val bottom = (cy + halfH).toInt()
-            ctx.drawContext.fill(px, top, px + 1, bottom + 1, fill)
+        for (py in y until y + size) {
+            for (px in x until x + size) {
+                val dx = px - cx
+                val dy = py - cy
+                val d2 = dx * dx + dy * dy
+                when {
+                    d2 <= rb2 -> ctx.drawContext.fill(px, py, px + 1, py + 1, fill)
+                    d2 <= r2  -> ctx.drawContext.fill(px, py, px + 1, py + 1, border)
+                }
+            }
         }
-        drawCircleOutline(ctx, x, y, size, border)
     }
 
     /**
-     * Контур кружка через пиксельную аппроксимацию.
+     * Контур кружка через попиксельную проверку.
      */
     private fun drawCircleOutline(ctx: RenderContext, x: Int, y: Int, size: Int, color: Int) {
-        val r = size / 2f
-        val cx = x + r
-        val cy = y + r
+        val cx = x + size / 2f - 0.5f
+        val cy = y + size / 2f - 0.5f
+        val r  = size / 2f
+        val r2 = r * r
+        val ri = (r - 1f).coerceAtLeast(0f)
+        val ri2 = ri * ri
 
-        for (px in x until x + size) {
-            val dx = px - cx + 0.5f
-            val halfH = Math.sqrt((r * r - dx * dx).toDouble().coerceAtLeast(0.0)).toFloat()
-            val top    = (cy - halfH).toInt()
-            val bottom = (cy + halfH).toInt()
-            ctx.drawContext.fill(px, top,    px + 1, top + 1,    color)
-            ctx.drawContext.fill(px, bottom, px + 1, bottom + 1, color)
+        for (py in y until y + size) {
+            for (px in x until x + size) {
+                val dx = px - cx
+                val dy = py - cy
+                val d2 = dx * dx + dy * dy
+                if (d2 in ri2..r2) {
+                    ctx.drawContext.fill(px, py, px + 1, py + 1, color)
+                }
+            }
         }
     }
 }
