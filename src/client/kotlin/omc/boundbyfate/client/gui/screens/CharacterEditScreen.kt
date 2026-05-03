@@ -1,230 +1,86 @@
 package omc.boundbyfate.client.gui.screens
 
+import net.minecraft.client.gui.DrawContext
 import omc.boundbyfate.client.gui.core.*
-import omc.boundbyfate.client.gui.widgets.*
-import omc.boundbyfate.client.gui.widgets.character.*
 
 /**
  * Экран создания/редактирования персонажа.
  *
- * Layout: 30% / 40% / 30%
+ * Размеры рассчитаны под GUI Scale 3.
  *
- * ## Использование
+ * Структура колонок:
+ *   Левая  (L): 218x343, сегменты: L1=218x67, L2=218x135, L3=218x135
+ *   Центр  (C): 194x343, сегменты: C1=194x67, C2=194x135, C3=194x135
+ *   Правая (R): 194x343, сегменты: R1=194x67, R2=194x135, R3=194x135
  *
- * ```kotlin
- * val screen = CharacterEditScreen()
- * screen.open()
- * ```
+ * Отступы между колонками и между сегментами — 2px.
  */
 class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
-    // ── Левая колонка (30%) ───────────────────────────────────────────────
+    // ── Константы макета ──────────────────────────────────────────────────
 
-    private val raceButton = BbfButton("Выбрать расу", width = 120, height = 24)
-    private val genderButton = BbfButton("Выбрать пол", width = 120, height = 24)
-    private val birthButton = BbfButton("Возраст: 25", width = 120, height = 24)
+    private val COL_GAP   = 2   // отступ между колонками
+    private val SEG_GAP   = 2   // отступ между сегментами внутри колонки
 
-    private val savingThrows = ScrollableList(
-        items = listOf(
-            "СИЛ" to 2,
-            "ЛОВ" to 5,
-            "ВЫН" to 3,
-            "ИНТ" to 1,
-            "МУД" to 4,
-            "ХАР" to 0
-        ),
-        itemHeight = 18,
-        createWidget = { (name, bonus) ->
-            SkillRowWidget(name, bonus, ProficiencyState.PROFICIENT)
-        }
-    )
+    private val LEFT_W    = 218
+    private val CENTER_W  = 194
+    private val RIGHT_W   = 194
 
-    private val abilityScores = GridWidget(
-        widgets = listOf(
-            AbilityScoreWidget("СИЛ", 10, 2),
-            AbilityScoreWidget("ЛОВ", 14, 2),
-            AbilityScoreWidget("ВЫН", 12, 2),
-            AbilityScoreWidget("ИНТ", 8, 2),
-            AbilityScoreWidget("МУД", 13, 2),
-            AbilityScoreWidget("ХАР", 10, 2)
-        ),
-        columns = 2,
-        gap = 8
-    )
+    private val TOTAL_W   = LEFT_W + COL_GAP + CENTER_W + COL_GAP + RIGHT_W  // 610
+    private val TOTAL_H   = 343
 
-    private val skills = ScrollableList(
-        items = listOf(
-            "Акробатика" to 5,
-            "Анализ" to 1,
-            "Атлетика" to 2,
-            "Восприятие" to 4,
-            "Выживание" to 4,
-            "Выступление" to 0,
-            "Запугивание" to 0,
-            "История" to 1,
-            "Ловкость рук" to 5,
-            "Магия" to 1,
-            "Медицина" to 4,
-            "Обман" to 0,
-            "Обращение с животными" to 4,
-            "Природа" to 1,
-            "Проницательность" to 4,
-            "Религия" to 1,
-            "Скрытность" to 5,
-            "Убеждение" to 0
-        ),
-        itemHeight = 18,
-        createWidget = { (name, bonus) ->
-            SkillRowWidget(name, bonus, ProficiencyState.NONE)
-        }
-    )
+    // Высоты сегментов (одинаковы для всех колонок)
+    private val SEG1_H    = 67
+    private val SEG2_H    = 135
+    private val SEG3_H    = 135
+    // SEG1_H + SEG_GAP + SEG2_H + SEG_GAP + SEG3_H = 67+2+135+2+135 = 341 ≠ 343
+    // Добавляем 2px к последнему сегменту чтобы точно заполнить 343
+    private val SEG3_H_ADJ = TOTAL_H - SEG1_H - SEG_GAP - SEG2_H - SEG_GAP  // 135
 
-    // ── Центральная колонка (40%) ─────────────────────────────────────────
+    // ── Цвета блоков (временные, для визуальной отладки) ──────────────────
 
-    private val nameField = BbfTextField(
-        text = "",
-        placeholder = "Имя персонажа",
-        width = 200,
-        height = 24
-    )
+    private val BG_PANEL   = 0xEE141420.toInt()
+    private val BG_SEG     = 0xEE1e1e2e.toInt()
+    private val BORDER_COL = 0xFF3a3a5a.toInt()
+    private val TEXT_LABEL = 0xFF888899.toInt()
 
-    private val levelBar = BarWidget(
-        current = 750f,
-        max = 1000f,
-        width = 200,
-        height = 8,
-        fillColor = 0xFF55FF55.toInt(),
-        showText = false
-    )
+    // ── Рендер ────────────────────────────────────────────────────────────
 
-    private val ownersButton = BbfButton("👥", width = 24, height = 24)
+    override fun renderContent(ctx: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
+        // Центрируем весь макет на экране
+        val originX = (width  - TOTAL_W) / 2
+        val originY = (height - TOTAL_H) / 2
 
-    private val appearanceField = BbfTextField(
-        text = "",
-        placeholder = "Описание внешности",
-        width = 250,
-        height = 60,
-        maxLength = 256
-    )
+        // X-позиции колонок
+        val leftX   = originX
+        val centerX = originX + LEFT_W + COL_GAP
+        val rightX  = centerX + CENTER_W + COL_GAP
 
-    private val lifeForce = CheckboxScaleWidget(
-        total = 5,
-        checked = 5,
-        checkboxSize = 16,
-        gap = 4
-    )
+        // Фон всего окна
+        ctx.fillRect(originX, originY, TOTAL_W, TOTAL_H, BG_PANEL)
 
-    private val scarsButton = BbfButton("Шрамы (0)", width = 120, height = 24)
+        // ── Левая колонка ─────────────────────────────────────────────────
+        drawSegment(ctx, "L1", leftX, originY,                                    LEFT_W, SEG1_H)
+        drawSegment(ctx, "L2", leftX, originY + SEG1_H + SEG_GAP,                LEFT_W, SEG2_H)
+        drawSegment(ctx, "L3", leftX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, LEFT_W, SEG3_H_ADJ)
 
-    private val features = ScrollableList(
-        items = listOf(
-            "Тёмное зрение",
-            "Ярость",
-            "Безрассудная атака",
-            "Опасное чутьё"
-        ),
-        itemHeight = 20,
-        createWidget = { feature ->
-            // TODO: создать FeatureRowWidget
-            BbfButton(feature, width = 200, height = 18)
-        }
-    )
+        // ── Центральная колонка ───────────────────────────────────────────
+        drawSegment(ctx, "C1", centerX, originY,                                    CENTER_W, SEG1_H)
+        drawSegment(ctx, "C2", centerX, originY + SEG1_H + SEG_GAP,                CENTER_W, SEG2_H)
+        drawSegment(ctx, "C3", centerX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, CENTER_W, SEG3_H_ADJ)
 
-    private val addFeatureButton = BbfButton("+", width = 24, height = 24)
-
-    // ── Правая колонка (30%) ──────────────────────────────────────────────
-
-    private val classButton = BbfButton("Выбрать класс", width = 120, height = 24)
-    private val subclassButton = BbfButton("Подкласс", width = 120, height = 24, enabled = false)
-
-    private val alignmentButton = BbfButton("Мировоззрение", width = 140, height = 24)
-    private val appearanceButton = BbfButton("Внешность", width = 140, height = 24)
-    private val abilitiesButton = BbfButton("Способности и механики", width = 140, height = 24)
-    private val savedStatsButton = BbfButton("Saved Stats", width = 140, height = 24)
-
-    private val proficiencies = ScrollableList(
-        items = listOf(
-            "Простое оружие",
-            "Боевое оружие",
-            "Лёгкая броня",
-            "Средняя броня",
-            "Щиты",
-            "Общий язык",
-            "Драконий язык"
-        ),
-        itemHeight = 18,
-        createWidget = { prof ->
-            BbfButton(prof, width = 130, height = 16)
-        }
-    )
-
-    private val addProficiencyButton = BbfButton("+", width = 24, height = 24)
-
-    // ── Layout ────────────────────────────────────────────────────────────
-
-    private lateinit var mainLayout: HBoxLayout
-
-    override fun onInit() {
-        val screenWidth = width
-        val screenHeight = height
-
-        val leftWidth = (screenWidth * 0.3f).toInt()
-        val centerWidth = (screenWidth * 0.4f).toInt()
-        val rightWidth = (screenWidth * 0.3f).toInt()
-
-        // Левая колонка
-        val leftColumn = vbox(gap = 8, padding = 10) {
-            add(raceButton, height = 24)
-            add(genderButton, height = 24)
-            add(birthButton, height = 24)
-            add(BbfButton("Спасброски", width = leftWidth - 20, height = 20, enabled = false), height = 20)
-            add(savingThrows, height = 120)
-            add(BbfButton("Характеристики", width = leftWidth - 20, height = 20, enabled = false), height = 20)
-            add(abilityScores, height = abilityScores.totalHeight)
-            add(BbfButton("Навыки", width = leftWidth - 20, height = 20, enabled = false), height = 20)
-            add(skills, height = 300)
-        }
-
-        // Центральная колонка
-        val centerColumn = vbox(gap = 8, padding = 10) {
-            add(nameField, height = 24)
-            add(levelBar, height = 8)
-            add(BbfButton("Ур. 5", width = centerWidth - 20, height = 16, enabled = false), height = 16)
-            add(appearanceField, height = 60)
-            add(BbfButton("Жизненная сила", width = centerWidth - 20, height = 20, enabled = false), height = 20)
-            add(lifeForce, height = 20)
-            add(scarsButton, height = 24)
-            add(BbfButton("Особенности", width = centerWidth - 20, height = 20, enabled = false), height = 20)
-            add(features, height = 300)
-        }
-
-        // Правая колонка
-        val rightColumn = vbox(gap = 8, padding = 10) {
-            add(classButton, height = 24)
-            add(subclassButton, height = 24)
-            add(alignmentButton, height = 24)
-            add(appearanceButton, height = 24)
-            add(abilitiesButton, height = 24)
-            add(savedStatsButton, height = 24)
-            add(BbfButton("Владения", width = rightWidth - 20, height = 20, enabled = false), height = 20)
-            add(proficiencies, height = 300)
-        }
-
-        mainLayout = hbox(gap = 0, padding = 0) {
-            add(leftColumn, width = leftWidth)
-            add(centerColumn, width = centerWidth)
-            add(rightColumn, width = rightWidth)
-        }
+        // ── Правая колонка ────────────────────────────────────────────────
+        drawSegment(ctx, "R1", rightX, originY,                                    RIGHT_W, SEG1_H)
+        drawSegment(ctx, "R2", rightX, originY + SEG1_H + SEG_GAP,                RIGHT_W, SEG2_H)
+        drawSegment(ctx, "R3", rightX, originY + SEG1_H + SEG_GAP + SEG2_H + SEG_GAP, RIGHT_W, SEG3_H_ADJ)
     }
 
-    override fun renderContent(ctx: net.minecraft.client.gui.DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
-        val rctx = RenderContext(ctx, 0, 0, width, height, mouseX, mouseY, delta)
-        mainLayout.tick(rctx)
-        mainLayout.render(rctx)
-    }
-
-    override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
-        // TODO: передать scroll в нужный список
-        return super.mouseScrolled(mouseX, mouseY, amount)
+    /**
+     * Рисует один сегмент с фоном, рамкой и меткой-номером в углу.
+     */
+    private fun drawSegment(ctx: DrawContext, label: String, x: Int, y: Int, w: Int, h: Int) {
+        ctx.fillRectWithBorder(x, y, w, h, bg = BG_SEG, border = BORDER_COL, thickness = 1)
+        // Метка в левом верхнем углу для ориентации
+        ctx.drawScaledText(label, x + 3, y + 3, color = TEXT_LABEL, shadow = false)
     }
 }
