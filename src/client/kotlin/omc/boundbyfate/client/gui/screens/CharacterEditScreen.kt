@@ -102,6 +102,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         nameLabel = EditableLabel(
             text = "Имя персонажа",
             textScale = 1f,
+            align = TextAlign.CENTER,
             onConfirm = { newName -> /* TODO: сохранить имя персонажа */ }
         )
         return PanelWidget(
@@ -335,18 +336,20 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     }
 
     /**
-     * Строит FlowList со строками формата [кнопка-название] [кнопка-×].
+     * Строит AccordionList со строками формата [кнопка-название] [кнопка-×].
      * Переиспользуется для C3 и R3.
+     * Шрифт 0.65f как у навыков и спасбросков.
      */
     private fun buildItemList(
         w: Int, h: Int, pad: Int, rowH: Int, gap: Int,
         items: List<String>
-    ): FlowList<HBoxLayout> {
-        val innerW = w - pad * 2
-        val delW   = rowH  // квадратная кнопка удаления
-        val nameW  = innerW - delW - gap
+    ): AccordionList<HBoxLayout> {
+        val innerW    = w - pad * 2
+        val expandedH = rowH + 4   // расширенная высота при hover
+        val delW      = rowH
+        val nameW     = innerW - delW - gap
 
-        val list = FlowList<HBoxLayout>(FlowConfig.Vertical(rowHeight = rowH, gap = gap))
+        val list = AccordionList<HBoxLayout>(baseRowH = rowH, expandedRowH = expandedH, gap = gap)
         items.forEach { name ->
             list.add(hbox(gap = gap) {
                 add(
@@ -354,9 +357,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                     width = nameW, height = rowH
                 )
                 add(
-                    BbfButton("×").also { btn ->
-                        btn.onClick { /* TODO: удалить элемент */ }
-                    },
+                    BbfButton("×").also { btn -> btn.onClick { /* TODO: удалить элемент */ } },
                     width = delW, height = rowH
                 )
             })

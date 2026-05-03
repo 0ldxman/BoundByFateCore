@@ -9,37 +9,31 @@ import omc.boundbyfate.client.gui.components.Hoverable
 import omc.boundbyfate.client.gui.core.*
 
 /**
- * Редактируемый текстовый лейбл.
+ * Редактируемый текстовый лейбл без фона.
  *
  * Состояния:
  *   IDLE     — текст + иконка пера, divider скрыт
- *   HOVERED  — divider плавно появляется от центра к краям
+ *   HOVERED  — divider раскрывается от центра к краям (белый/border)
  *   EDITING  — divider акцентного цвета, иконка ✓, активен ввод текста
  *
- * Анимация divider:
- *   [dividerAlpha] — прозрачность (0→1 при появлении)
- *   [dividerFade]  — fadeRatio (0.5→0 при появлении = "раскрытие от центра")
+ * Анимация divider через [revealProgress] (0 = схлопнут к центру, 1 = полностью раскрыт).
+ * Цвет divider меняется через [dividerColor].
+ *
+ * Иконка ✎/✓ рисуется сразу после текста (не у правого края).
  *
  * ## Использование
  * ```kotlin
- * val nameLabel = EditableLabel("Ричард Зорге")
+ * val nameLabel = EditableLabel("Имя персонажа", align = TextAlign.CENTER)
  * nameLabel.onConfirm = { newName -> character.name = newName }
- * // В экране пробрасываем события:
- * nameLabel.handleClick(mouseX, mouseY, button)
- * nameLabel.handleChar(char)
- * nameLabel.handleKey(key, mods)
  * ```
  */
 class EditableLabel(
     var text: String,
-    var textColor: Int = -1,          // -1 = Theme.text.primary
+    var textColor: Int = -1,       // -1 = Theme.text.primary
     var textScale: Float = 1f,
-    var accentColor: Int = -1,        // -1 = Theme.text.accent
-    /** Ширина иконки пера/галочки в пикселях. */
-    var iconWidth: Int = 8,
-    /** Зазор между текстом и иконкой. */
+    var accentColor: Int = -1,     // -1 = Theme.text.accent
+    var align: TextAlign = TextAlign.LEFT,
     var iconGap: Int = 3,
-    /** Колбек при подтверждении изменения. */
     var onConfirm: ((String) -> Unit)? = null
 ) : BbfWidget() {
 
@@ -48,28 +42,24 @@ class EditableLabel(
     private enum class State { IDLE, HOVERED, EDITING }
     private var state = State.IDLE
 
-    // Буфер редактирования — активен только в EDITING
     private var editBuffer = ""
     private var cursorTimer = 0f
     private var cursorVisible = false
 
     // ── Поведение ─────────────────────────────────────────────────────────
 
-    private val hover  = Hoverable()
-    private val click  = Clickable()
-    private val focus  = Focusable()
+    private val hover = Hoverable()
+    private val click = Clickable()
+    private val focus = Focusable()
 
     // ── Анимации divider ──────────────────────────────────────────────────
 
-    /** Прозрачность divider (0 = скрыт, 1 = виден). */
-    private val dividerAlpha = animFloat(0f, speed = 0.15f)
-
     /**
-     * fadeRatio divider (0.5 = только центральный пиксель, 0 = полная линия).
-     * При появлении: 0.5 → 0 (раскрытие от центра к краям).
-     * При исчезновении: 0 → 0.5 (схлопывание к центру).
+     * Прогресс раскрытия divider (0 = схлопнут к центру, 1 = полностью раскрыт).
+     * Анимация: при появлении 0→1 (раскрытие от центра к краям).
+     *           при исчезновении 1→0 (схлопывание к центру).
      */
-    private val dividerFade = animFloat(0.5f, speed = 0.12f)
+    private val revealProgress = animFloat(0f, speed = 0.18f)
 
     /** Цвет divider — интерполируется между border и accent. */
     private val dividerColor = animColor(Theme.panel.border, speed = 0.15f)
@@ -77,13 +67,9 @@ class EditableLabel(
     init {
         click.onClick { enterEditing() }
 
-        focus.onFocus {
-            cursorVisible = true
-            cursorTimer = 0f
-        }
-        focus.onBlur {
-            if (state == State.EDITING) cancelEditing()
-        }
+        focus.onFocus { /* не сбрасываем таймер здесь */ }
+        focus.onBlur  { if (state == State.EDITING) cancelEditing() }
+
         focus.onKeyPress { key, _ ->
             when (key) {
                 GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> { confirmEditing(); true }
@@ -105,28 +91,25 @@ class EditableLabel(
     override fun tick(ctx: RenderContext) {
         hover.update(ctx)
 
-        // Переходы состояний
         when (state) {
             State.IDLE -> {
                 if (hover.isHovered) {
                     state = State.HOVERED
-                    dividerAlpha.target = 1f
-                    dividerFade.target  = 0f
+                    revealProgress.target = 1f
                     dividerColor.target = Theme.panel.border
                 }
             }
             State.HOVERED -> {
-                if (!hover.isHovered && state != State.EDITING) {
+                if (!hover.isHovered) {
                     state = State.IDLE
-                    dividerAlpha.target = 0f
-                    dividerFade.target  = 0.5f
+                    revealProgress.target = 0f
                 }
             }
             State.EDITING -> {
-                // Мигание курсора
+                // Мигание курсора — только инкремент, без сброса при фокусе
                 cursorTimer += ctx.delta
-                if (cursorTimer >= 0.5f) {
-                    cursorTimer = 0f
+                if (cursorTimer >= 0.53f) {
+                    cursorTimer -= 0.53f
                     cursorVisible = !cursorVisible
                 }
             }
@@ -138,52 +121,77 @@ class EditableLabel(
     // ── Render ────────────────────────────────────────────────────────────
 
     override fun render(ctx: RenderContext) {
-        val resolvedText  = if (color == -1) Theme.text.primary else color
+        val tr = MinecraftClient.getInstance().textRenderer
+        val resolvedText   = if (textColor == -1) Theme.text.primary else textColor
         val resolvedAccent = if (accentColor == -1) Theme.text.accent else accentColor
 
-        // Зоны
-        val iconX  = ctx.right - iconWidth
-        val textW  = ctx.width - iconWidth - iconGap
-        val textY  = ctx.cy - ((8f * textScale) / 2f).toInt()
-        val lineY  = ctx.bottom - 1  // divider под текстом
+        val displayText = when (state) {
+            State.EDITING -> editBuffer + if (cursorVisible) "|" else " "
+            else          -> text
+        }
+        val activeColor = if (state == State.EDITING) resolvedAccent else resolvedText
+
+        // Ширина текста в пикселях
+        val rawTextW = (tr.getWidth(displayText) * textScale).toInt()
+
+        // Позиция текста по X в зависимости от выравнивания
+        val textX = when (align) {
+            TextAlign.LEFT   -> ctx.x
+            TextAlign.CENTER -> ctx.cx - rawTextW / 2
+            TextAlign.RIGHT  -> ctx.right - rawTextW
+        }
+        val textY = ctx.cy - ((8f * textScale) / 2f).toInt()
 
         // ── Текст ─────────────────────────────────────────────────────────
-        ctx.drawContext.withClip(ctx.x, ctx.y, textW, ctx.height) {
-            val displayText = when (state) {
-                State.EDITING -> editBuffer + if (cursorVisible) "|" else ""
-                else          -> text
-            }
+        ctx.drawContext.withClip(ctx.x, ctx.y, ctx.width, ctx.height) {
             drawScaledText(
-                displayText, ctx.x, textY,
-                scale = textScale,
-                color = if (state == State.EDITING) resolvedAccent else resolvedText,
-                shadow = false
+                displayText, textX, textY,
+                scale = textScale, color = activeColor,
+                align = TextAlign.LEFT, shadow = false
             )
         }
 
-        // ── Иконка ────────────────────────────────────────────────────────
+        // ── Иконка — сразу после текста ───────────────────────────────────
         val icon = if (state == State.EDITING) "✓" else "✎"
         val iconColor = if (state == State.EDITING) resolvedAccent else Theme.text.disabled
+        val iconX = textX + rawTextW + iconGap
         ctx.drawContext.drawScaledText(
-            icon, iconX + iconWidth / 2, textY,
+            icon, iconX, textY,
             scale = textScale * 0.85f,
             color = iconColor,
-            align = TextAlign.CENTER,
+            align = TextAlign.LEFT,
             shadow = false
         )
 
-        // ── Divider ───────────────────────────────────────────────────────
-        if (dividerAlpha.current > 0.01f) {
-            val lineColor = dividerColor.current.withAlpha(dividerAlpha.current)
+        // ── Divider — прямо под текстом ───────────────────────────────────
+        val progress = revealProgress.current
+        if (progress > 0.005f) {
+            // lineY = нижняя граница текста + 1px gap
+            val lineY = textY + (8f * textScale).toInt() + 1
+            val lineColor = dividerColor.current
             val lineW = ctx.width
-            val clampedFade = dividerFade.current.coerceIn(0f, 0.5f)
 
             for (i in 0 until lineW) {
-                val t = i.toFloat() / lineW
+                val t = i.toFloat() / lineW.coerceAtLeast(1)
+                // Расстояние от ближайшего края (0 на краях, 0.5 в центре)
                 val edgeDist = minOf(t, 1f - t)
-                val pixelAlpha = if (edgeDist < clampedFade) edgeDist / clampedFade else 1f
-                val pixelColor = lineColor.withAlpha(dividerAlpha.current * pixelAlpha)
-                ctx.drawContext.fillRect(ctx.x + i, lineY, 1, 1, pixelColor)
+                // Статичный градиент opacity: центр непрозрачный, края прозрачные
+                // fadeRatio = 0.35f — 35% с каждой стороны уходит в прозрачность
+                val staticFade = 0.35f
+                val staticAlpha = if (edgeDist < staticFade) edgeDist / staticFade else 1f
+
+                // Анимация раскрытия: пиксель виден только если он "раскрыт"
+                // При progress=0 виден только центральный пиксель (edgeDist=0.5)
+                // При progress=1 видна вся линия
+                // Порог видимости: edgeDist >= (0.5f - progress * 0.5f)
+                val revealThreshold = 0.5f - progress * 0.5f
+                val revealAlpha = if (edgeDist < revealThreshold) 0f
+                                  else ((edgeDist - revealThreshold) / (0.5f - revealThreshold).coerceAtLeast(0.001f)).coerceIn(0f, 1f)
+
+                val finalAlpha = staticAlpha * revealAlpha
+                if (finalAlpha > 0.01f) {
+                    ctx.drawContext.fillRect(ctx.x + i, lineY, 1, 1, lineColor.withAlpha(finalAlpha))
+                }
             }
         }
     }
@@ -199,8 +207,7 @@ class EditableLabel(
         FocusManager.requestFocus(focus)
         val resolvedAccent = if (accentColor == -1) Theme.text.accent else accentColor
         dividerColor.target = resolvedAccent
-        dividerAlpha.target = 1f
-        dividerFade.target  = 0f
+        revealProgress.target = 1f
     }
 
     private fun confirmEditing() {
@@ -218,13 +225,12 @@ class EditableLabel(
     private fun exitEditing() {
         state = State.IDLE
         FocusManager.clearFocus()
-        dividerAlpha.target = 0f
-        dividerFade.target  = 0.5f
+        revealProgress.target = 0f
         dividerColor.target = Theme.panel.border
         cursorVisible = false
     }
 
-    // ── Проброс событий из экрана ─────────────────────────────────────────
+    // ── Проброс событий ───────────────────────────────────────────────────
 
     fun handleClick(mouseX: Int, mouseY: Int, button: Int): Boolean =
         click.handle(mouseX, mouseY, button, hover.isHovered)
@@ -234,9 +240,4 @@ class EditableLabel(
 
     fun handleKey(key: Int, mods: Int): Boolean =
         focus.handleKeyPress(key, mods)
-
-    // ── Вспомогательные ───────────────────────────────────────────────────
-
-    /** Цвет текста — хранится отдельно чтобы не конфликтовать с полем [color] в BbfWidget. */
-    private val color get() = textColor
 }
