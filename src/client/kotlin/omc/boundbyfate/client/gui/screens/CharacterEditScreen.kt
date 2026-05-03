@@ -2,7 +2,7 @@ package omc.boundbyfate.client.gui.screens
 
 import net.minecraft.client.gui.DrawContext
 import omc.boundbyfate.client.gui.core.*
-import omc.boundbyfate.client.gui.widgets.BbfButton
+import omc.boundbyfate.client.gui.widgets.*
 import omc.boundbyfate.client.gui.widgets.character.StatBox
 
 /**
@@ -47,7 +47,11 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
     private lateinit var rootLayout: HBoxLayout
 
+    // Ссылки на скроллируемые блоки для проброса событий скролла
+    private val scrollables = mutableListOf<ScrollableBlock>()
+
     override fun onInit() {
+        scrollables.clear()
         buildLayout()
     }
 
@@ -86,9 +90,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     /**
      * Левая колонка.
      * L1 — цельный хедер.
-     * L2, L3 — делятся горизонтально: LL (StatBox-ы) + LR (заглушка).
-     *   LL2: СИЛ, ЛОВ, ВЫН
-     *   LL3: ИНТ, МУД, ХАР
+     * L2, L3 — делятся горизонтально: LL (StatBox-ы) + LR (спасброски/навыки).
      */
     private fun buildLeftColumn(colW: Int, s1h: Int, s2h: Int, s3h: Int): VBoxLayout {
         val llW = (colW * LEFT_LEFT_RATIO).toInt()
@@ -96,6 +98,13 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
         val statH2 = (s2h - SEG_GAP * 2) / 3
         val statH3 = (s3h - SEG_GAP * 2) / 3
+
+        // Стили чекбокса владения: пустой / акцентный / зелёный
+        val profStyles = listOf(
+            CheckboxAppearance(filled = false, fillColor = 0, borderColor = Theme.panel.border),
+            CheckboxAppearance(filled = true,  fillColor = Theme.text.accent,  borderColor = Theme.text.accent),
+            CheckboxAppearance(filled = true,  fillColor = 0xFF55AA55.toInt(), borderColor = 0xFF55AA55.toInt())
+        )
 
         return vbox(gap = SEG_GAP) {
             add(PanelWidget("L1", BG_SEG, BORDER_COL, TEXT_LABEL), height = s1h, width = colW)
@@ -110,7 +119,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                         },
                         width = llW, height = s2h
                     )
-                    add(PanelWidget("LR2", BG_SEG, BORDER_COL, TEXT_LABEL), width = lrW, height = s2h)
+                    add(buildSavingThrowsBlock(lrW, s2h, profStyles), width = lrW, height = s2h)
                 },
                 height = s2h, width = colW
             )
@@ -125,11 +134,99 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                         },
                         width = llW, height = s3h
                     )
-                    add(PanelWidget("LR3", BG_SEG, BORDER_COL, TEXT_LABEL), width = lrW, height = s3h)
+                    add(buildSkillsBlock(lrW, s3h, profStyles), width = lrW, height = s3h)
                 },
                 height = s3h, width = colW
             )
         }
+    }
+
+    /** Регистрирует ScrollableBlock для получения событий скролла. */
+    private fun <T : ScrollableBlock> T.register(): T {
+        scrollables.add(this)
+        return this
+    }
+
+    /**
+     * LR2 — ScrollableBlock со списком спасбросков.
+     * Строка: [Характеристика] [Бонус] [CycleCheckbox]
+     * Пропорции: 50% / 30% / 20% от ширины строки.
+     */
+    private fun buildSavingThrowsBlock(
+        w: Int, h: Int,
+        profStyles: List<CheckboxAppearance>
+    ): ScrollableBlock {
+        val rowH = 12
+        val gap  = 2
+
+        val savingThrows = listOf("СИЛ", "ЛОВ", "ВЫН", "ИНТ", "МУД", "ХАР")
+
+        val list = FlowList<HBoxLayout>(FlowConfig.Vertical(rowHeight = rowH, gap = gap))
+        savingThrows.forEach { stat ->
+            val nameW  = (w * 0.50f).toInt()
+            val bonusW = (w * 0.30f).toInt()
+            val cbW    = w - nameW - bonusW - gap * 2
+
+            list.add(hbox(gap = gap) {
+                add(TextWidget(stat,  align = TextAlign.LEFT,  color = Theme.text.secondary, scale = 0.8f), width = nameW,  height = rowH)
+                add(TextWidget("+0", align = TextAlign.RIGHT, color = Theme.text.accent,    scale = 0.8f), width = bonusW, height = rowH)
+                add(CycleCheckbox(3, profStyles), width = cbW, height = rowH)
+            })
+        }
+
+        return ScrollableBlock(content = list, contentHeightProvider = { list.contentHeight }).register()
+    }
+
+    /**
+     * LR3 — ScrollableBlock со списком навыков.
+     * Строка: [Сокр. характеристика] [Навык] [Бонус] [CycleCheckbox]
+     * Пропорции: 15% / 45% / 20% / 20% от ширины строки.
+     */
+    private fun buildSkillsBlock(
+        w: Int, h: Int,
+        profStyles: List<CheckboxAppearance>
+    ): ScrollableBlock {
+        val rowH = 12
+        val gap  = 2
+
+        // (сокращение характеристики, название навыка)
+        val skills = listOf(
+            "СИЛ" to "Атлетика",
+            "ЛОВ" to "Акробатика",
+            "ЛОВ" to "Ловкость рук",
+            "ЛОВ" to "Скрытность",
+            "ИНТ" to "Анализ",
+            "ИНТ" to "История",
+            "ИНТ" to "Магия",
+            "ИНТ" to "Природа",
+            "ИНТ" to "Религия",
+            "МУД" to "Внимание",
+            "МУД" to "Выживание",
+            "МУД" to "Медицина",
+            "МУД" to "Уход за животными",
+            "МУД" to "Проницательность",
+            "ХАР" to "Выступление",
+            "ХАР" to "Запугивание",
+            "ХАР" to "Обман",
+            "ХАР" to "Убеждение"
+        )
+
+        val list = FlowList<HBoxLayout>(FlowConfig.Vertical(rowHeight = rowH, gap = gap))
+        skills.forEach { (stat, skill) ->
+            val statW  = (w * 0.15f).toInt()
+            val skillW = (w * 0.45f).toInt()
+            val bonusW = (w * 0.20f).toInt()
+            val cbW    = w - statW - skillW - bonusW - gap * 3
+
+            list.add(hbox(gap = gap) {
+                add(TextWidget(stat,  align = TextAlign.LEFT,  color = Theme.text.disabled,  scale = 0.7f), width = statW,  height = rowH)
+                add(TextWidget(skill, align = TextAlign.LEFT,  color = Theme.text.secondary, scale = 0.7f), width = skillW, height = rowH)
+                add(TextWidget("+0", align = TextAlign.RIGHT, color = Theme.text.accent,    scale = 0.7f), width = bonusW, height = rowH)
+                add(CycleCheckbox(3, profStyles), width = cbW, height = rowH)
+            })
+        }
+
+        return ScrollableBlock(content = list, contentHeightProvider = { list.contentHeight }).register()
     }
 
     /**
@@ -145,18 +242,19 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
         val navLabels = listOf("Мировоззрение", "Внешность", "Способности", "Сохранённые")
 
+        val navButtons = navLabels.map { label ->
+            BbfButton(label).also { btn ->
+                btn.onClick { /* TODO: навигация на соответствующий экран */ }
+            }
+        }
+
         return vbox(gap = SEG_GAP) {
             add(PanelWidget("R1", BG_SEG, BORDER_COL, TEXT_LABEL), height = s1h, width = colW)
 
             add(
                 vbox(gap = SEG_GAP) {
-                    navLabels.forEach { label ->
-                        add(
-                            BbfButton(label).also { btn ->
-                                btn.onClick { /* TODO: навигация на соответствующий экран */ }
-                            },
-                            height = btnH, width = colW
-                        )
+                    navButtons.forEach { btn ->
+                        add(btn, height = btnH, width = colW)
                     }
                 },
                 height = s2h, width = colW
@@ -179,6 +277,11 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         val rctx = RenderContext(ctx, ox, oy, mw, mh, mouseX, mouseY, delta)
         rootLayout.tick(rctx)
         rootLayout.render(rctx)
+    }
+
+    override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
+        scrollables.forEach { it.handleScroll(mouseX, mouseY, amount) }
+        return super.mouseScrolled(mouseX, mouseY, amount)
     }
 }
 
