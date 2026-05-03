@@ -41,6 +41,9 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     private lateinit var rootLayout: HBoxLayout
     private val scrollables = mutableListOf<ScrollableBlock>()
 
+    /** Лейбл имени персонажа в C1 — нужен для проброса событий. */
+    private lateinit var nameLabel: EditableLabel
+
     override fun onInit() {
         scrollables.clear()
         buildLayout()
@@ -60,8 +63,8 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
         rootLayout = hbox(gap = COL_GAP) {
             add(buildLeftColumn(lw, s1h, s2h, s3h),  width = lw, height = mh)
-            add(buildColumn("C", cw, s1h, s2h, s3h), width = cw, height = mh)
-            add(buildRightColumn(rw, s1h, s2h, s3h), width = rw, height = mh)
+            add(buildCenterColumn(cw, s1h, s2h, s3h), width = cw, height = mh)
+            add(buildRightColumn(rw, s1h, s2h, s3h),  width = rw, height = mh)
         }
     }
 
@@ -75,6 +78,36 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         add(panel(colW, s1h, "${prefix}1"), height = s1h, width = colW)
         add(panel(colW, s2h, "${prefix}2"), height = s2h, width = colW)
         add(panel(colW, s3h, "${prefix}3"), height = s3h, width = colW)
+    }
+
+    /**
+     * Центральная колонка.
+     * C1 — имя персонажа (EditableLabel).
+     * C2 — заглушка.
+     * C3 — список владений (оружие, броня, инструменты, языки) с кнопкой "+".
+     */
+    private fun buildCenterColumn(colW: Int, s1h: Int, s2h: Int, s3h: Int): VBoxLayout =
+        vbox(gap = SEG_GAP) {
+            add(buildNamePanel(colW, s1h), height = s1h, width = colW)
+            add(panel(colW, s2h, "C2"),   height = s2h, width = colW)
+            add(buildProficienciesPanel(colW, s3h), height = s3h, width = colW)
+        }
+
+    /**
+     * C1 — панель с именем персонажа.
+     * EditableLabel центрируется вертикально внутри панели.
+     */
+    private fun buildNamePanel(w: Int, h: Int): PanelWidget {
+        val pad = 4
+        nameLabel = EditableLabel(
+            text = "Имя персонажа",
+            textScale = 1f,
+            onConfirm = { newName -> /* TODO: сохранить имя персонажа */ }
+        )
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, content = nameLabel
+        )
     }
 
     /**
@@ -241,6 +274,97 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     }
 
     /**
+     * C3 — список владений персонажа (оружие, броня, инструменты, языки).
+     * Строка: [BbfButton с названием] [кнопка "×" rowH×rowH]
+     * Кнопка "+" в правом верхнем углу панели.
+     */
+    private fun buildProficienciesPanel(w: Int, h: Int): PanelWidget {
+        val rowH = 11
+        val gap  = 1
+        val pad  = 3
+
+        // Тестовые данные — заменить на реальные данные персонажа
+        val proficiencies = listOf(
+            "Простое оружие", "Воинское оружие",
+            "Лёгкие доспехи", "Средние доспехи",
+            "Общий язык", "Эльфийский"
+        )
+
+        val list = buildItemList(w, h, pad, rowH, gap, proficiencies)
+        val scrollable = ScrollableBlock(
+            content = list,
+            contentHeightProvider = { list.contentHeight }
+        ).also { scrollables.add(it) }
+
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, title = "Владения",
+            content = scrollable,
+            onAdd = { /* TODO: открыть диалог добавления владения */ }
+        )
+    }
+
+    /**
+     * R3 — список особенностей и черт персонажа.
+     * Строка: [BbfButton с названием] [кнопка "×" rowH×rowH]
+     * Кнопка "+" в правом верхнем углу панели.
+     */
+    private fun buildFeaturesPanel(w: Int, h: Int): PanelWidget {
+        val rowH = 11
+        val gap  = 1
+        val pad  = 3
+
+        // Тестовые данные — заменить на реальные данные персонажа
+        val features = listOf(
+            "Дарохранитель", "Тёмное зрение",
+            "Стойкость дварфов", "Боевой стиль"
+        )
+
+        val list = buildItemList(w, h, pad, rowH, gap, features)
+        val scrollable = ScrollableBlock(
+            content = list,
+            contentHeightProvider = { list.contentHeight }
+        ).also { scrollables.add(it) }
+
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, title = "Особенности",
+            content = scrollable,
+            onAdd = { /* TODO: открыть диалог добавления особенности */ }
+        )
+    }
+
+    /**
+     * Строит FlowList со строками формата [кнопка-название] [кнопка-×].
+     * Переиспользуется для C3 и R3.
+     */
+    private fun buildItemList(
+        w: Int, h: Int, pad: Int, rowH: Int, gap: Int,
+        items: List<String>
+    ): FlowList<HBoxLayout> {
+        val innerW = w - pad * 2
+        val delW   = rowH  // квадратная кнопка удаления
+        val nameW  = innerW - delW - gap
+
+        val list = FlowList<HBoxLayout>(FlowConfig.Vertical(rowHeight = rowH, gap = gap))
+        items.forEach { name ->
+            list.add(hbox(gap = gap) {
+                add(
+                    BbfButton(name).also { btn -> btn.onClick { /* TODO: открыть детали */ } },
+                    width = nameW, height = rowH
+                )
+                add(
+                    BbfButton("×").also { btn ->
+                        btn.onClick { /* TODO: удалить элемент */ }
+                    },
+                    width = delW, height = rowH
+                )
+            })
+        }
+        return list
+    }
+
+    /**
      * Правая колонка.
      * R2 — 4 кнопки навигации.
      */
@@ -262,7 +386,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
                 height = s2h, width = colW
             )
 
-            add(panel(colW, s3h, "R3"), height = s3h, width = colW)
+            add(buildFeaturesPanel(colW, s3h), height = s3h, width = colW)
         }
     }
 
@@ -284,6 +408,22 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
         scrollables.forEach { it.handleScroll(mouseX, mouseY, amount) }
         return super.mouseScrolled(mouseX, mouseY, amount)
+    }
+
+    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        val mx = mouseX.toInt(); val my = mouseY.toInt()
+        if (::nameLabel.isInitialized && nameLabel.handleClick(mx, my, button)) return true
+        return super.mouseClicked(mouseX, mouseY, button)
+    }
+
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (::nameLabel.isInitialized && nameLabel.handleKey(keyCode, modifiers)) return true
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    override fun charTyped(chr: Char, modifiers: Int): Boolean {
+        if (::nameLabel.isInitialized && nameLabel.handleChar(chr)) return true
+        return super.charTyped(chr, modifiers)
     }
 
     // ── Хелперы ───────────────────────────────────────────────────────────

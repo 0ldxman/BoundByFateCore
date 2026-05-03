@@ -1,30 +1,24 @@
 package omc.boundbyfate.client.gui.widgets
 
+import omc.boundbyfate.client.gui.components.Clickable
+import omc.boundbyfate.client.gui.components.Hoverable
 import omc.boundbyfate.client.gui.core.*
 
 /**
  * Базовый виджет-панель. Рисует фон и рамку, передаёт дочернему виджету
  * контекст уменьшенный на [padding].
  *
- * Является базовым классом для всех окон и контейнеров с визуальным оформлением.
- * [ScrollableBlock], списки и другие функциональные виджеты не рисуют фон сами —
- * они оборачиваются в [PanelWidget].
+ * Если задан [onAdd] — в правом верхнем углу рисуется квадратная кнопка "+".
+ * Высота кнопки = высота строки заголовка (ADD_BTN_SIZE).
  *
  * ## Использование
  * ```kotlin
- * // Простая панель-заглушка
- * PanelWidget()
- *
- * // Панель с содержимым
- * PanelWidget(content = scrollableBlock, padding = 2)
- *
- * // Панель с заголовком
- * PanelWidget(title = "Спасброски", content = savingThrowsList, padding = 2)
- *
- * // Наследование для специфичного функционала
- * class CharacterHeaderPanel : PanelWidget() {
- *     override fun renderContent(ctx: RenderContext) { ... }
- * }
+ * PanelWidget(
+ *     title = "Особенности",
+ *     content = scrollable,
+ *     padding = 3,
+ *     onAdd = { openAddFeatureDialog() }
+ * )
  * ```
  */
 open class PanelWidget(
@@ -33,12 +27,33 @@ open class PanelWidget(
     var borderThickness: Int = 1,
     var padding: Int = 0,
     var title: String? = null,
-    var content: BbfWidget? = null
+    var content: BbfWidget? = null,
+    var onAdd: (() -> Unit)? = null
 ) : BbfWidget() {
+
+    companion object {
+        /** Размер квадратной кнопки "+" в пикселях. */
+        const val ADD_BTN_SIZE = 10
+        /** Высота строки заголовка (текст + отступы). */
+        const val HEADER_H = 12
+    }
+
+    // ── Поведение кнопки "+" ──────────────────────────────────────────────
+
+    private val addHover  = Hoverable(playSoundOnEnter = true)
+    private val addClick  = Clickable()
+
+    init {
+        addClick.onClick { onAdd?.invoke() }
+    }
 
     // ── Tick ──────────────────────────────────────────────────────────────
 
     override fun tick(ctx: RenderContext) {
+        if (onAdd != null) {
+            val (bx, by) = addBtnPos(ctx)
+            addHover.update(ctx.mouseX, ctx.mouseY, bx, by, ADD_BTN_SIZE, ADD_BTN_SIZE)
+        }
         content?.tick(contentCtx(ctx))
         tickAll(ctx.delta)
     }
@@ -52,35 +67,72 @@ open class PanelWidget(
             bg = bgColor, border = borderColor, thickness = borderThickness
         )
 
-        // Заголовок (если есть)
+        // Заголовок + кнопка "+"
+        if (title != null || onAdd != null) {
+            renderHeader(ctx)
+        }
+
+        // Хук для дочерних классов
+        renderContent(ctx)
+
+        // Содержимое
+        content?.render(contentCtx(ctx))
+    }
+
+    private fun renderHeader(ctx: RenderContext) {
+        val textY = ctx.y + padding + (HEADER_H - 6) / 2  // вертикальное центрирование текста
+
+        // Заголовок слева
         if (title != null) {
             ctx.drawContext.drawScaledText(
-                text = title!!, x = ctx.x + padding + 2, y = ctx.y + padding + 2,
+                text = title!!, x = ctx.x + padding + 2, y = textY,
                 scale = 0.8f, color = Theme.text.secondary, shadow = false
             )
         }
 
-        // Содержимое
-        renderContent(ctx)
-        content?.render(contentCtx(ctx))
+        // Кнопка "+" справа
+        if (onAdd != null) {
+            val (bx, by) = addBtnPos(ctx)
+            val btnBg = if (addHover.isHovered) Theme.button.hovered else Theme.button.normal
+            ctx.drawContext.fillRectWithBorder(bx, by, ADD_BTN_SIZE, ADD_BTN_SIZE, btnBg, Theme.panel.border)
+            ctx.drawContext.drawScaledText(
+                text = "+", x = bx + ADD_BTN_SIZE / 2, y = by + 1,
+                scale = 0.8f, color = Theme.text.primary,
+                align = TextAlign.CENTER, shadow = false
+            )
+        }
     }
 
     /**
      * Хук для дочерних классов — рисуется поверх фона, до [content].
-     * Переопредели для добавления кастомного содержимого без наследования.
      */
     open fun renderContent(ctx: RenderContext) {}
 
+    // ── Клики ─────────────────────────────────────────────────────────────
+
+    fun handleClick(mouseX: Int, mouseY: Int, button: Int): Boolean =
+        addClick.handle(mouseX, mouseY, button, addHover.isHovered)
+
     // ── Вспомогательные ───────────────────────────────────────────────────
 
-    /** Контекст для дочернего виджета с учётом padding и заголовка. */
+    /** Позиция кнопки "+" — правый верхний угол с учётом padding. */
+    private fun addBtnPos(ctx: RenderContext): Pair<Int, Int> {
+        val bx = ctx.right - padding - ADD_BTN_SIZE
+        val by = ctx.y + padding + (HEADER_H - ADD_BTN_SIZE) / 2
+        return bx to by
+    }
+
+    /**
+     * Контекст для дочернего виджета.
+     * Если есть заголовок или кнопка "+" — смещаем вниз на HEADER_H.
+     */
     protected fun contentCtx(ctx: RenderContext): RenderContext {
-        val titleOffset = if (title != null) (8f * 0.8f + padding).toInt() else 0
+        val headerOffset = if (title != null || onAdd != null) HEADER_H else 0
         return ctx.child(
             offsetX = padding,
-            offsetY = padding + titleOffset,
+            offsetY = padding + headerOffset,
             w = ctx.width  - padding * 2,
-            h = ctx.height - padding * 2 - titleOffset
+            h = ctx.height - padding * 2 - headerOffset
         )
     }
 }
