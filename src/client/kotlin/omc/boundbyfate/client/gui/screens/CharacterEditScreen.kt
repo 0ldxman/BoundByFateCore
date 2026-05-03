@@ -217,12 +217,10 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         }
     }
 
-    override fun render(ctx: net.minecraft.client.gui.DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
-        renderBackground(ctx)
+    override fun renderContent(ctx: net.minecraft.client.gui.DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         val rctx = RenderContext(ctx, 0, 0, width, height, mouseX, mouseY, delta)
         mainLayout.tick(rctx)
         mainLayout.render(rctx)
-        super.render(ctx, mouseX, mouseY, delta)
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, amount: Double): Boolean {
