@@ -61,8 +61,8 @@ class EditableLabel(
      */
     private val revealProgress = animFloat(0f, speed = 0.18f)
 
-    /** Цвет divider — интерполируется между border и accent. */
-    private val dividerColor = animColor(Theme.panel.border, speed = 0.15f)
+    /** Цвет divider — интерполируется между text.primary и accent. */
+    private val dividerColor = animColor(Theme.text.primary, speed = 0.15f)
 
     init {
         click.onClick { enterEditing() }
@@ -96,7 +96,8 @@ class EditableLabel(
                 if (hover.isHovered) {
                     state = State.HOVERED
                     revealProgress.target = 1f
-                    dividerColor.target = Theme.panel.border
+                    // При hover divider белый (цвет текста)
+                    dividerColor.target = Theme.text.primary
                 }
             }
             State.HOVERED -> {
@@ -226,7 +227,8 @@ class EditableLabel(
         state = State.IDLE
         FocusManager.clearFocus()
         revealProgress.target = 0f
-        dividerColor.target = Theme.panel.border
+        // Возвращаем цвет к белому перед исчезновением
+        dividerColor.target = Theme.text.primary
         cursorVisible = false
     }
 

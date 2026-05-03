@@ -64,7 +64,7 @@ class AccordionList<T : BbfWidget>(
     override fun forEachItemCtx(ctx: RenderContext, block: (T, RenderContext) -> Unit) {
         // Обновляем hover и целевые высоты
         var y = 0
-        _items.forEachIndexed { i, item ->
+        _items.forEachIndexed { i, _ ->
             val h = heightAnims[i].current.toInt()
             hovers[i].update(ctx.mouseX, ctx.mouseY, ctx.x, ctx.y + y, ctx.width, h)
             heightAnims[i].target = if (hovers[i].isHovered) expandedRowH.toFloat() else baseRowH.toFloat()
@@ -72,11 +72,15 @@ class AccordionList<T : BbfWidget>(
             y += h + gap
         }
 
-        // Рендерим с актуальными высотами
+        // Рендерим с актуальными высотами.
+        // Половина прироста высоты уходит вверх (смещение вверх на expandDelta/2),
+        // половина вниз — это создаёт симметричное расталкивание.
         var renderY = 0
         _items.forEachIndexed { i, item ->
             val h = heightAnims[i].current.toInt()
-            val itemCtx = ctx.child(offsetX = 0, offsetY = renderY, w = ctx.width, h = h)
+            val expandDelta = h - baseRowH  // 0 если не расширен
+            val offsetY = renderY - expandDelta / 2
+            val itemCtx = ctx.child(offsetX = 0, offsetY = offsetY, w = ctx.width, h = h)
             block(item, itemCtx)
             renderY += h + gap
         }

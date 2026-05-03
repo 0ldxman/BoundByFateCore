@@ -33,8 +33,11 @@ class BbfButton(
 
     // ── Анимации ──────────────────────────────────────────────────────────
 
-    /** Лёгкое масштабирование при наведении. */
-    private val scale = animFloat(1f, speed = 0.2f)
+    /**
+     * Масштаб текста при наведении — только текст увеличивается, не кнопка целиком.
+     * Ширина кнопки остаётся фиксированной, высота определяется контейнером (AccordionList).
+     */
+    private val textScale = animFloat(1f, speed = 0.2f)
 
     // ── API ───────────────────────────────────────────────────────────────
 
@@ -45,10 +48,10 @@ class BbfButton(
 
     override fun tick(ctx: RenderContext) {
         hover.update(ctx)
-        scale.target = when {
-            !enabled          -> 1f
-            hover.isHovered   -> 1.03f
-            else              -> 1f
+        textScale.target = when {
+            !enabled        -> 1f
+            hover.isHovered -> 1.08f
+            else            -> 1f
         }
         tickAll(ctx.delta)
     }
@@ -57,26 +60,24 @@ class BbfButton(
 
     override fun render(ctx: RenderContext) {
         val bg = when {
-            !enabled          -> Theme.button.disabled
-            hover.isHovered   -> Theme.button.hovered
-            else              -> Theme.button.normal
+            !enabled        -> Theme.button.disabled
+            hover.isHovered -> Theme.button.hovered
+            else            -> Theme.button.normal
         }
         val textColor = if (enabled) Theme.button.text else Theme.button.textDisabled
 
-        ctx.drawContext.transform(
-            pivotX = ctx.cx.toFloat(),
-            pivotY = ctx.cy.toFloat(),
-            scale  = scale.current
-        ) {
-            fillRectWithBorder(ctx.x, ctx.y, ctx.width, ctx.height, bg, Theme.panel.border)
-            drawScaledText(
-                label,
-                ctx.cx, ctx.cy - 3,
-                color  = textColor,
-                align  = TextAlign.CENTER,
-                shadow = false
-            )
-        }
+        // Фон и рамка — занимают весь контекст без масштабирования
+        ctx.drawContext.fillRectWithBorder(ctx.x, ctx.y, ctx.width, ctx.height, bg, Theme.panel.border)
+
+        // Текст — масштабируется только сам текст, не кнопка
+        ctx.drawContext.drawScaledText(
+            label,
+            ctx.cx, ctx.cy - (4f * textScale.current).toInt(),
+            scale  = textScale.current,
+            color  = textColor,
+            align  = TextAlign.CENTER,
+            shadow = false
+        )
     }
 
     // ── Клики (пробрасываются из экрана) ──────────────────────────────────
