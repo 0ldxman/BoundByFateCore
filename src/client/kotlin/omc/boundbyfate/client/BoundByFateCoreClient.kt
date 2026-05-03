@@ -86,6 +86,9 @@ class BoundByFateCoreClient : ClientModInitializer {
             omc.boundbyfate.client.character.CharacterDummyManager.clearAll()
         }
 
+        // Обработчик клиентских пакетов
+        omc.boundbyfate.client.network.ClientPacketHandler.register()
+
         logger.info("BoundByFate Core Client initialized successfully!")
         logger.info("=".repeat(50))
     }

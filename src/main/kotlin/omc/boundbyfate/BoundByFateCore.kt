@@ -42,12 +42,21 @@ class BoundByFateCore : ModInitializer {
         initializeRegistries()
         initializeComponents()
         initializeSystems()
+        initializeCommands()
 
         logger.info("=".repeat(50))
         logger.info("BoundByFate Core initialized successfully!")
         logger.info("=".repeat(50))
 
         printStatistics()
+    }
+
+    // ── Команды ───────────────────────────────────────────────────────────
+
+    private fun initializeCommands() {
+        logger.info("Initializing commands...")
+        omc.boundbyfate.command.BbfCommands.register()
+        logger.info("Commands initialized")
     }
 
     // ── Этап 1: Регистры ──────────────────────────────────────────────────
