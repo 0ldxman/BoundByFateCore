@@ -1,14 +1,12 @@
 package omc.boundbyfate.client.gui.widgets
 
-import omc.boundbyfate.client.gui.components.Clickable
-import omc.boundbyfate.client.gui.components.Hoverable
 import omc.boundbyfate.client.gui.core.*
 
 /**
- * Виджет-чекбокс с n состояниями. Клик циклически переключает состояние.
+ * Чекбокс с n состояниями, каждое из которых отображается как кружок.
  *
- * Внешний вид каждого состояния задаётся через [CheckboxAppearance].
- * Размер кружка = min(ctx.width, ctx.height) * [sizeRatio], центрируется в контексте.
+ * Конкретная реализация [CheckboxWidget]. Вся логика состояний, кликов
+ * и анимации — в базовом классе. Здесь только визуал.
  *
  * ## Использование
  * ```kotlin
@@ -17,85 +15,42 @@ import omc.boundbyfate.client.gui.core.*
  *     CheckboxAppearance(filled = true,  fillColor = Theme.text.accent,  borderColor = Theme.text.accent),
  *     CheckboxAppearance(filled = true,  fillColor = 0xFF55AA55.toInt(), borderColor = 0xFF55AA55.toInt())
  * )
- * val checkbox = CycleCheckbox(stateCount = 3, appearances = proficiencyStyles)
+ * val checkbox = CycleCheckbox(appearances = proficiencyStyles)
  * checkbox.onStateChanged = { state -> ... }
  * ```
  */
 class CycleCheckbox(
-    val stateCount: Int,
     val appearances: List<CheckboxAppearance>,
     initialState: Int = 0,
     /** Доля от меньшей стороны контекста для размера кружка. */
     val sizeRatio: Float = 0.55f
-) : BbfWidget() {
+) : CheckboxWidget(stateCount = appearances.size, initialState = initialState) {
 
     init {
-        require(appearances.size >= stateCount) {
-            "CycleCheckbox: appearances.size (${appearances.size}) < stateCount ($stateCount)"
-        }
+        require(appearances.isNotEmpty()) { "CycleCheckbox: appearances must not be empty" }
     }
 
-    var currentState: Int = initialState
-        private set
-
-    var onStateChanged: ((Int) -> Unit)? = null
-
-    // ── Поведение ─────────────────────────────────────────────────────────
-
-    private val hover = Hoverable()
-    private val click = Clickable()
-
-    // ── Анимация ──────────────────────────────────────────────────────────
-
-    private val scaleAnim = animFloat(1f, speed = 0.25f)
-
-    init {
-        click.onClick {
-            currentState = (currentState + 1) % stateCount
-            onStateChanged?.invoke(currentState)
-        }
-    }
-
-    // ── Tick ──────────────────────────────────────────────────────────────
-
-    override fun tick(ctx: RenderContext) {
-        hover.update(ctx)
-        scaleAnim.target = if (hover.isHovered) 1.15f else 1f
-        tickAll(ctx.delta)
-    }
-
-    // ── Render ────────────────────────────────────────────────────────────
-
-    override fun render(ctx: RenderContext) {
-        val appearance = appearances[currentState]
-        val size = (minOf(ctx.width, ctx.height) * sizeRatio * scaleAnim.current).toInt().coerceAtLeast(2)
+    override fun renderState(ctx: RenderContext, state: Int, scale: Float) {
+        val appearance = appearances[state]
+        val size = (minOf(ctx.width, ctx.height) * sizeRatio * scale).toInt().coerceAtLeast(2)
 
         // Центрируем кружок в контексте
-        val cx = ctx.cx - size / 2
-        val cy = ctx.cy - size / 2
+        val ox = ctx.cx - size / 2
+        val oy = ctx.cy - size / 2
 
         if (appearance.filled) {
-            // Заполненный кружок — имитируем через fillRect с border-radius эффектом
-            drawCircle(ctx, cx, cy, size, appearance.fillColor, appearance.borderColor)
+            drawCircleFilled(ctx, ox, oy, size, appearance.fillColor, appearance.borderColor)
         } else {
-            // Пустой кружок — только рамка
-            drawCircleOutline(ctx, cx, cy, size, appearance.borderColor)
+            drawCircleOutline(ctx, ox, oy, size, appearance.borderColor)
         }
     }
-
-    // ── Клики ─────────────────────────────────────────────────────────────
-
-    fun handleClick(mouseX: Int, mouseY: Int, button: Int): Boolean =
-        click.handle(mouseX, mouseY, button, hover.isHovered)
 
     // ── Рисование кружка ──────────────────────────────────────────────────
 
     /**
-     * Рисует заполненный кружок через пиксельную аппроксимацию.
-     * Minecraft не имеет нативного drawCircle, поэтому используем
-     * вертикальные полосы по алгоритму средней точки.
+     * Заполненный кружок через пиксельную аппроксимацию (вертикальные полосы).
      */
-    private fun drawCircle(ctx: RenderContext, x: Int, y: Int, size: Int, fill: Int, border: Int) {
+    private fun drawCircleFilled(ctx: RenderContext, x: Int, y: Int, size: Int, fill: Int, border: Int) {
         val r = size / 2f
         val cx = x + r
         val cy = y + r
@@ -107,13 +62,11 @@ class CycleCheckbox(
             val bottom = (cy + halfH).toInt()
             ctx.drawContext.fill(px, top, px + 1, bottom + 1, fill)
         }
-
-        // Рамка поверх
         drawCircleOutline(ctx, x, y, size, border)
     }
 
     /**
-     * Рисует контур кружка через пиксельную аппроксимацию.
+     * Контур кружка через пиксельную аппроксимацию.
      */
     private fun drawCircleOutline(ctx: RenderContext, x: Int, y: Int, size: Int, color: Int) {
         val r = size / 2f
@@ -125,18 +78,20 @@ class CycleCheckbox(
             val halfH = Math.sqrt((r * r - dx * dx).toDouble().coerceAtLeast(0.0)).toFloat()
             val top    = (cy - halfH).toInt()
             val bottom = (cy + halfH).toInt()
-            ctx.drawContext.fill(px, top,     px + 1, top + 1,    color)
-            ctx.drawContext.fill(px, bottom,  px + 1, bottom + 1, color)
+            ctx.drawContext.fill(px, top,    px + 1, top + 1,    color)
+            ctx.drawContext.fill(px, bottom, px + 1, bottom + 1, color)
         }
     }
 }
 
+// ── Описание состояния ────────────────────────────────────────────────────
+
 /**
- * Описание внешнего вида одного состояния чекбокса.
+ * Внешний вид одного состояния [CycleCheckbox].
  *
  * @param filled заполнен ли кружок
  * @param fillColor цвет заливки (игнорируется если filled = false)
- * @param borderColor цвет рамки/контура
+ * @param borderColor цвет контура
  */
 data class CheckboxAppearance(
     val filled: Boolean,
