@@ -107,10 +107,13 @@ class EditableLabel(
                 }
             }
             State.EDITING -> {
-                // Мигание курсора — только инкремент, без сброса при фокусе
                 cursorTimer += ctx.delta
-                if (cursorTimer >= 0.53f) {
-                    cursorTimer -= 0.53f
+                // partialTick при 60fps ≈ 0.05, нужно ~10 сек периода → порог ~0.5
+                // Но partialTick идёт 0..1 за один игровой тик (1/20 сек)
+                // При 60fps за секунду накапливается ~3.0 (60 * 0.05)
+                // Для мигания раз в ~0.5 сек нужен порог ~1.5
+                if (cursorTimer >= 1.5f) {
+                    cursorTimer -= 1.5f
                     cursorVisible = !cursorVisible
                 }
             }
