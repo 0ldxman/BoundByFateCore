@@ -82,16 +82,81 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
     /**
      * Центральная колонка.
-     * C1 — имя персонажа (EditableLabel).
-     * C2 — заглушка.
-     * C3 — список владений (оружие, броня, инструменты, языки) с кнопкой "+".
+     * C1 — имя персонажа (EditableLabel) + прогресс бар + опыт/уровень.
+     * C2 — жизненная сила (CheckboxScale) + кнопка шрамов.
+     * C3 — список владений с кнопкой "+".
      */
     private fun buildCenterColumn(colW: Int, s1h: Int, s2h: Int, s3h: Int): VBoxLayout =
         vbox(gap = SEG_GAP) {
-            add(buildNamePanel(colW, s1h), height = s1h, width = colW)
-            add(panel(colW, s2h, "C2"),   height = s2h, width = colW)
+            add(buildNamePanel(colW, s1h),          height = s1h, width = colW)
+            add(buildLifeForcePanel(colW, s2h),     height = s2h, width = colW)
             add(buildProficienciesPanel(colW, s3h), height = s3h, width = colW)
         }
+
+    /**
+     * C2 — жизненная сила + шрамы.
+     *
+     * Структура (сверху вниз):
+     *   TextWidget "Жизненная сила"   — ~20% высоты
+     *   CheckboxScale (5 кружков)     — ~40% высоты
+     *   BbfButton "Шрамы (n)"         — остаток
+     */
+    private fun buildLifeForcePanel(w: Int, h: Int): PanelWidget {
+        val pad    = 3
+        val gap    = 3
+        val innerH = h - pad * 2
+
+        val labelH = (innerH * 0.20f).toInt()
+        val scaleH = (innerH * 0.40f).toInt()
+        val btnH   = innerH - labelH - scaleH - gap * 2
+
+        // Тестовые данные — заменить на реальные
+        val lifeForceCount = 5
+        val lifeForceValue = 5
+        val scarsCount     = 0
+
+        val lifeForceLabel = TextWidget(
+            "Жизненная сила",
+            align = TextAlign.CENTER,
+            color = Theme.text.secondary,
+            scale = 0.75f
+        )
+
+        val lifeForce = CheckboxScale(
+            count = lifeForceCount,
+            value = lifeForceValue,
+            filledAppearance = CheckboxAppearance(
+                filled = true,
+                fillColor = 0xFFFF5555.toInt(),
+                borderColor = 0xFFFF5555.toInt()
+            ),
+            emptyAppearance = CheckboxAppearance(
+                filled = false,
+                fillColor = 0,
+                borderColor = Theme.panel.border
+            ),
+            gap = 4
+        )
+
+        val scarsBtn = BbfButton("Шрамы ($scarsCount)").also { it.onClick { /* TODO */ } }
+
+        val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
+            override fun renderContent(ctx: RenderContext) {
+                val labelCtx = ctx.child(0, 0,                    ctx.width, labelH)
+                val scaleCtx = ctx.child(0, labelH + gap,         ctx.width, scaleH)
+                val btnCtx   = ctx.child(0, labelH + gap + scaleH + gap, ctx.width, btnH)
+
+                lifeForceLabel.tick(labelCtx); lifeForceLabel.render(labelCtx)
+                lifeForce.tick(scaleCtx);      lifeForce.render(scaleCtx)
+                scarsBtn.tick(btnCtx);         scarsBtn.render(btnCtx)
+            }
+        }
+
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, content = content
+        )
+    }
 
     /**
      * C1 — имя персонажа + прогресс бар уровня + строка опыт/уровень.
