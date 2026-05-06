@@ -64,6 +64,9 @@ object JsonFormat {
 
     inline fun <reified T> decodeFromString(string: String): T = json.decodeFromString(string)
 
+    fun <T> decodeFromString(deserializer: DeserializationStrategy<T>, string: String): T =
+        json.decodeFromString(deserializer, string)
+
     fun encodeToString(element: JsonElement): String = json.encodeToString(JsonElement.serializer(), element)
 
     inline fun <reified T> decodeFromStream(stream: InputStream): T = json.decodeFromStream(stream)

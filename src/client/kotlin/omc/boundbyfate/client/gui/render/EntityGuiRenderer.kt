@@ -128,7 +128,7 @@ object EntityGuiRenderer {
         dispatcher.render(
             entity,
             0.0, 0.0, 0.0,
-            0f,  // yaw передаём через entity.yaw выше
+            rotationY,
             client.tickDelta,
             matrices,
             immediate,
@@ -153,11 +153,15 @@ object EntityGuiRenderer {
         entity.prevYaw = prevPrevYaw
     }
 
+    // ── Кеш ModelAttachment для GUI превью ───────────────────────────────
+
+    private val npcAttachmentCache = mutableMapOf<String, omc.boundbyfate.client.models.internal.v2.ModelAttachment>()
+
     /**
      * Рисует [NpcEntity] с GLTF моделью в GUI.
      *
      * Работает как для entity в мире, так и для локальных превью (не добавленных в мир).
-     * Загружает/кеширует модель через [HollowModelManager] напрямую.
+     * Кеширует [ModelAttachment] по пути модели — не создаёт новый каждый кадр.
      *
      * @param ctx контекст рисования
      * @param entity NPC entity с NpcModelComponent
@@ -185,15 +189,17 @@ object EntityGuiRenderer {
         ) ?: return
 
         val client = MinecraftClient.getInstance()
-
-        // Получаем ModelAttachment напрямую через HollowModelManager — работает для любого entity
         val modelPath = modelComponent.modelPath
-        val flow = omc.boundbyfate.client.models.internal.manager.HollowModelManager
-            .getOrCreate(modelPath.rl)
-        val animatedModel = flow.value
-        if (animatedModel === omc.boundbyfate.client.models.internal.AnimatedModel.EMPTY) return
 
-        val attachment = omc.boundbyfate.client.models.internal.v2.ModelAttachment(flow, null)
+        // Получаем или создаём кешированный ModelAttachment
+        val attachment = npcAttachmentCache.getOrPut(modelPath) {
+            val flow = omc.boundbyfate.client.models.internal.manager.HollowModelManager
+                .getOrCreate(modelPath.rl)
+            omc.boundbyfate.client.models.internal.v2.ModelAttachment(flow, null)
+        }
+
+        // Если модель ещё не загружена — пропускаем кадр, попробуем в следующем
+        if (attachment.model.scenes.isEmpty()) return
 
         RenderSystem.enableBlend()
         RenderSystem.defaultBlendFunc()
@@ -214,7 +220,7 @@ object EntityGuiRenderer {
         val matrices = ctx.matrices
         matrices.push()
         matrices.translate(x.toFloat(), y.toFloat(), 50f)
-        matrices.scale(scale, scale, -scale)
+        matrices.scale(scale, -scale, scale)
 
         if (rotationX != 0f) {
             matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX))
