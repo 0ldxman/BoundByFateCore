@@ -119,8 +119,8 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
      *   Нижняя строка: остаток
      *
      * Пропорции нижней строки по ширине:
-     *   Кнопка пола (квадратная): высота нижней строки × 1 = квадрат
-     *   Кнопка даты: остаток
+     *   Кнопка пола:  ~40% ширины
+     *   Кнопка даты:  остаток
      */
     private fun buildL1Panel(w: Int, h: Int): PanelWidget {
         val pad  = 3
@@ -128,44 +128,33 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         val innerW = w - pad * 2
         val innerH = h - pad * 2
 
-        // Пропорции: раса ~50%, нижняя строка ~50%
         val raceH   = (innerH * 0.50f).toInt()
         val bottomH = innerH - raceH - gap
-
-        // Кнопка пола — квадратная (bottomH × bottomH)
-        val genderW = bottomH
+        val genderW = (innerW * 0.40f).toInt()
         val birthW  = innerW - genderW - gap
 
-        // Пол: 3 состояния — муж / жен / небинарный
-        val genderStyles = listOf(
-            CheckboxAppearance(filled = false, fillColor = 0, borderColor = Theme.panel.border),
-            CheckboxAppearance(filled = true,  fillColor = 0xFF5599FF.toInt(), borderColor = 0xFF5599FF.toInt()),
-            CheckboxAppearance(filled = true,  fillColor = 0xFFFF77AA.toInt(), borderColor = 0xFFFF77AA.toInt())
-        )
-        val genderCheckbox = CycleCheckbox(genderStyles, sizeRatio = 0.7f)
+        // Пол: 3 состояния — циклически меняется при клике
+        val genderLabels = listOf("Пол: ♂", "Пол: ♀", "Пол: ⚧")
+        var genderIndex = 0
+        val genderBtn = BbfButton(genderLabels[genderIndex])
+        genderBtn.onClick {
+            genderIndex = (genderIndex + 1) % genderLabels.size
+            genderBtn.label = genderLabels[genderIndex]
+            /* TODO: сохранить пол персонажа */
+        }
 
         val raceBtn  = BbfButton("Раса: —").also { it.onClick { /* TODO */ } }
         val birthBtn = BbfButton("18 лет").also { it.onClick { /* TODO */ } }
 
         val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
             override fun renderContent(ctx: RenderContext) {
-                val x = ctx.x
-                val y = ctx.y
+                val raceBtnCtx   = ctx.child(0, 0,                  ctx.width, raceH)
+                val genderCtx    = ctx.child(0, raceH + gap,        genderW,   bottomH)
+                val birthCtx     = ctx.child(genderW + gap, raceH + gap, birthW, bottomH)
 
-                // Рендерим кнопку расы
-                val raceBtnCtx = ctx.child(0, 0, ctx.width, raceH)
-                raceBtn.tick(raceBtnCtx)
-                raceBtn.render(raceBtnCtx)
-
-                // Нижняя строка
-                val bottomY = raceH + gap
-                val genderCtx = ctx.child(0, bottomY, genderW, bottomH)
-                genderCheckbox.tick(genderCtx)
-                genderCheckbox.render(genderCtx)
-
-                val birthCtx = ctx.child(genderW + gap, bottomY, birthW, bottomH)
-                birthBtn.tick(birthCtx)
-                birthBtn.render(birthCtx)
+                raceBtn.tick(raceBtnCtx);   raceBtn.render(raceBtnCtx)
+                genderBtn.tick(genderCtx);  genderBtn.render(genderCtx)
+                birthBtn.tick(birthCtx);    birthBtn.render(birthCtx)
             }
         }
 
@@ -422,6 +411,53 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     }
 
     /**
+     * R1 — верхняя строка: Владелец + Сохранить.
+     *       нижняя строка: Класс + Подкласс.
+     *
+     * Пропорции по высоте:
+     *   Верхняя строка: ~45%
+     *   Нижняя строка:  остаток
+     *
+     * Кнопки в каждой строке делят ширину поровну с gap между ними.
+     */
+    private fun buildR1Panel(w: Int, h: Int): PanelWidget {
+        val pad    = 3
+        val gap    = 2
+        val innerW = w - pad * 2
+        val innerH = h - pad * 2
+
+        val topH    = (innerH * 0.45f).toInt()
+        val bottomH = innerH - topH - gap
+        val halfW   = (innerW - gap) / 2
+
+        val ownerBtn    = BbfButton("Владелец").also { it.onClick { /* TODO */ } }
+        val saveBtn     = BbfButton("Сохранить").also { it.onClick { /* TODO */ } }
+        val classBtn    = BbfButton("Класс: —").also { it.onClick { /* TODO */ } }
+        val subclassBtn = BbfButton("Подкласс: —").also { it.onClick { /* TODO */ } }
+
+        val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
+            override fun renderContent(ctx: RenderContext) {
+                // Верхняя строка
+                val ownerCtx   = ctx.child(0,          0,       halfW, topH)
+                val saveCtx    = ctx.child(halfW + gap, 0,       halfW, topH)
+                // Нижняя строка
+                val classCtx   = ctx.child(0,          topH + gap, halfW, bottomH)
+                val subCtx     = ctx.child(halfW + gap, topH + gap, halfW, bottomH)
+
+                ownerBtn.tick(ownerCtx);       ownerBtn.render(ownerCtx)
+                saveBtn.tick(saveCtx);         saveBtn.render(saveCtx)
+                classBtn.tick(classCtx);       classBtn.render(classCtx)
+                subclassBtn.tick(subCtx);      subclassBtn.render(subCtx)
+            }
+        }
+
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, content = content
+        )
+    }
+
+    /**
      * Правая колонка.
      * R2 — 4 кнопки навигации.
      */
@@ -434,7 +470,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         }
 
         return vbox(gap = SEG_GAP) {
-            add(panel(colW, s1h, "R1"), height = s1h, width = colW)
+            add(buildR1Panel(colW, s1h), height = s1h, width = colW)
 
             add(
                 vbox(gap = SEG_GAP) {
