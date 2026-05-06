@@ -132,14 +132,14 @@ class CharacterEditDraft(source: CharacterData? = null) {
         )
 
         val race = CharacterRace(
-            raceId = raceId ?: Identifier.of("boundbyfate-core", "unknown"),
+            raceId = raceId ?: Identifier.of("boundbyfate-core", "unknown")!!,
             subraceId = subraceId,
             gender = gender,
             dateOfBirth = dateOfBirth
         )
 
         val charClass = CharacterClass(
-            classId = classId ?: Identifier.of("boundbyfate-core", "unknown"),
+            classId = classId ?: Identifier.of("boundbyfate-core", "unknown")!!,
             subclassId = subclassId,
             levelUpHistory = levelUpHistory
         )
