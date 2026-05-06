@@ -94,20 +94,62 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         }
 
     /**
-     * C1 — панель с именем персонажа.
-     * EditableLabel центрируется вертикально внутри панели.
+     * C1 — имя персонажа + прогресс бар уровня + строка опыт/уровень.
+     *
+     * Структура (сверху вниз):
+     *   EditableLabel (имя)     — ~40% высоты
+     *   ProgressBar (опыт)      — 4px фиксированно
+     *   HBox (опыт/уровень)     — остаток
+     *     TextWidget "350/1000" — слева
+     *     TextWidget "Ур. 1"    — справа
      */
     private fun buildNamePanel(w: Int, h: Int): PanelWidget {
-        val pad = 4
+        val pad    = 4
+        val gap    = 3
+        val innerW = w - pad * 2
+        val innerH = h - pad * 2
+
+        val barH   = 4
+        val infoH  = 10
+        val nameH  = innerH - barH - infoH - gap * 2
+
+        // Тестовые данные — заменить на реальные
+        val currentXp = 350f
+        val maxXp     = 1000f
+        val level     = 1
+
         nameLabel = EditableLabel(
-            text = "Имя персонажа",
+            text = "",
+            placeholder = "Имя персонажа",
             textScale = 1f,
             align = TextAlign.CENTER,
-            onConfirm = { newName -> /* TODO: сохранить имя персонажа */ }
+            onConfirm = { /* TODO */ }
         )
+
+        val xpBar = ProgressBar(value = currentXp, maxValue = maxXp)
+
+        val xpText    = TextWidget("${currentXp.toInt()}/${maxXp.toInt()}", align = TextAlign.LEFT,  color = Theme.text.disabled, scale = 0.7f)
+        val levelText = TextWidget("Ур. $level",                            align = TextAlign.RIGHT, color = Theme.text.secondary, scale = 0.7f)
+
+        val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
+            override fun renderContent(ctx: RenderContext) {
+                val nameCtx  = ctx.child(0, 0,                    ctx.width, nameH)
+                val barCtx   = ctx.child(0, nameH + gap,          ctx.width, barH)
+                val infoY    = nameH + gap + barH + gap
+                val halfW    = ctx.width / 2
+                val xpCtx    = ctx.child(0,      infoY, halfW,            infoH)
+                val levelCtx = ctx.child(halfW,  infoY, ctx.width - halfW, infoH)
+
+                nameLabel.tick(nameCtx);  nameLabel.render(nameCtx)
+                xpBar.tick(barCtx);       xpBar.render(barCtx)
+                xpText.tick(xpCtx);       xpText.render(xpCtx)
+                levelText.tick(levelCtx); levelText.render(levelCtx)
+            }
+        }
+
         return PanelWidget(
             bgColor = BG_SEG, borderColor = BORDER_COL,
-            padding = pad, content = nameLabel
+            padding = pad, content = content
         )
     }
 

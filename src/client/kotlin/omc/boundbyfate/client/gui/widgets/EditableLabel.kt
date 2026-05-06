@@ -28,7 +28,8 @@ import omc.boundbyfate.client.gui.core.*
  * ```
  */
 class EditableLabel(
-    var text: String,
+    var text: String = "",
+    var placeholder: String = "",
     var textColor: Int = -1,       // -1 = Theme.text.primary
     var textScale: Float = 1f,
     var accentColor: Int = -1,     // -1 = Theme.text.accent
@@ -131,15 +132,21 @@ class EditableLabel(
 
         val displayText = when (state) {
             State.EDITING -> if (cursorVisible) editBuffer + "|" else editBuffer
-            else          -> text
+            else          -> if (text.isEmpty() && placeholder.isNotEmpty()) placeholder else text
         }
-        val activeColor = if (state == State.EDITING) resolvedAccent else resolvedText
+        // Placeholder рисуется приглушённым цветом
+        val activeColor = when {
+            state == State.EDITING                          -> resolvedAccent
+            text.isEmpty() && placeholder.isNotEmpty()     -> Theme.text.disabled
+            else                                           -> resolvedText
+        }
 
-        // Ширина считается всегда от базового текста без курсора — иначе позиция прыгает при мигании
-        val baseText = if (state == State.EDITING) editBuffer else text
+        // Ширина считается от реального текста (без placeholder и курсора) — иначе позиция прыгает
+        val baseText = when (state) {
+            State.EDITING -> editBuffer
+            else          -> if (text.isEmpty()) placeholder else text
+        }
         val rawTextW = (tr.getWidth(baseText) * textScale).toInt()
-
-        // Позиция текста по X в зависимости от выравнивания
         val textX = when (align) {
             TextAlign.LEFT   -> ctx.x
             TextAlign.CENTER -> ctx.cx - rawTextW / 2
