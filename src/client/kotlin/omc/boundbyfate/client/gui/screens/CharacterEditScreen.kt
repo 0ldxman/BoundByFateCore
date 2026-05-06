@@ -112,6 +112,70 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     }
 
     /**
+     * L1 — кнопка расы (сверху), кнопка пола + кнопка даты рождения (снизу рядом).
+     *
+     * Пропорции по высоте:
+     *   Кнопка расы:  ~50% высоты панели
+     *   Нижняя строка: остаток
+     *
+     * Пропорции нижней строки по ширине:
+     *   Кнопка пола (квадратная): высота нижней строки × 1 = квадрат
+     *   Кнопка даты: остаток
+     */
+    private fun buildL1Panel(w: Int, h: Int): PanelWidget {
+        val pad  = 3
+        val gap  = 2
+        val innerW = w - pad * 2
+        val innerH = h - pad * 2
+
+        // Пропорции: раса ~50%, нижняя строка ~50%
+        val raceH   = (innerH * 0.50f).toInt()
+        val bottomH = innerH - raceH - gap
+
+        // Кнопка пола — квадратная (bottomH × bottomH)
+        val genderW = bottomH
+        val birthW  = innerW - genderW - gap
+
+        // Пол: 3 состояния — муж / жен / небинарный
+        val genderStyles = listOf(
+            CheckboxAppearance(filled = false, fillColor = 0, borderColor = Theme.panel.border),
+            CheckboxAppearance(filled = true,  fillColor = 0xFF5599FF.toInt(), borderColor = 0xFF5599FF.toInt()),
+            CheckboxAppearance(filled = true,  fillColor = 0xFFFF77AA.toInt(), borderColor = 0xFFFF77AA.toInt())
+        )
+        val genderCheckbox = CycleCheckbox(genderStyles, sizeRatio = 0.7f)
+
+        val raceBtn  = BbfButton("Раса: —").also { it.onClick { /* TODO */ } }
+        val birthBtn = BbfButton("18 лет").also { it.onClick { /* TODO */ } }
+
+        val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
+            override fun renderContent(ctx: RenderContext) {
+                val x = ctx.x
+                val y = ctx.y
+
+                // Рендерим кнопку расы
+                val raceBtnCtx = ctx.child(0, 0, ctx.width, raceH)
+                raceBtn.tick(raceBtnCtx)
+                raceBtn.render(raceBtnCtx)
+
+                // Нижняя строка
+                val bottomY = raceH + gap
+                val genderCtx = ctx.child(0, bottomY, genderW, bottomH)
+                genderCheckbox.tick(genderCtx)
+                genderCheckbox.render(genderCtx)
+
+                val birthCtx = ctx.child(genderW + gap, bottomY, birthW, bottomH)
+                birthBtn.tick(birthCtx)
+                birthBtn.render(birthCtx)
+            }
+        }
+
+        return PanelWidget(
+            bgColor = BG_SEG, borderColor = BORDER_COL,
+            padding = pad, content = content
+        )
+    }
+
+    /**
      * Левая колонка.
      * L1 — цельная панель-заглушка.
      * L2, L3 — LL (StatBox-ы) + LR (PanelWidget → ScrollableBlock → FlowList).
@@ -130,7 +194,7 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
         )
 
         return vbox(gap = SEG_GAP) {
-            add(panel(colW, s1h, "L1"), height = s1h, width = colW)
+            add(buildL1Panel(colW, s1h), height = s1h, width = colW)
 
             // L2: StatBox-ы + спасброски
             add(
