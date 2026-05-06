@@ -2,8 +2,10 @@ package omc.boundbyfate.client.gui.screens
 
 import net.minecraft.client.gui.DrawContext
 import omc.boundbyfate.client.gui.core.*
+import omc.boundbyfate.client.gui.screens.draft.CharacterEditDraft
 import omc.boundbyfate.client.gui.widgets.*
 import omc.boundbyfate.client.gui.widgets.character.StatBox
+import omc.boundbyfate.data.world.character.CharacterData
 
 /**
  * Экран создания/редактирования персонажа.
@@ -19,7 +21,9 @@ import omc.boundbyfate.client.gui.widgets.character.StatBox
  *   S2 = 135/341 ≈ 39.59%
  *   S3 = остаток
  */
-class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
+class CharacterEditScreen(
+    private val source: CharacterData? = null
+) : BbfScreen("screen.bbf.character_edit") {
 
     private val SCREEN_PAD = 2
     private val COL_GAP    = 2
@@ -44,7 +48,15 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
     /** Лейбл имени персонажа в C1 — нужен для проброса событий. */
     private lateinit var nameLabel: EditableLabel
 
+    /** Черновик редактирования — создаётся один раз, переживает переходы между экранами. */
+    private lateinit var draft: CharacterEditDraft
+    private var draftInitialized = false
+
     override fun onInit() {
+        if (!draftInitialized) {
+            draft = CharacterEditDraft(source)
+            draftInitialized = true
+        }
         scrollables.clear()
         buildLayout()
     }
@@ -573,7 +585,14 @@ class CharacterEditScreen : BbfScreen("screen.bbf.character_edit") {
 
         val navLabels = listOf("Мировоззрение", "Внешность", "Способности", "Сохранённые")
         val navButtons = navLabels.map { label ->
-            BbfButton(label).also { btn -> btn.onClick { /* TODO */ } }
+            BbfButton(label).also { btn ->
+                btn.onClick {
+                    when (label) {
+                        "Внешность" -> AppearanceEditScreen(draft).open()
+                        else        -> { /* TODO */ }
+                    }
+                }
+            }
         }
 
         return vbox(gap = SEG_GAP) {
