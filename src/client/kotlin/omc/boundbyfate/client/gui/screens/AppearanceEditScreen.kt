@@ -115,7 +115,7 @@ class AppearanceEditScreen(
             entity    = characterDummy,
             scale     = MODEL_SCALE,
             rotationY = 180f,
-            followMouse = true,
+            followMouse = false,
             draggable = true
         )
 
