@@ -36,7 +36,7 @@ class NpcModelComponent : BbfComponent() {
      * Путь к GLTF модели.
      * Формат: "namespace:models/entity/name.gltf"
      */
-    var modelPath by synced("boundbyfate-core:models/entity/player_model.gltf")
+    var modelPath by synced("boundbyfate-core:models/entity/classic.gltf")
 
     /**
      * ID скина из FileTransferSystem (FileCategory.SKIN).

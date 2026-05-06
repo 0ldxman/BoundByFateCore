@@ -28,9 +28,12 @@ import java.util.UUID
  *   - Верхний левый угол: ← Назад
  *
  * Изменения пишутся в [draft] — не сохраняются до нажатия "Сохранить" на основном экране.
+ *
+ * @param parentScreen экран, на который возвращаемся при нажатии "← Назад"
  */
 class AppearanceEditScreen(
-    val draft: CharacterEditDraft
+    val draft: CharacterEditDraft,
+    private val parentScreen: net.minecraft.client.gui.screen.Screen? = null
 ) : BbfScreen("screen.bbf.appearance_edit") {
 
     // ── Константы макета ──────────────────────────────────────────────────
@@ -96,10 +99,13 @@ class AppearanceEditScreen(
         // NpcEntity — создаём локально для превью, не добавляем в мир
         npcPreview = NpcEntity(NpcEntityRegistry.NPC, world).also { npc ->
             val modelComp = npc.getOrCreate(NpcModelComponent.TYPE)
-            // TODO: установить modelPath из драфта когда будет поле для NPC модели
-            // modelComp.modelPath = draft.npcModelPath
-            if (draft.skinId.isNotEmpty()) {
-                modelComp.skinId = draft.skinId
+            if (draft.npcModelPath.isNotEmpty()) {
+                modelComp.modelPath = draft.npcModelPath
+            }
+            // npcSkinId имеет приоритет; если не задан — используем общий skinId
+            val effectiveNpcSkin = draft.npcSkinId.ifEmpty { draft.skinId }
+            if (effectiveNpcSkin.isNotEmpty()) {
+                modelComp.skinId = effectiveNpcSkin
             }
         }
     }
@@ -138,10 +144,10 @@ class AppearanceEditScreen(
         }
 
         npcSkinBtn = BbfButton("Скин НПС").also { btn ->
-            btn.onClick { /* TODO: открыть диалог выбора скина НПС */ }
+            btn.onClick { /* TODO: открыть диалог выбора скина НПС → draft.npcSkinId = выбранный ID → rebuildNpcPreview() */ }
         }
         npcModelBtn = BbfButton("Модель НПС").also { btn ->
-            btn.onClick { /* TODO: открыть диалог выбора модели НПС */ }
+            btn.onClick { /* TODO: открыть диалог выбора модели НПС → draft.npcModelPath = выбранный путь → rebuildNpcPreview() */ }
         }
     }
 
@@ -213,6 +219,13 @@ class AppearanceEditScreen(
         val modelCtx = rctx.child(dummyBtnX, btnMidY + BTN_H + PAD, btnW, BTN_H)
         skinBtn.tick(skinCtx);   skinBtn.render(skinCtx)
         modelBtn.tick(modelCtx); modelBtn.render(modelCtx)
+    }
+
+    // ── Навигация ─────────────────────────────────────────────────────────
+
+    /** Возвращает на родительский экран (или закрывает всё если его нет). */
+    override fun close() {
+        MinecraftClient.getInstance().setScreen(parentScreen)
     }
 
     // ── Ввод ──────────────────────────────────────────────────────────────

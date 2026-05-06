@@ -55,6 +55,19 @@ class CharacterEditDraft(source: CharacterData? = null) {
     var skinId: String = source?.identity?.appearance?.skinId ?: ""
     var modelType: ModelType = source?.identity?.appearance?.modelType ?: ModelType.STEVE
 
+    /**
+     * Путь к GLTF модели НПС-версии персонажа.
+     * Формат: "namespace:models/entity/name.gltf"
+     * Пустая строка — используется дефолтная модель.
+     */
+    var npcModelPath: String = source?.identity?.appearance?.npcModelPath ?: ""
+
+    /**
+     * ID скина для НПС-версии персонажа из FileTransferSystem (FileCategory.SKIN).
+     * Пустая строка — используется общий [skinId].
+     */
+    var npcSkinId: String = source?.identity?.appearance?.npcSkinId ?: ""
+
     // ── Race ──────────────────────────────────────────────────────────────
 
     /** ID расы. */
@@ -128,7 +141,12 @@ class CharacterEditDraft(source: CharacterData? = null) {
             displayName = name,
             createdAt = if (isNewCharacter) now else createdAt,
             lastPlayedAt = now,
-            appearance = CharacterAppearance(skinId = skinId, modelType = modelType)
+            appearance = CharacterAppearance(
+                skinId = skinId,
+                modelType = modelType,
+                npcModelPath = npcModelPath,
+                npcSkinId = npcSkinId
+            )
         )
 
         val race = CharacterRace(

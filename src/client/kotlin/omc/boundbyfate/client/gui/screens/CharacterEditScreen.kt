@@ -43,7 +43,9 @@ class CharacterEditScreen(
     // ── Корневой layout ───────────────────────────────────────────────────
 
     private lateinit var rootLayout: HBoxLayout
-    private val scrollables = mutableListOf<ScrollableBlock>()
+    private val scrollables  = mutableListOf<ScrollableBlock>()
+    private val clickables   = mutableListOf<BbfButton>()
+    private val panelWidgets = mutableListOf<PanelWidget>()
 
     /** Лейбл имени персонажа в C1 — нужен для проброса событий. */
     private lateinit var nameLabel: EditableLabel
@@ -58,6 +60,8 @@ class CharacterEditScreen(
             draftInitialized = true
         }
         scrollables.clear()
+        clickables.clear()
+        panelWidgets.clear()
         buildLayout()
     }
 
@@ -150,7 +154,7 @@ class CharacterEditScreen(
             gap = 4
         )
 
-        val scarsBtn = BbfButton("Шрамы ($scarsCount)").also { it.onClick { /* TODO */ } }
+        val scarsBtn = BbfButton("Шрамы ($scarsCount)").also { it.onClick { /* TODO */ }; clickables.add(it) }
 
         val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
             override fun renderContent(ctx: RenderContext) {
@@ -252,18 +256,18 @@ class CharacterEditScreen(
         val genderW = (innerW * 0.40f).toInt()
         val birthW  = innerW - genderW - gap
 
+        val raceBtn  = BbfButton("Раса: —").also { it.onClick { /* TODO */ }; clickables.add(it) }
+        val birthBtn = BbfButton("18 лет").also { it.onClick { /* TODO */ }; clickables.add(it) }
+
         // Пол: 3 состояния — циклически меняется при клике
         val genderLabels = listOf("Пол: ♂", "Пол: ♀", "Пол: ⚧")
         var genderIndex = 0
-        val genderBtn = BbfButton(genderLabels[genderIndex])
+        val genderBtn = BbfButton(genderLabels[genderIndex]).also { clickables.add(it) }
         genderBtn.onClick {
             genderIndex = (genderIndex + 1) % genderLabels.size
             genderBtn.label = genderLabels[genderIndex]
             /* TODO: сохранить пол персонажа */
         }
-
-        val raceBtn  = BbfButton("Раса: —").also { it.onClick { /* TODO */ } }
-        val birthBtn = BbfButton("18 лет").also { it.onClick { /* TODO */ } }
 
         val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
             override fun renderContent(ctx: RenderContext) {
@@ -474,7 +478,7 @@ class CharacterEditScreen(
             padding = pad, title = "Владения",
             content = scrollable,
             onAdd = { /* TODO: открыть диалог добавления владения */ }
-        )
+        ).also { panelWidgets.add(it) }
     }
 
     /**
@@ -504,7 +508,7 @@ class CharacterEditScreen(
             padding = pad, title = "Особенности",
             content = scrollable,
             onAdd = { /* TODO: открыть диалог добавления особенности */ }
-        )
+        ).also { panelWidgets.add(it) }
     }
 
     /**
@@ -522,8 +526,8 @@ class CharacterEditScreen(
         val list = FlowList<HBoxLayout>(FlowConfig.Vertical(rowHeight = rowH, gap = gap))
         items.forEach { name ->
             list.add(hbox(gap = gap) {
-                add(BbfButton(name).also { btn -> btn.onClick { /* TODO */ } }, width = nameW, height = rowH)
-                add(BbfButton("×").also { btn -> btn.onClick { /* TODO */ } }, width = delW, height = rowH)
+                add(BbfButton(name).also { btn -> btn.onClick { /* TODO */ }; clickables.add(btn) }, width = nameW, height = rowH)
+                add(BbfButton("×").also { btn -> btn.onClick { /* TODO */ }; clickables.add(btn) }, width = delW, height = rowH)
             })
         }
         return list
@@ -549,10 +553,10 @@ class CharacterEditScreen(
         val bottomH = innerH - topH - gap
         val halfW   = (innerW - gap) / 2
 
-        val ownerBtn    = BbfButton("Владелец").also { it.onClick { /* TODO */ } }
-        val saveBtn     = BbfButton("Сохранить").also { it.onClick { /* TODO */ } }
-        val classBtn    = BbfButton("Класс: —").also { it.onClick { /* TODO */ } }
-        val subclassBtn = BbfButton("Подкласс: —").also { it.onClick { /* TODO */ } }
+        val ownerBtn    = BbfButton("Владелец").also { it.onClick { /* TODO */ }; clickables.add(it) }
+        val saveBtn     = BbfButton("Сохранить").also { it.onClick { /* TODO */ }; clickables.add(it) }
+        val classBtn    = BbfButton("Класс: —").also { it.onClick { /* TODO */ }; clickables.add(it) }
+        val subclassBtn = BbfButton("Подкласс: —").also { it.onClick { /* TODO */ }; clickables.add(it) }
 
         val content = object : PanelWidget(bgColor = 0, borderColor = 0, borderThickness = 0) {
             override fun renderContent(ctx: RenderContext) {
@@ -586,9 +590,10 @@ class CharacterEditScreen(
         val navLabels = listOf("Мировоззрение", "Внешность", "Способности", "Сохранённые")
         val navButtons = navLabels.map { label ->
             BbfButton(label).also { btn ->
+                clickables.add(btn)
                 btn.onClick {
                     when (label) {
-                        "Внешность" -> AppearanceEditScreen(draft).open()
+                        "Внешность" -> AppearanceEditScreen(draft, parentScreen = this@CharacterEditScreen).open()
                         else        -> { /* TODO */ }
                     }
                 }
@@ -632,6 +637,8 @@ class CharacterEditScreen(
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         val mx = mouseX.toInt(); val my = mouseY.toInt()
         if (::nameLabel.isInitialized && nameLabel.handleClick(mx, my, button)) return true
+        clickables.forEach { it.handleClick(mx, my, button) }
+        panelWidgets.forEach { it.handleClick(mx, my, button) }
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
