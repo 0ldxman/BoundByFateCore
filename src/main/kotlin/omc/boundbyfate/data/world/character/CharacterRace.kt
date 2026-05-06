@@ -1,4 +1,4 @@
-package omc.boundbyfate.api.character
+package omc.boundbyfate.data.world.character
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder

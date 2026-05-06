@@ -183,7 +183,7 @@ object EntityGuiRenderer {
         val animSystem = NpcModelRenderer.getAnimationSystem(entity) ?: return
 
         // Обновляем анимацию
-        animSystem.update(MinecraftClient.getInstance().tickDelta.toDouble())
+        animSystem.update(MinecraftClient.getInstance().tickDelta.toFloat())
 
         val client = MinecraftClient.getInstance()
         val immediate = client.bufferBuilders.entityVertexConsumers
