@@ -183,7 +183,7 @@ data class GltfFile(
         const val GLB_CHUNK_MAGIC_BIN = 0x004e4942
 
         fun fromJson(json: String): GltfFile {
-            return JsonFormat.decodeFromString(GltfFile.serializer(), json)
+            return omc.boundbyfate.client.util.json.decodeFromString(GltfFile.serializer(), json)
         }
     }
 }
