@@ -72,7 +72,7 @@ class EntityViewWidget(
                 scale       = effectiveScale,
                 rotationY   = effectiveRotY,
                 rotationX   = rotationX,
-                followMouse = followMouse && !isHovered,
+                followMouse = followMouse && isHovered,
                 mouseX      = ctx.mouseX.toFloat(),
                 mouseY      = ctx.mouseY.toFloat(),
                 lighting    = lighting,

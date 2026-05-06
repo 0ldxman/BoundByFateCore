@@ -13,6 +13,7 @@ import net.minecraft.entity.LivingEntity
 import net.minecraft.util.math.RotationAxis
 import omc.boundbyfate.client.models.internal.rendering.RenderContext as ModelRenderContext
 import omc.boundbyfate.client.render.NpcModelRenderer
+import omc.boundbyfate.client.util.rl
 import omc.boundbyfate.entity.NpcEntity
 import org.joml.Quaternionf
 
@@ -114,7 +115,7 @@ object EntityGuiRenderer {
         val matrices = ctx.matrices
         matrices.push()
         matrices.translate(x.toFloat(), y.toFloat(), 50f)
-        matrices.scale(scale, scale, -scale)  // -scale по Z чтобы модель смотрела на нас
+        matrices.scale(scale, -scale, scale)  // -scale по Y — стандартный MC GUI рендер
 
         // Наклон по X
         if (rotationX != 0f) {
@@ -155,8 +156,8 @@ object EntityGuiRenderer {
     /**
      * Рисует [NpcEntity] с GLTF моделью в GUI.
      *
-     * Использует Kool pipeline напрямую — обходит стандартный EntityRenderDispatcher.
-     * Если у entity нет загруженной модели — ничего не рисует.
+     * Работает как для entity в мире, так и для локальных превью (не добавленных в мир).
+     * Загружает/кеширует модель через [HollowModelManager] напрямую.
      *
      * @param ctx контекст рисования
      * @param entity NPC entity с NpcModelComponent
@@ -179,20 +180,36 @@ object EntityGuiRenderer {
     ) {
         if (alpha < 0.005f) return
 
-        // Получаем AnimationSystem — она же содержит ссылку на ModelAttachment через pipeline
-        val animSystem = NpcModelRenderer.getAnimationSystem(entity) ?: return
-
-        // Обновляем анимацию
-        animSystem.update(MinecraftClient.getInstance().tickDelta.toFloat())
+        val modelComponent = entity.getAttached(
+            omc.boundbyfate.component.components.NpcModelComponent.TYPE
+        ) ?: return
 
         val client = MinecraftClient.getInstance()
-        val immediate = client.bufferBuilders.entityVertexConsumers
+
+        // Получаем ModelAttachment напрямую через HollowModelManager — работает для любого entity
+        val modelPath = modelComponent.modelPath
+        val flow = omc.boundbyfate.client.models.internal.manager.HollowModelManager
+            .getOrCreate(modelPath.rl)
+        val animatedModel = flow.value
+        if (animatedModel === omc.boundbyfate.client.models.internal.AnimatedModel.EMPTY) return
+
+        val attachment = omc.boundbyfate.client.models.internal.v2.ModelAttachment(flow, null)
 
         RenderSystem.enableBlend()
         RenderSystem.defaultBlendFunc()
         if (alpha < 1f) RenderSystem.setShaderColor(1f, 1f, 1f, alpha)
 
         DiffuseLighting.enableGuiDepthLighting()
+
+        // Биндим скин если есть
+        val effectiveSkin = modelComponent.skinId
+        if (effectiveSkin.isNotEmpty()) {
+            omc.boundbyfate.client.skin.ClientSkinManager.ensureLoaded(effectiveSkin)
+            val skinTex = omc.boundbyfate.client.skin.ClientSkinManager.getTexture(effectiveSkin)
+            if (skinTex != null) {
+                RenderSystem.setShaderTexture(0, client.textureManager.getTexture(skinTex).glId)
+            }
+        }
 
         val matrices = ctx.matrices
         matrices.push()
@@ -204,36 +221,18 @@ object EntityGuiRenderer {
         }
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY))
 
-        // Вызываем Kool pipeline напрямую с GUI MatrixStack
-        val modelComponent = entity.getAttached(
-            omc.boundbyfate.component.components.NpcModelComponent.TYPE
-        )
-
-        if (modelComponent != null) {
-            // Биндим скин если есть
-            if (modelComponent.skinId.isNotEmpty()) {
-                omc.boundbyfate.client.skin.ClientSkinManager.ensureLoaded(modelComponent.skinId)
-                val skinTex = omc.boundbyfate.client.skin.ClientSkinManager.getTexture(modelComponent.skinId)
-                if (skinTex != null) {
-                    RenderSystem.setShaderTexture(0,
-                        client.textureManager.getTexture(skinTex).glId
-                    )
-                }
-            }
-
-            // Получаем pipeline через NpcModelRenderer (он хранит CachedModel внутри)
-            // Используем reflection-free подход — вызываем onRenderPre с GUI MatrixStack
-            NpcModelRenderer.onRenderPre(
-                entity = entity,
-                entityYaw = rotationY,
-                partialTick = client.tickDelta,
-                poseStack = matrices,
-                buffer = immediate,
-                packedLight = 0xF000F0
+        val immediate = client.bufferBuilders.entityVertexConsumers
+        attachment.pipeline.render(
+            omc.boundbyfate.client.models.internal.rendering.RenderContext(
+                stack = matrices,
+                source = immediate,
+                light = 0xF000F0,
+                overlay = net.minecraft.client.render.OverlayTexture.DEFAULT_UV,
+                allowInstancing = false
             )
-        }
-
+        )
         immediate.draw()
+
         matrices.pop()
 
         if (alpha < 1f) RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
