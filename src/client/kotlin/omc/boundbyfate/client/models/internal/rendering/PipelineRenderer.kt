@@ -27,6 +27,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     private var vao = -1
     private var instancedVao = -1
     private val runtimeInstancedBindings = LinkedHashMap<Int, InstancedShaderBinding>()
+    private var drawLogCount = 0
 
     private var posBuffer: VboWrapper? = null
     private var norBuffer: VboWrapper? = null
@@ -551,7 +552,13 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     private fun RenderContext.renderVAO(node: MatrixGetter) {
         if (vao == -1) init()  // lazy GL init on render thread
         // Use shader from context (set by NpcModelRenderer) or fall back to RenderSystem
-        val shader = this.shader ?: RenderSystem.getShader() ?: return
+        val shader = this.shader ?: RenderSystem.getShader() ?: run {
+            org.apache.logging.log4j.LogManager.getLogger().warn("[PipelineRenderer] shader is null in renderVAO, skipping draw")
+            return
+        }
+        if (drawLogCount++ < 3) {
+            org.apache.logging.log4j.LogManager.getLogger().info("[PipelineRenderer] renderVAO: vao=$vao, indices=${primitive.indices?.size}, positions=${primitive.positionsCount}, shader=${shader.name}")
+        }
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
