@@ -47,9 +47,14 @@ class BatchingRenderer(
             val normal = stack.peek().normalMatrix
             val color = primitive.material.color
 
+            // Disable backface culling for model geometry — GLTF winding order may differ
+            com.mojang.blaze3d.systems.RenderSystem.disableCull()
+
             for (i in iterator) {
                 putVertex(matrixGetter, i, vertexConsumer, pose, normal, color, overlay, light, posArray, normArray, texArray)
             }
+
+            com.mojang.blaze3d.systems.RenderSystem.enableCull()
         }    }
 
     private fun putVertex(
@@ -74,7 +79,7 @@ class BatchingRenderer(
         consumer
             .vertex(pose, pos.x, pos.y, pos.z)
             .color(color.r, color.g, color.b, color.a)
-            .texture(texArray[index].x, texArray[index].y)
+            .texture(1f - texArray[index].x, texArray[index].y)
             .overlay(overlayCoords)
             .light(packedLight)
             .normal(normalMat, normal.x, normal.y, normal.z)
