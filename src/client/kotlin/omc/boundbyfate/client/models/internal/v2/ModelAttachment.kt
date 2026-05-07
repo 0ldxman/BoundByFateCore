@@ -91,7 +91,11 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
             modelState = animated
             configurePrimitiveRenderPaths(animated)
-            runtimeNodes = model.scenes.getOrNull(model.scene)?.nodes?.map { RuntimeNode(it, this) } ?: emptyList()
+            val scene = model.scenes.getOrNull(model.scene)
+            org.apache.logging.log4j.LogManager.getLogger().info(
+                "[ModelAttachment] ensureCompiled: scenes=${model.scenes.size}, scene=${model.scene}, sceneNodes=${scene?.nodes?.size ?: -1}, animations=${model.animations.size}"
+            )
+            runtimeNodes = scene?.nodes?.map { RuntimeNode(it, this) } ?: emptyList()
             runtimeAnimations = Animations(model.animations.associate { it.name to AnimationInstance(it) })
             runtimeMaterials = model.materials
             nodeIdToNode = runtimeNodes.flatMap { it.walk() }.associateBy { it.definition.index }
