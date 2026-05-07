@@ -75,7 +75,7 @@ class BatchingRenderer(
         consumer
             .vertex(pose, pos.x, pos.y, pos.z)
             .color(color.r, color.g, color.b, color.a)
-            .texture(texArray[index].x, texArray[index].y)
+            .texture(texArray[index].x, 1f - texArray[index].y)
             .overlay(overlayCoords)
             .light(packedLight)
             .normal(normalMat, normal.x, normal.y, normal.z)
