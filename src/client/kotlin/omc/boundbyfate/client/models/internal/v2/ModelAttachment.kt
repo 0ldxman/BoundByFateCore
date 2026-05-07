@@ -86,7 +86,10 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
             if (compiledFor === animated) return
 
             if (animated.model.isBlockBench) {
-                transform.rotation.set(180f.deg, Vec3f.Y_AXIS)
+                // Blockbench exports models rotated 180° around Y axis.
+                // We apply this via the pose stack in renderModel instead of here,
+                // to avoid inverting triangle winding order and UV coordinates.
+                // transform.rotation.set(180f.deg, Vec3f.Y_AXIS)
             }
 
             modelState = animated
