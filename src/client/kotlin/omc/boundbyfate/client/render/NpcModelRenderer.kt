@@ -277,6 +277,49 @@ object NpcModelRenderer {
         attachments[entity.uuid.toString()]?.animationSystem
 
     /**
+     * Рендерит модель НПС напрямую без frustum culling.
+     * Используется для GUI превью где entity не находится в мире.
+     *
+     * @return true если модель загружена и была нарисована
+     */
+    fun renderForGui(
+        entity: NpcEntity,
+        poseStack: MatrixStack,
+        buffer: VertexConsumerProvider,
+        packedLight: Int,
+        entityYaw: Float,
+        partialTick: Float
+    ): Boolean {
+        val modelComponent = entity.getAttached(NpcModelComponent.TYPE) ?: return false
+        val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
+
+        val animSystem = cached.animationSystem
+        if (animSystem != null) {
+            syncAnimationLayers(animSystem, cached, modelComponent.animationLayers)
+            animSystem.update(Time.deltaT)
+        }
+
+        val skinTexture = if (modelComponent.skinId.isNotEmpty()) {
+            omc.boundbyfate.client.skin.ClientSkinManager.also {
+                it.ensureLoaded(modelComponent.skinId)
+            }.getTexture(modelComponent.skinId)
+        } else null
+
+        renderModel(
+            attachment  = cached.attachment,
+            entity      = entity,
+            entityYaw   = entityYaw,
+            partialTick = partialTick,
+            poseStack   = poseStack,
+            buffer      = buffer,
+            packedLight = packedLight,
+            scale       = modelComponent.scale,
+            skinTexture = skinTexture
+        )
+        return true
+    }
+
+    /**
      * Очищает кеш и уничтожает [AnimationSystem] при удалении сущности из мира.
      *
      * Вызывается из [NpcRenderEventHandler] при выгрузке сущности.

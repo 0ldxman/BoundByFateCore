@@ -53,6 +53,9 @@ class EntityViewWidget(
 
         val footY = ctx.cy + (effectiveScale * 0.6f).toInt()
 
+        org.slf4j.LoggerFactory.getLogger("BbfGui")
+            .info("[EntityViewWidget] render3D: entity=${e.javaClass.simpleName}, isNpc=${e is NpcEntity}")
+
         when (e) {
             is NpcEntity -> EntityGuiRenderer.renderNpc(
                 ctx      = ctx.drawContext,

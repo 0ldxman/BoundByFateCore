@@ -205,6 +205,8 @@ class AppearanceEditScreen(
 
         // ── NPC модель ────────────────────────────────────────────────────
         val npcCtx = rctx.child(npcX, modelY, modelW, modelH)
+        org.slf4j.LoggerFactory.getLogger("BbfGui")
+            .info("[AppearanceEditScreen] npcView.entity=${npcView.entity?.javaClass?.simpleName}, npcCtx=($npcX,$modelY,${modelW}x${modelH})")
         npcView.tick(npcCtx); npcView.render(npcCtx)
 
         // ── CharacterDummy ────────────────────────────────────────────────

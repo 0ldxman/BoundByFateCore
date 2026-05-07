@@ -200,14 +200,14 @@ object EntityGuiRenderer {
         entity.bodyYaw     = rotationY
         entity.prevBodyYaw = rotationY
 
-        // NpcModelRenderer управляет кешем ModelAttachment и pipeline
-        NpcModelRenderer.onRenderPre(
+        // renderForGui — минует frustum culling, который отсекает entity не в мире
+        NpcModelRenderer.renderForGui(
             entity      = entity,
-            entityYaw   = rotationY,
-            partialTick = client.tickDelta,
             poseStack   = matrices,
             buffer      = client.bufferBuilders.entityVertexConsumers,
-            packedLight = 0xF000F0
+            packedLight = 0xF000F0,
+            entityYaw   = rotationY,
+            partialTick = client.tickDelta
         )
 
         client.bufferBuilders.entityVertexConsumers.draw()
