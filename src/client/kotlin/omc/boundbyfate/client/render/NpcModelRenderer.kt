@@ -290,8 +290,17 @@ object NpcModelRenderer {
         entityYaw: Float,
         partialTick: Float
     ): Boolean {
-        val modelComponent = entity.getAttached(NpcModelComponent.TYPE) ?: return false
-        val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
+        val modelComponent = entity.getAttached(NpcModelComponent.TYPE)
+        if (modelComponent == null) {
+            logger.warn("[renderForGui] NpcModelComponent is null for ${entity.uuid}")
+            return false
+        }
+        val cached = getOrCreateAttachment(entity, modelComponent)
+        if (cached == null) {
+            logger.warn("[renderForGui] getOrCreateAttachment returned null for ${entity.uuid}")
+            return false
+        }
+        logger.info("[renderForGui] modelPath=${cached.modelPath}, animSystem=${cached.animationSystem != null}")
 
         val animSystem = cached.animationSystem
         if (animSystem != null) {

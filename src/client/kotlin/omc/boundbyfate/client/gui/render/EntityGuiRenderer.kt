@@ -201,7 +201,7 @@ object EntityGuiRenderer {
         entity.prevBodyYaw = rotationY
 
         // renderForGui — минует frustum culling, который отсекает entity не в мире
-        NpcModelRenderer.renderForGui(
+        val rendered = NpcModelRenderer.renderForGui(
             entity      = entity,
             poseStack   = matrices,
             buffer      = client.bufferBuilders.entityVertexConsumers,
@@ -209,6 +209,8 @@ object EntityGuiRenderer {
             entityYaw   = rotationY,
             partialTick = client.tickDelta
         )
+        org.slf4j.LoggerFactory.getLogger("BbfGui")
+            .info("[renderNpc] renderForGui=$rendered, entity=${entity.uuid}")
 
         client.bufferBuilders.entityVertexConsumers.draw()
         matrices.pop()
