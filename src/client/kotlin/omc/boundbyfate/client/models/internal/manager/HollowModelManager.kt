@@ -116,7 +116,13 @@ object HollowModelManager : IdentifiableResourceReloadListener {
         update: PreparedModelUpdate<AnimatedModel>,
     ) {
         val swap = ModelReloadCoordinator.resolveSwap(flow.value, update, AnimatedModel.EMPTY)
+        org.apache.logging.log4j.LogManager.getLogger().info(
+            "[HollowModelManager] publish: location=$location, swap.next.nodes=${swap.next.nodes.size}, flow.value before=${flow.value.nodes.size}"
+        )
         flow.value = swap.next
+        org.apache.logging.log4j.LogManager.getLogger().info(
+            "[HollowModelManager] publish: flow.value after=${flow.value.nodes.size}"
+        )
         swap.retired?.let(::destroyLater)
 
         if (!update.exists && location !in indexedModels) {

@@ -44,7 +44,13 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
     val materials get() = runtimeMaterials
     val pipeline: RenderPipeline
         get() {
-            ensureCompiled(flow.value)
+            val current = flow.value
+            if (compiledFor !== current) {
+                org.apache.logging.log4j.LogManager.getLogger().info(
+                    "[ModelAttachment] pipeline getter: compiledFor.nodes=${compiledFor?.let { it.nodes.size } ?: -1}, flow.value.nodes=${current.nodes.size} — recompiling"
+                )
+            }
+            ensureCompiled(current)
             return renderPipeline
         }
 
