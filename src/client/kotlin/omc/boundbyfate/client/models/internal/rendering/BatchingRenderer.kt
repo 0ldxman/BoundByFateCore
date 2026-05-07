@@ -79,6 +79,7 @@ class BatchingRenderer(
             .overlay(overlayCoords)
             .light(packedLight)
             .normal(normalMat, normal.x, normal.y, normal.z)
+            .next()
     }
 
     override fun destroy() {
