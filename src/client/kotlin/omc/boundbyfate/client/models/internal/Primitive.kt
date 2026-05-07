@@ -88,15 +88,8 @@ class Primitive(
     ) {
         // Create renderer only once — reuse existing instance to preserve VAO state
         if (renderer == null) {
-            renderer = if (useBatching) {
-                BatchingRenderer(this)
-            } else {
-                PipelineRenderer(this)
-            }
+            renderer = if (useBatching) BatchingRenderer(this) else PipelineRenderer(this)
         }
-        org.apache.logging.log4j.LogManager.getLogger().info(
-            "[Primitive] setupPipeline: useBatching=$useBatching, hasSkinning=$hasSkinning, isDynamic=${hasSkinning || morphTargets.isNotEmpty()}, renderer=${renderer?.javaClass?.simpleName}, staticRenderPath=$staticRenderPath"
-        )
         renderer?.setupPipeline(pipeline, skinGetter, matrixGetter, visibilityGetter)
     }
 

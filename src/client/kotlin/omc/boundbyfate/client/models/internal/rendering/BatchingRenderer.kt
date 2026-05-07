@@ -50,8 +50,7 @@ class BatchingRenderer(
             for (i in iterator) {
                 putVertex(matrixGetter, i, vertexConsumer, pose, normal, color, overlay, light, posArray, normArray, texArray)
             }
-        }
-    }
+        }    }
 
     private fun putVertex(
         getter: MatrixGetter,
@@ -75,7 +74,7 @@ class BatchingRenderer(
         consumer
             .vertex(pose, pos.x, pos.y, pos.z)
             .color(color.r, color.g, color.b, color.a)
-            .texture(texArray[index].x, 1f - texArray[index].y)
+            .texture(texArray[index].x, texArray[index].y)
             .overlay(overlayCoords)
             .light(packedLight)
             .normal(normalMat, normal.x, normal.y, normal.z)

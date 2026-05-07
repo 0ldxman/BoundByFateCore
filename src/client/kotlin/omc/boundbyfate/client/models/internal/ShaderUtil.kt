@@ -21,9 +21,7 @@ private val shaderLogger = LoggerFactory.getLogger("BbfShaderUtil")
  */
 fun ShaderProgram.getProgramRef(): Int = (this as ShaderProgramAccessor).bbf_getGlRef()
 
-inline fun drawWithShader(
-    body: () -> Unit,
-) {
+inline fun drawWithShader(body: () -> Unit) {
     body()
 }
 
@@ -42,13 +40,11 @@ val batchingRenderType: Function<Material, RenderLayer> = Function { material ->
 }
 
 /**
- * Retrieves the entity_cutout_no_cull shader program from GameRenderer.
+ * Retrieves the entity_cutout_no_cull shader program from GameRenderer via reflection.
  *
- * In loom 1.15+ with MC 1.20.1, the yarn-mapped method getRenderTypeEntityCutoutNoNullProgram()
- * is not accessible via direct call due to a remapping issue. We use reflection with the
- * intermediary name (method_34504) as a workaround.
- *
- * At runtime MC classes are in intermediary (not yarn), so method_34504 is the correct name.
+ * Direct call to getRenderTypeEntityCutoutNoNullProgram() fails to compile with loom 1.15+
+ * due to a remapping issue. We use the intermediary name (method_34504) instead.
+ * At runtime MC classes are in intermediary, so this name is stable.
  */
 private var shaderMethodResolved = false
 private var shaderMethod: java.lang.reflect.Method? = null
@@ -58,33 +54,20 @@ private fun resolveShaderMethod(): java.lang.reflect.Method? {
     shaderMethodResolved = true
 
     val gameRenderer = MinecraftClient.getInstance().gameRenderer
-    val allMethods = gameRenderer.javaClass.let { clazz ->
-        val methods = mutableListOf<java.lang.reflect.Method>()
-        var c: Class<*>? = clazz
+    val allMethods = buildList {
+        var c: Class<*>? = gameRenderer.javaClass
         while (c != null) {
-            methods.addAll(c.declaredMethods)
+            addAll(c.declaredMethods)
             c = c.superclass
         }
-        methods
     }
-
-    // Log all method names for debugging
-    shaderLogger.info("[ShaderUtil] GameRenderer methods ({}): {}",
-        gameRenderer.javaClass.name,
-        allMethods.filter { it.name.startsWith("method_3") || it.name.contains("EntityCutout", ignoreCase = true) }
-            .map { it.name }.take(20)
-    )
 
     val method = allMethods.firstOrNull { it.name == "method_34504" }
     if (method != null) {
         method.isAccessible = true
         shaderMethod = method
-        shaderLogger.info("[ShaderUtil] Resolved method_34504 successfully")
     } else {
-        shaderLogger.warn("[ShaderUtil] method_34504 NOT FOUND in GameRenderer. Available shader methods: {}",
-            allMethods.filter { it.returnType.name.contains("ShaderProgram", ignoreCase = true) || it.returnType.name.contains("class_5944") }
-                .map { "${it.name}:${it.returnType.simpleName}" }
-        )
+        shaderLogger.warn("method_34504 not found in GameRenderer — shader will be null")
     }
     return shaderMethod
 }
@@ -92,10 +75,9 @@ private fun resolveShaderMethod(): java.lang.reflect.Method? {
 private fun getEntityCutoutNoNullProgram(): ShaderProgram? {
     return try {
         val method = resolveShaderMethod() ?: return null
-        val gameRenderer = MinecraftClient.getInstance().gameRenderer
-        method.invoke(gameRenderer) as? ShaderProgram
+        method.invoke(MinecraftClient.getInstance().gameRenderer) as? ShaderProgram
     } catch (e: Exception) {
-        shaderLogger.error("[ShaderUtil] Failed to invoke shader method", e)
+        shaderLogger.error("Failed to invoke shader method", e)
         null
     }
 }

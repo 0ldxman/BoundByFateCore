@@ -47,7 +47,6 @@ class ListRenderPipeline : RenderPipeline {
     private val vaoCommands = ArrayList<Renderable>()
     private val commands = ArrayList<() -> Unit>()
     private val skinCommands = ArrayList<() -> Unit>()
-    private var renderEmptyLogCount = 0
 
     override fun addBatchedRenderable(action: Renderable) {
         batchedCommands.add(action)
@@ -74,9 +73,6 @@ class ListRenderPipeline : RenderPipeline {
         for (action in batchedCommands) action(context)
         if (instancedCommands.isNotEmpty()) renderInstanced(context)
         if (vaoCommands.isNotEmpty()) renderVAO(context)
-        if (vaoCommands.isEmpty() && instancedCommands.isEmpty() && batchedCommands.isEmpty() && renderEmptyLogCount++ < 3) {
-            org.apache.logging.log4j.LogManager.getLogger().warn("[ListRenderPipeline] render called but all command lists are empty! commands=${commands.size}")
-        }
     }
 
     override fun clear() {
