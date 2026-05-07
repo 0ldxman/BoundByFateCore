@@ -19,6 +19,7 @@ import omc.boundbyfate.client.models.internal.v2.ModelAttachment
 import omc.boundbyfate.client.models.internal.v2.calculateBounds
 import omc.boundbyfate.component.components.AnimLayerState
 import omc.boundbyfate.component.components.NpcModelComponent
+import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.entity.NpcEntity
 import org.joml.Quaternionf
 import org.slf4j.LoggerFactory
@@ -74,7 +75,10 @@ object NpcModelRenderer {
     ): Boolean {
         if (entity !is NpcEntity) return false
 
-        val modelComponent = entity.getAttached(NpcModelComponent.TYPE) ?: return false
+        // Получаем или создаём компонент на клиенте.
+        // getOrCreate нужен потому что на клиенте компонент может ещё не прийти по сети,
+        // но дефолтные значения (modelPath = "boundbyfate-core:models/entity/classic.gltf") уже корректны.
+        val modelComponent = entity.getOrCreate(NpcModelComponent.TYPE)
         val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
 
         // Frustum culling по реальным bounds модели.
@@ -205,11 +209,25 @@ object NpcModelRenderer {
         // Пайплайн использует GL_TEXTURE0 для основной текстуры модели.
         if (skinTexture != null) {
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
-                MinecraftClient.getInstance().textureManager.getTexture(skinTexture).glId
+                MinecraftClient.getInstance().textureManager.getTexture(skinTexture).getGlId()
             )
         }
 
-        attachment.pipeline.render(
+        // Устанавливаем шейдер явно перед рендером VAO/Instanced примитивов.
+        // PipelineRenderer.renderVAO() использует RenderSystem.getShader() — он должен быть не null.
+        // EmptyEntityRenderer не устанавливает шейдер сам, поэтому делаем это здесь.
+        val entityCutoutShader = omc.boundbyfate.client.models.internal.SHADER
+        if (entityCutoutShader != null) {
+            com.mojang.blaze3d.systems.RenderSystem.setShader { entityCutoutShader }
+        } else {
+            logger.warn("[renderModel] entityCutoutShader is null — VAO render will be skipped")
+        }
+
+        val pipeline = attachment.pipeline
+        val pipelineClass = pipeline.javaClass.simpleName
+        logger.debug("[renderModel] pipeline=$pipelineClass, shader=${entityCutoutShader != null}")
+
+        pipeline.render(
             RenderContext(
                 stack = poseStack,
                 source = buffer,

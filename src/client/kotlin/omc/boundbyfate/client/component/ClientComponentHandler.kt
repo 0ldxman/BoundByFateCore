@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.entity.LivingEntity
 import omc.boundbyfate.component.core.BbfComponents
 import omc.boundbyfate.component.core.getComponent
+import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.component.core.fromBytes
 import omc.boundbyfate.network.packet.s2c.SyncComponentPacket
 import org.slf4j.LoggerFactory
@@ -39,10 +40,7 @@ object ClientComponentHandler {
             return
         }
 
-        val component = entity.getComponent(entry.attachmentType) ?: run {
-            logger.warn("Component '${payload.componentId}' not found on entity ${entity.name.string}")
-            return
-        }
+        val component = entity.getOrCreate(entry.attachmentType)
 
         try {
             // Use the client's integrated server registries or the network handler's registry manager

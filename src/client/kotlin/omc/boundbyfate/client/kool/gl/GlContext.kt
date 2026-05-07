@@ -114,6 +114,20 @@ fun renderFrame() {
     KoolManager.context.renderFrame()
 }
 
+/**
+ * Обновляет только корутины и тайминги Kool без рендера сцен.
+ * Вызывается каждый кадр рендера мира для тика анимаций и матриц нод.
+ * Не трогает GL-состояние и не рендерит Kool-сцены.
+ */
+fun tickKool() {
+    val mc = net.minecraft.client.MinecraftClient.getInstance()
+    val deltaT = mc.tickDelta / 20f
+    KoolHooks.setDeltaT(deltaT)
+    KoolHooks.addGameTime(deltaT.toDouble())
+    KoolHooks.incrementFrameCount()
+    KoolHooks.executeCoroutineTasks()
+}
+
 fun Scene.render(recordState: Boolean = true) {
     if (recordState) GlContext.setupState()
     assert(this in KoolManager.context.scenes) { "Scene ${this.name} must be added in KoolManager.context" }

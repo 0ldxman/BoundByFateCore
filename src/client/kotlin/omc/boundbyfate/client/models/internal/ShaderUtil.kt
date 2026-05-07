@@ -39,10 +39,10 @@ val batchingRenderType: Function<Material, RenderLayer> = Function { material ->
 }
 
 val SHADER: ShaderProgram?
-    get() = MinecraftClient.getInstance().gameRenderer.getProgram("rendertype_entity_cutout")
+    get() = MinecraftClient.getInstance().gameRenderer.getRenderTypeEntityCutoutNoNullProgram()
 
 val INSTANCED_SHADER: ShaderProgram?
-    get() = MinecraftClient.getInstance().gameRenderer.getProgram("rendertype_entity_cutout")
+    get() = MinecraftClient.getInstance().gameRenderer.getRenderTypeEntityCutoutNoNullProgram()
 
 const val COLOR_MAP_INDEX = GL13.GL_TEXTURE0
 const val NORMAL_MAP_INDEX = GL13.GL_TEXTURE1

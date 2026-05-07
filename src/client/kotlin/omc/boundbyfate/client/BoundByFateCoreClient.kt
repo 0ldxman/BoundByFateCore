@@ -22,6 +22,9 @@ class BoundByFateCoreClient : ClientModInitializer {
         omc.boundbyfate.client.render.NpcEntityRendererRegistry.register()
         omc.boundbyfate.client.render.NpcRenderEventHandler.register()
 
+        // Синхронизация компонентов с сервера
+        omc.boundbyfate.client.component.ClientComponentHandler.register()
+
         // Кейбиндинги — инициализируем объект, чтобы зарегистрировать все кейбиндинги
         omc.boundbyfate.client.keybind.BbfKeybinds.let { }
 
@@ -43,6 +46,21 @@ class BoundByFateCoreClient : ClientModInitializer {
                     logger.info("KoolManager and model system initialized")
                 } catch (e: Exception) {
                     logger.error("Failed to initialize KoolManager", e)
+                }
+            }
+        }
+
+        // Обновляем Kool-контекст каждый кадр рендера.
+        // Это нужно для: обновления матриц трансформации нод, тика анимаций через AnimationDispatcher,
+        // и прокрутки корутин KoolManager.
+        // Без этого вызова анимации не тикают и матрицы нод не обновляются.
+        // Используем BEFORE_ENTITIES чтобы матрицы были актуальны до рендера сущностей.
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.BEFORE_ENTITIES.register { context ->
+            if (koolInitialized) {
+                try {
+                    omc.boundbyfate.client.kool.gl.tickKool()
+                } catch (e: Exception) {
+                    logger.error("Error in Kool tickKool", e)
                 }
             }
         }
