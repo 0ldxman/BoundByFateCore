@@ -51,6 +51,12 @@ open class RuntimeNode(
 
     override fun collectCommands(pipeline: RenderPipeline) {
         super.collectCommands(pipeline)
+        val primitiveCount = definition.mesh?.primitives?.size ?: 0
+        if (primitiveCount > 0 || definition.children.isNotEmpty()) {
+            org.apache.logging.log4j.LogManager.getLogger().info(
+                "[RuntimeNode] collectCommands: node='$name', mesh=${definition.mesh != null}, primitives=$primitiveCount, children=${definition.children.size}"
+            )
+        }
         definition.mesh?.primitives?.forEach { primitive ->
             primitive.setupPipeline(pipeline, { definition.skin!!.compute(globalMatrix, jointGetter) }, ::globalMatrix, ::isVisible)
         }
