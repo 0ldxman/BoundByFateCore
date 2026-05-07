@@ -117,7 +117,9 @@ object EntityGuiRenderer {
         val matrices = ctx.matrices
         matrices.push()
         matrices.translate(x.toFloat(), y.toFloat(), 50f)
-        matrices.scale(scale, -scale, scale)  // -scale по Y — стандартный MC GUI рендер
+        matrices.scale(scale, scale, scale)
+        // Инвертируем Z чтобы модель смотрела на нас (стандартный MC GUI подход)
+        matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(180f))
 
         // Наклон по X
         if (rotationX != 0f) {

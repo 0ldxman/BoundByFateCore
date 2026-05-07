@@ -101,6 +101,8 @@ class AppearanceEditScreen(
             if (effectiveNpcSkin.isNotEmpty()) {
                 modelComp.skinId = effectiveNpcSkin
             }
+            org.slf4j.LoggerFactory.getLogger("BbfGui")
+                .info("[AppearanceEditScreen] NPC preview created, modelPath=${modelComp.modelPath}, uuid=${npc.uuid}")
         }
     }
 
