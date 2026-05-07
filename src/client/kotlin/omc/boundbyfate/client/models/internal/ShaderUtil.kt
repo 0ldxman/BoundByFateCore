@@ -38,11 +38,31 @@ val batchingRenderType: Function<Material, RenderLayer> = Function { material ->
     }
 }
 
+/**
+ * Retrieves the entity_cutout_no_cull shader program from GameRenderer.
+ *
+ * In loom 1.15+ with MC 1.20.1, the yarn-mapped method getRenderTypeEntityCutoutNoNullProgram()
+ * is not accessible via direct call due to a remapping issue. We use reflection with the
+ * intermediary name (method_34504) as a workaround.
+ */
+private fun getEntityCutoutNoNullProgram(): ShaderProgram? {
+    return try {
+        val gameRenderer = MinecraftClient.getInstance().gameRenderer
+        // intermediary name for getRenderTypeEntityCutoutNoNullProgram in 1.20.1
+        val method = gameRenderer.javaClass.getMethod("method_34504")
+        method.isAccessible = true
+        method.invoke(gameRenderer) as? ShaderProgram
+    } catch (_: Exception) {
+        // fallback: return whatever shader is currently active
+        RenderSystem.getShader()
+    }
+}
+
 val SHADER: ShaderProgram?
-    get() = MinecraftClient.getInstance().gameRenderer.getRenderTypeEntityCutoutNoNullProgram()
+    get() = getEntityCutoutNoNullProgram()
 
 val INSTANCED_SHADER: ShaderProgram?
-    get() = MinecraftClient.getInstance().gameRenderer.getRenderTypeEntityCutoutNoNullProgram()
+    get() = getEntityCutoutNoNullProgram()
 
 const val COLOR_MAP_INDEX = GL13.GL_TEXTURE0
 const val NORMAL_MAP_INDEX = GL13.GL_TEXTURE1
