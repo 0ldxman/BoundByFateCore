@@ -86,11 +86,17 @@ object NpcModelRenderer {
         // getOrCreate нужен потому что на клиенте компонент может ещё не прийти по сети,
         // но дефолтные значения (modelPath = "boundbyfate-core:models/entity/classic.gltf") уже корректны.
         val modelComponent = entity.getOrCreate(NpcModelComponent.TYPE)
-        val cached = getOrCreateAttachment(entity, modelComponent) ?: return false
+        val cached = getOrCreateAttachment(entity, modelComponent)
+        if (cached == null) {
+            if (renderLogCount <= 3) logger.info("[onRenderPre] getOrCreateAttachment returned null for {}", entity.uuid)
+            return false
+        }
 
         // Frustum culling по реальным bounds модели.
-        // MC culling использует hitbox сущности (0.6×1.8), модель может быть крупнее.
-        if (isCulled(cached.attachment, entity, partialTick)) return true
+        if (isCulled(cached.attachment, entity, partialTick)) {
+            if (renderLogCount <= 3) logger.info("[onRenderPre] NPC {} is culled", entity.uuid)
+            return true
+        }
 
         // Синхронизируем анимационные слои из компонента
         val animSystem = cached.animationSystem
@@ -232,7 +238,7 @@ object NpcModelRenderer {
 
         val pipeline = attachment.pipeline
         val pipelineClass = pipeline.javaClass.simpleName
-        logger.debug("[renderModel] pipeline=$pipelineClass, shader=${entityCutoutShader != null}")
+        logger.info("[renderModel] pipeline=$pipelineClass, shader=${entityCutoutShader != null}, entity=${entity.uuid}")
 
         pipeline.render(
             RenderContext(
