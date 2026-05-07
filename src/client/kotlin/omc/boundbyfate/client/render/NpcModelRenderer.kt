@@ -75,6 +75,8 @@ object NpcModelRenderer {
     ): Boolean {
         if (entity !is NpcEntity) return false
 
+        logger.debug("[onRenderPre] NPC {} render called", entity.uuid)
+
         // Получаем или создаём компонент на клиенте.
         // getOrCreate нужен потому что на клиенте компонент может ещё не прийти по сети,
         // но дефолтные значения (modelPath = "boundbyfate-core:models/entity/classic.gltf") уже корректны.
