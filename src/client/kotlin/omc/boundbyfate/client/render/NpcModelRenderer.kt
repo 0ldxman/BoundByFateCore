@@ -239,6 +239,11 @@ object NpcModelRenderer {
         val pipelineClass = pipeline.javaClass.simpleName
         logger.info("[renderModel] pipeline=$pipelineClass, shader=${entityCutoutShader != null}, entity=${entity.uuid}")
 
+        // Log pipeline command counts for debugging
+        if (pipeline is omc.boundbyfate.client.models.internal.rendering.ListRenderPipeline && renderLogCount <= 5) {
+            logger.info("[renderModel] nodes=${attachment.nodes.size}, triangles=${attachment.triangles}, model=${attachment.model.javaClass.simpleName}")
+        }
+
         pipeline.render(
             RenderContext(
                 stack = poseStack,

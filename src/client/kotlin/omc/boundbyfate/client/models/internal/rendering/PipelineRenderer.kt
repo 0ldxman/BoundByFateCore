@@ -404,6 +404,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         shader: ShaderProgram,
         layoutMode: InstancedShaderLayoutMode = InstancedShaderLayoutMode.FIXED,
     ) {
+        if (vao == -1) init()  // lazy GL init on render thread
         if (instances.isEmpty()) return
 
         val drawInstances = if (isTranslucent) instances.sortedByDescending(SubmittedInstance::sortKey) else instances
@@ -427,6 +428,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     }
 
     fun renderCapturedInstance(instance: SubmittedInstance, shader: ShaderProgram) {
+        if (vao == -1) init()  // lazy GL init on render thread
         applyMaterial(shader, primitive.material)
 
         GL33.glVertexAttribI2i(3, instance.overlay and FFFF, instance.overlay shr 16 and FFFF)
@@ -547,6 +549,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     }
 
     private fun RenderContext.renderVAO(node: MatrixGetter) {
+        if (vao == -1) init()  // lazy GL init on render thread
         val shader = RenderSystem.getShader() ?: return
         val matrix = node()
 

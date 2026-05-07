@@ -58,10 +58,12 @@ class Primitive(
             }
         }
 
-        renderer = if (useBatching) {
-            BatchingRenderer(this)
-        } else {
-            PipelineRenderer(this)
+        if (renderer == null) {
+            renderer = if (useBatching) {
+                BatchingRenderer(this)
+            } else {
+                PipelineRenderer(this)
+            }
         }
 
         renderer?.init()
@@ -84,7 +86,14 @@ class Primitive(
         matrixGetter: MatrixGetter,
         visibilityGetter: VisibilityGetter,
     ) {
-        init()
+        // NOTE: init() is NOT called here because setupPipeline may be called off the render thread.
+        // Instead, init() is called lazily in the first actual draw call (renderVAO/renderInstanced)
+        // which always runs on the render thread.
+        renderer = if (useBatching) {
+            BatchingRenderer(this)
+        } else {
+            PipelineRenderer(this)
+        }
         renderer?.setupPipeline(pipeline, skinGetter, matrixGetter, visibilityGetter)
     }
 
