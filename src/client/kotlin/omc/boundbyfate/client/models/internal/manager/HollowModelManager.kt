@@ -84,8 +84,11 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     private fun loadIntoFlow(location: Identifier, flow: MutableStateFlow<AnimatedModel>) {
         scopeAsync {
             try {
+                org.apache.logging.log4j.LogManager.getLogger().info("[HollowModelManager] Loading model: $location")
                 val loaded = loadModel(location)
+                org.apache.logging.log4j.LogManager.getLogger().info("[HollowModelManager] Loaded model: $location, nodes=${loaded.nodes.size}, animations=${loaded.animations.size}")
                 publish(location, flow, PreparedModelUpdate(exists = true, loaded = Result.success(loaded)))
+                org.apache.logging.log4j.LogManager.getLogger().info("[HollowModelManager] Published model: $location, flow.value nodes=${flow.value.nodes.size}")
             } catch (e: Exception) {
                 org.apache.logging.log4j.LogManager.getLogger().error("Can't reload model $location", e)
             }
