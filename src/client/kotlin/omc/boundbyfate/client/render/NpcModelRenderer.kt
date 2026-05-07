@@ -65,6 +65,8 @@ object NpcModelRenderer {
      *
      * @return true если рендер был выполнен и стандартный нужно отменить
      */
+    private var renderLogCount = 0
+
     fun onRenderPre(
         entity: Entity,
         entityYaw: Float,
@@ -75,7 +77,10 @@ object NpcModelRenderer {
     ): Boolean {
         if (entity !is NpcEntity) return false
 
-        logger.debug("[onRenderPre] NPC {} render called", entity.uuid)
+        if (renderLogCount < 3) {
+            renderLogCount++
+            logger.info("[onRenderPre] NPC {} render called (count={})", entity.uuid, renderLogCount)
+        }
 
         // Получаем или создаём компонент на клиенте.
         // getOrCreate нужен потому что на клиенте компонент может ещё не прийти по сети,
