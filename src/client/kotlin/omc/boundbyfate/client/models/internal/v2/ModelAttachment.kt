@@ -50,7 +50,12 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
     init {
         ensureCompiled(flow.value)
-        flow.onEach { ensureCompiled(it) }.launchIn(MinecraftClient.getInstance().coroutineScope)
+        // Subscribe to model updates — recompile on render thread via pipeline getter.
+        // We don't call ensureCompiled directly here because it creates GL resources
+        // (VAOs, VBOs) that must be initialized on the render thread.
+        // The pipeline getter calls ensureCompiled(flow.value) every frame,
+        // so it will pick up the new model automatically.
+        flow.onEach { /* trigger recompile on next pipeline getter call */ }.launchIn(MinecraftClient.getInstance().coroutineScope)
     }
 
     val triangles get() =
