@@ -98,12 +98,14 @@ object EntityGuiRenderer {
         val prevHeadYaw   = entity.headYaw
         val prevPitch     = entity.pitch
         val prevPrevYaw   = entity.prevYaw
+        val prevPrevBodyYaw = entity.prevBodyYaw
 
-        entity.yaw     = rotationY
-        entity.bodyYaw = rotationY
-        entity.headYaw = rotationY + headYaw
-        entity.pitch   = headPitch
-        entity.prevYaw = rotationY
+        entity.yaw         = rotationY
+        entity.bodyYaw     = rotationY
+        entity.prevBodyYaw = rotationY
+        entity.headYaw     = rotationY + headYaw
+        entity.pitch       = headPitch
+        entity.prevYaw     = rotationY
 
         // Настраиваем освещение
         lighting.apply()
@@ -146,11 +148,12 @@ object EntityGuiRenderer {
         DiffuseLighting.enableGuiDepthLighting()
 
         // Восстанавливаем состояние entity
-        entity.yaw     = prevYaw
-        entity.bodyYaw = prevBodyYaw
-        entity.headYaw = prevHeadYaw
-        entity.pitch   = prevPitch
-        entity.prevYaw = prevPrevYaw
+        entity.yaw         = prevYaw
+        entity.bodyYaw     = prevBodyYaw
+        entity.prevBodyYaw = prevPrevBodyYaw
+        entity.headYaw     = prevHeadYaw
+        entity.pitch       = prevPitch
+        entity.prevYaw     = prevPrevYaw
     }
 
     // ── Кеш ModelAttachment для GUI превью ───────────────────────────────
@@ -186,10 +189,17 @@ object EntityGuiRenderer {
 
         val modelComponent = entity.getAttached(
             omc.boundbyfate.component.components.NpcModelComponent.TYPE
-        ) ?: return
+        )
+        if (modelComponent == null) {
+            org.slf4j.LoggerFactory.getLogger("BbfGui")
+                .warn("[renderNpc] NpcModelComponent is null for entity ${entity.uuid}")
+            return
+        }
 
         val client = MinecraftClient.getInstance()
         val modelPath = modelComponent.modelPath
+        org.slf4j.LoggerFactory.getLogger("BbfGui")
+            .info("[renderNpc] Rendering NPC with model: $modelPath")
 
         // Получаем или создаём кешированный ModelAttachment
         val attachment = npcAttachmentCache.getOrPut(modelPath) {

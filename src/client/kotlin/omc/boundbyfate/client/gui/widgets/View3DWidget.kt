@@ -98,11 +98,17 @@ abstract class View3DWidget(
     fun updateDrag(mouseX: Float) {
         if (!isDragging || !draggable) return
         val delta = mouseX - dragStartX
+        // snap — без анимации, иначе lerp к target создаёт "возврат"
         rotYAnim.snap(dragStartRotY + delta * 0.5f)
     }
 
     /** Завершает drag. Вызывается из экрана при mouseReleased. */
-    fun endDrag() { isDragging = false }
+    fun endDrag() {
+        if (!isDragging) return
+        isDragging = false
+        // Фиксируем текущее положение как новый target — без возврата к rotationY
+        rotYAnim.target = rotYAnim.current
+    }
 
     /** Сбрасывает поворот к начальному значению с анимацией. */
     fun resetRotation() { rotYAnim.target = rotationY }
