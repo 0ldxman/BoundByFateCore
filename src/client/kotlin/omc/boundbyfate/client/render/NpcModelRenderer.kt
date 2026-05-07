@@ -255,6 +255,11 @@ object NpcModelRenderer {
             )
         )
 
+        // Flush batched geometry — VertexConsumerProvider.Immediate buffers must be drawn explicitly
+        if (buffer is net.minecraft.client.render.VertexConsumerProvider.Immediate) {
+            buffer.draw()
+        }
+
         poseStack.pop()
     }
 
