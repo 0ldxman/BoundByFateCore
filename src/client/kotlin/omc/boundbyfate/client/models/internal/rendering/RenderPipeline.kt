@@ -37,6 +37,7 @@ data class RenderContext(
     val overlay: Int,
     val allowInstancing: Boolean = false,
     val openedBatchedRenderTypes: MutableSet<RenderLayer>? = null,
+    val shader: net.minecraft.client.gl.ShaderProgram? = null,
 )
 
 

@@ -250,7 +250,8 @@ object NpcModelRenderer {
                 source = buffer,
                 light = packedLight,
                 overlay = overlay,
-                allowInstancing = false
+                allowInstancing = false,
+                shader = entityCutoutShader
             )
         )
 

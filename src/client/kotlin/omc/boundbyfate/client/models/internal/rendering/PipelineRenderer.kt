@@ -550,7 +550,8 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
     private fun RenderContext.renderVAO(node: MatrixGetter) {
         if (vao == -1) init()  // lazy GL init on render thread
-        val shader = RenderSystem.getShader() ?: return
+        // Use shader from context (set by NpcModelRenderer) or fall back to RenderSystem
+        val shader = this.shader ?: RenderSystem.getShader() ?: return
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
