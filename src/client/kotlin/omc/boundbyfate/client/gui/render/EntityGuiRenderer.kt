@@ -200,18 +200,27 @@ object EntityGuiRenderer {
 
         val client = MinecraftClient.getInstance()
         val modelPath = modelComponent.modelPath
-        org.slf4j.LoggerFactory.getLogger("BbfGui")
-            .info("[renderNpc] Rendering NPC with model: $modelPath")
 
         // Получаем или создаём кешированный ModelAttachment
+        val isNew = !npcAttachmentCache.containsKey(modelPath)
         val attachment = npcAttachmentCache.getOrPut(modelPath) {
             val flow = omc.boundbyfate.client.models.internal.manager.HollowModelManager
                 .getOrCreate(modelPath.rl)
             omc.boundbyfate.client.models.internal.v2.ModelAttachment(flow, null)
         }
+        if (isNew) {
+            org.slf4j.LoggerFactory.getLogger("BbfGui")
+                .info("[renderNpc] Created attachment for: $modelPath")
+        }
 
         // Если модель ещё не загружена — пропускаем кадр, попробуем в следующем
-        if (attachment.model.scenes.isEmpty()) return
+        if (attachment.model.scenes.isEmpty()) {
+            org.slf4j.LoggerFactory.getLogger("BbfGui")
+                .info("[renderNpc] Model not loaded yet: $modelPath")
+            return
+        }
+        org.slf4j.LoggerFactory.getLogger("BbfGui")
+            .info("[renderNpc] Rendering model: $modelPath, triangles=${attachment.triangles}")
 
         RenderSystem.enableBlend()
         RenderSystem.defaultBlendFunc()
