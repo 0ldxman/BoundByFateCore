@@ -88,13 +88,7 @@ class AppearanceEditScreen(
                 if (draft.modelType == ModelType.ALEX) ModelType.ALEX else ModelType.STEVE
             )
         }
-        characterDummy = CharacterDummy(
-            world,
-            draft.characterId ?: UUID.randomUUID(),
-            draft.skinId,
-            draft.modelType.name.lowercase(),
-            DummyAnimationType.STAND_IDLE
-        )
+        characterDummy = makeDummy()
 
         // NpcEntity — создаём локально для превью, не добавляем в мир
         npcPreview = NpcEntity(NpcEntityRegistry.NPC, world).also { npc ->
@@ -158,16 +152,28 @@ class AppearanceEditScreen(
 
     /** Пересоздаёт CharacterDummy после смены скина/модели. */
     private fun rebuildDummy() {
+        characterDummy = makeDummy()
+        dummyView.entity = characterDummy
+    }
+
+    /** Создаёт CharacterDummy с правильно инициализированными yaw полями. */
+    private fun makeDummy(): CharacterDummy {
         val client = MinecraftClient.getInstance()
-        val world  = client.world ?: return
-        characterDummy = CharacterDummy(
+        val world  = client.world ?: return characterDummy!!
+        return CharacterDummy(
             world,
             draft.characterId ?: UUID.randomUUID(),
             draft.skinId,
             draft.modelType.name.lowercase(),
             DummyAnimationType.STAND_IDLE
-        )
-        dummyView.entity = characterDummy
+        ).also { dummy ->
+            // Все yaw поля в 180f — иначе интерполяция от 0 к 180 даёт вращение
+            dummy.yaw         = 180f
+            dummy.prevYaw     = 180f
+            dummy.bodyYaw     = 180f
+            dummy.prevBodyYaw = 180f
+            dummy.headYaw     = 180f
+        }
     }
 
     // ── Рендер ────────────────────────────────────────────────────────────
