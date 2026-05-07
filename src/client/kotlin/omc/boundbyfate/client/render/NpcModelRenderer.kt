@@ -92,11 +92,10 @@ object NpcModelRenderer {
             return false
         }
 
-        // Frustum culling по реальным bounds модели.
-        if (isCulled(cached.attachment, entity, partialTick)) {
-            if (renderLogCount <= 3) logger.info("[onRenderPre] NPC {} is culled", entity.uuid)
-            return true
-        }
+        // Frustum culling отключён — используем стандартный MC culling по hitbox.
+        // Кастомный culling по bounds модели давал ложные срабатывания из-за
+        // несоответствия координатных систем модели и мира.
+        // if (isCulled(cached.attachment, entity, partialTick)) return true
 
         // Синхронизируем анимационные слои из компонента
         val animSystem = cached.animationSystem
