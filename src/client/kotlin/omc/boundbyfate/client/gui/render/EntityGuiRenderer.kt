@@ -158,24 +158,13 @@ object EntityGuiRenderer {
         entity.prevYaw     = prevPrevYaw
     }
 
-    // ── Кеш ModelAttachment для GUI превью ───────────────────────────────
-
-    private val npcAttachmentCache = mutableMapOf<String, omc.boundbyfate.client.models.internal.v2.ModelAttachment>()
+    // ── Рендер NPC через NpcModelRenderer ────────────────────────────────
 
     /**
      * Рисует [NpcEntity] с GLTF моделью в GUI.
      *
-     * Работает как для entity в мире, так и для локальных превью (не добавленных в мир).
-     * Кеширует [ModelAttachment] по пути модели — не создаёт новый каждый кадр.
-     *
-     * @param ctx контекст рисования
-     * @param entity NPC entity с NpcModelComponent
-     * @param x центр по X
-     * @param y нижняя точка по Y
-     * @param scale масштаб
-     * @param rotationY поворот по Y (градусы)
-     * @param rotationX наклон по X (градусы)
-     * @param alpha прозрачность
+     * Использует [NpcModelRenderer.onRenderPre] напрямую — тот же путь что и для entity в мире.
+     * Матрица настраивается для GUI контекста (translate + scale + rotate).
      */
     fun renderNpc(
         ctx: DrawContext,
@@ -189,38 +178,7 @@ object EntityGuiRenderer {
     ) {
         if (alpha < 0.005f) return
 
-        val modelComponent = entity.getAttached(
-            omc.boundbyfate.component.components.NpcModelComponent.TYPE
-        )
-        if (modelComponent == null) {
-            org.slf4j.LoggerFactory.getLogger("BbfGui")
-                .warn("[renderNpc] NpcModelComponent is null for entity ${entity.uuid}")
-            return
-        }
-
         val client = MinecraftClient.getInstance()
-        val modelPath = modelComponent.modelPath
-
-        // Получаем или создаём кешированный ModelAttachment
-        val isNew = !npcAttachmentCache.containsKey(modelPath)
-        val attachment = npcAttachmentCache.getOrPut(modelPath) {
-            val flow = omc.boundbyfate.client.models.internal.manager.HollowModelManager
-                .getOrCreate(modelPath.rl)
-            omc.boundbyfate.client.models.internal.v2.ModelAttachment(flow, null)
-        }
-        if (isNew) {
-            org.slf4j.LoggerFactory.getLogger("BbfGui")
-                .info("[renderNpc] Created attachment for: $modelPath")
-        }
-
-        // Если модель ещё не загружена — пропускаем кадр, попробуем в следующем
-        if (attachment.model.scenes.isEmpty()) {
-            org.slf4j.LoggerFactory.getLogger("BbfGui")
-                .info("[renderNpc] Model not loaded yet: $modelPath")
-            return
-        }
-        org.slf4j.LoggerFactory.getLogger("BbfGui")
-            .info("[renderNpc] Rendering model: $modelPath, triangles=${attachment.triangles}")
 
         RenderSystem.enableBlend()
         RenderSystem.defaultBlendFunc()
@@ -228,38 +186,31 @@ object EntityGuiRenderer {
 
         DiffuseLighting.enableGuiDepthLighting()
 
-        // Биндим скин если есть
-        val effectiveSkin = modelComponent.skinId
-        if (effectiveSkin.isNotEmpty()) {
-            omc.boundbyfate.client.skin.ClientSkinManager.ensureLoaded(effectiveSkin)
-            val skinTex = omc.boundbyfate.client.skin.ClientSkinManager.getTexture(effectiveSkin)
-            if (skinTex != null) {
-                RenderSystem.setShaderTexture(0, client.textureManager.getTexture(skinTex).glId)
-            }
-        }
-
         val matrices = ctx.matrices
         matrices.push()
         matrices.translate(x.toFloat(), y.toFloat(), 50f)
-        matrices.scale(scale, -scale, scale)
-
+        matrices.scale(scale, scale, scale)
+        // Поворот Z на 180° — стандартный GUI трюк (модель "стоит" на ногах)
+        matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(180f))
         if (rotationX != 0f) {
             matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX))
         }
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY))
 
-        val immediate = client.bufferBuilders.entityVertexConsumers
-        attachment.pipeline.render(
-            omc.boundbyfate.client.models.internal.rendering.RenderContext(
-                stack = matrices,
-                source = immediate,
-                light = 0xF000F0,
-                overlay = net.minecraft.client.render.OverlayTexture.DEFAULT_UV,
-                allowInstancing = false
-            )
+        // Устанавливаем yaw чтобы NpcModelRenderer применил правильный поворот
+        entity.bodyYaw     = rotationY
+        entity.prevBodyYaw = rotationY
+
+        // NpcModelRenderer управляет кешем ModelAttachment и pipeline
+        NpcModelRenderer.onRenderPre(
+            entity      = entity,
+            entityYaw   = rotationY,
+            partialTick = client.tickDelta,
+            poseStack   = matrices,
+            buffer      = client.bufferBuilders.entityVertexConsumers,
+            packedLight = 0xF000F0
         )
-        immediate.draw()
 
+        client.bufferBuilders.entityVertexConsumers.draw()
         matrices.pop()
 
         if (alpha < 1f) RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
