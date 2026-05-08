@@ -8,6 +8,7 @@ import omc.boundbyfate.client.models.internal.animations.Animation
 class AnimationInstance(private val animation: Animation) {
     val name = animation.name
     private var reversed = false
+    private var logCount = 0
 
     var wrapMode = WrapMode.Once
     var overrides = Overrides(translation = false, rotation = false, scale = false)
@@ -27,6 +28,11 @@ class AnimationInstance(private val animation: Animation) {
         if (weight == 0f) return
 
         time += speed * dt
+        if (logCount++ < 3) {
+            org.apache.logging.log4j.LogManager.getLogger().info(
+                "[AnimationInstance] update: name=$name, weight=$weight, time=$time, dt=$dt, nodes=${animation.nodes.size}"
+            )
+        }
         updatePlaying(model)
     }
 
@@ -41,17 +47,17 @@ class AnimationInstance(private val animation: Animation) {
             channels.translation?.let {
                 val translation = Vec3f.Companion.ZERO.mix(it.compute(time), weight)
                 if (overrides.translation) transform.translation.set(translation)
-                else transform.translate(translation)
+                else transform.translation.set(transform.translation + translation)
             }
             channels.rotation?.let {
                 val rotation = QuatF.Companion.IDENTITY.mix(it.compute(time), weight)
                 if (overrides.rotation) transform.rotation.set(rotation)
-                else transform.rotate(rotation)
+                else transform.rotation.set(transform.rotation.mul(rotation, de.fabmax.kool.math.MutableQuatF()))
             }
             channels.scale?.let {
                 val scale = Vec3f.Companion.ONES.mix(it.compute(time), weight)
                 if (overrides.scale) transform.scale.set(scale)
-                else transform.scale(scale)
+                else transform.scale.set(transform.scale * scale)
             }
         }
     }
