@@ -3,6 +3,7 @@
 import de.fabmax.kool.math.MutableMat4f
 import de.fabmax.kool.math.MutableQuatF
 import de.fabmax.kool.math.QuatF
+import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.scene.TrsTransformF
 
 open class NodeDefinition(

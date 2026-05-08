@@ -74,7 +74,7 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Vec3Step(
                 keys,
-                outputData.asVec3f().map { it - node.globalBaseTranslation }.toTypedArray()
+                outputData.asVec3f().map { Vec3f(it - node.globalBaseTranslation) }.toTypedArray()
             )
 
             AnimationTarget.ROTATION -> QuatStep(
@@ -106,7 +106,7 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Linear(
                 keys,
-                outputData.asVec3f().map { it - node.globalBaseTranslation }.toTypedArray()
+                outputData.asVec3f().map { Vec3f(it - node.globalBaseTranslation) }.toTypedArray()
             )
 
             AnimationTarget.ROTATION -> SphericalLinear(
