@@ -47,7 +47,10 @@ data class GltfMaterial(
         if(specularTextureDeferred != null)
             material.specularTexture = specularTextureDeferred
 
-        material.blend = if(this@GltfMaterial.alphaMode == "OPAQUE") Material.Blend.OPAQUE else Material.Blend.BLEND
+        material.blend = when (this@GltfMaterial.alphaMode) {
+            "BLEND" -> Material.Blend.BLEND
+            else -> Material.Blend.OPAQUE  // OPAQUE and MASK both use cutout rendering
+        }
         material.doubleSided = this@GltfMaterial.doubleSided
 
         return material
