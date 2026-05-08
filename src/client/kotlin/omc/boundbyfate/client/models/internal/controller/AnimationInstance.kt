@@ -5,6 +5,7 @@ import de.fabmax.kool.math.Vec3f
 import de.fabmax.kool.scene.TrsTransformF
 import omc.boundbyfate.client.models.internal.animations.Animation
 import org.slf4j.LoggerFactory
+import kotlin.math.absoluteValue
 
 class AnimationInstance(private val animation: Animation) {
     val name = animation.name
@@ -44,6 +45,16 @@ class AnimationInstance(private val animation: Animation) {
 
             channels.translation?.let {
                 val delta = it.compute(time)
+                
+                // Фильтруем аномально большие translation дельты (>0.5 блока по любой оси)
+                // Это защита от неправильных keyframes в GLTF для container нод
+                val isAnomalous = delta.x.absoluteValue > 0.5f || delta.y.absoluteValue > 0.5f || delta.z.absoluteValue > 0.5f
+                
+                if (isAnomalous) {
+                    if (doDebug) logger.warn("[AnimInst]   node=$node SKIPPED anomalous translation delta=(${delta.x},${delta.y},${delta.z})")
+                    return@let
+                }
+                
                 val translation = Vec3f.ZERO.mix(delta, weight)
                 if (doDebug) logger.info("[AnimInst]   node=$node translation delta=(${delta.x},${delta.y},${delta.z}) applied=(${translation.x},${translation.y},${translation.z})")
                 if (overrides.translation) transform.translation.set(translation)
