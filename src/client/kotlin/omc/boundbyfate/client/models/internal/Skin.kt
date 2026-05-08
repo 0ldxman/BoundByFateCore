@@ -27,10 +27,13 @@ class Skin(
             cache[i] = MutableMat4f(inverseRoot).mul(skinMatrix).transpose()
         }
 
-        if (skinLogCount++ < 10) {
-            val m = cache[0] as? MutableMat4f
+        skinLogCount++
+        if (skinLogCount in 50..55) {
+            val m0 = cache[0] as? MutableMat4f
+            val m1 = cache[1] as? MutableMat4f
+            // Log diagonal elements to detect rotation changes
             org.apache.logging.log4j.LogManager.getLogger().info(
-                "[Skin] compute #$skinLogCount: joints=${jointsIds.size}, cache[0] t=(${r(m?.m30)},${r(m?.m31)},${r(m?.m32)}) cache[1] t=(${r((cache[1] as? MutableMat4f)?.m30)},${r((cache[1] as? MutableMat4f)?.m31)},${r((cache[1] as? MutableMat4f)?.m32)})"
+                "[Skin] compute #$skinLogCount: cache[0] m00=${r(m0?.m00)} m11=${r(m0?.m11)} m22=${r(m0?.m22)} t=(${r(m0?.m30)},${r(m0?.m31)},${r(m0?.m32)})"
             )
         }
 
