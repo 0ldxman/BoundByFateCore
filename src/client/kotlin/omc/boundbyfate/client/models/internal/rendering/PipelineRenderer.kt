@@ -345,10 +345,12 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         matrixGetter: MatrixGetter,
         visibilityGetter: VisibilityGetter
     ) {
-        if (isDynamic && deformer != null) {
+        if (isDynamic) {
             pipeline.addSkinnable {
                 if (visibilityGetter()) {
-                    deformer!!.compute(skinGetter)
+                    // init() creates deformer lazily on render thread
+                    if (vao == -1) init()
+                    deformer?.compute(skinGetter)
                 }
             }
         }
