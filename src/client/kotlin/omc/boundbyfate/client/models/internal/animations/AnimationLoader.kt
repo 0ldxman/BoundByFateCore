@@ -74,17 +74,19 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Vec3Step(
                 keys,
-                outputData.asVec3f()
+                outputData.asVec3f().map { it - node.baseTransform.translation }.toTypedArray()
             )
 
             AnimationTarget.ROTATION -> QuatStep(
                 keys,
-                outputData.asVec4f().map { it.toQuatF() }.toTypedArray()
+                outputData.asVec4f().map {
+                    MutableQuatF(node.baseTransform.rotation).inverted().mul(it.toQuatF())
+                }.toTypedArray()
             )
 
             AnimationTarget.SCALE -> Vec3Step(
                 keys,
-                outputData.asVec3f()
+                outputData.asVec3f().map { it / node.baseTransform.scale }.toTypedArray()
             )
 
             AnimationTarget.WEIGHTS -> LinearSingle(
@@ -104,17 +106,19 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Linear(
                 keys,
-                outputData.asVec3f()
+                outputData.asVec3f().map { it - node.baseTransform.translation }.toTypedArray()
             )
 
             AnimationTarget.ROTATION -> SphericalLinear(
                 keys,
-                outputData.asVec4f().map { it.toQuatF() }.toTypedArray()
+                outputData.asVec4f().map {
+                    MutableQuatF(node.baseTransform.rotation).inverted().mul(it.toQuatF())
+                }.toTypedArray()
             )
 
             AnimationTarget.SCALE -> Linear(
                 keys,
-                outputData.asVec3f()
+                outputData.asVec3f().map { it / node.baseTransform.scale }.toTypedArray()
             )
 
             AnimationTarget.WEIGHTS -> LinearSingle(
