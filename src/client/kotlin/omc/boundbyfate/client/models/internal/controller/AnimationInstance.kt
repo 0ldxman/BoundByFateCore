@@ -56,9 +56,17 @@ class AnimationInstance(private val animation: Animation) {
                 }
                 
                 val translation = Vec3f.ZERO.mix(delta, weight)
-                if (doDebug) logger.info("[AnimInst]   node=$node translation delta=(${delta.x},${delta.y},${delta.z}) applied=(${translation.x},${translation.y},${translation.z})")
+                if (doDebug) {
+                    logger.info("[AnimInst]   node=$node translation delta=(${delta.x},${delta.y},${delta.z}) applied=(${translation.x},${translation.y},${translation.z})")
+                    if (node == 19) {
+                        logger.info("[AnimInst]     BEFORE: transform.translation=${transform.translation}")
+                    }
+                }
                 if (overrides.translation) transform.translation.set(translation)
                 else transform.translate(translation)
+                if (doDebug && node == 19) {
+                    logger.info("[AnimInst]     AFTER: transform.translation=${transform.translation}")
+                }
             }
             channels.rotation?.let {
                 val delta = it.compute(time)
