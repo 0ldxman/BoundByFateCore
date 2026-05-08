@@ -148,11 +148,6 @@ object NpcModelRenderer {
 
         poseStack.scale(scale, scale, scale)
 
-        // Blockbench exports models rotated 180° around Y — apply via pose stack
-        if (attachment.flow.value.model.isBlockBench) {
-            poseStack.multiply(Quaternionf().rotateY(Math.PI.toFloat()))
-        }
-
         if (skinTexture != null) {
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
                 MinecraftClient.getInstance().textureManager.getTexture(skinTexture).getGlId()
@@ -177,11 +172,6 @@ object NpcModelRenderer {
                 shader = entityCutoutShader
             )
         )
-
-        // Flush batched geometry
-        if (buffer is net.minecraft.client.render.VertexConsumerProvider.Immediate) {
-            buffer.draw()
-        }
 
         poseStack.pop()
     }
