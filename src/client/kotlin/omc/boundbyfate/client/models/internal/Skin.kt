@@ -11,9 +11,13 @@ class Skin(
 ) {
     private val cache: Array<Mat4f> = Array(jointsIds.size) { MutableMat4f() }
     private var debugCount = 0
+    private var totalFrames = 0
     private val logger = LoggerFactory.getLogger(Skin::class.java)
 
     fun compute(globalRoot: Mat4f, jointGetter: Map<Int, RuntimeNode>): Array<Mat4f> {
+        totalFrames++
+        val shouldLog = debugCount < 3 || (totalFrames % 30 == 0 && debugCount < 20)
+        
         // GLTF skinning formula: skinMatrix = inverse(globalMesh) * globalJoint * inverseBindMatrix
         // globalRoot = globalMatrix ноды с мешем (нода 22)
         // Нужно преобразовать joint из мирового пространства в пространство меша
@@ -30,7 +34,7 @@ class Skin(
             cache[i] = skinMatrix.transpose()
         }
 
-        if (debugCount < 3) {
+        if (shouldLog) {
             val legIdx = jointsIds.indexOf(19)
             if (legIdx >= 0) {
                 val jNode = jointGetter[19]
@@ -43,11 +47,9 @@ class Skin(
                 val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
                 
                 // translation в kool Mat4f хранится в m03, m13, m23 (column-major)
-                logger.info("[Skin] frame=$debugCount joint=19(LeftLeg)")
+                logger.info("[Skin] totalFrame=$totalFrames debugCount=$debugCount joint=19(LeftLeg)")
                 logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m03},${gm?.m13},${gm?.m23})")
-                logger.info("[Skin]   globalRoot: t=(${globalRoot.m03},${globalRoot.m13},${globalRoot.m23})")
                 logger.info("[Skin]   jointInMeshSpace: t=(${jointInMeshSpace.m03},${jointInMeshSpace.m13},${jointInMeshSpace.m23})")
-                logger.info("[Skin]   inverseBindMatrix[19]: t=(${inverseBindMatrices[legIdx].m03},${inverseBindMatrices[legIdx].m13},${inverseBindMatrices[legIdx].m23})")
                 logger.info("[Skin]   skinMatrix (final): t=(${skinMatrix.m03},${skinMatrix.m13},${skinMatrix.m23})")
             }
             debugCount++
