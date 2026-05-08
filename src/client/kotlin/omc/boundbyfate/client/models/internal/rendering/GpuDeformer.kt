@@ -199,8 +199,8 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 1, outNorBufferId)
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 2, outTanBufferId)
 
+        GL30.glBindVertexArray(processingVao)  // VAO must be bound BEFORE glBeginTransformFeedback
         GL30.glBeginTransformFeedback(GL11.GL_POINTS)
-        GL30.glBindVertexArray(processingVao)
         GL11.glEnable(GL30.GL_RASTERIZER_DISCARD)
         GL11.glDrawArrays(GL11.GL_POINTS, 0, drawCount)
         GL11.glDisable(GL30.GL_RASTERIZER_DISCARD)
