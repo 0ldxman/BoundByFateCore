@@ -350,6 +350,9 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                 if (visibilityGetter()) {
                     // init() creates deformer lazily on render thread
                     if (vao == -1) init()
+                    if (deformer == null) {
+                        org.apache.logging.log4j.LogManager.getLogger().warn("[PipelineRenderer] deformer is null after init! isDynamic=$isDynamic vao=$vao")
+                    }
                     deformer?.compute(skinGetter)
                 }
             }

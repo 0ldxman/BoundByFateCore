@@ -124,9 +124,7 @@ class AnimationSystem(val model: ModelAttachment) {
         if (destroyed) return
 
         scope.launch {
-            logger.info("[AnimationSystem] playIdleWhenReady: waiting for animations...")
             model.awaitAnimations()
-            logger.info("[AnimationSystem] playIdleWhenReady: animations ready, count=${model.animations.size}")
 
             val idleName = model.animations.findName("idle")
                 ?: model.animations.firstName()
@@ -136,19 +134,14 @@ class AnimationSystem(val model: ModelAttachment) {
                 return@launch
             }
 
-            logger.info("[AnimationSystem] playIdleWhenReady: starting '$idleName'")
-
-            // Set weight directly first frame, then do proper transition
             val idleAnim = model.animations.getOrNull(idleName)
             if (idleAnim != null) {
                 idleAnim.weight = 1f
                 idleAnim.wrapMode = WrapMode.Loop
                 idleAnim.time = 0f
-                logger.info("[AnimationSystem] playIdleWhenReady: weight set to 1f, duration=${idleAnim.duration}")
             }
 
             transition(to = idleName, duration = 0f, wrapMode = WrapMode.Loop)
-            logger.info("[AnimationSystem] playIdleWhenReady: transition complete")
         }
     }
 
