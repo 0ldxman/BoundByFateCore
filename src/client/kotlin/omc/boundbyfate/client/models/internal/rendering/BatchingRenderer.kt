@@ -16,8 +16,6 @@ class BatchingRenderer(
     private val primitive: Primitive
 ) : MeshRenderer {
 
-    private var debugLogCount = 0
-
     override fun init() {
         // No GL initialization needed for batching
     }
@@ -52,22 +50,6 @@ class BatchingRenderer(
 
             // Capture globalMatrix ONCE per draw call with explicit copy
             val globalSnapshot = de.fabmax.kool.math.MutableMat4f().also { it.set(matrixGetter()) }
-
-            // One-time debug: log first primitive's vertices as sent to GPU
-            val doLog = debugLogCount++ == 0 && posArray.size == 24
-            if (doLog) {
-                val log = org.apache.logging.log4j.LogManager.getLogger()
-                log.info("[BatchingRenderer] === 24-vertex primitive (head?) debug ===")
-                log.info("[BatchingRenderer] pose translation: (${r(pose.m30())}, ${r(pose.m31())}, ${r(pose.m32())})")
-                log.info("[BatchingRenderer] global: t=(${r(globalSnapshot.m30)},${r(globalSnapshot.m31)},${r(globalSnapshot.m32)}) scale=(${r(globalSnapshot.m00)},${r(globalSnapshot.m11)},${r(globalSnapshot.m22)})")
-                for (vi in posArray.indices) {
-                    val p = posArray[vi]
-                    val transformed = globalSnapshot.transform(de.fabmax.kool.math.MutableVec3f(p.x, p.y, p.z), 1f, de.fabmax.kool.math.MutableVec3f())
-                    val uv = if (vi < texArray.size) texArray[vi] else null
-                    log.info("[BatchingRenderer] v$vi raw=(${r(p.x)},${r(p.y)},${r(p.z)}) -> (${r(transformed.x)},${r(transformed.y)},${r(transformed.z)}) uv=${if(uv!=null) "(${r(uv.x)},${r(uv.y)})" else "N/A"}")
-                }
-                if (indices != null) log.info("[BatchingRenderer] indices=${indices.toList()}")
-            }
 
             for (i in iterator) {
                 putVertex(globalSnapshot, i, vertexConsumer, pose, normal, color, overlay, light, posArray, normArray, texArray)
@@ -105,8 +87,6 @@ class BatchingRenderer(
     override fun destroy() {
         // Nothing to destroy
     }
-
-    private fun r(f: Float) = Math.round(f * 1000f) / 1000f
 }
 
 
