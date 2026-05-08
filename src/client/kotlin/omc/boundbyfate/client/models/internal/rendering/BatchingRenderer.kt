@@ -43,8 +43,9 @@ class BatchingRenderer(
             val renderType = batchingRenderType.apply(primitive.material)
             openedBatchedRenderTypes?.add(renderType)
             val vertexConsumer = source.getBuffer(renderType)
-            val pose = stack.peek().positionMatrix
-            val normal = stack.peek().normalMatrix
+            // Copy matrices to avoid issues with MatrixStack reusing Entry objects
+            val pose = Matrix4f(stack.peek().positionMatrix)
+            val normal = Matrix3f(stack.peek().normalMatrix)
             val color = primitive.material.color
 
             // Capture globalMatrix ONCE per draw call, not per vertex
