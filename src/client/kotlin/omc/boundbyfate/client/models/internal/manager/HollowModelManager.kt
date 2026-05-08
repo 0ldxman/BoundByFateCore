@@ -152,6 +152,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
     }
 
     private fun createSkinningProgramGL33() {
+        org.apache.logging.log4j.LogManager.getLogger().info("[HollowModelManager] Creating skinning programs...")
         var glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
             glShader,
@@ -170,6 +171,7 @@ object HollowModelManager : IdentifiableResourceReloadListener {
         GL20.glLinkProgram(glProgramSkinning)
         val skinningLinkLog = GL20.glGetProgramInfoLog(glProgramSkinning)
         if (skinningLinkLog.isNotBlank()) org.apache.logging.log4j.LogManager.getLogger().warn("[HollowModelManager] gltf_skinning link log: $skinningLinkLog")
+        org.apache.logging.log4j.LogManager.getLogger().info("[HollowModelManager] glProgramSkinning=$glProgramSkinning")
 
         glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
