@@ -47,13 +47,16 @@ class BatchingRenderer(
             val normal = stack.peek().normalMatrix
             val color = primitive.material.color
 
+            // Capture globalMatrix ONCE per draw call, not per vertex
+            val globalSnapshot = de.fabmax.kool.math.MutableMat4f(matrixGetter())
+
             for (i in iterator) {
-                putVertex(matrixGetter, i, vertexConsumer, pose, normal, color, overlay, light, posArray, normArray, texArray)
+                putVertex(globalSnapshot, i, vertexConsumer, pose, normal, color, overlay, light, posArray, normArray, texArray)
             }
         }    }
 
     private fun putVertex(
-        getter: MatrixGetter,
+        global: de.fabmax.kool.math.MutableMat4f,
         index: Int,
         consumer: VertexConsumer,
         pose: Matrix4f,
@@ -67,7 +70,6 @@ class BatchingRenderer(
     ) {
         if (index !in posArray.indices || index !in normArray.indices || index !in texArray.indices) return
 
-        val global = getter()
         val pos = global.transform(posArray[index], 1f, MutableVec3f())
         val normal = global.getUpperLeft(MutableMat3f()).transform(normArray[index], MutableVec3f())
 
