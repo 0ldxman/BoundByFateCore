@@ -36,21 +36,20 @@ class AnimationInstance(private val animation: Animation) {
         animation.nodes.forEach { (node, channels) ->
             val transform = model[node] ?: return@forEach
 
-            channels.translation?.let {
-                val translation = Vec3f.ZERO.mix(it.compute(time), weight)
-                if (overrides.translation) transform.translation.set(translation)
-                else transform.translate(translation)
-            }
-            channels.rotation?.let {
-                val rotation = QuatF.IDENTITY.mix(it.compute(time), weight)
-                if (overrides.rotation) transform.rotation.set(rotation)
-                else transform.rotate(rotation)
-            }
-            channels.scale?.let {
-                val scale = Vec3f.ONES.mix(it.compute(time), weight)
-                if (overrides.scale) transform.scale.set(scale)
-                else transform.scale(scale)
-            }
+            // Читаем текущие значения (уже сброшены в baseTransform)
+            val curT = transform.translation
+            val curR = transform.rotation
+            val curS = transform.scale
+
+            val newT = channels.translation?.let { Vec3f.ZERO.mix(it.compute(time), weight) }
+            val newR = channels.rotation?.let { QuatF.IDENTITY.mix(it.compute(time), weight) }
+            val newS = channels.scale?.let { Vec3f.ONES.mix(it.compute(time), weight) }
+
+            // Пересобираем transform полностью чтобы гарантированно инвалидировать кеш matrixF
+            transform.setIdentity()
+            transform.translate(if (newT != null) curT + newT else curT)
+            transform.rotate(if (newR != null) curR.mul(newR, de.fabmax.kool.math.MutableQuatF()) else curR)
+            transform.scale(if (newS != null) curS * newS else curS)
         }
     }
 
