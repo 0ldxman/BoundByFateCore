@@ -35,6 +35,8 @@ class GpuDeformer(private val primitive: Primitive) {
     private var outTanBufferId = -1
 
     private var drawCount = 0
+    private var computeCallCount = 0
+    private val logger = org.slf4j.LoggerFactory.getLogger(GpuDeformer::class.java)
 
     fun init(dstPos: Int, dstNor: Int, dstTan: Int) {
         this.outPosBufferId = dstPos
@@ -177,6 +179,13 @@ class GpuDeformer(private val primitive: Primitive) {
     }
 
     fun compute(node: SkinGetter) {
+        computeCallCount++
+        val shouldLog = computeCallCount <= 5 || (computeCallCount % 30 == 0 && computeCallCount <= 200)
+        
+        if (shouldLog) {
+            logger.info("[GpuDeformer] compute call #$computeCallCount hasSkinning=${primitive.hasSkinning} morphTargets=${primitive.morphTargets.size}")
+        }
+        
         val shaderId: Int
 
         if (primitive.hasSkinning) {
