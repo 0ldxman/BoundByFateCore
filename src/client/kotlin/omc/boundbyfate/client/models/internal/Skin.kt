@@ -25,16 +25,20 @@ class Skin(
         }
 
         if (debugCount < 3) {
-            // Логируем joint 16 (индекс ноды 15=LeftArm) и joint 20 (индекс ноды 19=LeftLeg)
             val legIdx = jointsIds.indexOf(19)
             val armIdx = jointsIds.indexOf(15)
             if (legIdx >= 0) {
                 val m = cache[legIdx]
-                logger.info("[Skin] frame=$debugCount joint=19(LeftLeg) idx=$legIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r01=${m.m01} r10=${m.m10} r11=${m.m11}")
+                val jNode = jointGetter[19]
+                val gm = jNode?.globalMatrix
+                logger.info("[Skin] frame=$debugCount joint=19(LeftLeg) idx=$legIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r11=${m.m11}")
+                logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m30},${gm?.m31},${gm?.m32}) r00=${gm?.m00} r11=${gm?.m11}")
+                logger.info("[Skin]   transform[19].translation: ${jNode?.transform?.translation}")
+                logger.info("[Skin]   transform[19].rotation: ${jNode?.transform?.rotation}")
             }
             if (armIdx >= 0) {
                 val m = cache[armIdx]
-                logger.info("[Skin] frame=$debugCount joint=15(LeftArm) idx=$armIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r01=${m.m01} r10=${m.m10} r11=${m.m11}")
+                logger.info("[Skin] frame=$debugCount joint=15(LeftArm) idx=$armIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r11=${m.m11}")
             }
             debugCount++
         }
