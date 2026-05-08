@@ -158,6 +158,8 @@ object HollowModelManager : IdentifiableResourceReloadListener {
             "boundbyfate-core:shaders/core/gltf_skinning.vsh".rl.stream.readBytes().decodeToString()
         )
         GL20.glCompileShader(glShader)
+        val skinningLog = GL20.glGetShaderInfoLog(glShader)
+        if (skinningLog.isNotBlank()) org.apache.logging.log4j.LogManager.getLogger().warn("[HollowModelManager] gltf_skinning.vsh compile log: $skinningLog")
 
         glProgramSkinning = GL20.glCreateProgram()
         GL20.glAttachShader(glProgramSkinning, glShader)
@@ -166,6 +168,8 @@ object HollowModelManager : IdentifiableResourceReloadListener {
             glProgramSkinning, arrayOf<CharSequence>("outPosition", "outNormal", "outTangent"), GL30.GL_SEPARATE_ATTRIBS
         )
         GL20.glLinkProgram(glProgramSkinning)
+        val skinningLinkLog = GL20.glGetProgramInfoLog(glProgramSkinning)
+        if (skinningLinkLog.isNotBlank()) org.apache.logging.log4j.LogManager.getLogger().warn("[HollowModelManager] gltf_skinning link log: $skinningLinkLog")
 
         glShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
         GL20.glShaderSource(
@@ -173,6 +177,8 @@ object HollowModelManager : IdentifiableResourceReloadListener {
             "boundbyfate-core:shaders/core/gltf_morphing.vsh".rl.stream.readBytes().decodeToString()
         )
         GL20.glCompileShader(glShader)
+        val morphingLog = GL20.glGetShaderInfoLog(glShader)
+        if (morphingLog.isNotBlank()) org.apache.logging.log4j.LogManager.getLogger().warn("[HollowModelManager] gltf_morphing.vsh compile log: $morphingLog")
 
         glProgramMorphing = GL20.glCreateProgram()
         GL20.glAttachShader(glProgramMorphing, glShader)
@@ -181,6 +187,8 @@ object HollowModelManager : IdentifiableResourceReloadListener {
             glProgramMorphing, arrayOf<CharSequence>("outPosition", "outNormal", "outTangent"), GL30.GL_SEPARATE_ATTRIBS
         )
         GL20.glLinkProgram(glProgramMorphing)
+        val morphingLinkLog = GL20.glGetProgramInfoLog(glProgramMorphing)
+        if (morphingLinkLog.isNotBlank()) org.apache.logging.log4j.LogManager.getLogger().warn("[HollowModelManager] gltf_morphing link log: $morphingLinkLog")
     }
 
     fun initialize() {
