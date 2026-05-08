@@ -207,7 +207,7 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glEndTransformFeedback()
 
         GL30.glBindVertexArray(0)
-        GL20.glUseProgram(0)
+        // Don't call glUseProgram(0) here — ListRenderPipeline.transformSkinning() handles cleanup
 
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0)
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 1, 0)

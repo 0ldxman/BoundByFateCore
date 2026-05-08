@@ -173,6 +173,7 @@ class ListRenderPipeline : RenderPipeline {
             for (skinCommand in skinCommands) skinCommand()
             GL33.glBindBuffer(GL33.GL_TEXTURE_BUFFER, 0)
             GL33.glDisable(GL33.GL_RASTERIZER_DISCARD)
+            GlStateManager._glUseProgram(0)  // deactivate skinning program after all skin commands
         }
     }
 
