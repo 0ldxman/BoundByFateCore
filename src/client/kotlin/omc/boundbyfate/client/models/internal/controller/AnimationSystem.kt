@@ -134,6 +134,14 @@ class AnimationSystem(val model: ModelAttachment) {
                 return@launch
             }
 
+            // Set weight directly first frame, then do proper transition
+            val idleAnim = model.animations.getOrNull(idleName)
+            if (idleAnim != null) {
+                idleAnim.weight = 1f
+                idleAnim.wrapMode = WrapMode.Loop
+                idleAnim.time = 0f
+            }
+
             transition(to = idleName, duration = 0f, wrapMode = WrapMode.Loop)
         }
     }
