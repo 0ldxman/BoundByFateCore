@@ -51,12 +51,26 @@ open class RuntimeNode(
 
     override fun collectCommands(pipeline: RenderPipeline) {
         super.collectCommands(pipeline)
-        definition.mesh?.primitives?.forEach { primitive ->
+        definition.mesh?.primitives?.forEachIndexed { primIdx, primitive ->
+            // Debug: log golova mesh data once
+            if (name == "golova" && primIdx == 0) {
+                val log = org.apache.logging.log4j.LogManager.getLogger()
+                val pos = primitive.positions
+                val tex = primitive.texCoords
+                val idx = primitive.indices
+                log.info("[RuntimeNode] === golova primitive debug ===")
+                log.info("[RuntimeNode] positions=${pos?.size}, texCoords=${tex?.size}, indices=${idx?.size}")
+                pos?.forEachIndexed { i, v -> log.info("[RuntimeNode] pos[$i]=(${r(v.x)},${r(v.y)},${r(v.z)})") }
+                tex?.forEachIndexed { i, v -> log.info("[RuntimeNode] uv[$i]=(${r(v.x)},${r(v.y)})") }
+                idx?.let { log.info("[RuntimeNode] indices=${it.toList()}") }
+            }
             primitive.setupPipeline(pipeline, { definition.skin!!.compute(globalMatrix, jointGetter) }, ::globalMatrix, ::isVisible)
         }
         attachments.forEach { it.collectCommands(pipeline) }
         children.forEach { it.collectCommands(pipeline) }
     }
+
+    private fun r(f: Float) = Math.round(f * 1000f) / 1000f
 
     fun child(name: String): RuntimeNode = children.single { it.name == name }
 }
