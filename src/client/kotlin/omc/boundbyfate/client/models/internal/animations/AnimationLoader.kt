@@ -71,9 +71,8 @@ object AnimationLoader {
         target: AnimationTarget,
         componentCount: Int = -1,
     ): Interpolator<*> {
-        // Blockbench экспортирует translation корневой ноды скелета в мировых координатах,
-        // остальные ноды — в локальных. Корневая нода скелета = дочерняя ноды с мешем+скином.
-        val translationBase = if (node.parent?.skin != null) node.globalBaseTranslation else node.baseTransform.translation
+        // GLTF keyframes всегда хранятся в локальных координатах относительно родительской ноды
+        val translationBase = node.baseTransform.translation
         val rotationBase = node.baseTransform.rotation
 
         return when (target) {
@@ -108,7 +107,8 @@ object AnimationLoader {
         target: AnimationTarget,
         componentCount: Int = -1,
     ): Interpolator<*> {
-        val translationBase = if (node.parent?.skin != null) node.globalBaseTranslation else node.baseTransform.translation
+        // GLTF keyframes всегда хранятся в локальных координатах относительно родительской ноды
+        val translationBase = node.baseTransform.translation
         val rotationBase = node.baseTransform.rotation
 
         return when (target) {
