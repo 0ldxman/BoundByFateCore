@@ -28,6 +28,11 @@ class Skin(
         }
 
         skinLogCount++
+        if (skinLogCount == 50) {
+            org.apache.logging.log4j.LogManager.getLogger().info(
+                "[Skin] jointsIds=${jointsIds.take(10)}"
+            )
+        }
         if (skinLogCount in 50..55) {
             val m0 = cache[0] as? MutableMat4f
             val m1 = cache[1] as? MutableMat4f

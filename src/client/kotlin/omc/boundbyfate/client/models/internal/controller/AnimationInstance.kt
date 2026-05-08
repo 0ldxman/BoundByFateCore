@@ -58,6 +58,11 @@ class AnimationInstance(private val animation: Animation) {
             }
             channels.rotation?.let {
                 val rotation = QuatF.Companion.IDENTITY.mix(it.compute(time), weight)
+                if (logCount <= 3) {
+                    org.apache.logging.log4j.LogManager.getLogger().info(
+                        "[AnimationInstance] node=$node rotation=(${r(rotation.x)},${r(rotation.y)},${r(rotation.z)},${r(rotation.w)}) at time=$time"
+                    )
+                }
                 if (overrides.rotation) transform.rotation.set(rotation)
                 else transform.rotation.set(transform.rotation.mul(rotation, de.fabmax.kool.math.MutableQuatF()))
             }
