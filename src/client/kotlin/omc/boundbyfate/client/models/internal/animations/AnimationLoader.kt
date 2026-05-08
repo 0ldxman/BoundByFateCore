@@ -74,7 +74,7 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Vec3Step(
                 keys,
-                outputData.asVec3f().toTypedArray()
+                outputData.asVec3f()
             )
 
             AnimationTarget.ROTATION -> QuatStep(
@@ -84,7 +84,7 @@ object AnimationLoader {
 
             AnimationTarget.SCALE -> Vec3Step(
                 keys,
-                outputData.asVec3f().toTypedArray()
+                outputData.asVec3f()
             )
 
             AnimationTarget.WEIGHTS -> LinearSingle(
@@ -104,7 +104,7 @@ object AnimationLoader {
         return when (target) {
             AnimationTarget.TRANSLATION -> Linear(
                 keys,
-                outputData.asVec3f().toTypedArray()
+                outputData.asVec3f()
             )
 
             AnimationTarget.ROTATION -> SphericalLinear(
@@ -114,7 +114,7 @@ object AnimationLoader {
 
             AnimationTarget.SCALE -> Linear(
                 keys,
-                outputData.asVec3f().toTypedArray()
+                outputData.asVec3f()
             )
 
             AnimationTarget.WEIGHTS -> LinearSingle(
