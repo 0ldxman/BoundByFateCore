@@ -31,14 +31,14 @@ class Skin(
                 val m = cache[legIdx]
                 val jNode = jointGetter[19]
                 val gm = jNode?.globalMatrix
-                logger.info("[Skin] frame=$debugCount joint=19(LeftLeg) idx=$legIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r11=${m.m11}")
-                logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m30},${gm?.m31},${gm?.m32}) r00=${gm?.m00} r11=${gm?.m11}")
+                val parentNode = jNode?.parent
+                val parentGm = (parentNode as? omc.boundbyfate.client.models.internal.v2.RuntimeNode)?.globalMatrix
+                logger.info("[Skin] frame=$debugCount joint=19(LeftLeg) skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r11=${m.m11}")
+                logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m30},${gm?.m31},${gm?.m32})")
+                logger.info("[Skin]   globalMatrix[parent18]: t=(${parentGm?.m30},${parentGm?.m31},${parentGm?.m32})")
                 logger.info("[Skin]   transform[19].translation: ${jNode?.transform?.translation}")
                 logger.info("[Skin]   transform[19].rotation: ${jNode?.transform?.rotation}")
-            }
-            if (armIdx >= 0) {
-                val m = cache[armIdx]
-                logger.info("[Skin] frame=$debugCount joint=15(LeftArm) idx=$armIdx skinMatrix: t=(${m.m30},${m.m31},${m.m32}) r00=${m.m00} r11=${m.m11}")
+                logger.info("[Skin]   globalRoot: t=(${globalRoot.m30},${globalRoot.m31},${globalRoot.m32})")
             }
             debugCount++
         }
