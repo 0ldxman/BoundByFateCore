@@ -14,11 +14,19 @@ class Skin(
     private val logger = LoggerFactory.getLogger(Skin::class.java)
 
     fun compute(globalRoot: Mat4f, jointGetter: Map<Int, RuntimeNode>): Array<Mat4f> {
+        // GLTF skinning formula: skinMatrix = inverse(globalMesh) * globalJoint * inverseBindMatrix
+        // globalRoot = globalMatrix ноды с мешем (нода 22)
+        // Нужно преобразовать joint из мирового пространства в пространство меша
+        val inverseRoot = MutableMat4f(globalRoot)
+        inverseRoot.invert()
+        
         for ((i, id) in jointsIds.withIndex()) {
             val jointGlobalMatrix = MutableMat4f(jointGetter[id]!!.globalMatrix)
             val bindMatrix = MutableMat4f(inverseBindMatrices[i])
-            // GLTF skinning formula: skinMatrix = globalJoint * inverseBindMatrix
-            val skinMatrix = MutableMat4f(jointGlobalMatrix).mul(bindMatrix)
+            // Преобразуем joint из мирового пространства в пространство меша
+            val jointInMeshSpace = MutableMat4f(inverseRoot).mul(jointGlobalMatrix)
+            // Применяем inverseBindMatrix
+            val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
             cache[i] = skinMatrix.transpose()
         }
 
@@ -31,13 +39,16 @@ class Skin(
                 // Вычисляем skinMatrix до транспозиции для правильного лога
                 val jointGlobalMatrix = MutableMat4f(jointGetter[19]!!.globalMatrix)
                 val bindMatrix = MutableMat4f(inverseBindMatrices[legIdx])
-                val skinMatrix = MutableMat4f(jointGlobalMatrix).mul(bindMatrix)
+                val jointInMeshSpace = MutableMat4f(inverseRoot).mul(jointGlobalMatrix)
+                val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
                 
                 // translation в kool Mat4f хранится в m03, m13, m23 (column-major)
                 logger.info("[Skin] frame=$debugCount joint=19(LeftLeg)")
                 logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m03},${gm?.m13},${gm?.m23})")
+                logger.info("[Skin]   globalRoot: t=(${globalRoot.m03},${globalRoot.m13},${globalRoot.m23})")
+                logger.info("[Skin]   jointInMeshSpace: t=(${jointInMeshSpace.m03},${jointInMeshSpace.m13},${jointInMeshSpace.m23})")
                 logger.info("[Skin]   inverseBindMatrix[19]: t=(${inverseBindMatrices[legIdx].m03},${inverseBindMatrices[legIdx].m13},${inverseBindMatrices[legIdx].m23})")
-                logger.info("[Skin]   skinMatrix (joint*bind): t=(${skinMatrix.m03},${skinMatrix.m13},${skinMatrix.m23})")
+                logger.info("[Skin]   skinMatrix (final): t=(${skinMatrix.m03},${skinMatrix.m13},${skinMatrix.m23})")
             }
             debugCount++
         }
