@@ -198,7 +198,7 @@ object NpcModelRenderer {
             val animSystem = if (component.animationsEnabled) {
                 AnimationSystem(attachment).also { sys ->
                     if (component.animationLayers.isEmpty()) {
-                        sys.playIdleWhenReady()
+                        sys.playWhenReady("walk", wrapMode = WrapMode.Loop)
                     }
                 }
             } else null
