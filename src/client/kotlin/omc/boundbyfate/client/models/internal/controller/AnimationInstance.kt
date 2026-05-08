@@ -41,11 +41,18 @@ class AnimationInstance(private val animation: Animation) {
 
         val time = if (reversed) duration - time else time
 
+        var appliedCount = 0
         animation.nodes.forEach { (node, channels) ->
             val transform = model[node] ?: return@forEach
+            appliedCount++
 
             channels.translation?.let {
                 val translation = Vec3f.Companion.ZERO.mix(it.compute(time), weight)
+                if (logCount <= 3 && appliedCount == 1) {
+                    org.apache.logging.log4j.LogManager.getLogger().info(
+                        "[AnimationInstance] node=$node translation delta=(${r(translation.x)},${r(translation.y)},${r(translation.z)}) at time=$time"
+                    )
+                }
                 if (overrides.translation) transform.translation.set(translation)
                 else transform.translation.set(transform.translation + translation)
             }
@@ -61,6 +68,8 @@ class AnimationInstance(private val animation: Animation) {
             }
         }
     }
+
+    private fun r(f: Float) = Math.round(f * 1000f) / 1000f
 
     private fun applyWrapMode() {
         when (wrapMode) {

@@ -12,6 +12,8 @@ class Skin(
 
     private var skinLogCount = 0
 
+    private fun r(f: Float?) = f?.let { Math.round(it * 1000f) / 1000f } ?: 0f
+
     fun compute(globalRoot: Mat4f, jointGetter: Map<Int, RuntimeNode>): Array<Mat4f> {
         // Получаем и инвертируем глобальную матрицу узла модели
         val inverseRoot = MutableMat4f(globalRoot)
@@ -25,10 +27,10 @@ class Skin(
             cache[i] = MutableMat4f(inverseRoot).mul(skinMatrix).transpose()
         }
 
-        if (skinLogCount++ < 2) {
+        if (skinLogCount++ < 10) {
             val m = cache[0] as? MutableMat4f
             org.apache.logging.log4j.LogManager.getLogger().info(
-                "[Skin] compute: joints=${jointsIds.size}, cache[0] t=(${m?.m30?.let { Math.round(it*1000f)/1000f }},${m?.m31?.let { Math.round(it*1000f)/1000f }},${m?.m32?.let { Math.round(it*1000f)/1000f }})"
+                "[Skin] compute #$skinLogCount: joints=${jointsIds.size}, cache[0] t=(${r(m?.m30)},${r(m?.m31)},${r(m?.m32)}) cache[1] t=(${r((cache[1] as? MutableMat4f)?.m30)},${r((cache[1] as? MutableMat4f)?.m31)},${r((cache[1] as? MutableMat4f)?.m32)})"
             )
         }
 
