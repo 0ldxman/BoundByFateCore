@@ -23,6 +23,24 @@ open class NodeDefinition(
         scale(transform.scale)
     }
 
+    /**
+     * Глобальная T-pose translation (сумма всех translation по цепочке родителей).
+     * Используется в AnimationLoader для вычисления дельт от Blockbench анимаций,
+     * которые хранят трансформации в глобальных координатах.
+     */
+    val globalBaseTranslation: Vec3f by lazy {
+        val parentT = parent?.globalBaseTranslation ?: Vec3f.ZERO
+        parentT + baseTransform.translation
+    }
+
+    /**
+     * Глобальная T-pose rotation (произведение всех rotation по цепочке родителей).
+     */
+    val globalBaseRotation: QuatF by lazy {
+        val parentR = parent?.globalBaseRotation ?: QuatF.IDENTITY
+        parentR.mul(baseTransform.rotation, MutableQuatF())
+    }
+
 
     val localMatrix get() = transform.matrixF
     val globalMatrix = MutableMat4f()
