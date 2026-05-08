@@ -37,19 +37,30 @@ class AnimationInstance(private val animation: Animation) {
             val transform = model[node] ?: return@forEach
 
             channels.translation?.let {
-                val translation = Vec3f.Companion.ZERO.mix(it.compute(time), weight)
-                if (overrides.translation) transform.translation.set(translation)
-                else transform.translation.set(transform.translation + translation)
+                val keyframe = it.compute(time)
+                if (overrides.translation) {
+                    transform.translation.set(keyframe)
+                } else {
+                    // blend from current (base) to keyframe
+                    transform.translation.set(transform.translation.mix(keyframe, weight))
+                }
             }
             channels.rotation?.let {
-                val rotation = QuatF.Companion.IDENTITY.mix(it.compute(time), weight)
-                if (overrides.rotation) transform.rotation.set(rotation)
-                else transform.rotation.set(transform.rotation.mul(rotation, de.fabmax.kool.math.MutableQuatF()))
+                val keyframe = it.compute(time)
+                if (overrides.rotation) {
+                    transform.rotation.set(keyframe)
+                } else {
+                    // slerp from current (base) to absolute keyframe
+                    transform.rotation.set(transform.rotation.mix(keyframe, weight))
+                }
             }
             channels.scale?.let {
-                val scale = Vec3f.Companion.ONES.mix(it.compute(time), weight)
-                if (overrides.scale) transform.scale.set(scale)
-                else transform.scale.set(transform.scale * scale)
+                val keyframe = it.compute(time)
+                if (overrides.scale) {
+                    transform.scale.set(keyframe)
+                } else {
+                    transform.scale.set(transform.scale.mix(keyframe, weight))
+                }
             }
         }
     }

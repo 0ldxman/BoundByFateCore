@@ -160,7 +160,7 @@ object GltfModelLoader : ModelLoader {
             )
         }
         transform.translate(node.translation?.let { Vec3f(it[0], it[1], it[2]) } ?: MutableVec3f())
-        transform.rotate(node.rotation?.let { QuatF(it[0], it[1], it[2], it[3]) } ?: MutableQuatF())
+        transform.rotate(node.rotation?.let { QuatF(it[0], it[1], it[2], it[3]) } ?: QuatF.IDENTITY)
         transform.scale(node.scale?.let { Vec3f(it[0], it[1], it[2]) } ?: MutableVec3f(1f, 1f, 1f))
 
         return NodeDefinition(nodeIndex, node.name, children.toMutableList(), transform, mesh, skin).apply {
