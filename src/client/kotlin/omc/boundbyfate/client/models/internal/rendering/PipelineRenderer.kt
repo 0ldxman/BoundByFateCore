@@ -569,9 +569,6 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         if (vao == -1) init()  // lazy GL init on render thread
         val shader = this.shader ?: RenderSystem.getShader() ?: return
 
-        // Activate the correct shader program for rendering (may differ from skinning program)
-        com.mojang.blaze3d.platform.GlStateManager._glUseProgram(shader.getProgramRef())
-
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
@@ -609,7 +606,6 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         }
 
         GL33.glBindVertexArray(0)
-        com.mojang.blaze3d.platform.GlStateManager._glUseProgram(0)
     }
 
     private fun applyMaterial(shader: ShaderProgram, material: Material, colorLocation: Int = 1) {
