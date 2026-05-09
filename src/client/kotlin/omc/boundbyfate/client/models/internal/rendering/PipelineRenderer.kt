@@ -642,6 +642,21 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         applyMaterial(shader, primitive.material)
 
+        // Логируем первый раз для проверки
+        if (isDynamic) {
+            val currentFrame = deformer?.let { (it as? GpuDeformer)?.let { d -> 
+                val field = d.javaClass.getDeclaredField("computeCallCount")
+                field.isAccessible = true
+                field.getInt(d)
+            } } ?: 0
+            
+            if (currentFrame == 1 || currentFrame % 60 == 0) {
+                org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
+                    "[PipelineRenderer] renderVAO frame $currentFrame: using vao=$vao (should have deformed data at location 0)"
+                )
+            }
+        }
+
         RenderSystem.glBindVertexArray { vao }
 
         indexBuffer?.bind()

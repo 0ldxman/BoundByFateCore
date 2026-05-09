@@ -121,10 +121,10 @@ class GpuDeformer(private val primitive: Primitive) {
 
     fun compute(node: SkinGetter, renderVao: Int) {
         computeCallCount++
-        val shouldLog = computeCallCount == 1
+        val shouldLog = computeCallCount == 1 || computeCallCount % 60 == 0
         
         if (shouldLog) {
-            logger.info("[GpuDeformer] First compute call, hasSkinning=${primitive.hasSkinning}")
+            logger.info("[GpuDeformer] Compute call #$computeCallCount, hasSkinning=${primitive.hasSkinning}")
             logger.info("[GpuDeformer] Transform Feedback output buffers: pos=$outPosBufferId nor=$outNorBufferId tan=$outTanBufferId")
             logger.info("[GpuDeformer] Using render VAO for Transform Feedback: $renderVao")
         }
@@ -158,13 +158,13 @@ class GpuDeformer(private val primitive: Primitive) {
 
         GL30.glBindVertexArray(0)
         
-        // Проверяем что данные записались
+        // Проверяем что данные записались и меняются ли они
         if (shouldLog) {
             val testBuffer = org.lwjgl.BufferUtils.createFloatBuffer(9)
             GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, outPosBufferId)
             GL33.glGetBufferSubData(GL33.GL_ARRAY_BUFFER, 0, testBuffer)
             GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0)
-            logger.info("[GpuDeformer] First 3 output positions: v0=(${testBuffer.get(0)},${testBuffer.get(1)},${testBuffer.get(2)}) v1=(${testBuffer.get(3)},${testBuffer.get(4)},${testBuffer.get(5)}) v2=(${testBuffer.get(6)},${testBuffer.get(7)},${testBuffer.get(8)})")
+            logger.info("[GpuDeformer] Frame $computeCallCount output positions: v0=(${testBuffer.get(0)},${testBuffer.get(1)},${testBuffer.get(2)}) v1=(${testBuffer.get(3)},${testBuffer.get(4)},${testBuffer.get(5)}) v2=(${testBuffer.get(6)},${testBuffer.get(7)},${testBuffer.get(8)})")
         }
 
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0)
@@ -182,6 +182,12 @@ class GpuDeformer(private val primitive: Primitive) {
             buffer.put(m.m30).put(m.m31).put(m.m32).put(m.m33)
         }
         buffer.flip()
+        
+        if (computeCallCount == 1 || computeCallCount % 60 == 0) {
+            // Логируем первую матрицу для проверки изменений
+            logger.info("[GpuDeformer] Frame $computeCallCount: joint[0] translation=(${matrices[0].m30},${matrices[0].m31},${matrices[0].m32})")
+        }
+        
         jointMatrixBuffer?.bind()
         GL33.glBufferSubData(GL31.GL_TEXTURE_BUFFER, 0, buffer)
         jointMatrixBuffer?.unbind()
