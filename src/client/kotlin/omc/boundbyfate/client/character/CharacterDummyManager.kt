@@ -57,8 +57,7 @@ object CharacterDummyManager {
                 dummies.values.forEach { it.clientTick() }
                 
                 // Проверяем сущности в мире на наличие компонента внешности
-                // (только те, что в радиусе стриминга клиента)
-                client.world?.entities?.forEach { entity ->
+                client.world?.getEntities()?.forEach { entity ->
                     if (entity is LivingEntity && entity !is CharacterDummy && entity !is net.minecraft.client.network.ClientPlayerEntity) {
                         checkAndCreateProxy(entity)
                     }
@@ -104,30 +103,39 @@ object CharacterDummyManager {
     // ── Автоматизация прокси ──────────────────────────────────────────────
 
     private fun checkAndCreateProxy(entity: LivingEntity) {
-        val appearance = entity.getComponent(EntityAppearanceData.TYPE) ?: return
+        val appearance = entity.getComponent(EntityAppearanceData.TYPE)
+        
+        if (appearance == null) {
+            // Если компонент ещё не пришёл от сервера, пропускаем этот тик
+            return
+        }
         
         // Если прокси уже есть, проверяем не изменились ли базовые данные (скин/модель)
         val existing = dummies[entity.uuid]
         if (existing != null) {
-            // TODO: Можно добавить логику обновления скина если он изменился в компоненте
+            // Обновляем позицию источника на случай если она сбросилась
+            if (existing.sourceEntity == null) {
+                existing.sourceEntity = entity
+            }
             return
         }
 
         val world = entity.world as? net.minecraft.client.world.ClientWorld ?: return
+        
+        logger.info("Auto-creating CharacterDummy proxy for NPC ${entity.uuid} (Name: ${entity.name.string})")
         
         val dummy = CharacterDummy(
             world,
             entity.uuid,
             appearance.skinId,
             appearance.modelType,
-            DummyAnimationType.STAND_IDLE // По дефолту для NPC
+            DummyAnimationType.STAND_IDLE
         )
         
         dummy.sourceEntity = entity
         dummy.syncWithSource()
         
         dummies[entity.uuid] = dummy
-        logger.debug("Auto-created CharacterDummy proxy for entity ${entity.uuid} (${entity.name.string})")
     }
 
     private fun removeProxy(entity: LivingEntity) {

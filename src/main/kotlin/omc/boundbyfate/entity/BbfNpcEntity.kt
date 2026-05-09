@@ -77,6 +77,16 @@ class BbfNpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAw
 
     override fun readCustomDataFromNbt(nbt: net.minecraft.nbt.NbtCompound) {
         super.readCustomDataFromNbt(nbt)
+        // Гарантируем наличие компонента после загрузки
+        getOrCreate(EntityAppearanceData.TYPE)
+    }
+
+    override fun tick() {
+        super.tick()
+        // Дебаг-лог раз в 10 секунд (200 тиков) на сервере
+        if (!world.isClient && age % 200 == 0) {
+            org.slf4j.LoggerFactory.getLogger("BbfNpcDebug").info("NPC ${this.uuid} is alive at ${this.pos}")
+        }
     }
 
     var npcName: String
