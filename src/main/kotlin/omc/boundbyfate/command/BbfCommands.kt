@@ -7,6 +7,7 @@ import net.minecraft.server.command.CommandManager
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.Text
 import omc.boundbyfate.component.components.EntityAppearanceData
+import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.entity.BbfNpcEntity
 import omc.boundbyfate.entity.NpcEntity
 import omc.boundbyfate.network.packet.s2c.OpenCharacterEditScreenPacket

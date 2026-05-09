@@ -1,16 +1,16 @@
-﻿package omc.boundbyfate.system.npc.navigation
+package omc.boundbyfate.system.npc.navigation
 
 import net.minecraft.entity.ai.control.MoveControl
 import net.minecraft.entity.attribute.EntityAttributes
 import net.minecraft.util.math.MathHelper
-import omc.boundbyfate.entity.NpcEntity
+import net.minecraft.entity.mob.MobEntity
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
 /**
  * Yarn-compatible move control for NPC steering and jumping.
  */
-class NpcMoveControl(npc: NpcEntity) : MoveControl(npc) {
+class NpcMoveControl(npc: MobEntity) : MoveControl(npc) {
 
     override fun tick() {
         when (state) {
