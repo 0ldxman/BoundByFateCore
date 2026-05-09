@@ -25,9 +25,13 @@ class AnimationInstance(private val animation: Animation) {
     private var debugFrameCount = 0
 
     fun update(model: Map<Int, TrsTransformF>, dt: Float) {
-        debugFrameCount++
-        
         if (weight == 0f) return
+        
+        debugFrameCount++
+        val doDebug = debugFrameCount <= 5
+        if (doDebug) {
+            logger.info("[AnimInst] '${animation.name}' frame=$debugFrameCount weight=$weight time=${"%.3f".format(time)} nodes=${animation.nodes.size}")
+        }
         
         time += speed * dt
         updatePlaying(model)
