@@ -184,8 +184,14 @@ class GpuDeformer(private val primitive: Primitive) {
         buffer.flip()
         
         if (computeCallCount == 1 || computeCallCount % 60 == 0) {
-            // Логируем первую матрицу для проверки изменений
+            // Логируем несколько матриц для проверки изменений
             logger.info("[GpuDeformer] Frame $computeCallCount: joint[0] translation=(${matrices[0].m30},${matrices[0].m31},${matrices[0].m32})")
+            if (matrices.size > 19) {
+                logger.info("[GpuDeformer] Frame $computeCallCount: joint[19] translation=(${matrices[19].m30},${matrices[19].m31},${matrices[19].m32})")
+            }
+            if (matrices.size > 20) {
+                logger.info("[GpuDeformer] Frame $computeCallCount: joint[20] translation=(${matrices[20].m30},${matrices[20].m31},${matrices[20].m32})")
+            }
         }
         
         jointMatrixBuffer?.bind()
