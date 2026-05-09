@@ -124,11 +124,11 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         if (primitive.hasSkinning) {
             primitive.joints?.let { joints ->
                 VboWrapper.createArrayBuffer().apply {
-                    val buffer = BufferUtils.createIntBuffer(joints.size * 4)
+                    val buffer = org.lwjgl.BufferUtils.createIntBuffer(joints.size * 4)
                     joints.forEach { j -> buffer.put(j.x).put(j.y).put(j.z).put(j.w) }
                     buffer.flip()
                     uploadData(buffer)
-                    GL30.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
+                    GL33.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
                     GL33.glEnableVertexAttribArray(0)
                 }
             }
@@ -191,7 +191,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
         primitive.indices?.let { indices ->
             indexBuffer = VboWrapper.createElementBuffer().apply {
-                val buffer = BufferUtils.createIntBuffer(indices.size)
+                val buffer = org.lwjgl.BufferUtils.createIntBuffer(indices.size)
                 buffer.put(indices)
                 buffer.flip()
                 uploadData(buffer)
@@ -508,11 +508,11 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     private fun updateInstanceBuffers(instances: List<SubmittedInstance>) {
         ensureInstanceCapacity(instances.size)
 
-        val modelViews = BufferUtils.createFloatBuffer(instances.size * 16)
-        val normals = BufferUtils.createFloatBuffer(instances.size * 9)
-        val overlays = BufferUtils.createIntBuffer(instances.size * 2)
-        val lights = BufferUtils.createIntBuffer(instances.size * 2)
-        val entities = BufferUtils.createIntBuffer(instances.size * 3)
+        val modelViews = org.lwjgl.BufferUtils.createFloatBuffer(instances.size * 16)
+        val normals = org.lwjgl.BufferUtils.createFloatBuffer(instances.size * 9)
+        val overlays = org.lwjgl.BufferUtils.createIntBuffer(instances.size * 2)
+        val lights = org.lwjgl.BufferUtils.createIntBuffer(instances.size * 2)
+        val entities = org.lwjgl.BufferUtils.createIntBuffer(instances.size * 3)
 
         for (instance in instances) {
             putModelView(modelViews, instance.modelView)
@@ -599,12 +599,6 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
-
-        if (isDynamic && computeCallCount == 1) {
-            org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
-                "[PipelineRenderer] renderVAO: vao=$vao, posBuffer=${posBuffer?.id}"
-            )
-        }
 
         RenderSystem.glBindVertexArray { vao }
 
