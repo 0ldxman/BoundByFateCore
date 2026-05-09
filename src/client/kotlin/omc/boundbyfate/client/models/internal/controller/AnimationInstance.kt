@@ -26,16 +26,8 @@ class AnimationInstance(private val animation: Animation) {
 
     fun update(model: Map<Int, TrsTransformF>, dt: Float) {
         debugFrameCount++
-        val doDebug = debugFrameCount <= 10 || debugFrameCount % 60 == 0
         
-        if (doDebug) {
-            logger.info("[AnimInst] UPDATE CALLED: '${animation.name}' frame=$debugFrameCount weight=$weight time=${"%.3f".format(time)} dt=$dt")
-        }
-        
-        if (weight == 0f) {
-            if (doDebug) logger.info("[AnimInst] SKIPPED: weight=0")
-            return
-        }
+        if (weight == 0f) return
         
         time += speed * dt
         updatePlaying(model)
@@ -46,9 +38,9 @@ class AnimationInstance(private val animation: Animation) {
 
         val time = if (reversed) duration - time else time
 
-        val doDebug = debugFrameCount <= 10 || debugFrameCount % 60 == 0
+        val doDebug = debugFrameCount <= 3
         if (doDebug) {
-            logger.info("[AnimInst] PLAYING: '${animation.name}' frame=$debugFrameCount time=${"%.3f".format(time)} weight=$weight nodes=${animation.nodes.size}")
+            logger.info("[AnimInst] '${animation.name}' frame=$debugFrameCount time=${"%.3f".format(time)} weight=$weight")
         }
 
         animation.nodes.forEach { (node, channels) ->
@@ -62,34 +54,26 @@ class AnimationInstance(private val animation: Animation) {
                 val isAnomalous = delta.x.absoluteValue > 0.5f || delta.y.absoluteValue > 0.5f || delta.z.absoluteValue > 0.5f
                 
                 if (isAnomalous) {
-                    if (doDebug) logger.warn("[AnimInst]   node=$node SKIPPED anomalous translation delta=(${delta.x},${delta.y},${delta.z})")
+                    if (doDebug) logger.warn("[AnimInst] node=$node SKIPPED anomalous translation delta")
                     return@let
                 }
                 
                 val translation = Vec3f.ZERO.mix(delta, weight)
-                if (doDebug) {
-                    logger.info("[AnimInst]   node=$node translation delta=(${delta.x},${delta.y},${delta.z}) applied=(${translation.x},${translation.y},${translation.z})")
-                    if (node == 19) {
-                        logger.info("[AnimInst]     BEFORE: transform.translation=${transform.translation}")
-                    }
+                if (doDebug && (node == 19 || node == 20)) {
+                    logger.info("[AnimInst] node=$node translation=(${translation.x},${translation.y},${translation.z})")
                 }
                 if (overrides.translation) transform.translation.set(translation)
                 else transform.translate(translation)
-                if (doDebug && node == 19) {
-                    logger.info("[AnimInst]     AFTER: transform.translation=${transform.translation}")
-                }
             }
             channels.rotation?.let {
                 val delta = it.compute(time)
                 val rotation = QuatF.IDENTITY.mix(delta, weight)
-                if (doDebug) logger.info("[AnimInst]   node=$node rotation delta=(${delta.x},${delta.y},${delta.z},${delta.w}) applied=(${rotation.x},${rotation.y},${rotation.z},${rotation.w})")
                 if (overrides.rotation) transform.rotation.set(rotation)
                 else transform.rotate(rotation)
             }
             channels.scale?.let {
                 val delta = it.compute(time)
                 val scale = Vec3f.ONES.mix(delta, weight)
-                if (doDebug) logger.info("[AnimInst]   node=$node scale delta=(${delta.x},${delta.y},${delta.z})")
                 if (overrides.scale) transform.scale.set(scale)
                 else transform.scale(scale)
             }

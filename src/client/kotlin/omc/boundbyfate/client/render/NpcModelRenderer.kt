@@ -198,9 +198,10 @@ object NpcModelRenderer {
             val animSystem = if (component.animationsEnabled) {
                 AnimationSystem(attachment).also { sys ->
                     if (component.animationLayers.isEmpty()) {
-                        sys.playWhenReady("walk", wrapMode = WrapMode.Loop)
-                        // Прокручиваем dispatcher один раз чтобы корутина начала выполняться
-                        sys.update(0f)
+                        // duration=0 для мгновенного перехода без ожидания кадров
+                        sys.playWhenReady("walk", duration = 0f, wrapMode = WrapMode.Loop)
+                        // Прокручиваем dispatcher несколько раз чтобы обе корутины выполнились
+                        repeat(5) { sys.update(0f) }
                     }
                 }
             } else null

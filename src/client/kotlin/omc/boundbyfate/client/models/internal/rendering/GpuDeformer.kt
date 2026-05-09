@@ -180,10 +180,10 @@ class GpuDeformer(private val primitive: Primitive) {
 
     fun compute(node: SkinGetter) {
         computeCallCount++
-        val shouldLog = computeCallCount <= 5 || (computeCallCount % 30 == 0 && computeCallCount <= 200)
+        val shouldLog = computeCallCount == 1
         
         if (shouldLog) {
-            logger.info("[GpuDeformer] compute call #$computeCallCount hasSkinning=${primitive.hasSkinning} morphTargets=${primitive.morphTargets.size}")
+            logger.info("[GpuDeformer] First compute call, hasSkinning=${primitive.hasSkinning}")
         }
         
         val shaderId: Int

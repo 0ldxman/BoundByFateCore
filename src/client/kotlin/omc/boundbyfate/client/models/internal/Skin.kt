@@ -35,23 +35,7 @@ class Skin(
         }
 
         if (shouldLog) {
-            val legIdx = jointsIds.indexOf(19)
-            if (legIdx >= 0) {
-                val jNode = jointGetter[19]
-                val gm = jNode?.globalMatrix
-                
-                // Вычисляем skinMatrix до транспозиции для правильного лога
-                val jointGlobalMatrix = MutableMat4f(jointGetter[19]!!.globalMatrix)
-                val bindMatrix = MutableMat4f(inverseBindMatrices[legIdx])
-                val jointInMeshSpace = MutableMat4f(inverseRoot).mul(jointGlobalMatrix)
-                val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
-                
-                // translation в kool Mat4f хранится в m03, m13, m23 (column-major)
-                logger.info("[Skin] totalFrame=$totalFrames debugCount=$debugCount joint=19(LeftLeg)")
-                logger.info("[Skin]   globalMatrix[19]: t=(${gm?.m03},${gm?.m13},${gm?.m23})")
-                logger.info("[Skin]   jointInMeshSpace: t=(${jointInMeshSpace.m03},${jointInMeshSpace.m13},${jointInMeshSpace.m23})")
-                logger.info("[Skin]   skinMatrix (final): t=(${skinMatrix.m03},${skinMatrix.m13},${skinMatrix.m23})")
-            }
+            logger.info("[Skin] Computing skin matrices, frame=$totalFrames")
             debugCount++
         }
 
