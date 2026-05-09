@@ -80,9 +80,10 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.prevBodyYaw = sourceEntity.prevBodyYaw;
 
         // Копируем анимации конечностей (движение ног/рук)
-        this.limbDistance = sourceEntity.limbDistance;
-        this.prevLimbDistance = sourceEntity.prevLimbDistance;
         this.limbAnimator.setSpeed(sourceEntity.limbAnimator.getSpeed());
+        this.limbAnimator.setPos(sourceEntity.limbAnimator.getPos());
+        // В 1.20.1 limbDistance и prevLimbDistance могут быть недоступны напрямую или называться иначе в промежуточных маппингах.
+        // Используем limbAnimator для синхронизации движения.
 
         // Состояние (крадётся, плывёт и т.д.)
         this.setSneaking(sourceEntity.isSneaking());
