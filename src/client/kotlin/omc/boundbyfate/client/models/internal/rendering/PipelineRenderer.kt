@@ -127,15 +127,14 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
             GL33.glBindVertexArray(skinningVao)
 
             // Setup joints and weights for Transform Feedback shader (locations 0 and 1)
-            // ВАЖНО: joints в GLTF имеют тип UNSIGNED_SHORT (5123), а не INT!
+            // Конвертируем joints в Int (как в Hollow Core) для совместимости с шейдером
             primitive.joints?.let { joints ->
                 VboWrapper.createArrayBuffer().apply {
-                    // Конвертируем в unsigned short (2 байта на компонент)
-                    val buffer = org.lwjgl.BufferUtils.createShortBuffer(joints.size * 4)
-                    joints.forEach { j -> buffer.put(j.x.toShort()).put(j.y.toShort()).put(j.z.toShort()).put(j.w.toShort()) }
+                    val buffer = org.lwjgl.BufferUtils.createIntBuffer(joints.size * 4)
+                    joints.forEach { j -> buffer.put(j.x).put(j.y).put(j.z).put(j.w) }
                     buffer.flip()
                     uploadData(buffer)
-                    GL33.glVertexAttribIPointer(0, 4, GL11.GL_UNSIGNED_SHORT, 0, 0)
+                    GL33.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
                     GL33.glEnableVertexAttribArray(0)
                 }
             }
@@ -214,6 +213,14 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
             "[PipelineRenderer] Dynamic buffers: skinningVao=$skinningVao renderVao=$vao pos=${posBuffer!!.id} nor=${norBuffer!!.id} tan=${tanBuffer!!.id}"
         )
+        
+        // КРИТИЧЕСКАЯ ПРОВЕРКА: убедимся, что rendering VAO использует те же буферы, что и Transform Feedback output
+        GL33.glBindVertexArray(vao)
+        val boundPosBuffer = GL33.glGetVertexAttribi(0, GL33.GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING)
+        org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
+            "[PipelineRenderer] Rendering VAO location 0 uses buffer: $boundPosBuffer (should be ${posBuffer!!.id})"
+        )
+        GL33.glBindVertexArray(0)
     }
 
     private fun initCommonBuffers() {

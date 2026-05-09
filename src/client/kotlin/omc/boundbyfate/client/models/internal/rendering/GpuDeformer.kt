@@ -181,6 +181,9 @@ class GpuDeformer(private val primitive: Primitive) {
         GL11.glDrawArrays(GL11.GL_POINTS, 0, drawCount)
         GL30.glEndTransformFeedback()
 
+        // КРИТИЧНО: Ждём завершения Transform Feedback перед использованием результатов
+        GL33.glMemoryBarrier(GL33.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
+
         // Проверяем ошибки после Transform Feedback
         if (shouldLog) {
             val error2 = GL11.glGetError()
