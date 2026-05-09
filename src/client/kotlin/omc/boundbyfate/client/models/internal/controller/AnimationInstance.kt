@@ -27,12 +27,6 @@ class AnimationInstance(private val animation: Animation) {
     fun update(model: Map<Int, TrsTransformF>, dt: Float) {
         if (weight == 0f) return
         
-        debugFrameCount++
-        val doDebug = debugFrameCount <= 5
-        if (doDebug) {
-            logger.info("[AnimInst] '${animation.name}' frame=$debugFrameCount weight=$weight time=${"%.3f".format(time)} nodes=${animation.nodes.size}")
-        }
-        
         time += speed * dt
         updatePlaying(model)
     }
@@ -41,11 +35,6 @@ class AnimationInstance(private val animation: Animation) {
         applyWrapMode()
 
         val time = if (reversed) duration - time else time
-
-        val doDebug = debugFrameCount <= 3
-        if (doDebug) {
-            logger.info("[AnimInst] '${animation.name}' frame=$debugFrameCount time=${"%.3f".format(time)} weight=$weight")
-        }
 
         animation.nodes.forEach { (node, channels) ->
             val transform = model[node] ?: return@forEach
@@ -57,15 +46,9 @@ class AnimationInstance(private val animation: Animation) {
                 // Это защита от неправильных keyframes в GLTF для container нод
                 val isAnomalous = delta.x.absoluteValue > 0.5f || delta.y.absoluteValue > 0.5f || delta.z.absoluteValue > 0.5f
                 
-                if (isAnomalous) {
-                    if (doDebug) logger.warn("[AnimInst] node=$node SKIPPED anomalous translation delta")
-                    return@let
-                }
+                if (isAnomalous) return@let
                 
                 val translation = Vec3f.ZERO.mix(delta, weight)
-                if (doDebug && (node == 19 || node == 20)) {
-                    logger.info("[AnimInst] node=$node translation=(${translation.x},${translation.y},${translation.z})")
-                }
                 if (overrides.translation) transform.translation.set(translation)
                 else transform.translate(translation)
             }

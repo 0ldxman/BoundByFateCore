@@ -16,7 +16,7 @@ class Skin(
 
     fun compute(globalRoot: Mat4f, jointGetter: Map<Int, RuntimeNode>): Array<Mat4f> {
         totalFrames++
-        val shouldLog = debugCount < 3 || (totalFrames % 30 == 0 && debugCount < 20)
+        val shouldLog = totalFrames == 1
         
         // GLTF skinning formula: skinMatrix = inverse(globalMesh) * globalJoint * inverseBindMatrix
         // globalRoot = globalMatrix ноды с мешем (нода 22)
@@ -31,12 +31,11 @@ class Skin(
             val jointInMeshSpace = MutableMat4f(inverseRoot).mul(jointGlobalMatrix)
             // Применяем inverseBindMatrix
             val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
-            cache[i] = skinMatrix.transpose()
+            cache[i] = skinMatrix
         }
 
         if (shouldLog) {
-            logger.info("[Skin] Computing skin matrices, frame=$totalFrames")
-            debugCount++
+            logger.info("[Skin] Computing skin matrices")
         }
 
         return cache
