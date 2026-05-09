@@ -50,12 +50,12 @@ object CharacterDummyRenderer {
 
         for (dummy in dummies) {
             try {
-                // Если у Dummy есть источник, синхронизируем его
+                // Синхронизируем состояние с источником перед рендером
                 dummy.syncWithSource()
 
-                // Отключаем Frustum Culling временно для дебага и исправления проблем с невидимостью
-                // val frustum = context.frustum()
-                // if (frustum != null && !frustum.isVisible(dummy.boundingBox)) continue
+                // Возвращаем Frustum Culling с использованием исправленного хитбокса
+                val frustum = context.frustum()
+                if (frustum != null && !frustum.isVisible(dummy.visibilityBoundingBox)) continue
 
                 // Если это прокси для NPC, скрываем имя (оно есть у самого NPC)
                 dummy.customName = null

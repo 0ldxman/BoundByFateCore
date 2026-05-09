@@ -38,6 +38,8 @@ object NpcEntityRegistry {
         Identifier(BoundByFateCore.MOD_ID, "bbf_npc"),
         FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ::BbfNpcEntity)
             .dimensions(EntityDimensions.fixed(0.6f, 1.8f))
+            .trackRangeBlocks(128)
+            .trackedUpdateRate(1)
             .build()
     )
 

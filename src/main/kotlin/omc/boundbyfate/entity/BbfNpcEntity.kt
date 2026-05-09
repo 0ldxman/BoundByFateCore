@@ -65,8 +65,19 @@ class BbfNpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAw
     override fun canPickUpLoot() = true
     override fun canGather(stack: ItemStack) = false
 
+    // Эти методы обеспечивают сохранение сущности в мире
     override fun canImmediatelyDespawn(distanceSquared: Double) = false
     override fun isPersistent() = true
+    override fun cannotDespawn() = true
+
+    override fun writeCustomDataToNbt(nbt: net.minecraft.nbt.NbtCompound) {
+        super.writeCustomDataToNbt(nbt)
+        // Компоненты сохраняются автоматически через систему BbfComponent
+    }
+
+    override fun readCustomDataFromNbt(nbt: net.minecraft.nbt.NbtCompound) {
+        super.readCustomDataFromNbt(nbt)
+    }
 
     var npcName: String
         get() = displayName.string

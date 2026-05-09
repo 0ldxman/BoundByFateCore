@@ -6,7 +6,10 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Box;
 import omc.boundbyfate.client.mixin.accessor.LimbAnimatorAccessor;
 import omc.boundbyfate.client.mixin.accessor.LivingEntityAccessor;
 import omc.boundbyfate.client.skin.ClientSkinManager;
@@ -57,6 +60,24 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.skinId = skinId;
         this.modelType = modelType;
         this.animationType = animationType;
+
+        // Устанавливаем размеры игрока, чтобы хитбокс был корректным для куллинга
+        this.setDimensions(EntityDimensions.fixed(0.6f, 1.8f));
+    }
+
+    public void setSourceEntity(LivingEntity entity) {
+        this.sourceEntity = entity;
+    }
+
+    /**
+     * Для Frustum Culling используем хитбокс реального NPC, если он есть.
+     */
+    @Override
+    public Box getVisibilityBoundingBox() {
+        if (sourceEntity != null) {
+            return sourceEntity.getVisibilityBoundingBox();
+        }
+        return super.getVisibilityBoundingBox();
     }
 
     /**
