@@ -43,8 +43,8 @@ object CharacterDummyRenderer {
         val camera = context.camera()
         val tickDelta = context.tickDelta()
 
-        val matrices = context.matrixStack() ?: return
-        val consumers = context.consumers() ?: return
+        val poseStack = context.matrixStack() ?: return
+        val buffer = context.consumers() ?: return
 
         val camPos = camera.pos
 
@@ -53,9 +53,9 @@ object CharacterDummyRenderer {
                 // Если у Dummy есть источник, синхронизируем его
                 dummy.syncWithSource()
 
-                // Проверяем Frustum Culling — не рендерим то, что за кадром
-                val frustum = context.frustum()
-                if (frustum != null && !frustum.isVisible(dummy.boundingBox)) continue
+                // Отключаем Frustum Culling временно для дебага и исправления проблем с невидимостью
+                // val frustum = context.frustum()
+                // if (frustum != null && !frustum.isVisible(dummy.boundingBox)) continue
 
                 // Если это прокси для NPC, скрываем имя (оно есть у самого NPC)
                 dummy.customName = null
@@ -64,21 +64,25 @@ object CharacterDummyRenderer {
                 val x = dummy.x - camPos.x
                 val y = dummy.y - camPos.y
                 val z = dummy.z - camPos.z
+                val light = dispatcher.getLight(dummy, tickDelta)
 
-                matrices.push()
-                matrices.translate(x, y, z)
+                poseStack.push()
+                poseStack.translate(x, y, z)
 
+                // Рендерим через стандартный диспетчер игрока
                 dispatcher.render(
                     dummy,
-                    0.0, 0.0, 0.0,
+                    0.0, // x уже в матрице
+                    0.0, // y уже в матрице
+                    0.0, // z уже в матрице
                     dummy.yaw,
                     tickDelta,
-                    matrices,
-                    consumers,
-                    dispatcher.getLight(dummy, tickDelta)
+                    poseStack,
+                    buffer,
+                    light
                 )
 
-                matrices.pop()
+                poseStack.pop()
             } catch (e: Exception) {
                 logger.error("Failed to render CharacterDummy ${dummy.characterId}", e)
             }
