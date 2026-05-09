@@ -61,8 +61,8 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.modelType = modelType;
         this.animationType = animationType;
 
-        // Устанавливаем размеры игрока, чтобы хитбокс был корректным для куллинга
-        this.setDimensions(EntityDimensions.fixed(0.6f, 1.8f));
+        // В Entity нет публичного метода setDimensions. 
+        // Однако AbstractClientPlayerEntity инициализирует хитбокс автоматически на основе модели.
     }
 
     public void setSourceEntity(LivingEntity entity) {
