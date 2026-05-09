@@ -16,4 +16,16 @@ public interface LivingEntityAccessor {
     /** yarn 1.20.1: stepBobbingAmount */
     @Accessor("stepBobbingAmount")
     float bbf_getStrideDistance();
+
+    @Accessor("limbDistance")
+    float bbf_getLimbDistance();
+
+    @Accessor("limbDistance")
+    void bbf_setLimbDistance(float value);
+
+    @Accessor("prevLimbDistance")
+    float bbf_getPrevLimbDistance();
+
+    @Accessor("prevLimbDistance")
+    void bbf_setPrevLimbDistance(float value);
 }

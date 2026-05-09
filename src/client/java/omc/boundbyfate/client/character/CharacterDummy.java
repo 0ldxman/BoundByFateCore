@@ -7,6 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.Identifier;
+import omc.boundbyfate.client.mixin.accessor.LivingEntityAccessor;
 import omc.boundbyfate.client.skin.ClientSkinManager;
 import omc.boundbyfate.data.world.character.ModelType;
 import omc.boundbyfate.network.packet.s2c.DummyAnimationType;
@@ -80,10 +81,14 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.prevBodyYaw = sourceEntity.prevBodyYaw;
 
         // Копируем анимации конечностей (движение ног/рук)
+        // Используем аксессоры для доступа к защищенным полям в 1.20.1
+        LivingEntityAccessor sourceAcc = (LivingEntityAccessor) sourceEntity;
+        LivingEntityAccessor thisAcc = (LivingEntityAccessor) this;
+
+        thisAcc.bbf_setLimbDistance(sourceAcc.bbf_getLimbDistance());
+        thisAcc.bbf_setPrevLimbDistance(sourceAcc.bbf_getPrevLimbDistance());
+        
         this.limbAnimator.setSpeed(sourceEntity.limbAnimator.getSpeed());
-        this.limbAnimator.setPos(sourceEntity.limbAnimator.getPos());
-        // В 1.20.1 limbDistance и prevLimbDistance могут быть недоступны напрямую или называться иначе в промежуточных маппингах.
-        // Используем limbAnimator для синхронизации движения.
 
         // Состояние (крадётся, плывёт и т.д.)
         this.setSneaking(sourceEntity.isSneaking());
