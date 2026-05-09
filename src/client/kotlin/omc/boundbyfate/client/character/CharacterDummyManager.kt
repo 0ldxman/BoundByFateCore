@@ -9,7 +9,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.entity.LivingEntity
 import omc.boundbyfate.client.animation.PlayerAnimSystem
 import omc.boundbyfate.component.components.EntityAppearanceData
-import omc.boundbyfate.component.core.getAttached
+import omc.boundbyfate.component.core.getComponent
 import omc.boundbyfate.network.packet.s2c.CharacterDummyDespawnPacket
 import omc.boundbyfate.network.packet.s2c.CharacterDummySpawnPacket
 import omc.boundbyfate.network.packet.s2c.CharacterEnterResponsePacket
@@ -104,7 +104,7 @@ object CharacterDummyManager {
     // ── Автоматизация прокси ──────────────────────────────────────────────
 
     private fun checkAndCreateProxy(entity: LivingEntity) {
-        val appearance = entity.getAttached(EntityAppearanceData.TYPE) ?: return
+        val appearance = entity.getComponent(EntityAppearanceData.TYPE) ?: return
         
         // Если прокси уже есть, проверяем не изменились ли базовые данные (скин/модель)
         val existing = dummies[entity.uuid]

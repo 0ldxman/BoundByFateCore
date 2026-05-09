@@ -54,7 +54,8 @@ object CharacterDummyRenderer {
                 dummy.syncWithSource()
 
                 // Проверяем Frustum Culling — не рендерим то, что за кадром
-                if (!context.frustum().isVisible(dummy.boundingBox)) continue
+                val frustum = context.frustum()
+                if (frustum != null && !frustum.isVisible(dummy.boundingBox)) continue
 
                 // Если это прокси для NPC, скрываем имя (оно есть у самого NPC)
                 dummy.customName = null
