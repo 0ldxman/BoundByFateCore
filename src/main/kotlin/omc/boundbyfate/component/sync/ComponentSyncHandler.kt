@@ -2,6 +2,7 @@ package omc.boundbyfate.component.sync
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
+import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.entity.LivingEntity
 import net.minecraft.server.network.ServerPlayerEntity
@@ -48,11 +49,19 @@ object ComponentSyncHandler {
     }
 
     fun register() {
-        // При входе игрока — синхронизировать все компоненты кроме NONE
+        // При входе игрока — синхронизировать все компоненты игрока с ним самим
         ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
             val player = handler.player
             logger.debug("Syncing components on join for ${player.name.string}")
             syncAllComponents(player, player)
+        }
+
+        // При начале отслеживания сущности — синхронизировать все её компоненты с игроком
+        EntityTrackingEvents.START_TRACKING.register { entity, player ->
+            if (entity is LivingEntity && player is ServerPlayerEntity) {
+                logger.debug("Syncing components for entity ${entity.name.string} to tracker ${player.name.string}")
+                syncAllComponents(entity, player)
+            }
         }
 
         // При загрузке сущности — синхронизировать ON_CHANGE компоненты для всех игроков
