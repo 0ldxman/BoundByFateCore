@@ -16,26 +16,22 @@ class Skin(
 
     fun compute(globalRoot: Mat4f, jointGetter: Map<Int, RuntimeNode>): Array<Mat4f> {
         totalFrames++
-        val shouldLog = totalFrames == 1
+        val shouldLog = totalFrames == 1 || totalFrames == 60
         
-        // GLTF skinning formula: skinMatrix = inverse(globalMesh) * globalJoint * inverseBindMatrix
-        // globalRoot = globalMatrix ноды с мешем (нода 22)
-        // Нужно преобразовать joint из мирового пространства в пространство меша
+        // Получаем и инвертируем глобальную матрицу узла модели
         val inverseRoot = MutableMat4f(globalRoot)
         inverseRoot.invert()
-        
+
+        // Проходим по всем суставам
         for ((i, id) in jointsIds.withIndex()) {
             val jointGlobalMatrix = MutableMat4f(jointGetter[id]!!.globalMatrix)
             val bindMatrix = MutableMat4f(inverseBindMatrices[i])
-            // Преобразуем joint из мирового пространства в пространство меша
-            val jointInMeshSpace = MutableMat4f(inverseRoot).mul(jointGlobalMatrix)
-            // Применяем inverseBindMatrix
-            val skinMatrix = MutableMat4f(jointInMeshSpace).mul(bindMatrix)
-            cache[i] = skinMatrix
-        }
-
-        if (shouldLog) {
-            logger.info("[Skin] Computing skin matrices")
+            val skinMatrix = MutableMat4f(jointGlobalMatrix).mul(bindMatrix)
+            cache[i] = MutableMat4f(inverseRoot).mul(skinMatrix).transpose() // Транспозируем для передачи в шейдер
+            
+            if (shouldLog && (id == 19 || id == 20)) {
+                logger.info("[Skin] joint=$id frame=$totalFrames translation=(${jointGlobalMatrix.m03},${jointGlobalMatrix.m13},${jointGlobalMatrix.m23})")
+            }
         }
 
         return cache
