@@ -134,6 +134,13 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
         onUpdates.forEach { it() }
 
+        val activeAnims = currentAnimations.filter { it.weight > 0f }
+        if (activeAnims.isNotEmpty()) {
+            org.slf4j.LoggerFactory.getLogger("ModelAttachment").info(
+                "[ModelAttachment] update() dt=$dt activeAnims=${activeAnims.map { "${it.name}(w=${it.weight})" }}"
+            )
+        }
+
         for (animation in currentAnimations) {
             animation.update(transforms, dt)
         }
