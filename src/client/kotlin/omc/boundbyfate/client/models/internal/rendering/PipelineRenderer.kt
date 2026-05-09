@@ -24,7 +24,8 @@ import omc.boundbyfate.client.util.toTexture
 import java.util.*
 
 class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
-    private var vao = -1
+    private var vao = -1 // Rendering VAO
+    private var skinningVao = -1 // Transform Feedback VAO (for skinning)
     private var instancedVao = -1
     private val runtimeInstancedBindings = LinkedHashMap<Int, InstancedShaderBinding>()
 
@@ -120,8 +121,12 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     private fun initDynamicBuffers() {
         val vertexCount = primitive.positionsCount / 3
 
-        // Для Transform Feedback шейдера нужны joints (location 0) и weights (location 1)
+        // Create separate VAO for Transform Feedback (skinning)
         if (primitive.hasSkinning) {
+            skinningVao = GL33.glGenVertexArrays()
+            GL33.glBindVertexArray(skinningVao)
+
+            // Setup joints and weights for Transform Feedback shader (locations 0 and 1)
             primitive.joints?.let { joints ->
                 VboWrapper.createArrayBuffer().apply {
                     val buffer = org.lwjgl.BufferUtils.createIntBuffer(joints.size * 4)
@@ -141,16 +146,49 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                     GL33.glEnableVertexAttribArray(1)
                 }
             }
+
+            // Setup source positions, normals, tangents for Transform Feedback (locations 2, 3, 4)
+            primitive.positions?.let { positions ->
+                VboWrapper.createArrayBuffer().apply {
+                    val data = positions.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
+                    uploadData(data)
+                    GL33.glVertexAttribPointer(2, 3, GL33.GL_FLOAT, false, 0, 0)
+                    GL33.glEnableVertexAttribArray(2)
+                }
+            }
+
+            primitive.normals?.let { normals ->
+                VboWrapper.createArrayBuffer().apply {
+                    val data = normals.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
+                    uploadData(data)
+                    GL33.glVertexAttribPointer(3, 3, GL33.GL_FLOAT, false, 0, 0)
+                    GL33.glEnableVertexAttribArray(3)
+                }
+            }
+
+            primitive.tangents?.let { tangents ->
+                VboWrapper.createArrayBuffer().apply {
+                    val data = tangents.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
+                    uploadData(data)
+                    GL33.glVertexAttribPointer(4, 4, GL33.GL_FLOAT, false, 0, 0)
+                    GL33.glEnableVertexAttribArray(4)
+                }
+            }
+
+            GL33.glBindVertexArray(0)
         }
 
-        // Positions, normals, tangents - входные данные для Transform Feedback
+        // Now setup rendering VAO with deformed buffers
+        GL33.glBindVertexArray(vao)
+
+        // Create output buffers for deformed data
         posBuffer = VboWrapper.createArrayBuffer().apply {
             primitive.positions?.let { positions ->
                 val data = positions.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(2, 3, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(2)
+            GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(0)
         }
 
         norBuffer = VboWrapper.createArrayBuffer().apply {
@@ -158,8 +196,8 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                 val data = normals.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(3, 3, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(3)
+            GL33.glVertexAttribPointer(5, 3, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(5)
         }
 
         tanBuffer = VboWrapper.createArrayBuffer().apply {
@@ -167,9 +205,13 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                 val data = tangents.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 4 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(4, 4, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(4)
+            GL33.glVertexAttribPointer(9, 4, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(9)
         }
+
+        org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
+            "[PipelineRenderer] Dynamic buffers: skinningVao=$skinningVao renderVao=$vao pos=${posBuffer!!.id} nor=${norBuffer!!.id} tan=${tanBuffer!!.id}"
+        )
     }
 
     private fun initCommonBuffers() {
@@ -389,7 +431,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                     if (deformer == null) {
                         org.apache.logging.log4j.LogManager.getLogger().warn("[PipelineRenderer] deformer is null after init! isDynamic=$isDynamic vao=$vao")
                     }
-                    deformer?.compute(skinGetter, vao) // Передаём vao
+                    deformer?.compute(skinGetter, skinningVao) // Pass skinning VAO for Transform Feedback
                 }
             }
         }
@@ -674,6 +716,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
 
     override fun destroy() {
         GL33.glDeleteVertexArrays(vao)
+        if (skinningVao != -1) GL33.glDeleteVertexArrays(skinningVao)
         if (instancedVao != -1) GL33.glDeleteVertexArrays(instancedVao)
         clearRuntimeInstancedBindings()
         posBuffer?.delete()
