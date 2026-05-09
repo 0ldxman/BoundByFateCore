@@ -55,7 +55,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         registerRenderer(this)
     }
 
-    fun init() {
+    override fun init() {
         vao = GL33.glGenVertexArrays()
         GL33.glBindVertexArray(vao)
 
