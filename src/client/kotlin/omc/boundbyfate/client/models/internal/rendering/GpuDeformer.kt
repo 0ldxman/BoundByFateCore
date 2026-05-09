@@ -11,11 +11,7 @@ import omc.boundbyfate.client.models.internal.utils.toFloatBuffer
 import kotlin.math.min
 
 class GpuDeformer(private val primitive: Primitive) {
-    private var processingVao = -1
-
-    private var srcPosBuffer: VboWrapper? = null
-    private var srcNorBuffer: VboWrapper? = null
-    private var srcTanBuffer: VboWrapper? = null
+    // Убрали processingVao - используем VAO из PipelineRenderer
 
     private var srcJointsBuffer: VboWrapper? = null
     private var srcWeightsBuffer: VboWrapper? = null
@@ -44,10 +40,8 @@ class GpuDeformer(private val primitive: Primitive) {
         this.outTanBufferId = dstTan
         this.drawCount = primitive.positions?.size ?: 0
 
-        processingVao = GL30.glGenVertexArrays()
-        GL30.glBindVertexArray(processingVao)
-
-        initSourceAttributes()
+        // Не создаём отдельный VAO - используем VAO из PipelineRenderer
+        // Привязываем joints и weights к основному VAO в PipelineRenderer.initDynamicBuffers()
 
         if (primitive.morphTargets.isNotEmpty()) {
             initMorphTextures()
@@ -55,59 +49,6 @@ class GpuDeformer(private val primitive: Primitive) {
 
         if (primitive.hasSkinning) {
             initJointMatrixTexture()
-        }
-
-        GL30.glBindVertexArray(0)
-    }
-
-    private fun initSourceAttributes() {
-        primitive.positions?.let { positions ->
-            srcPosBuffer = VboWrapper.createArrayBuffer().apply {
-                val data = positions.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
-                uploadData(data)
-                GL33.glVertexAttribPointer(2, 3, GL33.GL_FLOAT, false, 0, 0)
-                GL33.glEnableVertexAttribArray(2)
-            }
-        }
-
-        primitive.normals?.let { normals ->
-            srcNorBuffer = VboWrapper.createArrayBuffer().apply {
-                val data = normals.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
-                uploadData(data)
-                GL33.glVertexAttribPointer(3, 3, GL33.GL_FLOAT, false, 0, 0)
-                GL33.glEnableVertexAttribArray(3)
-            }
-        }
-
-        primitive.tangents?.let { tangents ->
-            srcTanBuffer = VboWrapper.createArrayBuffer().apply {
-                val data = tangents.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
-                uploadData(data)
-                GL33.glVertexAttribPointer(4, 4, GL33.GL_FLOAT, false, 0, 0)
-                GL33.glEnableVertexAttribArray(4)
-            }
-        }
-
-        if (primitive.hasSkinning) {
-            primitive.joints?.let { joints ->
-                srcJointsBuffer = VboWrapper.createArrayBuffer().apply {
-                    val buffer = BufferUtils.createIntBuffer(joints.size * 4)
-                    joints.forEach { j -> buffer.put(j.x).put(j.y).put(j.z).put(j.w) }
-                    buffer.flip()
-                    uploadData(buffer)
-                    GL30.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
-                    GL33.glEnableVertexAttribArray(0)
-                }
-            }
-
-            primitive.jointWeights?.let { weights ->
-                srcWeightsBuffer = VboWrapper.createArrayBuffer().apply {
-                    val data = weights.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
-                    uploadData(data)
-                    GL33.glVertexAttribPointer(1, 4, GL33.GL_FLOAT, false, 0, 0)
-                    GL33.glEnableVertexAttribArray(1)
-                }
-            }
         }
     }
 
@@ -178,13 +119,14 @@ class GpuDeformer(private val primitive: Primitive) {
         return textureId
     }
 
-    fun compute(node: SkinGetter) {
+    fun compute(node: SkinGetter, renderVao: Int) {
         computeCallCount++
         val shouldLog = computeCallCount == 1
         
         if (shouldLog) {
             logger.info("[GpuDeformer] First compute call, hasSkinning=${primitive.hasSkinning}")
             logger.info("[GpuDeformer] Transform Feedback output buffers: pos=$outPosBufferId nor=$outNorBufferId tan=$outTanBufferId")
+            logger.info("[GpuDeformer] Using render VAO for Transform Feedback: $renderVao")
         }
         
         val shaderId: Int
@@ -210,7 +152,7 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 2, outTanBufferId)
 
         GL30.glBeginTransformFeedback(GL11.GL_POINTS)
-        GL30.glBindVertexArray(processingVao)
+        GL30.glBindVertexArray(renderVao) // Используем рендеринг-VAO
         GL11.glDrawArrays(GL11.GL_POINTS, 0, drawCount)
         GL30.glEndTransformFeedback()
 
@@ -218,14 +160,12 @@ class GpuDeformer(private val primitive: Primitive) {
         
         // Проверяем что данные записались
         if (shouldLog) {
-            val testBuffer = org.lwjgl.BufferUtils.createFloatBuffer(9) // 3 вершины * 3 компонента
+            val testBuffer = org.lwjgl.BufferUtils.createFloatBuffer(9)
             GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, outPosBufferId)
             GL33.glGetBufferSubData(GL33.GL_ARRAY_BUFFER, 0, testBuffer)
             GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0)
             logger.info("[GpuDeformer] First 3 output positions: v0=(${testBuffer.get(0)},${testBuffer.get(1)},${testBuffer.get(2)}) v1=(${testBuffer.get(3)},${testBuffer.get(4)},${testBuffer.get(5)}) v2=(${testBuffer.get(6)},${testBuffer.get(7)},${testBuffer.get(8)})")
         }
-
-        // Don't call glUseProgram(0) here — ListRenderPipeline.transformSkinning() handles cleanup
 
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0)
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 1, 0)
@@ -277,11 +217,8 @@ class GpuDeformer(private val primitive: Primitive) {
     }
 
     fun destroy() {
-        GL30.glDeleteVertexArrays(processingVao)
+        // Убрали удаление processingVao
 
-        srcPosBuffer?.delete()
-        srcNorBuffer?.delete()
-        srcTanBuffer?.delete()
         srcJointsBuffer?.delete()
         srcWeightsBuffer?.delete()
 

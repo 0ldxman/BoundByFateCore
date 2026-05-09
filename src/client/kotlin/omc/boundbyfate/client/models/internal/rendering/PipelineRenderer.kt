@@ -120,34 +120,55 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
     private fun initDynamicBuffers() {
         val vertexCount = primitive.positionsCount / 3
 
+        // Для Transform Feedback шейдера нужны joints (location 0) и weights (location 1)
+        if (primitive.hasSkinning) {
+            primitive.joints?.let { joints ->
+                VboWrapper.createArrayBuffer().apply {
+                    val buffer = BufferUtils.createIntBuffer(joints.size * 4)
+                    joints.forEach { j -> buffer.put(j.x).put(j.y).put(j.z).put(j.w) }
+                    buffer.flip()
+                    uploadData(buffer)
+                    GL30.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
+                    GL33.glEnableVertexAttribArray(0)
+                }
+            }
+
+            primitive.jointWeights?.let { weights ->
+                VboWrapper.createArrayBuffer().apply {
+                    val data = weights.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
+                    uploadData(data)
+                    GL33.glVertexAttribPointer(1, 4, GL33.GL_FLOAT, false, 0, 0)
+                    GL33.glEnableVertexAttribArray(1)
+                }
+            }
+        }
+
+        // Positions, normals, tangents - входные данные для Transform Feedback
         posBuffer = VboWrapper.createArrayBuffer().apply {
-            // Загружаем исходные позиции в буфер
             primitive.positions?.let { positions ->
                 val data = positions.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(0)
+            GL33.glVertexAttribPointer(2, 3, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(2)
         }
 
         norBuffer = VboWrapper.createArrayBuffer().apply {
-            // Загружаем исходные нормали в буфер
             primitive.normals?.let { normals ->
                 val data = normals.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(5, 3, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(5)
+            GL33.glVertexAttribPointer(3, 3, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(3)
         }
 
         tanBuffer = VboWrapper.createArrayBuffer().apply {
-            // Загружаем исходные тангенты в буфер
             primitive.tangents?.let { tangents ->
                 val data = tangents.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
                 uploadData(data, GL33.GL_DYNAMIC_COPY)
             } ?: allocate(vertexCount * 4 * 4L, GL33.GL_DYNAMIC_COPY)
-            GL33.glVertexAttribPointer(9, 4, GL33.GL_FLOAT, false, 0, 0)
-            GL33.glEnableVertexAttribArray(9)
+            GL33.glVertexAttribPointer(4, 4, GL33.GL_FLOAT, false, 0, 0)
+            GL33.glEnableVertexAttribArray(4)
         }
     }
 
@@ -368,7 +389,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                     if (deformer == null) {
                         org.apache.logging.log4j.LogManager.getLogger().warn("[PipelineRenderer] deformer is null after init! isDynamic=$isDynamic vao=$vao")
                     }
-                    deformer?.compute(skinGetter)
+                    deformer?.compute(skinGetter, vao) // Передаём vao
                 }
             }
         }
@@ -578,6 +599,12 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
+
+        if (isDynamic && computeCallCount == 1) {
+            org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
+                "[PipelineRenderer] renderVAO: vao=$vao, posBuffer=${posBuffer?.id}"
+            )
+        }
 
         RenderSystem.glBindVertexArray { vao }
 
