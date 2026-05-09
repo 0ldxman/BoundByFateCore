@@ -40,6 +40,14 @@ class GpuDeformer(private val primitive: Primitive) {
         this.outTanBufferId = dstTan
         this.drawCount = primitive.positions?.size ?: 0
 
+        // Логируем первые несколько вершин для отладки
+        primitive.joints?.let { joints ->
+            logger.info("[GpuDeformer] First 3 vertex joints: v0=${joints[0]} v1=${joints[1]} v2=${joints[2]}")
+        }
+        primitive.jointWeights?.let { weights ->
+            logger.info("[GpuDeformer] First 3 vertex weights: v0=${weights[0]} v1=${weights[1]} v2=${weights[2]}")
+        }
+
         // Не создаём отдельный VAO - используем VAO из PipelineRenderer
         // Привязываем joints и weights к основному VAO в PipelineRenderer.initDynamicBuffers()
 
