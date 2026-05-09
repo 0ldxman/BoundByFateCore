@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL31
 import org.lwjgl.opengl.GL33
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import java.nio.ShortBuffer
 
 class VboWrapper(val id: Int, val target: Int = GL33.GL_ARRAY_BUFFER) {
 
@@ -25,6 +26,11 @@ class VboWrapper(val id: Int, val target: Int = GL33.GL_ARRAY_BUFFER) {
     }
 
     fun uploadData(data: IntBuffer, usage: Int = GL33.GL_STATIC_DRAW) {
+        bind()
+        GL33.glBufferData(target, data, usage)
+    }
+
+    fun uploadData(data: ShortBuffer, usage: Int = GL33.GL_STATIC_DRAW) {
         bind()
         GL33.glBufferData(target, data, usage)
     }
