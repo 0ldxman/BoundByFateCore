@@ -6,6 +6,7 @@
 		"EntityRendererMixin",
 		"PlayerSkinMixin",
 		"accessor.GameRendererAccessor",
+		"accessor.LimbAnimatorAccessor",
 		"accessor.LivingEntityAccessor",
 		"accessor.ShaderProgramAccessor"
 	],

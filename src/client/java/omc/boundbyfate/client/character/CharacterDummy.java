@@ -7,6 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.Identifier;
+import omc.boundbyfate.client.mixin.accessor.LimbAnimatorAccessor;
 import omc.boundbyfate.client.mixin.accessor.LivingEntityAccessor;
 import omc.boundbyfate.client.skin.ClientSkinManager;
 import omc.boundbyfate.data.world.character.ModelType;
@@ -81,14 +82,13 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.prevBodyYaw = sourceEntity.prevBodyYaw;
 
         // Копируем анимации конечностей (движение ног/рук)
-        // Используем аксессоры для доступа к защищенным полям в 1.20.1
-        LivingEntityAccessor sourceAcc = (LivingEntityAccessor) sourceEntity;
-        LivingEntityAccessor thisAcc = (LivingEntityAccessor) this;
+        // В 1.20.1 поля limbDistance и prevLimbDistance переехали в LimbAnimator
+        LimbAnimatorAccessor sourceLimb = (LimbAnimatorAccessor) sourceEntity.limbAnimator;
+        LimbAnimatorAccessor thisLimb = (LimbAnimatorAccessor) this.limbAnimator;
 
-        thisAcc.bbf_setLimbDistance(sourceAcc.bbf_getLimbDistance());
-        thisAcc.bbf_setPrevLimbDistance(sourceAcc.bbf_getPrevLimbDistance());
-        
-        this.limbAnimator.setSpeed(sourceEntity.limbAnimator.getSpeed());
+        thisLimb.bbf_setSpeed(sourceLimb.bbf_getSpeed());
+        thisLimb.bbf_setPrevSpeed(sourceLimb.bbf_getPrevSpeed());
+        thisLimb.bbf_setPos(sourceLimb.bbf_getPos());
 
         // Состояние (крадётся, плывёт и т.д.)
         this.setSneaking(sourceEntity.isSneaking());
