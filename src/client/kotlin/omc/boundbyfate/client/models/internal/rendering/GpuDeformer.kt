@@ -215,6 +215,16 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glEndTransformFeedback()
 
         GL30.glBindVertexArray(0)
+        
+        // Проверяем что данные записались
+        if (shouldLog) {
+            val testBuffer = org.lwjgl.BufferUtils.createFloatBuffer(9) // 3 вершины * 3 компонента
+            GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, outPosBufferId)
+            GL33.glGetBufferSubData(GL33.GL_ARRAY_BUFFER, 0, testBuffer)
+            GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0)
+            logger.info("[GpuDeformer] First 3 output positions: v0=(${testBuffer.get(0)},${testBuffer.get(1)},${testBuffer.get(2)}) v1=(${testBuffer.get(3)},${testBuffer.get(4)},${testBuffer.get(5)}) v2=(${testBuffer.get(6)},${testBuffer.get(7)},${testBuffer.get(8)})")
+        }
+
         // Don't call glUseProgram(0) here — ListRenderPipeline.transformSkinning() handles cleanup
 
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0)
