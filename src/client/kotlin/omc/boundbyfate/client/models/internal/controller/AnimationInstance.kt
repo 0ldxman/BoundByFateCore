@@ -25,7 +25,18 @@ class AnimationInstance(private val animation: Animation) {
     private var debugFrameCount = 0
 
     fun update(model: Map<Int, TrsTransformF>, dt: Float) {
-        if (weight == 0f) return
+        debugFrameCount++
+        val doDebug = debugFrameCount <= 10 || debugFrameCount % 60 == 0
+        
+        if (doDebug) {
+            logger.info("[AnimInst] UPDATE CALLED: '${animation.name}' frame=$debugFrameCount weight=$weight time=${"%.3f".format(time)} dt=$dt")
+        }
+        
+        if (weight == 0f) {
+            if (doDebug) logger.info("[AnimInst] SKIPPED: weight=0")
+            return
+        }
+        
         time += speed * dt
         updatePlaying(model)
     }
@@ -35,9 +46,9 @@ class AnimationInstance(private val animation: Animation) {
 
         val time = if (reversed) duration - time else time
 
-        val doDebug = debugFrameCount < 5
+        val doDebug = debugFrameCount <= 10 || debugFrameCount % 60 == 0
         if (doDebug) {
-            logger.info("[AnimInst] '${animation.name}' frame=$debugFrameCount time=$time weight=$weight nodes=${animation.nodes.size}")
+            logger.info("[AnimInst] PLAYING: '${animation.name}' frame=$debugFrameCount time=${"%.3f".format(time)} weight=$weight nodes=${animation.nodes.size}")
         }
 
         animation.nodes.forEach { (node, channels) ->
@@ -83,8 +94,6 @@ class AnimationInstance(private val animation: Animation) {
                 else transform.scale(scale)
             }
         }
-
-        if (doDebug) debugFrameCount++
     }
 
     private fun applyWrapMode() {

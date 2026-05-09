@@ -118,19 +118,31 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         val vertexCount = primitive.positionsCount / 3
 
         posBuffer = VboWrapper.createArrayBuffer().apply {
-            allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
+            // Загружаем исходные позиции в буфер
+            primitive.positions?.let { positions ->
+                val data = positions.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
+                uploadData(data, GL33.GL_DYNAMIC_COPY)
+            } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
             GL33.glVertexAttribPointer(0, 3, GL33.GL_FLOAT, false, 0, 0)
             GL33.glEnableVertexAttribArray(0)
         }
 
         norBuffer = VboWrapper.createArrayBuffer().apply {
-            allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
+            // Загружаем исходные нормали в буфер
+            primitive.normals?.let { normals ->
+                val data = normals.toFloatBuffer(3) { v, b -> b.put(v.x).put(v.y).put(v.z) }
+                uploadData(data, GL33.GL_DYNAMIC_COPY)
+            } ?: allocate(vertexCount * 3 * 4L, GL33.GL_DYNAMIC_COPY)
             GL33.glVertexAttribPointer(5, 3, GL33.GL_FLOAT, false, 0, 0)
             GL33.glEnableVertexAttribArray(5)
         }
 
         tanBuffer = VboWrapper.createArrayBuffer().apply {
-            allocate(vertexCount * 4 * 4L, GL33.GL_DYNAMIC_COPY)
+            // Загружаем исходные тангенты в буфер
+            primitive.tangents?.let { tangents ->
+                val data = tangents.toFloatBuffer(4) { v, b -> b.put(v.x).put(v.y).put(v.z).put(v.w) }
+                uploadData(data, GL33.GL_DYNAMIC_COPY)
+            } ?: allocate(vertexCount * 4 * 4L, GL33.GL_DYNAMIC_COPY)
             GL33.glVertexAttribPointer(9, 4, GL33.GL_FLOAT, false, 0, 0)
             GL33.glEnableVertexAttribArray(9)
         }
