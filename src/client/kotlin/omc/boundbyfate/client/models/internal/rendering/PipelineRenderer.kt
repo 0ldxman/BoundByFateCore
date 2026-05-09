@@ -569,6 +569,9 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         if (vao == -1) init()  // lazy GL init on render thread
         val shader = this.shader ?: RenderSystem.getShader() ?: return
 
+        // Переключаемся на рендеринг-шейдер (после Transform Feedback который использовал шейдер скиннинга)
+        com.mojang.blaze3d.platform.GlStateManager._glUseProgram(shader.getProgramRef())
+
         val matrix = node()
 
         applyMaterial(shader, primitive.material)
@@ -606,6 +609,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         }
 
         GL33.glBindVertexArray(0)
+        // Не сбрасываем шейдер здесь - ListRenderPipeline.renderVAO() сделает это в конце
     }
 
     private fun applyMaterial(shader: ShaderProgram, material: Material, colorLocation: Int = 1) {
