@@ -133,8 +133,6 @@ class GpuDeformer(private val primitive: Primitive) {
         
         if (shouldLog) {
             logger.info("[GpuDeformer] Compute call #$computeCallCount, hasSkinning=${primitive.hasSkinning}")
-            logger.info("[GpuDeformer] Transform Feedback output buffers: pos=$outPosBufferId nor=$outNorBufferId tan=$outTanBufferId")
-            logger.info("[GpuDeformer] Using render VAO for Transform Feedback: $renderVao")
         }
         
         val shaderId: Int
@@ -142,6 +140,17 @@ class GpuDeformer(private val primitive: Primitive) {
         if (primitive.hasSkinning) {
             shaderId = HollowModelManager.glProgramSkinning
             GL20.glUseProgram(shaderId)
+            
+            // Проверяем, что шейдер валиден
+            if (shouldLog) {
+                val linkStatus = GL20.glGetProgrami(shaderId, GL20.GL_LINK_STATUS)
+                val validateStatus = GL20.glGetProgrami(shaderId, GL20.GL_VALIDATE_STATUS)
+                logger.info("[GpuDeformer] Shader program $shaderId: linkStatus=$linkStatus, validateStatus=$validateStatus")
+                
+                // Проверяем, что Transform Feedback настроен
+                val tfVaryings = GL30.glGetProgrami(shaderId, GL30.GL_TRANSFORM_FEEDBACK_VARYINGS)
+                logger.info("[GpuDeformer] Transform Feedback varyings count: $tfVaryings")
+            }
 
             updateJointMatrices(node)
 
@@ -159,10 +168,26 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 1, outNorBufferId)
         GL30.glBindBufferBase(GL30.GL_TRANSFORM_FEEDBACK_BUFFER, 2, outTanBufferId)
 
+        // Проверяем ошибки перед Transform Feedback
+        if (shouldLog) {
+            val error1 = GL11.glGetError()
+            if (error1 != GL11.GL_NO_ERROR) {
+                logger.error("[GpuDeformer] OpenGL error before TF: $error1")
+            }
+        }
+
         GL30.glBeginTransformFeedback(GL11.GL_POINTS)
-        GL30.glBindVertexArray(renderVao) // Используем рендеринг-VAO
+        GL30.glBindVertexArray(renderVao)
         GL11.glDrawArrays(GL11.GL_POINTS, 0, drawCount)
         GL30.glEndTransformFeedback()
+
+        // Проверяем ошибки после Transform Feedback
+        if (shouldLog) {
+            val error2 = GL11.glGetError()
+            if (error2 != GL11.GL_NO_ERROR) {
+                logger.error("[GpuDeformer] OpenGL error after TF: $error2")
+            }
+        }
 
         GL30.glBindVertexArray(0)
         
