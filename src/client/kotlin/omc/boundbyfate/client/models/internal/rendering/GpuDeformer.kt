@@ -182,7 +182,7 @@ class GpuDeformer(private val primitive: Primitive) {
         GL30.glEndTransformFeedback()
 
         // КРИТИЧНО: Ждём завершения Transform Feedback перед использованием результатов
-        GL33.glMemoryBarrier(GL33.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
+        GL42.glMemoryBarrier(GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
 
         // Проверяем ошибки после Transform Feedback
         if (shouldLog) {
