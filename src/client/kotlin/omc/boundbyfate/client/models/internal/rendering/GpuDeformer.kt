@@ -184,6 +184,7 @@ class GpuDeformer(private val primitive: Primitive) {
         
         if (shouldLog) {
             logger.info("[GpuDeformer] First compute call, hasSkinning=${primitive.hasSkinning}")
+            logger.info("[GpuDeformer] Transform Feedback output buffers: pos=$outPosBufferId nor=$outNorBufferId tan=$outTanBufferId")
         }
         
         val shaderId: Int

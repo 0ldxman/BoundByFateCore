@@ -55,7 +55,7 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
         registerRenderer(this)
     }
 
-    override fun init() {
+    fun init() {
         vao = GL33.glGenVertexArrays()
         GL33.glBindVertexArray(vao)
 
@@ -67,6 +67,9 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
                 dstPos = posBuffer!!.id,
                 dstNor = norBuffer!!.id,
                 dstTan = tanBuffer!!.id
+            )
+            org.slf4j.LoggerFactory.getLogger("PipelineRenderer").info(
+                "[PipelineRenderer] Dynamic buffers: pos=${posBuffer!!.id} nor=${norBuffer!!.id} tan=${tanBuffer!!.id}"
             )
             GL33.glBindVertexArray(vao)
         } else {
