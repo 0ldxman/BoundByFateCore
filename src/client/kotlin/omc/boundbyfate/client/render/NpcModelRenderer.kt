@@ -199,6 +199,8 @@ object NpcModelRenderer {
                 AnimationSystem(attachment).also { sys ->
                     if (component.animationLayers.isEmpty()) {
                         sys.playWhenReady("walk", wrapMode = WrapMode.Loop)
+                        // Прокручиваем dispatcher один раз чтобы корутина начала выполняться
+                        sys.update(0f)
                     }
                 }
             } else null

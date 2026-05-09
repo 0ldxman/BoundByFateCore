@@ -70,6 +70,9 @@ object BbfCommands {
         // Инициализируем компонент модели
         val modelComp = npc.getOrCreate(NpcModelComponent.TYPE)
         // modelPath уже дефолтный: boundbyfate-core:models/entity/classic.gltf
+        
+        // Запускаем анимацию walk
+        modelComp.playAnimation("walk", looping = true)
 
         world.spawnEntity(npc)
 

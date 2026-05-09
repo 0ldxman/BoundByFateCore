@@ -95,9 +95,12 @@ class AnimationSystem(val model: ModelAttachment) {
     ) {
         if (destroyed) return
 
+        logger.info("[AnimSystem] playWhenReady('$name') called, launching coroutine")
         scope.launch {
+            logger.info("[AnimSystem] playWhenReady('$name') coroutine started, awaiting animations...")
             // Ждём пока модель загрузится и в ней есть анимации
             model.awaitAnimations()
+            logger.info("[AnimSystem] playWhenReady('$name') animations loaded, resolving name...")
 
             // Ищем анимацию: сначала точное совпадение, потом case-insensitive
             val resolvedName = model.animations.findName(name)
@@ -106,6 +109,7 @@ class AnimationSystem(val model: ModelAttachment) {
                 return@launch
             }
 
+            logger.info("[AnimSystem] playWhenReady('$name') resolved to '$resolvedName', starting transition...")
             transition(to = resolvedName, duration = duration, wrapMode = wrapMode)
         }
     }
