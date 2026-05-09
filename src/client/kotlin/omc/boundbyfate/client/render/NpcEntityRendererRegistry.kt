@@ -23,6 +23,9 @@ object NpcEntityRendererRegistry {
         EntityRendererRegistry.register(NpcEntityRegistry.NPC) { context ->
             EmptyEntityRenderer(context)
         }
-        logger.info("NPC entity renderer registered")
+        EntityRendererRegistry.register(NpcEntityRegistry.BBF_NPC) { context ->
+            EmptyEntityRenderer(context)
+        }
+        logger.info("NPC entity renderers registered")
     }
 }

@@ -34,8 +34,11 @@ public class EntityRendererMixin<T extends Entity> {
         int packedLight,
         CallbackInfo ci
     ) {
+        // Kool/GLTF rendering disabled for now
+        /*
         if (NpcModelRenderer.INSTANCE.onRenderPre(entity, entityYaw, partialTick, poseStack, buffer, packedLight)) {
             ci.cancel();
         }
+        */
     }
 }

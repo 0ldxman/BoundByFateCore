@@ -17,17 +17,17 @@ import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.world.World
-import omc.boundbyfate.component.components.NpcModelComponent
+import omc.boundbyfate.component.components.EntityAppearanceData
 import omc.boundbyfate.component.core.getOrCreate
 import omc.boundbyfate.system.npc.navigation.NpcMoveControl
 import omc.boundbyfate.system.npc.navigation.NpcPathNavigation
 import omc.boundbyfate.util.extension.toIdentifier
 
 /**
- * NPC entity for BoundByFate.
- * Yarn-compatible baseline implementation.
+ * Новая сущность NPC для BoundByFate, чистая от Kool.
+ * Автоматически использует EntityAppearanceData для прокси-рендеринга.
  */
-class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAwareEntity(type, world) {
+class BbfNpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAwareEntity(type, world) {
 
     init {
         moveControl = NpcMoveControl(this)
@@ -35,10 +35,6 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
 
     override fun createNavigation(world: World): EntityNavigation = NpcPathNavigation(this, world)
 
-    /**
-     * Инициализирует компонент модели при первом спавне.
-     * Компонент синхронизируется с клиентом через ComponentSyncHandler.
-     */
     override fun initialize(
         world: net.minecraft.world.ServerWorldAccess,
         difficulty: net.minecraft.world.LocalDifficulty,
@@ -46,13 +42,14 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
         entityData: net.minecraft.entity.EntityData?,
         entityNbt: net.minecraft.nbt.NbtCompound?
     ): net.minecraft.entity.EntityData? {
-        // getOrCreate(NpcModelComponent.TYPE) // Disabled Kool NPC model
+        // Автоматически создаем компонент внешности при спавне
+        getOrCreate(EntityAppearanceData.TYPE)
         return super.initialize(world, difficulty, spawnReason, entityData, entityNbt)
     }
 
     override fun interactMob(player: PlayerEntity, hand: Hand): ActionResult {
         if (hand == Hand.MAIN_HAND && world.isClient) {
-            // TODO: Open NPC menu GUI
+            // TODO: Открыть меню NPC
             return ActionResult.SUCCESS
         }
         return super.interactMob(player, hand)
@@ -68,14 +65,6 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
     override fun canPickUpLoot() = true
     override fun canGather(stack: ItemStack) = false
 
-    override fun pushAway(entity: Entity) {
-        super.pushAway(entity)
-    }
-
-    override fun isPushable(): Boolean = super.isPushable()
-
-    override fun isCollidable(): Boolean = false
-
     override fun canImmediatelyDespawn(distanceSquared: Double) = false
     override fun isPersistent() = true
 
@@ -85,10 +74,6 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
             customName = Text.literal(value)
             isCustomNameVisible = value.isNotEmpty()
         }
-
-    fun clearTarget() {
-        target = null
-    }
 
     fun setAttributes(attributes: Map<String, Float>) {
         attributes.forEach { (attributeName, value) ->
@@ -108,15 +93,8 @@ class NpcEntity(type: EntityType<out PathAwareEntity>, world: World) : PathAware
             return LivingEntity.createLivingAttributes()
                 .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0)
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.2)
-                .add(EntityAttributes.GENERIC_ARMOR, 0.0)
-                .add(EntityAttributes.GENERIC_ARMOR_TOUGHNESS, 0.0)
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 1.0)
-                .add(EntityAttributes.GENERIC_ATTACK_SPEED, 4.0)
-                .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 0.0)
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 128.0)
-                .add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.0)
-                .add(EntityAttributes.GENERIC_FLYING_SPEED, 0.4)
-                .add(EntityAttributes.GENERIC_LUCK, 0.0)
         }
     }
 }

@@ -40,6 +40,9 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
     /** Тип анимации отдыха. */
     public final DummyAnimationType animationType;
 
+    /** Сущность-источник (например, игрок), чьё состояние мы копируем. */
+    public net.minecraft.entity.LivingEntity sourceEntity;
+
     public CharacterDummy(
             ClientWorld world,
             UUID characterId,
@@ -52,6 +55,43 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         this.skinId = skinId;
         this.modelType = modelType;
         this.animationType = animationType;
+    }
+
+    /**
+     * Копирует визуальное состояние из сущности-источника.
+     */
+    public void syncWithSource() {
+        if (sourceEntity == null) return;
+
+        // Копируем позицию и повороты
+        this.setPos(sourceEntity.getX(), sourceEntity.getY(), sourceEntity.getZ());
+        this.prevX = sourceEntity.prevX;
+        this.prevY = sourceEntity.prevY;
+        this.prevZ = sourceEntity.prevZ;
+
+        this.setYaw(sourceEntity.getYaw());
+        this.prevYaw = sourceEntity.prevYaw;
+        this.setPitch(sourceEntity.getPitch());
+        this.prevPitch = sourceEntity.prevPitch;
+
+        this.headYaw = sourceEntity.headYaw;
+        this.prevHeadYaw = sourceEntity.prevHeadYaw;
+        this.bodyYaw = sourceEntity.bodyYaw;
+        this.prevBodyYaw = sourceEntity.prevBodyYaw;
+
+        // Копируем анимации конечностей (движение ног/рук)
+        this.limbDistance = sourceEntity.limbDistance;
+        this.prevLimbDistance = sourceEntity.prevLimbDistance;
+        this.limbAnimator.setSpeed(sourceEntity.limbAnimator.getSpeed());
+
+        // Состояние (крадётся, плывёт и т.д.)
+        this.setSneaking(sourceEntity.isSneaking());
+        this.setSprinting(sourceEntity.isSprinting());
+        this.setSwimming(sourceEntity.isSwimming());
+
+        // Копируем время жизни (важно для некоторых ванильных анимаций)
+        // Но не затираем свой age полностью, если dummy используется для анимаций отдыха
+        // this.age = sourceEntity.age; 
     }
 
     // ── Скин (API 1.20.1) ─────────────────────────────────────────────────
@@ -80,13 +120,19 @@ public class CharacterDummy extends AbstractClientPlayerEntity {
         return "alex".equalsIgnoreCase(modelType) ? "slim" : "default";
     }
 
-    // ── Заморозка — Dummy не двигается и не реагирует ────────────────────
+    // ── Заморозка — Dummy не двигается самостоятельно ────────────────────
 
     @Override
     public void tick() {
-        // Не вызываем super.tick() — Dummy полностью статичен.
-        // Только увеличиваем возраст для корректного рендера.
-        age++;
+        // Мы НЕ вызываем super.tick(), чтобы избежать ванильной логики движения.
+        // age увеличивается в CharacterDummyManager (Client Tick), а не здесь.
+    }
+
+    /**
+     * Вызывается из клиентского тика для обновления состояния.
+     */
+    public void clientTick() {
+        this.age++;
     }
 
     @Override

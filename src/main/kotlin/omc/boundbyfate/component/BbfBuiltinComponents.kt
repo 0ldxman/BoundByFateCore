@@ -29,7 +29,7 @@ object BbfBuiltinComponents {
         EntityCombatData.TYPE
         EntityAbilitiesData.TYPE
         EntityAppearanceData.TYPE
-        NpcModelComponent.TYPE
+        // NpcModelComponent.TYPE
 
         logger.info("Built-in components registered")
     }

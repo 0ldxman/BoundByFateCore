@@ -32,11 +32,12 @@ class BoundByFateCoreClient : ClientModInitializer {
         omc.boundbyfate.client.hud.HudSystem.register()
 
         // Регистрация HollowModelManager как reload listener
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
-            .registerReloadListener(omc.boundbyfate.client.models.internal.manager.HollowModelManager)
+        // ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
+        //    .registerReloadListener(omc.boundbyfate.client.models.internal.manager.HollowModelManager)
 
         // KoolManager инициализируется при первом тике когда OpenGL контекст уже готов
         var koolInitialized = false
+        /*
         ClientTickEvents.START_CLIENT_TICK.register { client: MinecraftClient ->
             if (!koolInitialized && client.world != null) {
                 koolInitialized = true
@@ -49,6 +50,7 @@ class BoundByFateCoreClient : ClientModInitializer {
                 }
             }
         }
+        */
 
         // Обновляем Kool-контекст каждый кадр рендера.
         // Это нужно для: обновления матриц трансформации нод, тика анимаций через AnimationDispatcher,
@@ -58,7 +60,7 @@ class BoundByFateCoreClient : ClientModInitializer {
         net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.BEFORE_ENTITIES.register { context ->
             if (koolInitialized) {
                 try {
-                    omc.boundbyfate.client.kool.gl.tickKool()
+                    // omc.boundbyfate.client.kool.gl.tickKool()
                 } catch (e: Exception) {
                     logger.error("Error in Kool tickKool", e)
                 }

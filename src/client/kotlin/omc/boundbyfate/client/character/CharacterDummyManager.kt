@@ -2,9 +2,14 @@ package omc.boundbyfate.client.character
 
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.minecraft.client.MinecraftClient
+import net.minecraft.entity.LivingEntity
 import omc.boundbyfate.client.animation.PlayerAnimSystem
+import omc.boundbyfate.component.components.EntityAppearanceData
+import omc.boundbyfate.component.core.getAttached
 import omc.boundbyfate.network.packet.s2c.CharacterDummyDespawnPacket
 import omc.boundbyfate.network.packet.s2c.CharacterDummySpawnPacket
 import omc.boundbyfate.network.packet.s2c.CharacterEnterResponsePacket
@@ -46,6 +51,28 @@ object CharacterDummyManager {
     // ── Регистрация ───────────────────────────────────────────────────────
 
     fun register() {
+        ClientTickEvents.END_CLIENT_TICK.register { client ->
+            if (client.world != null && !client.isPaused) {
+                // Тикаем существующие манекены
+                dummies.values.forEach { it.clientTick() }
+                
+                // Проверяем сущности в мире на наличие компонента внешности
+                // (только те, что в радиусе стриминга клиента)
+                client.world?.entities?.forEach { entity ->
+                    if (entity is LivingEntity && entity !is CharacterDummy && entity !is net.minecraft.client.network.ClientPlayerEntity) {
+                        checkAndCreateProxy(entity)
+                    }
+                }
+            }
+        }
+
+        // Автоматическое удаление прокси при выгрузке сущности
+        ClientEntityEvents.ENTITY_UNLOAD.register { entity, _ ->
+            if (entity is LivingEntity) {
+                removeProxy(entity)
+            }
+        }
+
         ClientPlayNetworking.registerGlobalReceiver(CharacterDummySpawnPacket.TYPE) { packet, _, _ ->
             MinecraftClient.getInstance().execute { onSpawn(packet) }
         }
@@ -73,6 +100,41 @@ object CharacterDummyManager {
      * Возвращает манекен по UUID персонажа или null.
      */
     fun getDummy(characterId: UUID): CharacterDummy? = dummies[characterId]
+
+    // ── Автоматизация прокси ──────────────────────────────────────────────
+
+    private fun checkAndCreateProxy(entity: LivingEntity) {
+        val appearance = entity.getAttached(EntityAppearanceData.TYPE) ?: return
+        
+        // Если прокси уже есть, проверяем не изменились ли базовые данные (скин/модель)
+        val existing = dummies[entity.uuid]
+        if (existing != null) {
+            // TODO: Можно добавить логику обновления скина если он изменился в компоненте
+            return
+        }
+
+        val world = entity.world as? net.minecraft.client.world.ClientWorld ?: return
+        
+        val dummy = CharacterDummy(
+            world,
+            entity.uuid,
+            appearance.skinId,
+            appearance.modelType,
+            DummyAnimationType.STAND_IDLE // По дефолту для NPC
+        )
+        
+        dummy.sourceEntity = entity
+        dummy.syncWithSource()
+        
+        dummies[entity.uuid] = dummy
+        logger.debug("Auto-created CharacterDummy proxy for entity ${entity.uuid} (${entity.name.string})")
+    }
+
+    private fun removeProxy(entity: LivingEntity) {
+        val dummy = dummies.remove(entity.uuid) ?: return
+        PlayerAnimSystem.stopAll(dummy.uuid)
+        logger.debug("Auto-removed CharacterDummy proxy for entity ${entity.uuid}")
+    }
 
     // ── Обработка пакетов ─────────────────────────────────────────────────
 

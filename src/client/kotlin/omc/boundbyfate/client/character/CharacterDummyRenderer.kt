@@ -50,8 +50,15 @@ object CharacterDummyRenderer {
 
         for (dummy in dummies) {
             try {
-                // Обновляем тик Dummy (минимальный — только возраст)
-                dummy.tick()
+                // Если у Dummy есть источник, синхронизируем его
+                dummy.syncWithSource()
+
+                // Проверяем Frustum Culling — не рендерим то, что за кадром
+                if (!context.frustum().isVisible(dummy.boundingBox)) continue
+
+                // Если это прокси для NPC, скрываем имя (оно есть у самого NPC)
+                dummy.customName = null
+                dummy.isCustomNameVisible = false
 
                 val x = dummy.x - camPos.x
                 val y = dummy.y - camPos.y
