@@ -127,13 +127,15 @@ class PipelineRenderer(private val primitive: Primitive) : MeshRenderer {
             GL33.glBindVertexArray(skinningVao)
 
             // Setup joints and weights for Transform Feedback shader (locations 0 and 1)
+            // ВАЖНО: joints в GLTF имеют тип UNSIGNED_SHORT (5123), а не INT!
             primitive.joints?.let { joints ->
                 VboWrapper.createArrayBuffer().apply {
-                    val buffer = org.lwjgl.BufferUtils.createIntBuffer(joints.size * 4)
-                    joints.forEach { j -> buffer.put(j.x).put(j.y).put(j.z).put(j.w) }
+                    // Конвертируем в unsigned short (2 байта на компонент)
+                    val buffer = org.lwjgl.BufferUtils.createShortBuffer(joints.size * 4)
+                    joints.forEach { j -> buffer.put(j.x.toShort()).put(j.y.toShort()).put(j.z.toShort()).put(j.w.toShort()) }
                     buffer.flip()
                     uploadData(buffer)
-                    GL33.glVertexAttribIPointer(0, 4, GL33.GL_INT, 0, 0)
+                    GL33.glVertexAttribIPointer(0, 4, GL11.GL_UNSIGNED_SHORT, 0, 0)
                     GL33.glEnableVertexAttribArray(0)
                 }
             }

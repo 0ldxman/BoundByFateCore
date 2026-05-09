@@ -29,8 +29,9 @@ class Skin(
             val skinMatrix = MutableMat4f(jointGlobalMatrix).mul(bindMatrix)
             cache[i] = MutableMat4f(inverseRoot).mul(skinMatrix).transpose() // Транспозируем для передачи в шейдер
             
-            if (shouldLog && (id == 19 || id == 20)) {
-                logger.info("[Skin] joint=$id frame=$totalFrames translation=(${jointGlobalMatrix.m03},${jointGlobalMatrix.m13},${jointGlobalMatrix.m23})")
+            // Логируем ноды, которые используются первыми вершинами (21 и 18)
+            if (shouldLog && (id == 21 || id == 18 || id == 19 || id == 20)) {
+                logger.info("[Skin] joint=$id (cache[$i]) frame=$totalFrames translation=(${jointGlobalMatrix.m03},${jointGlobalMatrix.m13},${jointGlobalMatrix.m23})")
             }
         }
 

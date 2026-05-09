@@ -219,6 +219,9 @@ class GpuDeformer(private val primitive: Primitive) {
         if (computeCallCount == 1 || computeCallCount % 60 == 0) {
             // Логируем несколько матриц для проверки изменений
             logger.info("[GpuDeformer] Frame $computeCallCount: joint[0] translation=(${matrices[0].m30},${matrices[0].m31},${matrices[0].m32})")
+            if (matrices.size > 1) {
+                logger.info("[GpuDeformer] Frame $computeCallCount: joint[1] translation=(${matrices[1].m30},${matrices[1].m31},${matrices[1].m32})")
+            }
             if (matrices.size > 19) {
                 logger.info("[GpuDeformer] Frame $computeCallCount: joint[19] translation=(${matrices[19].m30},${matrices[19].m31},${matrices[19].m32})")
             }
