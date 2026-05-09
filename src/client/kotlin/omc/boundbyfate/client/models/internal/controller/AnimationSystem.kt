@@ -95,9 +95,12 @@ class AnimationSystem(val model: ModelAttachment) {
     ) {
         if (destroyed) return
 
+        logger.info("[AnimSystem] playWhenReady('$name') called")
         scope.launch {
+            logger.info("[AnimSystem] playWhenReady('$name') awaiting animations...")
             // Ждём пока модель загрузится и в ней есть анимации
             model.awaitAnimations()
+            logger.info("[AnimSystem] playWhenReady('$name') animations loaded")
 
             // Ищем анимацию: сначала точное совпадение, потом case-insensitive
             val resolvedName = model.animations.findName(name)
@@ -106,6 +109,7 @@ class AnimationSystem(val model: ModelAttachment) {
                 return@launch
             }
 
+            logger.info("[AnimSystem] playWhenReady('$name') resolved to '$resolvedName', starting transition")
             transition(to = resolvedName, duration = duration, wrapMode = wrapMode)
         }
     }
@@ -181,16 +185,23 @@ class AnimationSystem(val model: ModelAttachment) {
         target?.time = 0f
         target?.wrapMode = wrapMode
 
+        logger.info("[AnimSystem] transition() from='$fromName' to='$to' duration=$duration")
+
         val job = scope.launch {
             val steps = (duration * 60f).toInt().coerceAtLeast(1)
+            logger.info("[AnimSystem] transition coroutine started, steps=$steps")
             for (i in 0..steps) {
                 val t = i.toFloat() / steps
                 target?.weight = t
                 original?.weight = 1f - t
+                if (i == 0 || i == steps) {
+                    logger.info("[AnimSystem] transition step $i/$steps: target.weight=$t")
+                }
                 dispatcher.awaitNextFrame()
             }
             target?.weight = 1f
             original?.weight = 0f
+            logger.info("[AnimSystem] transition completed: target.weight=${target?.weight}")
         }
         transitionJobs[key] = job
 
