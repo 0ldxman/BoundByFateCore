@@ -63,6 +63,18 @@ dependencies {
 
 	// EMF — Entity Model Features (reads JEM/JPM files for player animations)
 	modImplementation("maven.modrinth:entity-model-features:3.2.2-fabric-1.20.1")
+
+	// Testing dependencies
+	testImplementation(kotlin("test"))
+	testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+	useJUnitPlatform()
+	testLogging {
+		events("passed", "skipped", "failed")
+	}
 }
 
 tasks.processResources {

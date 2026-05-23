@@ -3,14 +3,12 @@
 	"package": "omc.boundbyfate.client.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
-		"EntityRendererMixin",
-		"PlayerSkinMixin",
-		"accessor.GameRendererAccessor",
-		"accessor.LimbAnimatorAccessor",
-		"accessor.LivingEntityAccessor",
-		"accessor.ShaderProgramAccessor"
+		"ExampleClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
 	}
 }

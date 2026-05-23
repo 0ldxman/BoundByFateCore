@@ -1,8 +1,0 @@
-{
-  "id": "boundbyfate-core:draconic",
-  "tags": ["language", "exotic"],
-  "script": "Draconic",
-  "penalty": {
-    "type": "none"
-  }
-}

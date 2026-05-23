@@ -1,8 +1,0 @@
-{
-  "id": "boundbyfate-core:common",
-  "tags": ["language"],
-  "script": "Common",
-  "penalty": {
-    "type": "none"
-  }
-}
