@@ -17,7 +17,9 @@ fun main() {
     tree.addTag("resistance:fire:1")
     
     println("Все теги силы:")
-    tree.getTags("stat:strength").forEach { println(" - $it") }
+    tree.getParsedTags("stat:strength").forEach { tag -> 
+        println(" - Path: ${tag.rawPath}, Value: ${tag.asInt()}") 
+    }
     
     println("Проверка наличия resistance:fire: ${tree.hasTag("resistance:fire")}")
     
@@ -25,7 +27,9 @@ fun main() {
     tree.removeTag("stat:strength:bonus:rage")
     
     println("Теги силы после удаления:")
-    tree.getTags("stat:strength").forEach { println(" - $it") }
+    tree.getParsedTags("stat:strength").forEach { tag -> 
+        println(" - ${tag.rawPath}") 
+    }
     
     println("=== Проверка завершена ===")
 }
