@@ -19,12 +19,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-      - name: run tests
-        run: ./gradlew test
-      - name: build
-        run: ./gradlew build -x test # Собираем проект, пропуская уже пройденные тесты
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4 # Используем официальный экшен для кэширования
+
+      - name: build and test
+        run: ./gradlew build
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
