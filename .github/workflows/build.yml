@@ -22,7 +22,7 @@ jobs:
       - name: setup gradle
          uses: gradle/actions/setup-gradle@v4 # Используем официальный экшен для кэширования
  
-       - name: build and test
+      - name: build and test
          run: |
            chmod +x ./gradlew
            ./gradlew build
