@@ -74,6 +74,8 @@ tasks.test {
 	useJUnitPlatform()
 	testLogging {
 		events("passed", "skipped", "failed")
+		showStandardStreams = true // Позволяет видеть println из тегов в консоли GitHub
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 	}
 }
 

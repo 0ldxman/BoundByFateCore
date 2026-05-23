@@ -21,10 +21,10 @@ jobs:
           distribution: 'temurin'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew build
       - name: run tests
         run: ./gradlew test
+      - name: build
+        run: ./gradlew build -x test # Собираем проект, пропуская уже пройденные тесты
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
